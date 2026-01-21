@@ -2,10 +2,12 @@ import app from "./app.js";
 import dbConnection from "../configs/dbConnection.js";
 import dotenv from "dotenv";
 
+// --------------------------------------- Load Environment Variable --------------------------------------- \\
 dotenv.config();
 
 const PORT: string | undefined = process.env.PORT;
 const DOMAIN: string | undefined = process.env.DOMAIN || "http://localhost";
+// --------------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // Start the server after establishing the database connection
 async function startServer(): Promise<void> {
