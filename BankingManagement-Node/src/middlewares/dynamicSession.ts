@@ -1,9 +1,9 @@
 import session from "express-session";
 import type { NextFunction, RequestHandler, Request, Response } from "express";
 import type { SessionConfig } from "../types/sessionTypes.js";
-import type { badRequestResponseJson } from "../types/responseJson.js";
+import type { failedResponseJson } from "../types/responseJson.js";
 
-const dynamicSession = (sessions: SessionConfig): RequestHandler => (req: Request, res: Response, next: NextFunction): Response<badRequestResponseJson> | void => {
+const dynamicSession = (sessions: SessionConfig): RequestHandler => (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
     const portal: string | string[] | undefined = req.headers["portal"];
 
     if (!portal) {
