@@ -5,7 +5,6 @@ import type { SessionConfig, SessionError } from "../types/sessionTypes.js";
 dotenv.config();
 
 // const buildSession = (store): session.SessionOptions => {
-// const buildSession = (req?: Request): SessionConfig | SessionError => {
 const buildSession = (): RequestHandler => (req: Request): SessionConfig | SessionError => {
     // if (!store) {
     //     return {status: "BAD_REQUEST", message: "Redis store id not initialised"};

@@ -12,7 +12,7 @@ if (!dbUsername || !dbPassword) {
     throw new Error("❌ Database credentials are missing in environment variables");
 }
 
-const dbUrl: string = `mongodb+srv://${dbUsername}:${dbPassword}@shopcart.f8nivgy.mongodb.net/ShopCart?retryWrites=true&w=majority&appName=ShopCart`
+const dbUrl: string = `mongodb+srv://${dbUsername}:${dbPassword}@bankingmanagementcluste.ydiokc3.mongodb.net/ShopCart?retryWrites=true&w=majority&appName=BankingManagementCluster`
 
 const dbConnection = async (): Promise<void> => {
     try {
