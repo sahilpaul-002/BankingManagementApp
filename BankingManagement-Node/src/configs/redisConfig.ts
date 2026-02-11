@@ -1,5 +1,6 @@
 import { createClient, type RedisClientType } from 'redis';
 import dotenv from "dotenv";
+import type { failedResponseJson, successResponseJson, successResponseJsonRedisCLient } from '../types/responseJson.js';
 
 dotenv.config();
 
@@ -12,12 +13,13 @@ export const redisConfig = async (): Promise<RedisClientType> => {
     }
     
     const redisUrl: string | undefined = process.env.REDIS_HOST;
-    const redisPortp: string | undefined = process.env.REDIS_PORT;
+    const redisPort: string | undefined = process.env.REDIS_PORT;
     const redisPassword: string | undefined = process.env.REDIS_PASSWORD;
 
     const clientOptions: any = {
         socket: {
-            port: parseInt(redisPortp || "12317"),
+            // port: parseInt(redisPort || "12317"),
+            port: redisPort
         }
     };
     if (redisPassword) {
@@ -26,6 +28,14 @@ export const redisConfig = async (): Promise<RedisClientType> => {
     if (redisUrl) {
         clientOptions.socket.host = redisUrl;
     }
+
+    // redisClient = createClient({
+    //     password: redisPassword,
+    //     socket: {
+    //         host: redisUrl,
+    //         port: redisPortp
+    //     }
+    // })
 
     redisClient = createClient(clientOptions);
 
@@ -49,11 +59,12 @@ export const redisConfig = async (): Promise<RedisClientType> => {
     return redisClient;
 }
 
-export const getRedisClient = (): RedisClientType => {
+export const getRedisClient = (): failedResponseJson | successResponseJsonRedisCLient => {
+    console.log("Getting Redis client from getRedisClient function...", redisClient);
     if (!redisClient) {
-        return ({status: "error", message: "Redis client is not initialized."} as unknown) as RedisClientType;
+        return ({status: "FAILED", message: "Redis client is not initialized."});
     } 
     else {
-        return ({status: "success", message: "Redis client is initialized.", client: redisClient} as unknown) as RedisClientType;
+        return ({status: "SUCCESS", message: "Redis client is initialized.", client: redisClient});
     }
 }

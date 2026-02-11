@@ -1,14 +1,14 @@
 import dotenv from "dotenv";
 import type { Request, RequestHandler } from "express";
 import type { SessionConfig, SessionError } from "../types/sessionTypes.js";
+import type { RedisStore } from "connect-redis";
 
 dotenv.config();
 
-// const buildSession = (store): session.SessionOptions => {
-const buildSession = (): RequestHandler => (req: Request): SessionConfig | SessionError => {
-    // if (!store) {
-    //     return {status: "BAD_REQUEST", message: "Redis store id not initialised"};
-    // }
+const buildSession = (req: Request, store: RedisStore | undefined): SessionConfig | SessionError => {
+    if (!store) {
+        return {status: "INTERNAL_SERVER_ERROR", message: "Redis store is not initialised"};
+    }
 
     // Load environment variable
     const environment: string | undefined = process.env.NODE_ENV || "production";
@@ -31,7 +31,7 @@ const buildSession = (): RequestHandler => (req: Request): SessionConfig | Sessi
                 secure: process.env.NODE_ENV === "production",
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 
-                maxAge: 1000 * 60 * 10, // 10 minutes
+                maxAge: 1000 * 60 * 12, // 12 minutes
             }
         },
         userSession: {
@@ -50,7 +50,7 @@ const buildSession = (): RequestHandler => (req: Request): SessionConfig | Sessi
                 secure: process.env.NODE_ENV === "production",
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 
-                maxAge: 1000 * 60 * 10, // 10 minutes
+                maxAge: 1000 * 60 * 12, // 12 minutes
             }
         }
     }

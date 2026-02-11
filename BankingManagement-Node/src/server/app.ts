@@ -9,7 +9,11 @@ import rateLimiter from "../middlewares/rateLimiter.js";
 import sessionExistance from "../middlewares/sessionExistance.js";
 import checkOriginExist from "../middlewares/checkOriginExist.js";
 import type { Request, Response } from "express";
-import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
+import type { failedResponseJson, successResponseJson, successResponseJsonRedisStore } from "../types/responseJson.js";
+import { redisConfig } from "../configs/redisConfig.js";
+import type { RedisClientType } from "redis";
+import getRedisStore from "../configs/redisStore.js";
+import buildSession from "../middlewares/buildSession.js";
 
 dotenv.config();
 
@@ -24,20 +28,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.text());
 
 // CORS Middleware
-const allowedOrigins: string[] = [
-    "http://localhost:3000",
-]
 const corsOptions: cors.CorsOptions = {
-    origin: (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void): void => {
-        // Allow server-to-server or Postman (no origin)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error("Not allowed by CORS"));
-        }
-    },
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -56,9 +47,26 @@ app.use(rid());
 app.use(cookieParser());
 // --------------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------------- \\
 
+// --------------------------------------- Redis Setup --------------------------------------- \\
+// Create Redis CLient and establish connection
+const redisClient: RedisClientType = await redisConfig();
+app.locals.redisClient = redisClient;
+// // Create Redis Store
+// const redisStoreResponse: successResponseJsonRedisStore | failedResponseJson = await getRedisStore(redisClient);
+// let sessions
+// if (redisStoreResponse.status === "SUCCESS" && redisStoreResponse.store) {
+//     app.locals.redisStore = redisStoreResponse.store;
+//     sessions = buildSession(redisStoreResponse.store);
+//     console.log("Redis store created and stored in app.locals successfully.");
+// }
+// else {
+//     console.error("Failed to create Redis store:", redisStoreResponse.message);
+// }
+// --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
+
 // ---------------------------------------- Custom Middlewares ---------------------------------------- \\
 // Dynamic Session Middleware
-// app.use(dynamicSession(sessions))
+app.use(dynamicSession())
 
 // Rate Limiter Middleware
 app.use(rateLimiter());
