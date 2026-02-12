@@ -12,9 +12,9 @@ import type { Request, Response } from "express";
 import type { failedResponseJson, successResponseJson, successResponseJsonRedisStore } from "../types/responseJson.js";
 import { redisConfig } from "../configs/redisConfig.js";
 import type { RedisClientType } from "redis";
-import getRedisStore from "../configs/redisStore.js";
-import buildSession from "../middlewares/buildSession.js";
 import portalHeaderCheck from "../middlewares/portalHeckCheck.js";
+import helperRoutes from "../routes/helperRoutes.js";
+import configRoutes from "../routes/configRoutes.js";
 
 dotenv.config();
 
@@ -111,7 +111,8 @@ app.get("/destroy-session", (req: Request, res: Response): Response<successRespo
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 
 // ---------------------------------------- Routes ---------------------------------------- \\
-
+app.use("/api/v1/helper", helperRoutes);
+app.use("/api/v1/config", configRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 

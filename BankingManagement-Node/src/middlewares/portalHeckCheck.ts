@@ -16,8 +16,8 @@ const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Res
     }
 
     // Validate the portal header value
-    if (portal?.toString()?.toUpperCase() !== "ADMIN" && portal?.toString()?.toUpperCase() !== "USER") {
-        return res.status(400).json({ status: "FORBIDDEN", message: "Invalid portal header value. Allowed values are 'admin' or 'user'" });
+    if (portal?.toString()?.toUpperCase() !== "ADMIN" && portal?.toString()?.toUpperCase() !== "USER" && portal?.toString()?.toUpperCase() !== "BUSINESS") {
+        return res.status(400).json({ status: "FORBIDDEN", message: "Invalid portal header value. Allowed values are 'admin' or 'user' or 'business'" });
     }
 
     next();
