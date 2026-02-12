@@ -14,6 +14,7 @@ import { redisConfig } from "../configs/redisConfig.js";
 import type { RedisClientType } from "redis";
 import getRedisStore from "../configs/redisStore.js";
 import buildSession from "../middlewares/buildSession.js";
+import portalHeaderCheck from "../middlewares/portalHeckCheck.js";
 
 dotenv.config();
 
@@ -51,20 +52,15 @@ app.use(cookieParser());
 // Create Redis CLient and establish connection
 const redisClient: RedisClientType = await redisConfig();
 app.locals.redisClient = redisClient;
-// // Create Redis Store
-// const redisStoreResponse: successResponseJsonRedisStore | failedResponseJson = await getRedisStore(redisClient);
-// let sessions
-// if (redisStoreResponse.status === "SUCCESS" && redisStoreResponse.store) {
-//     app.locals.redisStore = redisStoreResponse.store;
-//     sessions = buildSession(redisStoreResponse.store);
-//     console.log("Redis store created and stored in app.locals successfully.");
-// }
-// else {
-//     console.error("Failed to create Redis store:", redisStoreResponse.message);
-// }
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ---------------------------------------- Custom Middlewares ---------------------------------------- \\
+// Cehck Origin Header Exist Middleware
+app.use(checkOriginExist)
+
+// Check Portal Header Exist Middleware
+app.use(portalHeaderCheck);
+
 // Dynamic Session Middleware
 app.use(dynamicSession())
 
@@ -73,9 +69,6 @@ app.use(rateLimiter());
 
 // Check session existance  middleware 
 app.use(sessionExistance);
-
-// Cehck Origin Header Exist Middleware
-app.use(checkOriginExist)
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 
 // ---------------------------------------- Default Routes ---------------------------------------- \\
@@ -112,10 +105,14 @@ app.get("/destroy-session", (req: Request, res: Response): Response<successRespo
         res.clearCookie("connect.sid.admin");
         res.clearCookie("connect.sid.user");
 
-        return res.json({status: "SUCCESS", message: "SESSION DESTROYED SUCCESSFULLY", data: {sessionId: sessionId}});
+        return res.json({ status: "SUCCESS", message: "SESSION DESTROYED SUCCESSFULLY", data: { sessionId: sessionId } });
     });
 });
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
+
+// ---------------------------------------- Routes ---------------------------------------- \\
+
+// --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 
 export default app;

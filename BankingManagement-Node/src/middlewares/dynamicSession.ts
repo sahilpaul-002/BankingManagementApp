@@ -18,15 +18,8 @@ const dynamicSession = (): RequestHandler => async (req: Request, res: Response,
     const redisClient: RedisClientType | undefined = redisClientResponse.status === "SUCCESS" ? redisClientResponse.client : undefined;
     // Create Redis Store
     const redisStoreResponse: failedResponseJson | successResponseJsonRedisStore = await getRedisStore(redisClient);
-    console.log("Redis store response from getRedisStore function in dynamicSession middleware:", redisStoreResponse);
-    // let sessions: SessionConfig | SessionError | undefined;
-    // if (redisStoreResponse.status === "SUCCESS" && redisStoreResponse.store) {
-    //     sessions = buildSession(req, redisStoreResponse.store);
-    //     console.log("Redis store created successfully.");
-    // }
-    // else {
-    //     console.error("Failed to create Redis store:", redisStoreResponse.message);
-    // }
+    // console.log("Redis store response from getRedisStore function in dynamicSession middleware:", redisStoreResponse);
+
     if (redisStoreResponse.status === "FAILED") {
         console.error("Failed to create Redis store:", redisStoreResponse.message);
     }
@@ -34,7 +27,7 @@ const dynamicSession = (): RequestHandler => async (req: Request, res: Response,
 
     // Get Sessions
     const sessions: SessionConfig | SessionError | undefined = buildSession(req, redisStore);
-    console.log("Session configuration returned from buildSession function in dynamicSession middleware:", sessions);
+    // console.log("Session configuration returned from buildSession function in dynamicSession middleware:", sessions);
 
     // Check Session
     if (!sessions) {
@@ -49,10 +42,6 @@ const dynamicSession = (): RequestHandler => async (req: Request, res: Response,
 
     // Check Portal Header
     const portal: string | string[] | undefined = req.headers["portal"];
-
-    if (!portal) {
-        return res.status(400).json({ status: "BAD_REQUEST", message: "Portal header is missing" });
-    }
 
     // const reqSession = req.app.locals.sessions;
     const activeSession: session.SessionOptions | undefined = portal === "admin" ? adminSession : userSession;
