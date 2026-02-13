@@ -15,6 +15,25 @@ const buildSession = (req: Request, store: RedisStore | undefined): SessionConfi
 
     // Return session configuration options for admin and user
     return {
+        businessSession: {
+            // store,
+            genid: (req) => {
+                return crypto.randomUUID();
+            },
+            name: "BMA_Business_Session",
+            secret: process.env.SESSION_SECRET_KEY || "gr45fe612rfgew3grfewAfgd5a6fWvdeRT",
+            resave: false,
+            proxy: environment === "production", // Trust the reverse proxy when in production
+            saveUninitialized: false,
+            cookie: {
+                httpOnly: true,
+
+                secure: process.env.NODE_ENV === "production",
+                sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+
+                maxAge: 1000 * 60 * 12, // 12 minutes
+            }
+        },
         adminSession: {
             // store,
             genid: (req) => {

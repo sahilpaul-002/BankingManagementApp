@@ -2,6 +2,7 @@ import session from "express-session";
 
 // Session return configuration type
 export interface SessionConfig {
+    businessSession: session.SessionOptions,
     adminSession: session.SessionOptions;
     userSession: session.SessionOptions;
 }
@@ -33,6 +34,7 @@ export interface SessionItems {
     valid: boolean;
     publicKey: string;
     privateKey: string;
+    encryptionKey: string,
     userEmail: string;
     passwordHash: string;
     userType: userType;

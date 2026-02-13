@@ -8,14 +8,14 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
     if (["POST", "PUT", "PATCH"].includes(req.method)) {
         const contentType: string | undefined = req.headers["content-type"];
         if (!contentType || !contentType.includes("application/json")) {
-            return res.status(400).json({ status: "INVALID_HEADER", message: "Content-Type header must be application/json" });
+            return res.status(400).json({ status: "INVALID_HEADER", message: "'content-type' header must be application/json" });
         }
     }
 
     // Validate X-API-Key header for all requests
     const xApiKey: string | null = checkStringHeader(req, "x-api-key");
     if (!xApiKey) {
-        return res.status(400).json({ status: "INVALID_HEADER", message: "X-API-Key MISSING OR NOT STRING" });
+        return res.status(400).json({ status: "INVALID_HEADER", message: "'x-api-key' MISSING OR NOT STRING" });
     }
 
     next();

@@ -1,9 +1,45 @@
-import type { NextFunction, Response, Request } from "express";
+import type { Response, Request } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import mongoose from "mongoose";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 
-export const insertDDocumentIntoCollection = async (req: Request, res: Response, next: NextFunction): Promise<Response<successResponseJson | failedResponseJson>> => {
+// Health Check
+export const healthCheck = (req: Request, res: Response): Response<successResponseJson> => {
+    return res.status(200).json({ status: "OK", message: "SERVER IS HEALTHY" }); 0
+}
+
+// Get Session
+export const getSession = (req: Request, res: Response): Response<successResponseJson> => {
+    if (!req.session) {
+        return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
+    }
+
+    const sessionId = req.sessionID;
+    return res.status(200).json({ status: "SUCCESS", message: "SESSION FOUND", data: { session: req.session, sessionId: sessionId } })
+}
+
+// Destroy Session
+export const destroySession = (req: Request, res: Response): Response<successResponseJson> | void => {
+    if (!req.session) {
+        return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
+    }
+
+    const sessionId = req.sessionID;
+
+    req.session.destroy((err): Response<successResponseJson> | Response<failedResponseJson> => {
+        if (err) {
+            console.error("Session destroy error:", err);
+            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "FAILED TO DESTROY SESSION", error: err });
+        }
+
+        res.clearCookie("BMA_Admin_Session");
+        res.clearCookie("BMA_User_Session");
+
+        return res.json({ status: "SUCCESS", message: "SESSION DESTROYED SUCCESSFULLY", data: { sessionId: sessionId } });
+    });
+}
+
+export const insertDDocumentIntoCollection = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson>> => {
     try {
         // Cehck request body
         if (!req?.body?.collectionName) {

@@ -8,7 +8,7 @@ export interface BaseResponse {
 }
 
 // Error Status Value Types
-export type ErrorStatus = "BAD_REQUEST" | "UNAUTHENTICATED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "INVALID_SESSION" | "INTERNAL_SERVER_ERROR" | "INVALID_HEADER" | "ERROR" | "FAILED";
+export type ErrorStatus = "BAD_REQUEST" | "UNAUTHENTICATED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "INVALID_SESSION" | "INTERNAL_SERVER_ERROR" | "INVALID_HEADER" | "INVALID_REQUEST_BODY_PARAMETER" | "ERROR" | "FAILED";
 
 // Response Error JSON Type
 export interface responseError {

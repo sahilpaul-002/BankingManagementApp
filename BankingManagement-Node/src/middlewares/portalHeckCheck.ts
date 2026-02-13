@@ -6,14 +6,13 @@ const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Res
     if (req.method === "OPTIONS") {
         return next();
     }
-
     // Check Portal Header
     const portal: string | string[] | undefined = req.headers["portal"];
 
-    // Check portal header exist
-    if (!portal) {
-        return res.status(400).json({ status: "FORBIDDEN", message: "Portal header is missing" });
-    }
+    // Check if header portal exist and  is string
+    if (!portal || typeof portal !== "string") {
+        return res.status(400).json({status: "FORBIDDEN", message: "'portal' IS MISSING OR NOT STRING"});}
+
 
     // Validate the portal header value
     if (portal?.toString()?.toUpperCase() !== "ADMIN" && portal?.toString()?.toUpperCase() !== "USER" && portal?.toString()?.toUpperCase() !== "BUSINESS") {

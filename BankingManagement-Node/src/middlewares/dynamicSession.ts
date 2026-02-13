@@ -37,14 +37,27 @@ const dynamicSession = (): RequestHandler => async (req: Request, res: Response,
     if (sessionStatus === "INTERNAL_SERVER_ERROR") {
         return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to build session configuration" });
     }
+    // Get business session from sessions
+    const businessSession: session.SessionOptions | undefined = sessions && "businessSession" in sessions ? sessions.businessSession : undefined;
+    // Get admin session from sessions
     const adminSession: session.SessionOptions | undefined = sessions && "adminSession" in sessions ? sessions.adminSession : undefined;
+    // Get user session from sesssions
     const userSession: session.SessionOptions | undefined = sessions && "userSession" in sessions ? sessions.userSession : undefined;
 
-    // Check Portal Header
-    const portal: string | string[] | undefined = req.headers["portal"];
+    // Get Portal Header
+    const portal: string = req.headers["portal"] as string; // Portal header is checked for string in previous middleware
 
     // const reqSession = req.app.locals.sessions;
-    const activeSession: session.SessionOptions | undefined = portal === "admin" ? adminSession : userSession;
+    let activeSession: session.SessionOptions | undefined;
+    if (portal?.toUpperCase() === "BUSINESS" ) {
+        activeSession = businessSession
+    }
+    else if (portal?.toUpperCase() === "ADMIN") {
+        activeSession = adminSession
+    }
+    else {
+        activeSession = userSession
+    }
 
     if (!activeSession) {
         return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to determine active session configuration" });

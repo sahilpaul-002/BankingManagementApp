@@ -10,7 +10,9 @@ const sessionExpiration = (req: Request, res: Response, next: NextFunction): Res
         if (req.session?.lastActivity) {
             if (now - req.session?.lastActivity > maxAge) {
                 req.session.destroy(() => {
-                    res.clearCookie("BEMASession");
+                    res.clearCookie("BMA_Business_Session");
+                    res.clearCookie("BMA_Admin_Session");
+                    res.clearCookie("BMA_User_Session");
                     res.status(401).json({
                         status: "UNAUTHORIZED",
                         message: "Session expired due to inactivity"
