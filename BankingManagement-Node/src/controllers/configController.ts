@@ -7,8 +7,9 @@ import checkStringHeader from '../utils/checkStringHeader.js';
 import checkStringBody from '../utils/checkStringBody.js';
 import { getSymmetricEncryptionKey } from '../utils/symmetricEncryptionDecryption.js';
 import type { SessionData } from 'express-session';
+import errorHandler from '../utils/errorHandler.js';
 
-export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson>> => {
+export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     try {
         // Check if collection exist in MongoDB
         const isCollectionPresent = await checkMongoDbCollectionExist("portal_configurations");
@@ -23,6 +24,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
         }
         // Validate domain name in request body
         const domainName: string | null = checkStringBody(req, "domainName");
+
         if (!domainName) {
             return res.status(400).json({ status: "INVALID_REQUEST_BODY_PARAMETER", message: "'domainName' MISSING OR NOT STRING" });
         }
@@ -37,13 +39,11 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
         return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: dnsData });
     }
     catch (error) {
-        console.error("getDnsConfig error:", error);
-
-        return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Something went wrong" });
+        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET DNS CONFIG FACING ISSUE.");
     }
 }
 
-export const getEncryptionKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> => {
+export const getEncryptionKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
         // Get the encryption key
         const encryptionKeyResponse = getSymmetricEncryptionKey(req);
@@ -55,7 +55,6 @@ export const getEncryptionKey = (req: Request, res: Response): Response<successR
         }
     }
     catch (error) {
-        console.error(error);
-        return res.status(400).json({ status: "BAD_REQUEST", message: "Internal Server Error" });
+        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET DNS CONFIG FACING ISSUE.");
     }
 }

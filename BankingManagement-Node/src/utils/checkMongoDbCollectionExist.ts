@@ -19,7 +19,7 @@ const checkMongoDbCollectionExist = async (collectionName: string): Promise<succ
             return { status: "INTERNAL_SERVER_ERROR", message: `Collection ${collectionName} does not exist in MongoDB` };
         }
     
-        console.log(`Collection ${collectionName} exists:`, exists); // true or false
+        // console.log(`Collection ${collectionName} exists:`, exists); // true or false
         return { status: "SUCCESS", message: `Collection ${collectionName} exists in MongoDB`, data: {isExists: exists} };
 }
 

@@ -4,6 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 import rid from "connect-rid"
 import cookieParser from "cookie-parser";
+import timeout from "connect-timeout";
 import dynamicSession from "../middlewares/dynamicSession.js";
 import rateLimiter from "../middlewares/rateLimiter.js";
 import sessionExistance from "../middlewares/sessionExistance.js";
@@ -16,6 +17,9 @@ import portalHeaderCheck from "../middlewares/portalHeckCheck.js";
 import helperRoutes from "../routes/helperRoutes.js";
 import configRoutes from "../routes/configRoutes.js";
 import sessionExpiration from "../middlewares/sessionExpiration.js";
+import checkTimeout from "../middlewares/checkTimeout.js";
+import morgan from "morgan";
+import logger from "../utils/logger.js";
 
 dotenv.config();
 
@@ -47,6 +51,28 @@ app.use(rid());
 
 // Cookie Parser Middleware
 app.use(cookieParser());
+
+// Morgon Middleware
+app.use(
+    // morgan("combined", {
+    //     stream: {
+    //         write: (message: string) => logger.info(message.trim())
+    //     }
+    // })
+
+    morgan((tokens, req, res) => {
+        return JSON.stringify({
+            method: tokens.method?.(req, res) || "",
+            url: tokens.url?.(req, res) || "",
+            status: tokens.status?.(req, res) || "",
+            responseTime: tokens["response-time"]?.(req, res) || "0"
+        });
+    }, {
+        stream: {
+            write: (message) => logger.info(JSON.parse(message))
+        }
+    })
+);
 // --------------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------------- \\
 
 // --------------------------------------- Redis Setup --------------------------------------- \\
@@ -73,7 +99,7 @@ app.use(sessionExistance);
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 
 // ---------------------------------------- Routes ---------------------------------------- \\
-app.use("/api/v1/helper", helperRoutes);
+app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", configRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 

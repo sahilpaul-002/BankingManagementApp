@@ -2,44 +2,72 @@ import type { Response, Request } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import mongoose from "mongoose";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
+import errorHandler from "../utils/errorHandler.js";
 
 // Health Check
-export const healthCheck = (req: Request, res: Response): Response<successResponseJson> => {
-    return res.status(200).json({ status: "OK", message: "SERVER IS HEALTHY" }); 0
+export const healthCheck = (req: Request, res: Response): Response<successResponseJson> | void => {
+    try {
+        return res.status(200).json({ status: "OK", message: "SERVER IS HEALTHY" });
+    }
+    catch (error) {
+        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "HEALTH CHECK SERVICE FACING ISSUE.");
+    }
 }
 
 // Get Session
-export const getSession = (req: Request, res: Response): Response<successResponseJson> => {
-    if (!req.session) {
-        return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
-    }
+export const getSession = (req: Request, res: Response): Response<successResponseJson> | void => {
+    try {
+        if (!req.session) {
+            return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
+        }
 
-    const sessionId = req.sessionID;
-    return res.status(200).json({ status: "SUCCESS", message: "SESSION FOUND", data: { session: req.session, sessionId: sessionId } })
+        const sessionId = req.sessionID;
+        return res.status(200).json({ status: "SUCCESS", message: "SESSION FOUND", data: { session: req.session, sessionId: sessionId } })
+    }
+    catch (error) {
+        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET SESSION SERVICE FACING ISSUE.");
+    }
 }
 
 // Destroy Session
 export const destroySession = (req: Request, res: Response): Response<successResponseJson> | void => {
-    if (!req.session) {
-        return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
-    }
-
-    const sessionId = req.sessionID;
-
-    req.session.destroy((err): Response<successResponseJson> | Response<failedResponseJson> => {
-        if (err) {
-            console.error("Session destroy error:", err);
-            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "FAILED TO DESTROY SESSION", error: err });
+    try {
+        if (!req.session) {
+            return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
         }
 
-        res.clearCookie("BMA_Admin_Session");
-        res.clearCookie("BMA_User_Session");
+        const sessionId = req.sessionID;
 
-        return res.json({ status: "SUCCESS", message: "SESSION DESTROYED SUCCESSFULLY", data: { sessionId: sessionId } });
-    });
+        req.session.destroy((err): Response<successResponseJson> | Response<failedResponseJson> => {
+            if (err) {
+                console.error("Session destroy error:", err);
+                return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "FAILED TO DESTROY SESSION", error: err });
+            }
+
+            res.clearCookie("BMA_Admin_Session");
+            res.clearCookie("BMA_User_Session");
+
+            return res.json({ status: "SUCCESS", message: "SESSION DESTROYED SUCCESSFULLY", data: { sessionId: sessionId } });
+        });
+    }
+    catch (error) {
+        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "DESTROY SESSION SERVICE FACING ISSUE.");
+    }
 }
 
-export const insertDDocumentIntoCollection = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson>> => {
+export const checkTimeoutApi = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        await new Promise(resolve => setTimeout(resolve, 6000));
+        if (!res.headersSent) {
+            return res.status(200).json({ status: "SUCCESS", message: "Request finished" });
+        }
+    }
+    catch (error) {
+        errorHandler(req, res, error, 500, "SERVICE_UNAVAILABLE", "CHECK TIMEOUT SERVICE FACING ISSUE.");
+    }
+}
+
+export const insertDDocumentIntoCollection = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     try {
         // Cehck request body
         if (!req?.body?.collectionName) {
@@ -72,7 +100,6 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
         console.log("Document inserted: ", insertedDocument);
         return res.status(200).json({ status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument });
     } catch (error) {
-        console.error("Error inserting document into collection:", error);
-        return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to insert document into collection", error: error });
+        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "DATA INSERTION SERVICE FACING ISSUE.");
     }
 }
