@@ -1,7 +1,8 @@
 import express from "express";
+import type { Router } from "express";
 import { checkTimeoutApi, destroySession, getSession, healthCheck, insertDDocumentIntoCollection } from "../controllers/helperConteroller.js";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.get("/health", healthCheck);
 router.get("/get-session", getSession);

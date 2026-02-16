@@ -8,7 +8,9 @@ import checkStringBody from '../utils/checkStringBody.js';
 import { getSymmetricEncryptionKey } from '../utils/symmetricEncryptionDecryption.js';
 import type { SessionData } from 'express-session';
 import errorHandler from '../utils/errorHandler.js';
+import { getAsymmetricKeyPair } from '../utils/asymmetricEncryptionDecryption.js';
 
+// FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     try {
         // Check if collection exist in MongoDB
@@ -43,18 +45,36 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
     }
 }
 
+// FUNCTION TO GET THE SYMMETRIC ENCRYPTION KEY
 export const getEncryptionKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
         // Get the encryption key
         const encryptionKeyResponse = getSymmetricEncryptionKey(req);
-        if (encryptionKeyResponse?.status.toLowerCase() === "success") {
+        if (encryptionKeyResponse?.status.toUpperCase() === "SUCCESS") {
             return res.status(200).json({ status: "SUCCESS", key: encryptionKeyResponse.key });
         }
         else {
-            return res.status(400).json({ status: "ERROR", message: "Failed to generate web crypto key" });
+            return res.status(400).json({ status: "ERROR", message: "Failed to generate symmetric encryption key" });
         }
     }
     catch (error) {
-        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET DNS CONFIG FACING ISSUE.");
+        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET ENCRYPTION KEY FACING ISSUE.");
+    }
+}
+
+// FUNCTION TO GET THE ASYMMETRIC ENCRPTION PUBLIC KEY
+export const getPublicKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
+    try {
+        // Get public encryption key
+        const publicKeyResponse = getAsymmetricKeyPair(req);
+        if (publicKeyResponse?.status.toUpperCase() === "SUCCESS") {
+            return res.status(200).json({ status: "SUCCESS", key: publicKeyResponse.publicKey });
+        }
+        else {
+            return res.status(400).json({ status: "ERROR", message: "Failed to generate asymeetric public key" });
+        }
+    }
+    catch (error) {
+        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET PUBLIC KEY FACING ISSUE.");
     }
 }

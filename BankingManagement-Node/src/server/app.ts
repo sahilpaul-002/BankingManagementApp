@@ -14,12 +14,13 @@ import type { failedResponseJson, successResponseJson, successResponseJsonRedisS
 import { redisConfig } from "../configs/redisConfig.js";
 import type { RedisClientType } from "redis";
 import portalHeaderCheck from "../middlewares/portalHeckCheck.js";
-import helperRoutes from "../routes/helperRoutes.js";
-import configRoutes from "../routes/configRoutes.js";
 import sessionExpiration from "../middlewares/sessionExpiration.js";
 import checkTimeout from "../middlewares/checkTimeout.js";
 import morgan from "morgan";
 import logger from "../utils/logger.js";
+import helperRoutes from "../routes/helperRoutes.js";
+import configRoutes from "../routes/configRoutes.js";
+import userRoutes from "../routes/userRoutes.js";
 
 dotenv.config();
 
@@ -100,7 +101,8 @@ app.use(sessionExistance);
 
 // ---------------------------------------- Routes ---------------------------------------- \\
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
-app.use("/api/v1/config", configRoutes);
+app.use("/api/v1/config", checkTimeout(5), configRoutes);
+app.use("/api/v1/user", checkTimeout(5), userRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 

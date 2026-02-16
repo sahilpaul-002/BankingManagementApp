@@ -5,7 +5,9 @@ import type { portalConfigurationSchema } from "../types/schemaTypes.js";
 const portalConfigurationsSchema = new Schema<portalConfigurationSchema>({
     domain_name: {
         type: String,
-        required: true
+        required: true,
+        unique: true,
+        index: true
     },
 
     agent_code: {
@@ -47,6 +49,7 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchema>({
     x_api_key: {
         type: String,
         required: true,
+        index: true,
     },
 
     logo_url: {
@@ -152,7 +155,7 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchema>({
         required: true,
         default: true
     },
-},{minimize: false, timestamps: true});
+}, { minimize: false, timestamps: true });
 
 const portalConfigurationsModel = mongoose.model<portalConfigurationSchema>("PortalConfigurations", portalConfigurationsSchema, "portal_configurations");
 

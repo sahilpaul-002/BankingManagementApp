@@ -2,6 +2,7 @@ import crypto from "crypto";
 import session, { type SessionData } from "express-session";
 import { type Request } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
+import type { decryptionFailedJson, decryptionSuccessJson } from "../types/decryptionRespoonseTypes.js";
 
 // Function to generate web crypto key and store it in session
 // export const getSymmetricEncryptionKey = (session: SessionData): {status: string, key: string} => {
@@ -18,7 +19,7 @@ export const getSymmetricEncryptionKey = (req: Request): {status: string, key: s
     }
 }
 
-export const symmetricDecryptionMsg = (req: Request, { ciphertextHex, ivHex }: {ciphertextHex: string, ivHex: string}): {status: string, decryptedText: string} | failedResponseJson => {
+export const symmetricDecryptionMsg = (req: Request, { ciphertextHex, ivHex }: {ciphertextHex: string, ivHex: string}): decryptionSuccessJson | decryptionFailedJson => {
     const response = getSymmetricEncryptionKey(req); // hex → raw bytes
     let key: Buffer;
     if (response?.status.toUpperCase() === "SUCCESS") {

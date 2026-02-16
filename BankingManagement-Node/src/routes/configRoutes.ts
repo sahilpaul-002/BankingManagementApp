@@ -1,11 +1,12 @@
 import express from "express";
-import { getDnsConfig, getEncryptionKey } from "../controllers/configController.js";
-import { symmetricDecryptionMsg } from "../utils/symmetricEncryptionDecryption.js";
+import type { Router } from "express";
+import { getDnsConfig, getEncryptionKey, getPublicKey } from "../controllers/configController.js";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 
 router.get("/getDnsConfig", getDnsConfig);
 router.get("/getEncryptionKey", getEncryptionKey);
+router.get("/getPublicKey", getPublicKey);
 
 export default router;
