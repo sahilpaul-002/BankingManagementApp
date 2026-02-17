@@ -13,7 +13,7 @@ import type { Request, Response } from "express";
 import type { failedResponseJson, successResponseJson, successResponseJsonRedisStore } from "../types/responseJson.js";
 import { redisConfig } from "../configs/redisConfig.js";
 import type { RedisClientType } from "redis";
-import portalHeaderCheck from "../middlewares/portalHeckCheck.js";
+import portalHeaderCheck from "../middlewares/portalHeaderCheck.js";
 import sessionExpiration from "../middlewares/sessionExpiration.js";
 import checkTimeout from "../middlewares/checkTimeout.js";
 import morgan from "morgan";
@@ -102,7 +102,8 @@ app.use(sessionExistance);
 // ---------------------------------------- Routes ---------------------------------------- \\
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
-app.use("/api/v1/user", checkTimeout(5), userRoutes);
+// app.use("/api/v1/user", checkTimeout(5), userRoutes);
+app.use("/api/v1/user", userRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 

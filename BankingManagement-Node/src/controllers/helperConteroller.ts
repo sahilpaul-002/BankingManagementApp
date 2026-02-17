@@ -3,6 +3,10 @@ import type { failedResponseJson, successResponseJson } from "../types/responseJ
 import mongoose from "mongoose";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import errorHandler from "../utils/errorHandler.js";
+import { userDetailsModel } from "../models/user_details.js";
+import { userAddressModel } from "../models/user_addresses.js";
+import { userBankDetailsModel } from "../models/user_bank_details.js";
+import { portalConfigurationsModel } from "../models/portal_configurations.js";
 
 // Health Check
 export const healthCheck = (req: Request, res: Response): Response<successResponseJson> | void => {
@@ -33,7 +37,7 @@ export const getSession = (req: Request, res: Response): Response<successRespons
 export const destroySession = (req: Request, res: Response): Response<successResponseJson> | void => {
     try {
         if (!req.session) {
-            return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
+            return res.status(200).json({ status: "NOT_FOUND", message: "NO ACTIVE SESSION FOUND" });
         }
 
         const sessionId = req.sessionID;
@@ -44,6 +48,7 @@ export const destroySession = (req: Request, res: Response): Response<successRes
                 return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "FAILED TO DESTROY SESSION", error: err });
             }
 
+            res.clearCookie("BMA_Ausiness_Session");
             res.clearCookie("BMA_Admin_Session");
             res.clearCookie("BMA_User_Session");
 
@@ -82,20 +87,37 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
         // Check if collection exist in MongoDB
         const isCollectionPresent: successResponseJson | failedResponseJson = await checkMongoDbCollectionExist(collectionNameString);
         if (isCollectionPresent.status !== "SUCCESS") {
+            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Collection does not exist in MongoDB" });
+        }
+
+
+        // // Connect to db
+        // const db = mongoose.connection.db;
+        // // Cehck db connection exists
+        // if (!db) {
+        //     return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "MongoDB connection is not established" });
+        // }
+        // // Get collection in db
+        // const collection = db.collection(collectionNameString);
+
+        // All DB Models mapped
+        const modelsMap: Record<string, any> = {
+            portal_configurations: portalConfigurationsModel,
+            user_details: userDetailsModel,
+            user_addresses: userAddressModel,
+            user_bank_details: userBankDetailsModel
+        };
+        // Get Model
+        const Model = modelsMap[collectionNameString];
+
+        // Check if the model exist
+        if (!Model) {
             return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Required collection does not exist in MongoDB" });
         }
 
-
-        // Connect to db
-        const db = mongoose.connection.db;
-        // Cehck db connection exists
-        if (!db) {
-            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "MongoDB connection is not established" });
-        }
-        // Get collection in db
-        const collection = db.collection(collectionNameString);
         // Insert document in collection
-        const insertedDocument = await collection.insertOne(document);
+        // const insertedDocument = await collection.insertOne(document);
+        const insertedDocument = await Model.create(document);
 
         console.log("Document inserted: ", insertedDocument);
         return res.status(200).json({ status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument });

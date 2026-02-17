@@ -12,6 +12,12 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
         }
     }
 
+    // Validate FROM_PORTAL header for all requests
+    const fromPortal: string | null = checkStringHeader(req, "from-portal");
+    if (!fromPortal) {
+        return res.status(400).json({ status: "INVALID_HEADER", message: "'from-portal' MISSING OR NOT STRING" });
+    }
+
     // Validate X-API-Key header for all requests
     const xApiKey: string | null = checkStringHeader(req, "x-api-key");
     if (!xApiKey) {

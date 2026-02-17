@@ -1,8 +1,10 @@
 import express from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import type { failedResponseJson } from '../types/responseJson.js';
+import type { failedResponseJson, successResponseJson } from '../types/responseJson.js';
+import { userDetailsModel as user_details } from '../models/user_details.js';
+import errorHandler from '../utils/errorHandler.js';
 
-const sessionValidation = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
+const sessionValidation = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     // Check session exist
     if (!req.session) {
         return res.status(400).json({ status: "NOT_FOUND", message: "SESSION NOT FOUND" });
@@ -29,13 +31,39 @@ const sessionValidation = (req: Request, res: Response, next: NextFunction): Res
         return res.status(400).json({ status: "FORBIDDEN", message: "X-API-KEY MISMATCH" });
     }
 
-    // Check user exist in DB
-    // const user = await User.findById(req.session.userId);
+    // Get user from DB
+    const checkUserExistInDB = async (req: Request): Promise<boolean | null> => {
+        const userExistResponse: boolean | null = await user_details.findById(req.session.userEmail);
+        return userExistResponse;
+    }
+    const userExistance: boolean | null = await checkUserExistInDB(req);
 
-    // if (!user) {
-    //     req.session.destroy(() => { });
-    //     return res.status(401).json({ message: "User no longer exists" });
-    // }
+    // Check user exist in DB
+    if (!userExistance) {
+        try {
+            if (!req.session) {
+                return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
+            }
+
+            const sessionId = req.sessionID;
+
+            req.session.destroy((err): Response<successResponseJson> | Response<failedResponseJson> => {
+                if (err) {
+                    console.error("Session destroy error:", err);
+                    return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "FAILED TO DESTROY SESSION", error: err });
+                }
+
+                res.clearCookie("BMA_Business_Session");
+                res.clearCookie("BMA_Admin_Session");
+                res.clearCookie("BMA_User_Session");
+
+                return res.status(401).json({ status: "FORBIDDEN", message: "User does not exists" });
+            });
+        }
+        catch (error) {
+            errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "DESTROY SESSION SERVICE FACING ISSUE.");
+        }
+    }
 
     // Check user active status
     // if (user.isBlocked || user.isDisabled) {

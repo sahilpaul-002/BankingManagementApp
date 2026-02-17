@@ -1,9 +1,9 @@
 import mongoose, { Schema, Types } from "mongoose";
 import { userBankDetailsModel as user_bank_details } from "./user_bank_details.js";
 import { userAddressModel as user_addresses } from "./user_addresses.js";
-import type { userDetailsSchema } from "../types/schemaTypes.js";
+import { type userDetailsSchema } from "../types/schemaTypes.js";
 
-const userDetailsSchema = new Schema({
+const userDetailsSchema = new Schema<userDetailsSchema>({
     full_name: {
         type: String,
         required: true,
@@ -41,6 +41,16 @@ const userDetailsSchema = new Schema({
         enum: ["PENDING", "VERIFIED", "REJECTED"],
         default: "PENDING",
         required: true
+    },
+    is_admin: {
+        type: String,
+        enum: ["Y", "N"],
+        default: "N"
+    },
+    is_master_admin: {
+        type: String,
+        enum: ["Y", "N"],
+        default: "N"
     },
     risk_category: {
         type: String,

@@ -45,6 +45,8 @@ export interface userDetailsSchema extends Document{
     risk_category?: "LOW" | "MEDIUM" | "HIGH";
     wallet_id?: string | null;
     status?: "ACTIVE" | "DISABLED" | "BLOCKED";
+    is_admin?: "Y" | "N";
+    is_master_admin?: "Y" | "N";
     is_active?: boolean;
     is_email_verified?: boolean;
     is_phone_verified?: boolean;
