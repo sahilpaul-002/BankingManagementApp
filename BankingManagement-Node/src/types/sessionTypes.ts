@@ -15,12 +15,13 @@ export interface SessionError {
 
 // Sessiondata stored in session
 type sessiondata = {
-    requestXApiKey: string;
+    domainName: string;
     agentCode: string;
     subAgentCode: string;
+    businessId: string;
     programId: string;
     clientId: string;
-    clientName: string;
+    requestXApiKey: string;
     accessToken: string;
 }
 

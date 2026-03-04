@@ -20,7 +20,7 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchema>({
         required: true,
     },
 
-    businessId: {
+    business_id: {
         type: String,
         required: true,
     },

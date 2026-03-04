@@ -39,6 +39,22 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             return res.status(404).json({ status: "NOT_FOUND", message: "DNS configuration not found" });
         }
 
+        // INITIATE SESSION
+        req.session.initiated = true;
+        req.session.lastActivity = Date.now();
+
+        // Set DNS data in session
+        req.session.sessiondata = {
+            domainName: dnsData.domain_name,
+            agentCode: dnsData.agent_code,
+            subAgentCode: dnsData.subagent_code,
+            businessId: dnsData.business_id,
+            programId: dnsData.program_id,
+            clientId: dnsData.client_id,
+            requestXApiKey: dnsData.x_api_key,
+            accessToken: "Access Token"
+        };
+
         return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: dnsData });
     }
     catch (error) {

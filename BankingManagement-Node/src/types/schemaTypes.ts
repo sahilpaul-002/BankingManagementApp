@@ -5,7 +5,7 @@ export interface portalConfigurationSchema extends Document {
     domain_name: string;
     agent_code: string;
     subagent_code: string;
-    businessId: string;
+    business_id: string;
     dashboard_name: string;
     program_id: string;
     prefund_flag: boolean;

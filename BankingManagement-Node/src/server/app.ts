@@ -21,6 +21,8 @@ import logger from "../utils/logger.js";
 import helperRoutes from "../routes/helperRoutes.js";
 import configRoutes from "../routes/configRoutes.js";
 import userRoutes from "../routes/userRoutes.js";
+import headerTypeValidation from "../middlewares/headerTypeValidation.js";
+import sessionValidation from "../middlewares/sessionValidation.js";
 
 dotenv.config();
 
@@ -103,7 +105,7 @@ app.use(sessionExistance);
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
 // app.use("/api/v1/user", checkTimeout(5), userRoutes);
-app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/user", sessionValidation, headerTypeValidation, checkTimeout(5), userRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 
