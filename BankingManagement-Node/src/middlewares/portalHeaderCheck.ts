@@ -3,8 +3,14 @@ import type { failedResponseJson } from "../types/responseJson.js";
 
 const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
     // Skip portal header check for helper paths
-    const excludedPaths: string = "/api/v1/helper";
-    if (req.path.includes(excludedPaths)) {
+    const excludedHelperPath: string = "/api/v1/helper";
+    if (req.path.includes(excludedHelperPath)) {
+        return next();
+    }
+
+    // Skip portal header check for selcted pathes
+    const excludedPaths: string[] = ["/api/v1/config/getMobileCountryCodes"];
+    if (excludedPaths.includes(req.path)) {
         return next();
     }
 
