@@ -38,6 +38,7 @@ export interface userDetailsSchema extends Document{
     full_name: string;
     email: string;
     mobile_country_code: string;
+    mobile_country_name: string;
     phone_number: string;
     date_of_birth: Date;
     gender: "MALE" | "FEMALE" | "OTHER";

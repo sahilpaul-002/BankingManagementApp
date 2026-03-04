@@ -8,6 +8,9 @@ import destroySession from "../utils/destroySession.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import mongoose from "mongoose";
 import type { userDetailsSchema } from "../types/schemaTypes.js";
+import userDetailsValidationSchema from "../validations/userDetailsValidation.js";
+import type { SafeParseResult } from "../types/zodTypes.js";
+import type z from "zod";
 
 // ------------------------------ FUNCTION TO SET USERCONTROLLER HEADERS ------------------------------ \\
 const userControllerHeader = (req: Request) => {
@@ -62,8 +65,18 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
 
         // Check user exist in DB
         if (userExistance) {
-            destroySession(req, res);
+            const destroySessionResponse = await destroySession(req, res);
             return res.status(401).json({ status: "FORBIDDEN", message: "User already exists" });
+        }
+
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof userDetailsValidationSchema>> = userDetailsValidationSchema.safeParse(req.body);
+        if (!validationResult.success) {
+            return res.status(400).json({
+                status: "ERROR",
+                message: "Invalid request body",
+                errors: validationResult.error.issues.map(issue => issue.message)
+            });
         }
 
         // Insert document in collection

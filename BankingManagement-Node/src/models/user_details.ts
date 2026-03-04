@@ -22,6 +22,10 @@ const userDetailsSchema = new Schema<userDetailsSchema>({
         type: String,
         required: true
     },
+    mobile_country_name: {
+        type: String,
+        required: true
+    },
     phone_number: {
         type: String,
         required: true,
@@ -40,7 +44,6 @@ const userDetailsSchema = new Schema<userDetailsSchema>({
         type: String,
         enum: ["PENDING", "VERIFIED", "REJECTED"],
         default: "PENDING",
-        required: true
     },
     is_admin: {
         type: String,

@@ -28,7 +28,8 @@
     "mongoose": "^9.1.5",
     "morgan": "^1.10.1",
     "redis": "^5.10.0",
-    "winston": "^3.19.0"
+    "winston": "^3.19.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/connect-timeout": "^1.9.0",

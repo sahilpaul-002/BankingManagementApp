@@ -2,6 +2,12 @@ import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
 
 const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
+    // Skip portal header check for helper paths
+    const excludedPaths: string = "/api/v1/helper";
+    if (req.path.includes(excludedPaths)) {
+        return next();
+    }
+
     // Skip preflight requests
     if (req.method === "OPTIONS") {
         return next();
