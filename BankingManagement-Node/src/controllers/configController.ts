@@ -9,6 +9,7 @@ import { getSymmetricEncryptionKey } from '../utils/symmetricEncryptionDecryptio
 import type { SessionData } from 'express-session';
 import errorHandler from '../utils/errorHandler.js';
 import { getAsymmetricKeyPair } from '../utils/asymmetricEncryptionDecryption.js';
+import listCountryMobileCodes from '../utils/listCountryMobileCodes.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
@@ -76,5 +77,21 @@ export const getPublicKey = (req: Request, res: Response): Response<successRespo
     }
     catch (error) {
         errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET PUBLIC KEY FACING ISSUE.");
+    }
+}
+
+// FUNCTION TO GET THE MOBILE COUNTRY CODES
+export const getMobileCountryCodes = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
+    try {
+        const mobileCountryCodesResponse = listCountryMobileCodes();
+        if (mobileCountryCodesResponse?.status.toUpperCase() === "SUCCESS") {
+            return res.status(200).json({ status: "SUCCESS", data: mobileCountryCodesResponse.data });
+        }
+        else {
+            return res.status(400).json({ status: "ERROR", message: "Failed to fetch mobile country codes" });
+        }
+    }
+    catch (error) {
+        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET MOBILE COUNTRY CODES FACING ISSUE.");
     }
 }

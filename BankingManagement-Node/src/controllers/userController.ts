@@ -10,7 +10,7 @@ import mongoose from "mongoose";
 import type { userDetailsSchema } from "../types/schemaTypes.js";
 import userDetailsValidationSchema from "../validations/userDetailsValidation.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
-import type z from "zod";
+import z from "zod";
 
 // ------------------------------ FUNCTION TO SET USERCONTROLLER HEADERS ------------------------------ \\
 const userControllerHeader = (req: Request) => {
@@ -53,7 +53,7 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
     try {
         // Check email present in request body
         if (!req.body.email) {
-            return res.status(401).json({ status: "BAD_REQUEST", message: "Email not present in the request body"});
+            return res.status(401).json({ status: "BAD_REQUEST", message: "Email not present in the request body" });
         }
 
         // Get user from DB
@@ -75,7 +75,11 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
             return res.status(400).json({
                 status: "ERROR",
                 message: "Invalid request body",
-                errors: validationResult.error.issues.map(issue => issue.message)
+                // errors: validationResult.error.issues.map(issue => issue.message)
+                // errors: validationResult.error.issues.map(issue => ({
+                //     [issue.path.join(".")]: issue.message
+                // }))
+                errors: z.flattenError(validationResult.error)
             });
         }
 
