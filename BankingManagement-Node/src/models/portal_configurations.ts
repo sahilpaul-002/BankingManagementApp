@@ -62,21 +62,6 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchema>({
         required: true,
     },
 
-    nationality_list_url: {
-        type: String,
-        default: null,
-    },
-
-    mobilecountry_list_url: {
-        type: String,
-        default: null,
-    },
-
-    country_list_url: {
-        type: String,
-        default: null,
-    },
-
     favicon: {
         type: String,
         default: null,

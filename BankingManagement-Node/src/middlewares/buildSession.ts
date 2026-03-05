@@ -16,7 +16,7 @@ const buildSession = (req: Request, store: RedisStore | undefined): SessionConfi
     // Return session configuration options for admin and user
     return {
         businessSession: {
-            // store,
+            store,
             genid: (req) => {
                 return crypto.randomUUID();
             },

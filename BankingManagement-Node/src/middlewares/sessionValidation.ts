@@ -5,6 +5,7 @@ import { userDetailsModel as user_details } from '../models/user_details.js';
 import errorHandler from '../utils/errorHandler.js';
 
 const sessionValidation = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
+
     // Check session exist
     if (!req.session) {
         return res.status(400).json({ status: "NOT_FOUND", message: "SESSION NOT FOUND" });
@@ -20,23 +21,17 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
         return res.status(400).json({ status: "INVALID_SESSION", message: "SESSION NOT INITIATED OR SESSION TIMEDOUT" });
     }
 
-    // Check session valid
-    if (!req.session?.valid) {
-        return res.status(400).json({ status: "INVALID_SESSION", message: "SESSION NOT VALID" });
-    }
-
-    // Check request security headers
-    const requestXApiKey: string = req.headers['x-api-key'] as string;    // String header validtion done
-    if (!requestXApiKey || requestXApiKey !== req.session?.sessiondata?.requestXApiKey) {
-        return res.status(400).json({ status: "FORBIDDEN", message: "X-API-KEY MISMATCH" });
-    }
-
     // Skip user existance check for selcted pathes
     const excludedPaths: string[] = ["/api/v1/user/signUp"];
-    if (excludedPaths.includes(req.path)) {
+    if (excludedPaths.includes(req.originalUrl)) {
         return next();
     }
     else {
+        // Check session valid
+        if (!req.session?.valid) {
+            return res.status(400).json({ status: "INVALID_SESSION", message: "SESSION NOT VALID" });
+        }
+
         // Get user from DB
         const checkUserExistInDB = async (req: Request): Promise<boolean | null> => {
             const userExistResponse: boolean | null = await user_details.findById(req.session.userEmail);

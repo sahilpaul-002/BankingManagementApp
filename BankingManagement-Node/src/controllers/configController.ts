@@ -55,6 +55,8 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             accessToken: "Access Token"
         };
 
+        console.log("Session data: ", req.session);
+
         return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: dnsData });
     }
     catch (error) {

@@ -22,9 +22,10 @@ const userControllerHeader = (req: Request) => {
 export const userSignUp = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     // Get request header "from_portal" to check the sorce the api call
     const fromPortal: string = req?.headers["from-portal"] as string;
+    console.log(fromPortal);
 
     // Check if the api call is not from portal
-    if (fromPortal) {
+    if (fromPortal === "true") {
         // Get encrypted payload
         const encryptedPayload: string = req?.body
         // Decrypt request body

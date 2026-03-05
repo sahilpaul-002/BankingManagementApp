@@ -119,7 +119,7 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
         // const insertedDocument = await collection.insertOne(document);
         const insertedDocument = await Model.create(document);
 
-        console.log("Document inserted: ", insertedDocument);
+        // console.log("Document inserted: ", insertedDocument);
         return res.status(200).json({ status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument });
     } catch (error) {
         errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "DATA INSERTION SERVICE FACING ISSUE.");
