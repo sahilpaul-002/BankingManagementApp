@@ -10,6 +10,16 @@ const userDetailsSchema = new Schema<userDetailsSchema>({
         trim: true,
         index: true
     },
+    agent_code: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    subagent_code: {
+        type: String,
+        required: true,
+        trim: true
+    },
     email: {
         type: String,
         required: true,

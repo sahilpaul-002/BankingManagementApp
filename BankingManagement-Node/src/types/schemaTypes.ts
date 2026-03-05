@@ -36,6 +36,8 @@ export interface portalConfigurationSchema extends Document {
 // Type for User Details Model Schema
 export interface userDetailsSchema extends Document{
     full_name: string;
+    agent_code: string;
+    subagent_code: string;
     email: string;
     mobile_country_code: string;
     mobile_country_name: string;

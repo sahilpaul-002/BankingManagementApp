@@ -85,7 +85,13 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
         }
 
         // Insert document in collection
-        const document: object = req?.body;
+        // const document: object = req?.body;
+        // Format document by adding the agent_code and subagent_code from session
+        const document: object = {
+            ...req?.body,
+            agent_code: req.session?.sessiondata?.agentCode,
+            subagent_code: req.session?.sessiondata?.subAgentCode
+        };
         const insertedDocument = await user_details.create(document);
 
         console.log("Document inserted: ", insertedDocument);
