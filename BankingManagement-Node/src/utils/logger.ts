@@ -7,7 +7,7 @@ const logger = winston.createLogger({
     winston.format.errors({ stack: true }),
     // winston.format.json()
     winston.format.printf(({ timestamp, level, message, stack }) => {
-      console.log("----------------- LOGGER ERROR RESPOSE START -----------------")
+      console.log("----------------- LOGGER RESPONSE START -----------------")
       if (stack) {
         return `${timestamp} [${level}] ${message}\n${stack}`;
       }

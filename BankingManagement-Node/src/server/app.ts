@@ -54,7 +54,7 @@ app.use(helmet());
 app.use(rid());
 
 // Cookie Parser Middleware
-app.use(cookieParser());
+app.use(cookieParser(process.env.COOKIE_SECRET_KEY || "jsev4jdls6sb15h2n5lujfj8b8m8sz5gv1f2d4eg1hfs"));
 
 // Morgon Middleware
 app.use(

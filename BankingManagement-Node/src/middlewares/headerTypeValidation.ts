@@ -12,16 +12,22 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
         }
     }
 
-    // Validate FROM_PORTAL header for all requests
+    // Validate FROM_PORTAL header
     const fromPortal: string | null = checkStringHeader(req, "from-portal");
     if (!fromPortal) {
         return res.status(400).json({ status: "INVALID_HEADER", message: "'from-portal' MISSING OR NOT STRING" });
     }
 
-    // Validate X-API-Key header for all requests
+    // Validate X-API-Key header
     const xApiKey: string | null = checkStringHeader(req, "x-api-key");
     if (!xApiKey) {
         return res.status(400).json({ status: "INVALID_HEADER", message: "'x-api-key' MISSING OR NOT STRING" });
+    }
+
+    // Validate Authorization header
+    const authorizationHeader: string | null = checkStringHeader(req, "authorization");
+    if (!authorizationHeader) {
+        return res.status(400).json({ status: "INVALID_HEADER", message: "'authorization' MISSING OR NOT STRING" });
     }
 
     next();

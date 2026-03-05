@@ -6,10 +6,10 @@ import checkMongoDbCollectionExist from '../utils/checkMongoDbCollectionExist.js
 import checkStringHeader from '../utils/checkStringHeader.js';
 import checkStringBody from '../utils/checkStringBody.js';
 import { getSymmetricEncryptionKey } from '../utils/symmetricEncryptionDecryption.js';
-import type { SessionData } from 'express-session';
 import errorHandler from '../utils/errorHandler.js';
 import { getAsymmetricKeyPair } from '../utils/asymmetricEncryptionDecryption.js';
 import listCountryMobileCodes from '../utils/listCountryMobileCodes.js';
+import setResponseCookie from '../utils/setResponseCookie.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
@@ -43,6 +43,13 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
         req.session.initiated = true;
         req.session.lastActivity = Date.now();
 
+        // // Create Access Token
+        const setResponseCookieResult: successResponseJson = setResponseCookie(res, dnsData.domain_name);
+        if (setResponseCookieResult.status.toUpperCase() !== "SUCCESS") {
+            return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
+        }
+        const jwtAccessToken: string | undefined = (setResponseCookieResult.data as { jwtAuthToken?: string })?.jwtAuthToken;
+
         // Set DNS data in session
         req.session.sessiondata = {
             domainName: dnsData.domain_name,
@@ -52,10 +59,10 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             programId: dnsData.program_id,
             clientId: dnsData.client_id,
             requestXApiKey: dnsData.x_api_key,
-            accessToken: "Access Token"
+            accessToken: jwtAccessToken || ""
         };
 
-        console.log("Session data: ", req.session);
+        // console.log("Session data: ", req.session);
 
         return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: dnsData });
     }

@@ -26,6 +26,8 @@ const buildSession = (req: Request, store: RedisStore | undefined): SessionConfi
             proxy: environment === "production", // Trust the reverse proxy when in production
             saveUninitialized: false,
             cookie: {
+                signed: true,
+
                 httpOnly: true,
 
                 secure: process.env.NODE_ENV === "production",
@@ -45,6 +47,8 @@ const buildSession = (req: Request, store: RedisStore | undefined): SessionConfi
             proxy: environment === "production", // Trust the reverse proxy when in production
             saveUninitialized: false,
             cookie: {
+                signed: true,
+                
                 httpOnly: true,
 
                 secure: process.env.NODE_ENV === "production",
@@ -64,6 +68,8 @@ const buildSession = (req: Request, store: RedisStore | undefined): SessionConfi
             proxy: environment === "production", // Trust the reverse proxy when in production
             saveUninitialized: false,
             cookie: {
+                signed: true,
+                
                 httpOnly: true,
 
                 secure: process.env.NODE_ENV === "production",
