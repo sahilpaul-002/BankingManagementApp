@@ -100,7 +100,10 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
             ...restBody,
             password: hashedPassword,
             agent_code: req.session?.sessiondata?.agentCode,
-            subagent_code: req.session?.sessiondata?.subAgentCode
+            subagent_code: req.session?.sessiondata?.subAgentCode,
+            program_id: req.session?.sessiondata?.programId,
+            business_id: req.session?.sessiondata?.businessId,
+            client_id: req.session?.sessiondata?.clientId
         };
 
         // Insert document in collection
@@ -189,7 +192,22 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             return res.status(400).json({ status: "FORBIDDEN", message: "Invalid credentials" });
         }
 
-        return res.status(200).json({ status: "SUCCESS", message: "User login successfull", data: userDetails });
+        // Check user configuration
+        if (userDetails.agent_code !== req.session?.sessiondata?.agentCode || userDetails.subagent_code !== req.session?.sessiondata?.subAgentCode || userDetails.program_id !== req.session?.sessiondata?.programId || userDetails.business_id !== req.session?.sessiondata?.businessId || userDetails.client_id !== req.session?.sessiondata?.clientId) {
+            const destroySessionResponse = await destroySession(req, res);
+            return res.status(400).json({ status: "FORBIDDEN", message: "User configuration does not match"});
+        }
+
+        // Update user status in DB if not already activated
+        let updatedUserDetails: userDetailsSchema
+        if (userDetails?.is_active === false) {
+            updatedUserDetails = await user_details.findByIdAndUpdate(userDetails._id, { is_active: true, status: "ACTIVE" }, { new: true }) as userDetailsSchema;
+        }
+        else {
+            updatedUserDetails = userDetails;
+        }
+
+        return res.status(200).json({ status: "SUCCESS", message: "User login successfull", data: updatedUserDetails });
     }
     catch (error) {
         errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "USER SIGN IN SERVICE FACING ISSUE.");

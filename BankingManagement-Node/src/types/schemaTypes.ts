@@ -38,6 +38,9 @@ export interface userDetailsSchema extends Document{
     full_name: string;
     agent_code: string;
     subagent_code: string;
+    program_id: string;
+    client_id: string;
+    business_id: string;
     email: string;
     password: string;
     mobile_country_code: string;

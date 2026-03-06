@@ -30,6 +30,43 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
         return res.status(400).json({ status: "INVALID_HEADER", message: "'authorization' MISSING OR NOT STRING" });
     }
 
+    // Skip user existance check for selcted pathes
+    const excludedPaths: string[] = ["/api/v1/user/signUp"];
+    if (excludedPaths.includes(req.originalUrl)) {
+        return next();
+    }
+    else {
+        // Validate Agent Code header
+        const agentCode: string | null = checkStringHeader(req, "agent-code")
+        if (!agentCode) {
+            return res.status(400).json({ status: "INVALID_HEADER", message: "'agent-code' MISSING OR NOT STRING" });
+        }
+
+        // Validate Subagent Code header
+        const subAgentCode: string | null = checkStringHeader(req, "subagent-code")
+        if (!subAgentCode) {
+            return res.status(400).json({ status: "INVALID_HEADER", message: "'subagent-code' MISSING OR NOT STRING" });
+        }
+
+        // Validate Program ID header
+        const programId: string | null = checkStringHeader(req, "program-id")
+        if (!programId) {
+            return res.status(400).json({ status: "INVALID_HEADER", message: "'program-id' MISSING OR NOT STRING" });
+        }
+
+        // Validate Business ID header
+        const businessId: string | null = checkStringHeader(req, "business-id")
+        if (!businessId) {
+            return res.status(400).json({ status: "INVALID_HEADER", message: "'business-id' MISSING OR NOT STRING" });
+        }
+
+        // Validate Client ID header
+        const clientId: string | null = checkStringHeader(req, "client-id")
+        if (!clientId) {
+            return res.status(400).json({ status: "INVALID_HEADER", message: "'client-id' MISSING OR NOT STRING" });
+        }
+    }
+
     next();
 }
 

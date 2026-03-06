@@ -20,6 +20,21 @@ const userDetailsSchema = new Schema<userDetailsSchema>({
         required: true,
         trim: true
     },
+    program_id: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    business_id: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    client_id: {
+        type: String,
+        required: true,
+        trim: true
+    },
     email: {
         type: String,
         required: true,

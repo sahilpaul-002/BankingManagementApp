@@ -34,7 +34,7 @@ const headerValidations = (req: Request, res: Response, next: NextFunction): Res
         return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to extract JWT token value from authorization header" });
     }
     const jwtAccessTokenValue1: string | undefined = (jwtTokenVerificationResult1.data as { jwtTokenValue?: string })?.jwtTokenValue;
-    
+
     // Extract token value of sessiondata access token
     const jwtTokenVerificationResult2: successResponseJson = extractJwtTokenValue(req.session?.sessiondata?.accessToken as string);
     if (jwtTokenVerificationResult2.status !== "SUCCESS") {
@@ -45,6 +45,43 @@ const headerValidations = (req: Request, res: Response, next: NextFunction): Res
         return res.status(400).json({ status: "UNAUTHORIZED", message: "Invalid or expired access token" });
     }
     // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
+
+    // Skip user existance check for selcted pathes
+    const excludedPaths: string[] = ["/api/v1/user/signUp"];
+    if (excludedPaths.includes(req.originalUrl)) {
+        return next();
+    }
+    else {
+        // Validate Agent Code header
+        const agentCode: string = req.headers["agent-code"] as string;
+        if (agentCode !== req.session?.sessiondata?.agentCode) {
+            return res.status(400).json({ status: "UNAUTHORIZED", message: "INVALID 'agent-code'" })
+        }
+
+        // Validate Subagent Code header
+        const subAgentCode: string = req.headers["subagent-code"] as string;
+        if (subAgentCode !== req.session?.sessiondata?.subAgentCode) {
+            return res.status(400).json({ status: "UNAUTHORIZED", message: "INVALID 'subagent-code'" })
+        }
+
+        // Validate Program Id header
+        const programId: string = req.headers["program-id"] as string;
+        if (programId !== req.session?.sessiondata?.programId) {
+            return res.status(400).json({ status: "UNAUTHORIZED", message: "INVALID 'program-id'" })
+        }
+
+        // Validate Business Id header
+        const businessId: string = req.headers["business-id"] as string;
+        if (businessId !== req.session?.sessiondata?.businessId) {
+            return res.status(400).json({ status: "UNAUTHORIZED", message: "INVALID 'business-id'" })
+        }
+
+        // Validate Client Id header
+        const clientId: string = req.headers["client-id"] as string;
+        if (clientId !== req.session?.sessiondata?.clientId) {
+            return res.status(400).json({ status: "UNAUTHORIZED", message: "INVALID 'client-id'" })
+        }
+    }
 
     next();
 }
