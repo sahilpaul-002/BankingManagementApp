@@ -207,6 +207,9 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             updatedUserDetails = userDetails;
         }
 
+        // Update the session validity
+        req.session.valid = true;
+
         return res.status(200).json({ status: "SUCCESS", message: "User login successfull", data: updatedUserDetails });
     }
     catch (error) {
