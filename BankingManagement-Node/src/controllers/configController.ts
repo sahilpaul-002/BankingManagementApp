@@ -49,6 +49,9 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
         }
         const jwtAccessToken: string | undefined = (setResponseCookieResult.data as { jwtAuthToken?: string })?.jwtAuthToken;
+        if (!jwtAccessToken) {
+            return res.status(400).json({status: "INTERNAL_SERVER_ERROR", message: "Failed to generate access token"})
+        }
 
         // Set DNS data in session
         req.session.sessiondata = {

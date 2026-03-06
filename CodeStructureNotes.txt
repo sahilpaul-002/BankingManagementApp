@@ -1,3 +1,6 @@
+// ----------------------------------- GET CONFIG DNS ----------------------------------- \\
+1.
+
 // ----------------------------------- USER SIGN UP ----------------------------------- \\
 1. User sign up api is excluded from session validity and user existance check
-2. 
+2. Authorization bearer token must same as the request signed cookie (accessToken) generated from getConfigDns
