@@ -67,7 +67,7 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
         // Check user exist in DB
         if (userExistance) {
             const destroySessionResponse = await destroySession(req, res);
-            return res.status(401).json({ status: "FORBIDDEN", message: "User already exists" });
+            return res.status(400).json({ status: "FORBIDDEN", message: "User already exists" });
         }
 
         // Check Validations

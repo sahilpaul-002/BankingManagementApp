@@ -58,7 +58,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
                     res.clearCookie("BMA_Admin_Session");
                     res.clearCookie("BMA_User_Session");
 
-                    return res.status(401).json({ status: "FORBIDDEN", message: "User does not exists" });
+                    return res.status(400).json({ status: "FORBIDDEN", message: "User does not exists" });
                 });
             }
             catch (error) {
