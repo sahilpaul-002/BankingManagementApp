@@ -3,6 +3,7 @@ import type { Request, Response, NextFunction } from 'express';
 import type { failedResponseJson, successResponseJson } from '../types/responseJson.js';
 import { userDetailsModel as user_details } from '../models/user_details.js';
 import errorHandler from '../utils/errorHandler.js';
+import type { userDetailsSchema } from '../types/schemaTypes.js';
 
 const sessionValidation = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
 
@@ -27,20 +28,27 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
         return next();
     }
     else {
-        // Check session valid
-        if (!req.session?.valid) {
-            return res.status(400).json({ status: "INVALID_SESSION", message: "SESSION NOT VALID" });
+        // Skip session validity check for selcted pathes
+        const excludedPaths: string[] = ["/api/v1/user/login"];
+        if (excludedPaths.includes(req.originalUrl)) {
+            return next();
+        }
+        else {
+            // Check session valid
+            if (!req.session?.valid) {
+                return res.status(400).json({ status: "INVALID_SESSION", message: "SESSION NOT VALID" });
+            }
         }
 
         // Get user from DB
-        const checkUserExistInDB = async (req: Request): Promise<boolean | null> => {
-            const userExistResponse: boolean | null = await user_details.findById(req.session.userEmail);
+        const checkUserExistInDB = async (req: Request): Promise<userDetailsSchema | null> => {
+            const userExistResponse: userDetailsSchema | null = await user_details.findById(req.session.userEmail);
             return userExistResponse;
         }
-        const userExistance: boolean | null = await checkUserExistInDB(req);
+        const userDetails: userDetailsSchema | null = await checkUserExistInDB(req);
 
         // Check user exist in DB
-        if (!userExistance) {
+        if (!userDetails) {
             try {
                 if (!req.session) {
                     return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
@@ -67,7 +75,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
         }
 
         // Check user active status
-        // if (user.isBlocked || user.isDisabled) {
+        // if (userDetails.isBlocked || user.isDisabled) {
         //     req.session.destroy(() => { });
         //     return res.status(403).json({ message: "Account disabled" });
         // }
