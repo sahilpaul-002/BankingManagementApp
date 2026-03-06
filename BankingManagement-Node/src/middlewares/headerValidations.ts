@@ -8,7 +8,7 @@ const headerValidations = (req: Request, res: Response, next: NextFunction): Res
     const xApiKey: string = req.headers["x-api-key"] as string;
 
     if (xApiKey !== req.session?.sessiondata?.requestXApiKey) {
-        return res.status(400).json({ status: "FORBIDDEN", message: "INVALID 'x-api-key'" })
+        return res.status(400).json({ status: "UNAUTHORIZED", message: "INVALID 'x-api-key'" })
     }
 
     // ----------------------------------- Logic to validate authorization header ----------------------------------- \\
@@ -42,7 +42,7 @@ const headerValidations = (req: Request, res: Response, next: NextFunction): Res
     }
     const jwtAccessTokenValue2: string | undefined = (jwtTokenVerificationResult2.data as { jwtTokenValue?: string })?.jwtTokenValue;
     if (!jwtAccessTokenValue1 || !jwtAccessTokenValue2 || jwtAccessTokenValue1 !== jwtAccessTokenValue2) {
-        return res.status(401).json({ status: "UNAUTHORIZED", message: "Invalid or expired access token" });
+        return res.status(400).json({ status: "UNAUTHORIZED", message: "Invalid or expired access token" });
     }
     // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
 

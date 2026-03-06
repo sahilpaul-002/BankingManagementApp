@@ -1,0 +1,3 @@
+// ----------------------------------- USER SIGN UP ----------------------------------- \\
+1. User sign up api is excluded from session validity and user existance check
+2. 
