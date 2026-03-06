@@ -7,3 +7,9 @@
 // ----------------------------------- USER SIGN UP ----------------------------------- \\
 1. User sign up api is excluded from session validity and user existance check
 2. Authorization bearer token must same as the request signed cookie (accessToken) generated from getConfigDns
+
+// ----------------------------------- USER LOGIN ----------------------------------- \\
+1. After successfull login update the user_details DB items (is_active, status) if not already logged in user
+2. After successfull login update the session item (valid) to make the session the valid
+3. The user configuration sent from login api will be saved in redux and attached to next request headers to pass header validations
+

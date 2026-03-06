@@ -20,7 +20,7 @@ const userControllerHeader = (req: Request) => {
 }
 // ------------------------------ xxxxxxxxxxxxxxxxxxxxxxxxxx ------------------------------ \\
 
-// FUNCTION TO PERFORM USER SIGN UP
+// ------------------------------ FUNCTION TO PERFORM USER SIGN UP ------------------------------ \\
 export const userSignUp = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     // Get request header "from_portal" to check the sorce the api call
     const fromPortal: string = req?.headers["from-portal"] as string;
@@ -116,8 +116,9 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
         errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "USER SIGN UP SERVICE FACING ISSUE.");
     }
 }
+// ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
 
-// FUNCTION TO PERFORM USER LOGIN
+// ------------------------------ FUNCTION TO PERFORM USER LOGIN ------------------------------ \\
 export const userLogin = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     // Get request header "from_portal" to check the sorce the api call
     const fromPortal: string = req?.headers["from-portal"] as string;
@@ -216,3 +217,4 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "USER SIGN IN SERVICE FACING ISSUE.");
     }
 }
+// ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
