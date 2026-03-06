@@ -28,6 +28,11 @@ const userDetailsSchema = new Schema<userDetailsSchema>({
         index: true,
         unique: true
     },
+    password: {
+        type: String,
+        required: true,
+        trim: true
+    },
     mobile_country_code: {
         type: String,
         required: true

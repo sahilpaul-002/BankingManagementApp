@@ -45,6 +45,51 @@ export const userDetailsValidationSchema = z.object({
             message: "Disposable email addresses are not allowed"
         }),
 
+    password: z
+        .string("Password is required and must be a string")
+        .min(8, "Password must be at least 8 characters")
+        .max(50, "Password cannot exceed 50 characters")
+        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=<>])[A-Za-z\d@$!%*?&#^()_+\-=<>]{8,}$/, "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
+        .superRefine((password, ctx) => {
+            if (!/[A-Z]/.test(password)) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Password must contain at least one uppercase letter (A-Z)"
+                });
+            }
+            
+            if (!/[a-z]/.test(password)) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Password must contain at least one lowercase letter (a-z)"
+                });
+            }
+
+            if (!/\d/.test(password)) {
+                ctx.addIssue({
+                    code: "custom",
+                    message: "Password must contain at least one number (0-9)"
+                });
+            }
+
+            if (!/[@$!%*?&#^()_+\-=<>]/.test(password)) {
+                ctx.addIssue({
+                    code: "custom",
+                    message:
+                        "Password must contain at least one special character (@ $ ! % * ? & # ^ ( ) _ + - = < >)"
+                });
+            }
+
+            if (!/^[A-Za-z\d@$!%*?&#^()_+\-=<>]+$/.test(password)) {
+                ctx.addIssue({
+                    code: "custom",
+                    message:
+                        "Password contains invalid characters. Allowed special characters are: @ $ ! % * ? & # ^ ( ) _ + - = < >"
+                });
+            }
+
+        }),
+
     mobile_country_code: z
         .string("Mobile country code is required and must be a string")
         .trim()

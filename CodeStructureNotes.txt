@@ -1,5 +1,8 @@
 // ----------------------------------- GET CONFIG DNS ----------------------------------- \\
-1.
+1. After DNS data is fetch initiate the session set session items values (initiated, lastActivity)
+2. Generate JWT Auth Token using domain_name of DNS data to set acccessToken in sessionData in session
+3. Set sessiondata in session
+4. Before any api call , call getDnsConfig api to initiate the session
 
 // ----------------------------------- USER SIGN UP ----------------------------------- \\
 1. User sign up api is excluded from session validity and user existance check
