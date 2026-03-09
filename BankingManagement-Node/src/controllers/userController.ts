@@ -57,6 +57,12 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
     }
 
     try {
+        // Check if collection exist in MongoDB
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Required collection does not exist in MongoDB" });
+        }
+
         // Check email present in request body
         if (!reqBody?.email) {
             return res.status(401).json({ status: "BAD_REQUEST", message: "Email not present in the request body" });
@@ -155,6 +161,12 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
     }
 
     try {
+        // Check if collection exist in MongoDB
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Required collection does not exist in MongoDB" });
+        }
+
         // Check email present in request body
         if (!reqBody?.email) {
             return res.status(401).json({ status: "BAD_REQUEST", message: "Email not present in the request body" });

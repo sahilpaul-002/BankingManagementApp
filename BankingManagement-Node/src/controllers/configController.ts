@@ -10,6 +10,7 @@ import errorHandler from '../utils/errorHandler.js';
 import { getAsymmetricKeyPair } from '../utils/asymmetricEncryptionDecryption.js';
 import listCountryMobileCodes from '../utils/listCountryMobileCodes.js';
 import setResponseCookie from '../utils/setResponseCookie.js';
+import { dnsConfigCache, type LRUCachedData } from '../utils/lruCache.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
@@ -32,12 +33,23 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             return res.status(400).json({ status: "INVALID_REQUEST_BODY_PARAMETER", message: "'domainName' MISSING OR NOT STRING" });
         }
 
+        // Check cached DNS configuration data
+        const cachedDnsConfigData: portalConfigurationSchema | undefined = dnsConfigCache.get(domainName);
+        if (cachedDnsConfigData) {
+            console.log("DNS configuration data fetched from cache", cachedDnsConfigData);
+            return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: cachedDnsConfigData });
+        }
+
+        // Fetch DNS configuration data from database
         const dnsData: portalConfigurationSchema | null = await portal_configurations.findOne({ dns_x_api_key: xApiKey, domain_name: domainName }, { _id: 0, __v: 0, createdAt: 0, updatedAt: 0 }).lean();
 
         // Cehck DNS Config Data
         if (!dnsData) {
             return res.status(404).json({ status: "NOT_FOUND", message: "DNS configuration not found" });
         }
+
+        // Set DNS configuration data in DNS configuration cache
+        dnsConfigCache.set(domainName, dnsData);
 
         // INITIATE SESSION
         req.session.initiated = true;
