@@ -14,7 +14,7 @@ export interface SessionError {
 };
 
 // Sessiondata stored in session
-type sessiondata = {
+export type sessiondata = {
     domainName: string;
     agentCode: string;
     subAgentCode: string;
@@ -23,6 +23,7 @@ type sessiondata = {
     clientId: string;
     requestXApiKey: string;
     accessToken: string;
+    userId?: string;
 }
 
 // User Type Value TYpes

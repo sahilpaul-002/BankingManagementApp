@@ -106,7 +106,7 @@ app.use(sessionExistance);
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
 // app.use("/api/v1/user", checkTimeout(5), userRoutes);
-app.use("/api/v1/user", sessionValidation, headerTypeValidation, headerValidations, checkTimeout(5), userRoutes);
+app.use("/api/v1/user", sessionValidation, headerTypeValidation, headerValidations, checkTimeout(500), userRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 

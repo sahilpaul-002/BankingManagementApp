@@ -43,7 +43,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
         req.session.initiated = true;
         req.session.lastActivity = Date.now();
 
-        // // Create Access Token
+        // Create Access Token
         const setResponseCookieResult: successResponseJson = setResponseCookie(res, dnsData.domain_name);
         if (setResponseCookieResult.status.toUpperCase() !== "SUCCESS") {
             return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
