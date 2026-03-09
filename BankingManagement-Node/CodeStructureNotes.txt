@@ -13,3 +13,4 @@
 2. After successfull login update the session item (valid) to make the session the valid
 3. The user configuration sent from login api will be saved in redux and attached to next request headers to pass header validations
 
+COLORS : #bbd13d, #d1b33d, #d17d3d2
