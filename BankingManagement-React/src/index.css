@@ -1,19 +1,48 @@
+@import "tailwindcss";
+
+/* GLOBAL REST CSS */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* GLOBAL CSS */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
+  /* color: rgba(255, 255, 255, 0.87); */
   background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* GLOBAL COLORS */
+  --color-100: #000000;
+  --color-200: #272727;
+  --color-300: #4f4f4f;
+  --color-400: #6f6f6f;
+  --color-500: #959595;
+  --color-600: #bfbfbf;
+  --color-700: #ebebeb;
+  --color-800: #ffffff;
+  --color-text1: #000000;
+  --color-text2: #3c3c3c;
+  --color-text3: #6a6a6a;
+  --color-text4: #949494;
+  --color-text5: #ffffff;
+  
+  --border-radius: 6px;
 }
 
-a {
+/* a {
   font-weight: 500;
   color: #646cff;
   text-decoration: inherit;
@@ -65,4 +94,4 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
-}
+} */
