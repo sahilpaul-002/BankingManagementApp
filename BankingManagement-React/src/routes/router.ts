@@ -1,6 +1,8 @@
 import { createBrowserRouter } from "react-router"
 import App from "../App"
 import AuthLayout from "../layouts/AuthLayout"
+import { Component } from "react"
+import SignInPage from "../components/auth/SignInPage"
 
 const router = createBrowserRouter([
     {
@@ -8,11 +10,13 @@ const router = createBrowserRouter([
         Component: App,
         children: [
             {
-                index: true,
                 Component: AuthLayout,
-                // children: [
-
-                // ]
+                children: [
+                    {
+                        index: true,
+                        Component: SignInPage
+                    }
+                ]
             }
         ]
     }

@@ -1,0 +1,45 @@
+import React from 'react'
+import Card from '../common/Card'
+
+export default function BrandingComponent() {
+    return (
+        <div className="brandingComponent-container w-screen h-screen bg-gradient-to-br from-black via-zinc-800 to-zinc-700 text-white overflow-clip relative">
+            {/* Checker Boxes Design */}
+            <div
+                className="absolute inset-0 opacity-30 blur-[0.3px] bg-[linear-gradient(rgba(255,255,255,0.25)_1px,transparent_2px),linear-gradient(90deg,rgba(255,255,255,0.25)_1px,transparent_2px)] bg-[size:64px_64px]" />
+
+            {/* Radial Blur Circles */}
+            <div className="brandingComponent-radialBlur-circles w-[150px] h-[100px] bg-white blur-3xl absolute top-0 left-0 z-70"></div>
+            <div className="brandingComponent-radialBlur-circles w-[200px] h-[200px] bg-white blur-3xl absolute top-[20vh] left-[40vw] z-70"></div>
+            <div className="brandingComponent-radialBlur-circles w-[150px] h-[100px] bg-gray-600 blur-3xl absolute bottom-0 left-0 z-70"></div>
+
+            {/* Main Branding Component */}
+            <div className="brandingComponent-mainBrandingContainer  w-[44vw] h-screen px-4! py-6! z-90">
+                <div className="brandComponent-mainBrandingContainer-brandingTexts w-full h-fit flex flex-col justify-center items-center gap-10">
+                    {/* Brand Texts */}
+                    <div className="brandComponent-mainBrandingContainer-brandingText-brnadName w-fit h-fit">
+                        <h1 className='w-fit h-fit text-[var(--color-text6)] text-[3vw] text-center xl:text-[3.6vw] font-semibold tracking-tight'>Banking Management</h1>
+                    </div>
+                    <div className="brandComponent-mainBrandingContainer-brandingText-brnadSlogans w-fit h-fit flex flex-col justify-center items-center gap-1">
+                        <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-tight'>
+                            Stay on top of all company spending in real-time
+                        </span>
+                        <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-tight'>
+                            Through our corporate innovative payment platform.
+                        </span>
+                    </div>
+
+                    {/* Cards */}
+                    <div className="brandComponent-mainBrandingContainer-cardsContainer w-full h-[60vh] relative">
+                        <div className="brandComponent-mainBrandingContainer-card1 w-fit h-fit -skew-6 absolute bottom-10 left-0">
+                            <Card />
+                        </div>
+                        <div className="brandComponent-mainBrandingContainer-card2 w-fit h-fit skew-12 absolute top-10 right-10 z-80">
+                            <Card />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}

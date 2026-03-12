@@ -16,12 +16,12 @@ export default function HourGlassLoader(props: HourGlassLoaderProps) {
     // Destructure props
     const {height, width, visible, ariaLabel, wrapperStyle, wrapperClass, primaryColor, secondaryColor} = props;
 
-    const colorPrimary = getComputedStyle(document.documentElement).getPropertyValue(primaryColor ?? '--color-700').trim();
-    const colorSecondary = getComputedStyle(document.documentElement).getPropertyValue(secondaryColor ?? '--color-600').trim();
+    const colorPrimary = getComputedStyle(document.documentElement).getPropertyValue(primaryColor ?? '--color-200').trim();
+    const colorSecondary = getComputedStyle(document.documentElement).getPropertyValue(secondaryColor ?? '--color-400').trim();
     
     return (
         // <div className="hourGlassLoader-container w-fit h-fit">
-        <div className="hourGlassLoader-container w-full h-full bg-white/30 flex justify-center items-center fixed top-0 left-0 z-100">
+        <div className="hourGlassLoader-container w-full h-full bg-white/15 backdrop-blur-2xl flex justify-center items-center fixed top-0 left-0 z-100">
             <Hourglass
                 visible={visible ?? true}
                 height={height ?? 80}
