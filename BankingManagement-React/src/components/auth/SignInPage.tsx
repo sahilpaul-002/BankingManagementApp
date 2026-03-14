@@ -1,4 +1,5 @@
 import React from 'react'
+import CustomInput from '../common/CustomInput'
 
 export default function SignInPage() {
   return (
@@ -14,7 +15,9 @@ export default function SignInPage() {
           <div className="signinPage-logo w-[160px] h-[100px] bg-red-500"></div>
 
           {/* Signin Form */}
-          <div className="signinPage-signinForm-container"></div>
+          <div className="signinPage-signinForm-container w-full h-fit">
+            <CustomInput />
+          </div>
         </div>
     </div>
   )
