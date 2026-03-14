@@ -7,7 +7,7 @@ export default function CustomInput() {
         <div className="input-container w-full h-full">
             <Field>
                 <FieldLabel htmlFor="input-demo-api-key">API Key</FieldLabel>
-                <Input id="input-demo-api-key" type="password" placeholder="sk-..." />
+                <Input id="input-invalid" type="password" placeholder="sk-..." aria-invalid />
                 <FieldDescription>
                     Your API key is encrypted and stored securely.
                 </FieldDescription>
