@@ -19,7 +19,7 @@ export default function AuthPage() {
             <div className="authPage-mainContent w-full h-full flex justify-center items-center relative">
                 <BrandingComponent />
                 
-                <div className="authPage-mainContent-authPages-wrapper absolute top-0 right-0 z-90">
+                <div className="authPage-mainContent-authPages-wrapper bg-[var(--color-800)] w-[100vw] lg:w-[56vw] h-[100vh] lg:rounded-l-4xl p-4! absolute top-0 right-0 z-90">
                     <Outlet />
                 </div>
             </div>
