@@ -45,6 +45,9 @@
   --color-text5: #ffffffd7;
   --color-text6: #ffffff;
 
+  --color-link1: #383acf;
+  --color-link2: #2e30a3;
+
   --border-radius: 6px;
 
   --background: oklch(1 0 0);

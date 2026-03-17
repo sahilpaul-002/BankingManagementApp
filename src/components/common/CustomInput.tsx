@@ -31,10 +31,10 @@ const CustomInput = forwardRef<HTMLInputElement, PasswordInputPropsTypes>((props
                     </FieldDescription>
                 </Activity>
                 <Activity mode={error ? "visible" : "hidden"}>
-                    <p className={`${id}-input-error text-[13px] text-red-500 mt-1 font-medium`}>{error}</p>
+                    <p className={`${id}-input-error w-fit h-fit text-[13px] text-red-500 mt-1 font-medium`}>{error}</p>
                 </Activity>
                 <Activity mode={(hint && !error) ? "visible" : "hidden"}>
-                    <p className={`${id}-input-hint text-[13px] text-yellow-500 mt-1 font-medium`}>{hint}</p>
+                    <p className={`${id}-input-hint w-fit h-fit text-[13px] text-yellow-500 mt-1 font-medium`}>{hint}</p>
                 </Activity>
             </Field>
         </div>

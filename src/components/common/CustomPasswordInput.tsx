@@ -31,7 +31,7 @@ const CustomPasswordInput = forwardRef<HTMLInputElement, InputPropsTypes>((props
                 <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute top-9 -right-102! text-gray-500 hover:text-gray-700 cursor-pointer"
+                    className="w-fit! h-fit! absolute top-9 right-7 text-gray-500 hover:text-gray-700 cursor-pointer"
                     tabIndex={-1}
                 >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -42,10 +42,10 @@ const CustomPasswordInput = forwardRef<HTMLInputElement, InputPropsTypes>((props
                     </FieldDescription>
                 </Activity>
                 <Activity mode={error ? "visible" : "hidden"}>
-                    <p className={`${id}-input-error text-[13px] text-red-500 mt-1 font-medium`}>{error}</p>
+                    <p className={`${id}-input-erro w-fit h-fitr text-[13px] text-red-500 mt-1 font-medium`}>{error}</p>
                 </Activity>
                 <Activity mode={(hint && !error) ? "visible" : "hidden"}>
-                    <p className={`${id}-input-hint text-[13px] text-yellow-500 mt-1 font-medium`}>{hint}</p>
+                    <p className={`${id}-input-hint w-fit h-fit text-[13px] text-yellow-500 mt-1 font-medium`}>{hint}</p>
                 </Activity>
             </Field>
         </div>
