@@ -6,7 +6,7 @@ function App() {
 
   return (
     <>
-      <div className="application-container bg-[var(--color-800)] min-w-[99vw] min-h-screen">
+      <div className="application-container bg-[var(--color-800)] w-screen min-h-screen">
         <Outlet />
       </div>
     </>

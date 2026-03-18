@@ -3,6 +3,7 @@ import App from "../App"
 import AuthLayout from "../layouts/AuthLayout"
 import { Component } from "react"
 import SignInPage from "../components/auth/SignInPage"
+import SignUpPage from "@/components/auth/SignUpPage"
 
 const router = createBrowserRouter([
     {
@@ -15,6 +16,10 @@ const router = createBrowserRouter([
                     {
                         index: true,
                         Component: SignInPage
+                    },
+                    {
+                        path: "/signup",
+                        Component: SignUpPage
                     }
                 ]
             }

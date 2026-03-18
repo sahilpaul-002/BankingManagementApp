@@ -2,12 +2,14 @@ import React, { useState } from 'react'
 import CustomInput from '../common/CustomInput'
 import CustomPasswordInput from '../common/CustomPasswordInput'
 import CustomButton from '../common/CustomButton';
+import { Link } from 'react-router';
 
 export default function SignInPage() {
   // State to manage the password visibility
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+
   return (
-    <div className="signinPage-wrapper w-full min-h-screen flex justify-center items- center px-0! lg:px-20! py-2!">
+    <div className="signinPage-wrapper w-full min-h-[95.5vh] flex justify-center items- center px-0! lg:px-20! py-2!">
       <div className="signinPage-container w-[80vw] md:w-[50vw] h-[80vh] lg:w-full lg:h-full flex flex-col justify-start items-center gap-4">
         {/* Welcome Text */}
         <span className="signinPage-text w-fit h-fit text-[3vw] text-center xl:text-[3.6vw] text-[var(--color-text1)] font-semibold tracking-tight">
@@ -35,7 +37,7 @@ export default function SignInPage() {
           {/* Button */}
           <div className="signinPage-signinForm-button-wrapper w-full h-fit flex justify-center items-center">
             <div className="signinPage-signinForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-              <CustomButton id={"signPage-signinForm-button"} label={"Submit"} />
+              <CustomButton id={"signPage-signinForm-button"} label={"Sign In"} />
             </div>
           </div>
 
@@ -43,7 +45,9 @@ export default function SignInPage() {
           <div className="signinPage-signinForm-createNewAccount-container w-full h-fit flex justify-center items-center">
             <div className="signinPage-signinForm-createNewAccount w-fit h-fit">
               <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--color-text3)] tracking-tight inline-block">Create a new account -</span>
-              <span className="signinPage-singinForm-createAccount-text ms-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-tight hover:underline! inline-block cursor-pointer">Sign Up</span>
+              <span className="signinPage-singinForm-createAccount-text ms-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-tight hover:underline! inline-block cursor-pointer">
+                <Link to="/signup">Sign Up</Link>
+                </span>
             </div>
           </div>
         </div>

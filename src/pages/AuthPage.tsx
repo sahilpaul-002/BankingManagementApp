@@ -10,7 +10,7 @@ export default function AuthPage() {
     const dnsDetails: { dashboard_name?: string } = {}
 
     return (
-        <div className="authPage-container w-full min-h-[99vh] bg-gradient-to-br from-black via-zinc-800 to-zinc-700 relative">
+        <div className="authPage-container w-full min-h-screen bg-gradient-to-br from-black via-zinc-800 to-zinc-700 relative">
             {/* Checker Boxes Design */}
             <div
                 className="checkBoxPageDesignocontainer w-full h-full pointer-events-none absolute inset-0 opacity-30 blur-[0.3px] bg-[linear-gradient(rgba(255,255,255,0.25)_1px,transparent_2px),linear-gradient(90deg,rgba(255,255,255,0.25)_1px,transparent_2px)] bg-[size:64px_64px]" />
@@ -32,7 +32,7 @@ export default function AuthPage() {
                     <BrandingComponent />
                 </div>
 
-                <div className="authPage-mainContent-authPages-wrapper bg-[var(--color-800)] w-screen lg:w-[50vw] min-h-full lg:rounded-l-4xl p-4!">
+                <div className="authPage-mainContent-authPages-wrapper bg-[var(--color-800)] w-screen lg:w-[50vw] min-h-full lg:rounded-l-4xl p-4! z-10">
                     <Outlet />
                 </div>
             </div>
