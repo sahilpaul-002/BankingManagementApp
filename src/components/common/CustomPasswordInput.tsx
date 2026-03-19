@@ -8,7 +8,7 @@ interface InputPropsTypes extends InputHTMLAttributes<HTMLInputElement> {
     label: string,
     type: "password" | "text",
     placeholder: string,
-    error?: string,
+    error?: string | undefined,
     hint?: string,
     fieldLabelClassname?: string,
     inputClassname?: string,
@@ -42,10 +42,10 @@ const CustomPasswordInput = forwardRef<HTMLInputElement, InputPropsTypes>((props
                     </FieldDescription>
                 </Activity>
                 <Activity mode={error ? "visible" : "hidden"}>
-                    <p className={`${id}-input-erro w-fit h-fitr text-[13px] text-red-500 mt-1 font-medium`}>{error}</p>
+                    <p className="input-error">{error}</p>
                 </Activity>
                 <Activity mode={(hint && !error) ? "visible" : "hidden"}>
-                    <p className={`${id}-input-hint w-fit h-fit text-[13px] text-yellow-500 mt-1 font-medium`}>{hint}</p>
+                    <p className="input-hint">{hint}</p>
                 </Activity>
             </Field>
         </div>

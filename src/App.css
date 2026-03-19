@@ -1,3 +1,17 @@
+.input-hint {
+  font-size: 11px;
+  color: #ca8a04;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+
+.input-error {
+  font-size: 11px;
+  color: var(--color-destructive);
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+
 /* #root {
   max-width: 1280px;
   margin: 0 auto;

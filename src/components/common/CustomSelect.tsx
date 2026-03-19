@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react'
+import React, { Activity, forwardRef } from 'react'
 import {
     Select,
     SelectContent,
@@ -18,46 +18,50 @@ interface SelectPropsTypes {
     labelCategory?: string,
     labels: LabelItem[] | null | undefined
     className?: string
-    value: string
+    value: string | null
     onChange: (value: string) => void
+    error?: string | undefined,
+    hint?: string,
 }
 
 const CustomSelect = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref) => {
     // Destructure props
-    const { id, label, labelCategory, labels, className, value, onChange, ...restAttributes } = props
+    const { id, label, labelCategory, labels, className, value, hint, error, onChange, ...restAttributes } = props
 
     // Get the selected item
-    const selectedItem = labels?.find((item) =>
-        typeof item === "string"
-            ? item === value
-            : item.value === value
-    )
+    const selectedItem = labels?.find((item) => {
+        // console.log("Item:", item);
+        // console.log("Value:", value)
+        // const itemValue = typeof item === "string" ? item === value : item.value === value
+        const itemValue = typeof item === "string" ? item : item.value;
+        // console.log("ItemValue: ", itemValue)
+        return itemValue === value;
+    })
 
     return (
         <div className="customSelect-container w-full h-full">
-            <Select value={value} onValueChange={onChange}>
+            {/* <Select value={value} onValueChange={onChange}> */}
+            <Select value={value ?? ""} onValueChange={onChange}>
                 <SelectTrigger
                     id={id}
                     ref={ref}
-                    className={clsx("w-full min-w-48 px-2!", className)}
+                    className={clsx(`w-full min-w-48 px-2! ${error ? "border-destructive ring-3 ring-destructive/20" : ""}`, className)}
                     {...restAttributes}
                 >
-                    {/* <SelectValue placeholder={label} /> */}
                     <SelectValue placeholder={label}>
-                        {selectedItem &&
+                        {selectedItem ?
                             (typeof selectedItem === "string"
                                 ? selectedItem
-                                : selectedItem.label)}
+                                : selectedItem.value)
+                            : (
+                                "Dial code selection is facing issue"
+                            )}
                     </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectGroup className='p-2!'>
+                    <SelectGroup className='w-full min-w-48 max-h-[160px] overflow-scroll p-2!'>
                         {/* <SelectLabel>{labelCategory}</SelectLabel> */}
-                        {/* {labels && (labels.map((item, index) => (
-                            <SelectItem key={index} value={item}>
-                                {item}
-                            </SelectItem>
-                        )))} */}
+
                         {labels?.map((item, index) => {
                             if (typeof item === "string") {
                                 return (
@@ -68,8 +72,8 @@ const CustomSelect = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref
                             }
 
                             return (
-                                <SelectItem key={index} value={item.value}>
-                                    <div className="w-full flex justify-center items-center gap-4">
+                                <SelectItem key={index} value={item.value} className='w-full'>
+                                    <div className="min-w-48 flex justify-between items-center gap-4">
                                         <span>{item.label}</span>
                                         <span className="text-muted-foreground">
                                             {item.value}
@@ -80,8 +84,14 @@ const CustomSelect = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref
                         })}
                     </SelectGroup>
                 </SelectContent>
+                <Activity mode={error ? "visible" : "hidden"}>
+                    <p className="input-error mt-1.5!">{error}</p>
+                </Activity>
+                <Activity mode={(hint && !error) ? "visible" : "hidden"}>
+                    <p className="input-hint mt-1.5!">{hint}</p>
+                </Activity>
             </Select>
-        </div>
+        </div >
     )
 })
 

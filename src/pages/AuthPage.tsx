@@ -38,7 +38,7 @@ export default function AuthPage() {
             </div>
 
             {/* Footer */}
-            <div className="authPage-footer-container w-full h-[50px] px-4! fixed bottom-0 left-0 z-[99]">
+            <div className="authPage-footer-container w-full h-[30px] px-4! fixed bottom-0 left-0 z-[99]">
                 <div className="authPage-footer-texts w-full h-full flex flex-col sm:flex-row justify-center lg:justify-between items-center gap-1">
                     {/* Copy Right Text */}
                     <span className="authPage-footer-copyrightText text-[var(--color-text2)] lg:text-[var(--color-text5)] text-start text-[12px] font-normal tracking-tight">CopyRight © {currentYear} {dnsDetails?.dashboard_name || 'Banking Management App'} - All Right Reserved.</span>
