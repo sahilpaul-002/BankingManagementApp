@@ -46,7 +46,7 @@ export default function SignUpPage() {
     //     console.log(formattedDate);
     // }, [date])
 
-    // 
+    // ------------------------------------- ZOD + REACT HOOK FORM ------------------------------------- \\
     // Configure Zod Validation
     const signupFormValidationSchema = z.object({
         fullName: z
@@ -132,6 +132,7 @@ export default function SignUpPage() {
     };
 
     const onSignupFormSubmit = handleSubmit(onValid, onError);
+    // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
     return (
         <div className="signupPage-wrapper w-full min-h-[96.5vh] sm:min-h-[97vh] flex justify-center items- center px-0! lg:px-20! py-2!">
