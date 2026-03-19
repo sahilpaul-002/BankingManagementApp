@@ -41,6 +41,9 @@ export default function SignInPage() {
   const onSigninFormSubmit: SubmitHandler<SigninFormData> = (formData) => {
     console.log(formData);
   };
+
+  // Formdata Watch
+  const password = watch("password");
   // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
   return (
@@ -62,7 +65,7 @@ export default function SignInPage() {
 
             <div className="signinPage-signinForm-password-forgotPassword-container w-full h-fit flex flex-col justify-center items-end gap-1">
               {/* Password */}
-              <CustomPasswordInput id={"signinForm-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} {...register("password")}/>
+              <CustomPasswordInput id={"signinForm-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} password={password} error={errors?.password?.message} {...register("password")}/>
 
               {/* Forgot Password */}
               <div className="signinPage-signinForm-forgotPassword-container">

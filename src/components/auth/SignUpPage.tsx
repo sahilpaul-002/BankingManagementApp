@@ -132,6 +132,9 @@ export default function SignUpPage() {
     };
 
     const onSignupFormSubmit = handleSubmit(onValid, onError);
+
+    // Formdata Watch
+    const password = watch("password");
     // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
     return (
@@ -168,7 +171,7 @@ export default function SignUpPage() {
                                 <CustomInput id={"signupForm1-input-email"} label={"Email"} type={"email"} placeholder={"Enter Email"} inputClassname={"px-4!"} autoComplete={"email"} error={errors?.email?.message} {...register("email")} />
 
                                 {/* Password */}
-                                <CustomPasswordInput id={"signupForm1-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} {...register("password")} />
+                                <CustomPasswordInput id={"signupForm1-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} password={password} {...register("password")} />
 
                                 {/* Confirm Password */}
                                 <CustomPasswordInput id={"signupForm1-input-confirmPassword"} label={"Confirm Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} {...register("confirmPassword")} />
