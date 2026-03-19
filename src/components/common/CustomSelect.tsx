@@ -45,7 +45,7 @@ const CustomSelect = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref
                 <SelectTrigger
                     id={id}
                     ref={ref}
-                    className={clsx(`w-full min-w-48 px-2! ${error ? "border-destructive ring-3 ring-destructive/20" : ""}`, className)}
+                    className={clsx(`w-full min-w-36 px-2! ${error ? "border-destructive ring-3 ring-destructive/20" : ""}`, className)}
                     {...restAttributes}
                 >
                     <SelectValue placeholder={label}>
@@ -59,7 +59,7 @@ const CustomSelect = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref
                     </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectGroup className='w-full min-w-48 max-h-[160px] overflow-scroll p-2!'>
+                    <SelectGroup className='w-full min-w-36 max-h-[160px] overflow-scroll p-2!'>
                         {/* <SelectLabel>{labelCategory}</SelectLabel> */}
 
                         {labels?.map((item, index) => {
@@ -73,7 +73,7 @@ const CustomSelect = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref
 
                             return (
                                 <SelectItem key={index} value={item.value} className='w-full'>
-                                    <div className="min-w-48 flex justify-between items-center gap-4">
+                                    <div className="min-w-36 flex justify-between items-center gap-4">
                                         <span>{item.label}</span>
                                         <span className="text-muted-foreground">
                                             {item.value}

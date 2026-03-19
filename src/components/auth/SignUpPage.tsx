@@ -135,10 +135,10 @@ export default function SignUpPage() {
     // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
     return (
-        <div className="signupPage-wrapper w-full min-h-[96.5vh] sm:min-h-[97vh] flex justify-center items- center px-0! lg:px-20! py-2!">
-            <div className="signupPage-container w-[80vw] md:w-[50vw] h-[80vh] lg:w-full lg:h-full flex flex-col justify-start items-center gap-4">
+        <div className="signupPage-wrapper w-full min-h-screen flex justify-center items- center px-0! lg:px-20! py-2!">
+            <div className="signupPage-container w-[80vw] md:w-[50vw] min-h-[80vh] lg:w-full lg:h-full flex flex-col justify-start items-center gap-4">
                 {/* Welcome Text */}
-                <span className="signupPage-text w-fit h-fit text-[3vw] text-center xl:text-[3.6vw] text-[var(--color-text1)] font-semibold tracking-tight">
+                <span className="signupPage-text w-fit h-fit text-[36px] sm:text-[6vw] md:text-[4vw] xl:text-[3.6vw] text-[var(--color-text1)] font-semibold tracking-tight">
                     Create Account
                 </span>
 
@@ -208,8 +208,57 @@ export default function SignUpPage() {
                         {/* Form step 2 */}
                         <Activity mode={formStep === 2 ? 'visible' : 'hidden'}>
                             <div className="signupPage-signupForm2-container w-full h-fit space-y-6!">
+
+                                {/* Dial Code + Country Code */}
+                                <div className="signupPage-signupForm2-dialCode-countryCode-container w-full h-fit flex flex-col sm:flex-row justify-center items-center gap-2">
+                                    {/* Phone Dial Code */}
+                                    <Controller
+                                        name="dialCode"
+                                        control={control}
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                            <>
+                                                <div className="signupForm2-dialCodeSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
+                                                    <span className="signupForm2-phoneDialCode-text text-sm font-semibold tracking-tight">Phone Dial Code</span>
+                                                    <CustomSelect
+                                                        id="signupForm1-input-select-phoneDialCode"
+                                                        label="Select Dial Code"
+                                                        labels={mobileDialCodes}
+                                                        className="w-full   h-full"
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        error={errors?.countryCode?.message}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    />
+
+                                    {/* Country Code */}
+                                    <Controller
+                                        name="countryCode"
+                                        control={control}
+                                        defaultValue=""
+                                        render={({ field }) => (
+                                            <>
+                                                <div className="signupForm2-countryCodeSelect-wrapper w-full h-fit flex flex-col justify-between items-start gap-2">
+                                                    <span className="signupForm2-countryCodeSelect-text text-sm font-semibold tracking-tight">Country Code</span>
+                                                    <CustomSelect
+                                                        id="signupForm1-input-select-countryCode"
+                                                        label="Select Country Code"
+                                                        labels={mobileCountryCodes}
+                                                        className="w-full h-full"
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        error={errors?.countryCode?.message}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    />
+                                </div>
                                 {/* Phone Dial Code */}
-                                <Controller
+                                {/* <Controller
                                     name="dialCode"
                                     control={control}
                                     defaultValue=""
@@ -229,10 +278,10 @@ export default function SignUpPage() {
                                             </div>
                                         </>
                                     )}
-                                />
+                                /> */}
 
                                 {/* Country Code */}
-                                <Controller
+                                {/* <Controller
                                     name="countryCode"
                                     control={control}
                                     defaultValue=""
@@ -252,7 +301,7 @@ export default function SignUpPage() {
                                             </div>
                                         </>
                                     )}
-                                />
+                                /> */}
 
                                 {/* Phone Number */}
                                 <CustomInput id={"signupForm2-input-phoneNumber"} label={"Phone Number"} type={"text"} placeholder={"Enter phone number"} inputClassname={"px-4!"} hint={"* Enter number without country code"} error={errors?.phoneNumber?.message} {...register("phoneNumber")} />

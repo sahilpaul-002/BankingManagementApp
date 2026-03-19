@@ -31,14 +31,14 @@ export default function AuthLayout() {
     <>
       {/* Display Page Loader */}
       <Activity mode={displayPageLoader ? 'visible' : 'hidden'}>
-        <div className="hourGlassLoader-wrapper w-full h-full">
+        <div className="hourGlassLoader-wrapper w-full h-screen">
           <HourGlassLoader primaryColor={'--color-200'} secondaryColor={'--color-400'} />
         </div>
       </Activity>
 
       {/* Display Auth Layout */}
       <Activity mode={!displayPageLoader ? 'visible' : 'hidden'}>
-        <div className="authLayout-container w-full h-full">
+        <div className="authLayout-container w-full min-h-screen">
           <AuthPage />
         </div>
       </Activity>

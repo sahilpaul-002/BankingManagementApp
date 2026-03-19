@@ -3,7 +3,7 @@ import Card from '../common/Card'
 
 export default function BrandingComponent() {
     return (
-        <div className="brandingComponent-container w-[50vw] min-h-[99vh] text-white">
+        <div className="brandingComponent-container w-full min-h-screen text-white">
             {/* Main Branding Component */}
             <div className="brandingComponent-mainBrandingContainer  w-full h-full px-4! py-6! z-90">
                 <div className="brandComponent-mainBrandingContainer-brandingTexts w-full h-fit flex flex-col justify-center items-center gap-10">

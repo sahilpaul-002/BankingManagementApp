@@ -44,10 +44,10 @@ export default function SignInPage() {
   // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
   return (
-    <div className="signinPage-wrapper w-full min-h-[95.5vh] flex justify-center items- center px-0! lg:px-20! py-2! mb-[30px]!">
+    <div className="signinPage-wrapper w-full min-h-screen flex justify-center items- center px-0! lg:px-20! py-2! mb-[30px]!">
       <div className="signinPage-container w-[80vw] md:w-[50vw] h-[80vh] lg:w-full lg:h-full flex flex-col justify-start items-center gap-4">
         {/* Welcome Text */}
-        <span className="signinPage-text w-fit h-fit text-[3vw] text-center xl:text-[3.6vw] text-[var(--color-text1)] font-semibold tracking-tight">
+        <span className="signinPage-text w-fit h-fit text-center text-[36px] sm:text-[6vw] md:text-[4vw] xl:text-[3.6vw] text-[var(--color-text1)] font-semibold tracking-tight">
           Welcome
         </span>
 

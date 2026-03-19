@@ -10,15 +10,15 @@ export default function AuthPage() {
     const dnsDetails: { dashboard_name?: string } = {}
 
     return (
-        <div className="authPage-container w-full min-h-screen bg-gradient-to-br from-black via-zinc-800 to-zinc-700 relative">
+        <div className="authPage-container w-screen min-h-screen bg-gradient-to-br from-black via-zinc-800 to-zinc-700 relative">
             {/* Checker Boxes Design */}
             <div
                 className="checkBoxPageDesignocontainer w-full h-full pointer-events-none absolute inset-0 opacity-30 blur-[0.3px] bg-[linear-gradient(rgba(255,255,255,0.25)_1px,transparent_2px),linear-gradient(90deg,rgba(255,255,255,0.25)_1px,transparent_2px)] bg-[size:64px_64px]" />
 
             {/* Radial Blur Circles */}
-            <div className="brandingComponent-radialBlur-circles w-[150px] h-[100px] bg-white blur-3xl absolute top-0 left-0 z-70"></div>
-            <div className="brandingComponent-radialBlur-circles w-[200px] h-[200px] bg-white blur-3xl absolute top-[20vh] left-[40vw] z-70"></div>
-            <div className="brandingComponent-radialBlur-circles w-[150px] h-[100px] bg-gray-600 blur-3xl absolute bottom-0 left-0 z-70"></div>
+            <div className="brandingComponent-radialBlur-circles w-[150px] h-[100px] bg-white blur-3xl absolute top-0 left-0"></div>
+            <div className="brandingComponent-radialBlur-circles w-[200px] h-[200px] bg-white blur-3xl absolute top-[20vh] left-[40vw]"></div>
+            <div className="brandingComponent-radialBlur-circles w-[150px] h-[100px] bg-gray-600 blur-3xl absolute bottom-0 left-0"></div>
 
             {/* Header */}
             {/* <div className="authPage-header-container w-full h-[50px] bg-red-400 fixed top-0 left-0 z-[99]">
@@ -26,13 +26,12 @@ export default function AuthPage() {
             </div> */}
 
             {/* Main Content */}
-            {/* <div className="authPage-mainContent w-full min-h-full relative"> */}
-            <div className="authPage-mainContent w-full min-h-full flex justify-center items-start">
-                <div className="authPage-mainContent-brnadingContainer-wrapper w-fit h-fit hidden lg:flex">
+            <div className="authPage-mainContent w-full min-h-screen flex justify-center items-start">
+                <div className="authPage-mainContent-brnadingContainer-wrapper w-[50vw] min-h-screen hidden lg:flex">
                     <BrandingComponent />
                 </div>
 
-                <div className="authPage-mainContent-authPages-wrapper bg-[var(--color-800)] w-screen lg:w-[50vw] min-h-full lg:rounded-l-4xl p-4! z-10">
+                <div className="authPage-mainContent-authPages-wrapper bg-[var(--color-800)] w-screen lg:w-[50vw] min-h-screen lg:rounded-l-4xl pt-4! z-10">
                     <Outlet />
                 </div>
             </div>
