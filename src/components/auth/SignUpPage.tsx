@@ -62,7 +62,8 @@ export default function SignUpPage() {
             .regex(/\d/, 'Password must contain a digit')
             .regex(/[!@#$%^&*]/, 'Password must contain special characters'),
         confirmPassword: z
-            .string(),
+            .string()
+            .min(1, "Confirm password is required"),
         gender: z
             .string()
             .min(1, "Please select a gender"),
@@ -94,8 +95,8 @@ export default function SignUpPage() {
                 message: "You must be at least 18 years old",
             }),
     }).refine((d) => d.password === d.confirmPassword, {
-        message: ('settings.passwords_dont_match'),
-        path: ['confirm_password'],
+        message: ('Password do not match'),
+        path: ['confirmPassword'],
     });
     type SignupFormData = z.infer<typeof signupFormValidationSchema>
 
