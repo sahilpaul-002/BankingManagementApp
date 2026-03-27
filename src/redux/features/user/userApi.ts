@@ -1,4 +1,7 @@
+import { USER_URL } from '@/configs/constants'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
+import { selectDnsConfigDetails, type DnsConfigData } from '@/redux/slice/config/configSlice'
+import type { RootState } from '@/redux/sotre'
 
 interface SigninRequest {
     email: string
@@ -8,83 +11,91 @@ interface SigninRequest {
 interface SigninResponse {
     status: string,
     message: string,
-    data: object
+    data?: object,
+    error?: any
 };
 
+// ==============================
+// BASE QUERY (STATIC BASE URL)
+// ==============================
+const customBaseQuery = fetchBaseQuery({
+    baseUrl: 'http://localhost:3000', // 🔥 keep static
+
+    prepareHeaders: (headers, { getState }) => {
+        const state = getState() as RootState
+        const dnsConfig = selectDnsConfigDetails(state)
+
+        // ✅ Dynamic headers from Redux
+        if (dnsConfig) {
+            headers.set('x-api-key', dnsConfig.x_api_key)
+            headers.set('agent-code', dnsConfig.agent_code)
+            headers.set('subagent-code', dnsConfig.subagent_code)
+            headers.set('program-id', dnsConfig.program_id)
+            headers.set('business-id', dnsConfig.business_id)
+            headers.set('client-id', dnsConfig.client_id)
+        }
+
+        // ✅ Static headers
+        headers.set('portal', 'business')
+        headers.set('from-portal', 'false')
+        headers.set('Content-Type', 'application/json')
+
+        return headers
+    }
+})
+
+// ==============================
+// API
+// ==============================
 export const userApis = createApi({
     reducerPath: "userApis",
 
-    baseQuery: fetchBaseQuery({
-        baseUrl: 'http://localhost:3000/api/v1/user',
-
-        prepareHeaders: (headers) => {
-            // 🔥 Your custom headers
-            headers.set('portal', 'business')
-            headers.set('from-portal', 'false')
-            headers.set('x-api-key', 'Z0PjX745by9mjgMjfZlNP2hViztkskjduhp8Gwwil')
-            headers.set('agent-code', 'INC00001')
-            headers.set('subagent-code', '01')
-            headers.set('program-id', 'SPMAA0')
-            headers.set('business-id', 'INBC00001')
-            headers.set('client-id', 'cebd2dfb-b010-48ef-b2f2-ac7e640e3a6')
-            headers.set(
-                'authorization',
-                'Bearer s:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-            )
-
-            // 🔥 Authorization (dynamic or static)
-            // const token = localStorage.getItem('token')
-
-            // if (token) {
-            //     headers.set('authorization', `Bearer ${token}`)
-            // } else {
-            //     // fallback (your static token if needed)
-            //     headers.set(
-            //         'authorization',
-            //         'Bearer s:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-            //     )
-            // }
-
-            // 🔥 Optional but safe
-            headers.set('Content-Type', 'application/json')
-
-            return headers
-        },
-    }),
+    baseQuery: customBaseQuery,
 
 
-
+    // ==============================
+    // SIGN IN
+    // ==============================
     endpoints: (build) => ({
         signIn: build.mutation<SigninResponse, SigninRequest>({
-            query: (signInPayload: SigninRequest) => ({
-                url: '/login',
-                method: 'POST',
-                body: signInPayload,
-            }),
+            async queryFn(payload, {getState}, _extraOptions, baseQuery) {
+                const state = getState() as RootState
+                const dnsConfig = selectDnsConfigDetails(state)
 
-            // 🔥 Optional: clean response
-            transformResponse: (response: SigninResponse) => {
-                return response
+                if (!dnsConfig) {
+                    return {
+                        error: {
+                            status: 400,
+                            data: 'DNS Config not loaded'
+                        }
+                    }
+                }
+
+                const result = await baseQuery({
+                    url: `${dnsConfig.base_url_api}${USER_URL}/login`,
+                    method: 'POST',
+                    body: payload
+                })
+
+                if (result.error) {
+                    return { error: result.error }
+                }
+
+                return {
+                    data: result.data as SigninResponse
+                }
             },
 
-            // 🔥 Optional: clean error
-            transformErrorResponse: (response: any) => {
-                return response.status
-            },
-
-            // 🔥 Side effects (VERY IMPORTANT)
-            async onQueryStarted(arg, { queryFulfilled }) {
+            async onQueryStarted(payload, { queryFulfilled }) {
                 try {
                     const { data } = await queryFulfilled
-
-                    // ✅ Save token after login
                     // localStorage.setItem('token', data.token)
                 } catch (err) {
                     console.error('Login failed')
                 }
             }
-        }),
-    }),
+        })
+    })
 })
 
 export const { useSignInMutation } = userApis

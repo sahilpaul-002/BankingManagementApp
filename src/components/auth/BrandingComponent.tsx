@@ -1,7 +1,11 @@
 import React from 'react'
 import Card from '../common/Card'
+import { selectDnsConfigDetails, type DnsConfigData } from '@/redux/slice/config/configSlice'
+import { useSelector } from 'react-redux'
 
 export default function BrandingComponent() {
+    const dnsConfig: DnsConfigData | null = useSelector(selectDnsConfigDetails)
+    
     return (
         <div className="brandingComponent-container w-full min-h-screen text-white">
             {/* Main Branding Component */}
@@ -9,14 +13,14 @@ export default function BrandingComponent() {
                 <div className="brandComponent-mainBrandingContainer-brandingTexts w-full h-fit flex flex-col justify-center items-center gap-10">
                     {/* Brand Texts */}
                     <div className="brandComponent-mainBrandingContainer-brandingText-brnadName w-fit h-fit">
-                        <h1 className='w-fit h-fit text-[var(--color-text6)] text-[3vw] text-center xl:text-[3.6vw] font-semibold tracking-tight'>Banking Management</h1>
+                        <h1 className='w-fit h-fit text-[var(--color-text6)] text-[3vw] text-center xl:text-[3.6vw] font-semibold tracking-tight'>{dnsConfig?.dashboard_name || "Banking Management"}</h1>
                     </div>
                     <div className="brandComponent-mainBrandingContainer-brandingText-brnadSlogans w-fit h-fit flex flex-col justify-center items-center gap-1">
                         <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-tight'>
-                            Stay on top of all company spending in real-time
+                            {dnsConfig?.slogan_line_1 || "Banking Management"}
                         </span>
                         <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-tight'>
-                            Through our corporate innovative payment platform.
+                            {dnsConfig?.slogan_line_2 || "Banking Management"}
                         </span>
                     </div>
 

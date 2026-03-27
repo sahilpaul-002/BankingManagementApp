@@ -1,9 +1,25 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import BrandingComponent from '../components/auth/BrandingComponent';
-import { Outlet } from 'react-router';
+import { data, Outlet } from 'react-router';
 import SignInPage from '@/components/auth/SignInPage';
+import { useGetDnsConfigQuery, useLazyGetDnsConfigQuery } from '@/redux/features/config/configApi';
 
 export default function AuthPage() {
+
+    // Dns Config Query
+    const { data, isLoading, error } = useGetDnsConfigQuery({
+        domainName: 'business.banking-management.com',
+    })
+    useEffect(() => {
+        console.log(data);
+        console.log(error);
+    }, [data, error])
+    // const [getDnsConfig, { data, isLoading, error }] = useLazyGetDnsConfigQuery()
+    // useEffect(() => {
+    //     getDnsConfig({
+    //         domainName: 'business.banking-management.com',
+    //     })
+    // }, [])
 
     // Get current year for footer
     const currentYear = new Date().getFullYear();
