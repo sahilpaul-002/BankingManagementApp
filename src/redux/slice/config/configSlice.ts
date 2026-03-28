@@ -1,10 +1,10 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { RootState } from '../../sotre'
+import type { rootStateType } from '../../sotre'
 
 // 🔐 Define State Type
 export type portalType = 'admin' | 'business' | 'user'
 
-export interface DnsConfigData {
+export interface dnsConfigDataType {
     domain_name: string;
     agent_code: string;
     subagent_code: string;
@@ -34,7 +34,7 @@ export interface DnsConfigData {
 }
 
 interface ConfigState {
-  dnsConfigData: DnsConfigData | null
+  dnsConfigData: dnsConfigDataType | null
 }
 
 // 🧠 Initial State
@@ -48,7 +48,7 @@ const configSlice = createSlice({
   initialState,
   reducers: {
     // Set User Details
-    setDnsConfigDetails: (state, action: PayloadAction<DnsConfigData>) => {
+    setDnsConfigDetails: (state, action: PayloadAction<dnsConfigDataType>) => {
       state.dnsConfigData = action.payload
     },
 
@@ -62,4 +62,4 @@ export const { setDnsConfigDetails} = configSlice.actions
 export default configSlice
 
 // 📌 Selectors (best practice)
-export const selectDnsConfigDetails = (state: RootState) => state.config.dnsConfigData
+export const selectDnsConfigDetails = (state: rootStateType) => state.config.dnsConfigData

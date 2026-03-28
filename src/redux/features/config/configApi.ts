@@ -1,5 +1,5 @@
 import { CONFIG_URL } from '@/configs/constants'
-import { setDnsConfigDetails, type DnsConfigData } from '@/redux/slice/config/configSlice'
+import { setDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
 const dnsBaseUrl = import.meta.env.VITE_DNS_BASE_URL
@@ -74,7 +74,7 @@ export const configApis = createApi({
                     const { data } = await queryFulfilled
 
                     // 🔥 Store data in config slice
-                    dispatch(setDnsConfigDetails(data.data as DnsConfigData))
+                    dispatch(setDnsConfigDetails(data.data as dnsConfigDataType))
                 } catch (err) {
                     console.error('Failed to store DNS config')
                 }

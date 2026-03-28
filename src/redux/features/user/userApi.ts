@@ -1,7 +1,7 @@
 import { USER_URL } from '@/configs/constants'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { selectDnsConfigDetails, type DnsConfigData } from '@/redux/slice/config/configSlice'
-import type { RootState } from '@/redux/sotre'
+import { selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
+import type { rootStateType } from '@/redux/sotre'
 
 interface SigninRequest {
     email: string
@@ -22,7 +22,7 @@ const customBaseQuery = fetchBaseQuery({
     baseUrl: 'http://localhost:3000', // 🔥 keep static
 
     prepareHeaders: (headers, { getState }) => {
-        const state = getState() as RootState
+        const state = getState() as rootStateType
         const dnsConfig = selectDnsConfigDetails(state)
         console.log("Dns data: ", dnsConfig);
 
@@ -62,7 +62,7 @@ export const userApis = createApi({
     endpoints: (build) => ({
         signIn: build.mutation<SigninResponse, SigninRequest>({
             async queryFn(payload, { getState }, _extraOptions, baseQuery) {
-                const state = getState() as RootState
+                const state = getState() as rootStateType
                 const dnsConfig = selectDnsConfigDetails(state)
 
                 if (!dnsConfig) {

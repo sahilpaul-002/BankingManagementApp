@@ -22,5 +22,5 @@ export const store = configureStore({
 })
 
 // EXPORT HOOKS TYPES
-export type RootState = ReturnType<typeof store.getState>
-export type AppDispatch = typeof store.dispatch
+export type rootStateType = ReturnType<typeof store.getState>
+export type appDispatchType = typeof store.dispatch

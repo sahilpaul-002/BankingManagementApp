@@ -1,12 +1,12 @@
-import type { ValidatePasswordType } from "./validatePassword";
+import type { validatePasswordType } from "./validatePassword";
 
-export type PasswordStrengthType = {
+export type passwordStrengthType = {
   label: string,
   percent: number,
   color: string
 }
 
-export default function getPasswordStrength(rules: ValidatePasswordType): PasswordStrengthType {
+export default function getPasswordStrength(rules: validatePasswordType): passwordStrengthType {
 
   const passed = rules.filter(r => r.valid).length;
 

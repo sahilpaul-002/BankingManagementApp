@@ -3,12 +3,12 @@ type RulesTypes = {
   message: string
 }
 
-export type ValidatePasswordType = Array<{
+export type validatePasswordType = Array<{
   valid: boolean,
   message: string
 }>
 
-export default function validatePassword(password: string): ValidatePasswordType {
+export default function validatePassword(password: string): validatePasswordType {
   if (typeof password !== "string") {
     return [{ valid: false, message: "Password must be a string" }];
   }

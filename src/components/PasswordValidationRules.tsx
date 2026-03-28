@@ -1,9 +1,9 @@
 import React from 'react'
 import { Check, X } from 'lucide-react';
-import type { ValidatePasswordType } from '@/utils/validatePassword';
+import type { validatePasswordType } from '@/utils/validatePassword';
 
 interface Props {
-  passwordValidationRules: ValidatePasswordType
+  passwordValidationRules: validatePasswordType
 }
 
 export default function PasswordValidationRules(props: Props) {

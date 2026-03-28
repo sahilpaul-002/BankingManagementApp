@@ -2,8 +2,8 @@ import React, { Activity, forwardRef, useEffect, useState, type ChangeEvent, typ
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { EyeOff, Eye } from "lucide-react";
-import validatePassword, { type ValidatePasswordType } from '@/utils/validatePassword';
-import checkPasswordStrength, { type PasswordStrengthType } from "../../utils/checkPasswordStrength"
+import validatePassword, { type validatePasswordType } from '@/utils/validatePassword';
+import checkPasswordStrength, { type passwordStrengthType } from "../../utils/checkPasswordStrength"
 import PasswordValidationRules from '../PasswordValidationRules';
 
 interface InputPropsTypes extends InputHTMLAttributes<HTMLInputElement> {
@@ -30,8 +30,8 @@ const CustomPasswordInput = forwardRef<HTMLInputElement, InputPropsTypes>((props
     const { onChange, onBlur, ...rest } = restAttributes;
 
     const [passwordFocused, setPasswordFocused] = useState<boolean>(false);
-    const [passwordValidationRules, setPasswordValidationRules] = useState<ValidatePasswordType>(validatePassword(""))
-    const [passwordStrength, setPasswordStrength] = useState<PasswordStrengthType | null>(null)
+    const [passwordValidationRules, setPasswordValidationRules] = useState<validatePasswordType>(validatePassword(""))
+    const [passwordStrength, setPasswordStrength] = useState<passwordStrengthType | null>(null)
 
     const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
         setPasswordValidationRules(validatePassword(e.target.value));

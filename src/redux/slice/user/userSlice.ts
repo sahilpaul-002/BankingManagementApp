@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
-import type { RootState } from '../../sotre'
+import type { rootStateType } from '../../sotre'
 
 // 🔐 Define State Type
 interface UserDetails {
@@ -64,5 +64,5 @@ export const { setUserDetails, logout } = userSlice.actions
 export default userSlice
 
 // 📌 Selectors (best practice)
-export const selectUserDetails = (state: RootState) => state.user.userDetails
-export const selectIsAuthenticated = (state: RootState) => state.user.isAuthenticated
+export const selectUserDetails = (state: rootStateType) => state.user.userDetails
+export const selectIsAuthenticated = (state: rootStateType) => state.user.isAuthenticated

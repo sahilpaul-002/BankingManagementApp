@@ -1,10 +1,10 @@
 import React from 'react'
 import Card from '../common/Card'
-import { selectDnsConfigDetails, type DnsConfigData } from '@/redux/slice/config/configSlice'
+import { selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
 import { useSelector } from 'react-redux'
 
 export default function BrandingComponent() {
-    const dnsConfig: DnsConfigData | null = useSelector(selectDnsConfigDetails)
+    const dnsConfig: dnsConfigDataType | null = useSelector(selectDnsConfigDetails)
     
     return (
         <div className="brandingComponent-container w-full min-h-screen text-white">
