@@ -13,7 +13,7 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
   // SignIn Api Mutation
-  const [signIn, { isLoading, error, data }] = useSignInMutation()
+  const [signIn, { isLoading, error, data, isSuccess, reset: resetMutation }] = useSignInMutation()
 
   // ------------------------------------- ZOD + REACT HOOK FORM ------------------------------------- \\
   // Configure Zod Validation
@@ -37,7 +37,7 @@ export default function SignInPage() {
     watch,
     control,
     formState: { errors },
-    reset
+    reset: resetReactHookForm
   } = useForm<SigninFormData>({
     resolver: zodResolver(signInFormValidationSchema),
   })

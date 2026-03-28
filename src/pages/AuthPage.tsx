@@ -1,13 +1,14 @@
-import React, { useEffect } from 'react'
+import React, { Activity, useEffect } from 'react'
 import BrandingComponent from '../components/auth/BrandingComponent';
 import { data, Outlet } from 'react-router';
 import SignInPage from '@/components/auth/SignInPage';
 import { useGetDnsConfigQuery, useLazyGetDnsConfigQuery } from '@/redux/features/config/configApi';
+import FormSkeleton from "../components/common/FormSkeleton";
 
 export default function AuthPage() {
 
     // Dns Config Query
-    const { data, isLoading, error } = useGetDnsConfigQuery({
+    const { data, isLoading, isSuccess, error } = useGetDnsConfigQuery({
         domainName: 'business.banking-management.com',
     })
     useEffect(() => {
@@ -48,7 +49,12 @@ export default function AuthPage() {
                 </div>
 
                 <div className="authPage-mainContent-authPages-wrapper bg-[var(--color-800)] w-screen lg:w-[50vw] min-h-screen lg:rounded-l-4xl pt-4! z-10">
-                    <Outlet />
+                    <Activity mode={!isSuccess ? "visible" : "hidden"}>
+                        <FormSkeleton />
+                    </Activity>
+                    <Activity mode={isSuccess ? "visible" : "hidden"}>
+                        <Outlet />
+                    </Activity>
                 </div>
             </div>
 

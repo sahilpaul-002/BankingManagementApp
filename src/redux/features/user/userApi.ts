@@ -2,6 +2,7 @@ import { USER_URL } from '@/configs/constants'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
 import type { rootStateType } from '@/redux/sotre'
+import { configApis, useGetDnsConfigQuery } from '../config/configApi'
 
 interface SigninRequest {
     email: string
@@ -61,21 +62,29 @@ export const userApis = createApi({
     // ==============================
     endpoints: (build) => ({
         signIn: build.mutation<SigninResponse, SigninRequest>({
-            async queryFn(payload, { getState }, _extraOptions, baseQuery) {
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 const state = getState() as rootStateType
                 const dnsConfig = selectDnsConfigDetails(state)
 
                 if (!dnsConfig) {
-                    return {
-                        error: {
-                            status: 400,
-                            data: 'DNS Config not loaded'
-                        }
+                    const result = await dispatch(
+                        configApis.endpoints.getDnsConfig.initiate({
+                            domainName: 'business.banking-management.com',
+                        })
+                    );
+
+                    if (result.isError) {
+                        return {
+                            error: {
+                                status: 400,
+                                data: 'DNS Config not loaded'
+                            }
+                        };
                     }
                 }
 
                 const result = await baseQuery({
-                    url: `${dnsConfig.base_url_api}${USER_URL}/login`,
+                    url: `${dnsConfig?.base_url_api}${USER_URL}/login`,
                     method: 'POST',
                     body: payload
                 })

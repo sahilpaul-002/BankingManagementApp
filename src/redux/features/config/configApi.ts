@@ -73,7 +73,7 @@ export const configApis = createApi({
                 try {
                     const { data } = await queryFulfilled
 
-                    // 🔥 Store data in config slice
+                    // Store data in config slice
                     dispatch(setDnsConfigDetails(data.data as dnsConfigDataType))
                 } catch (err) {
                     console.error('Failed to store DNS config')
