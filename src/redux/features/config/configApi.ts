@@ -54,6 +54,7 @@ export const configApis = createApi({
             headers.set('Content-Type', 'application/json')
             return headers
         },
+        credentials: "include"
     }),
 
     endpoints: (build) => ({

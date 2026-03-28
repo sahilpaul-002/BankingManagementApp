@@ -17,10 +17,10 @@ export default function BrandingComponent() {
                     </div>
                     <div className="brandComponent-mainBrandingContainer-brandingText-brnadSlogans w-fit h-fit flex flex-col justify-center items-center gap-1">
                         <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-tight'>
-                            {dnsConfig?.slogan_line_1 || "Banking Management"}
+                            {dnsConfig?.slogan_line_1 || "Stay on top of all company spending in real-time"}
                         </span>
                         <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-tight'>
-                            {dnsConfig?.slogan_line_2 || "Banking Management"}
+                            {dnsConfig?.slogan_line_2 || "through our corporate innovative payment platform."}
                         </span>
                     </div>
 

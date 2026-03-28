@@ -2,7 +2,7 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { RootState } from '../../sotre'
 
 // 🔐 Define State Type
-export type PortalType = 'admin' | 'business' | 'user'
+export type portalType = 'admin' | 'business' | 'user'
 
 export interface DnsConfigData {
     domain_name: string;
@@ -30,6 +30,7 @@ export interface DnsConfigData {
     portal_type: string;
     m2p_allowed: boolean;
     p2p_allowed: boolean;
+    accessToken: string
 }
 
 interface ConfigState {

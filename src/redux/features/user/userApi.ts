@@ -24,6 +24,7 @@ const customBaseQuery = fetchBaseQuery({
     prepareHeaders: (headers, { getState }) => {
         const state = getState() as RootState
         const dnsConfig = selectDnsConfigDetails(state)
+        console.log("Dns data: ", dnsConfig);
 
         // ✅ Dynamic headers from Redux
         if (dnsConfig) {
@@ -33,6 +34,7 @@ const customBaseQuery = fetchBaseQuery({
             headers.set('program-id', dnsConfig.program_id)
             headers.set('business-id', dnsConfig.business_id)
             headers.set('client-id', dnsConfig.client_id)
+            headers.set("authorization", `Bearer ${dnsConfig.accessToken}`)
         }
 
         // ✅ Static headers
@@ -41,7 +43,8 @@ const customBaseQuery = fetchBaseQuery({
         headers.set('Content-Type', 'application/json')
 
         return headers
-    }
+    },
+    credentials: "include"
 })
 
 // ==============================
@@ -58,7 +61,7 @@ export const userApis = createApi({
     // ==============================
     endpoints: (build) => ({
         signIn: build.mutation<SigninResponse, SigninRequest>({
-            async queryFn(payload, {getState}, _extraOptions, baseQuery) {
+            async queryFn(payload, { getState }, _extraOptions, baseQuery) {
                 const state = getState() as RootState
                 const dnsConfig = selectDnsConfigDetails(state)
 
@@ -86,14 +89,14 @@ export const userApis = createApi({
                 }
             },
 
-            async onQueryStarted(payload, { queryFulfilled }) {
-                try {
-                    const { data } = await queryFulfilled
-                    // localStorage.setItem('token', data.token)
-                } catch (err) {
-                    console.error('Login failed')
-                }
-            }
+            // async onQueryStarted(payload, { queryFulfilled }) {
+            //     try {
+            //         const { data } = await queryFulfilled
+            //         // localStorage.setItem('token', data.token)
+            //     } catch (err) {
+            //         console.error('Login failed')
+            //     }
+            // }
         })
     })
 })
