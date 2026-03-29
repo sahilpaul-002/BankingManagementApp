@@ -54,6 +54,8 @@ export const configApis = createApi({
             headers.set('Content-Type', 'application/json')
             return headers
         },
+        timeout: 5000,
+        // timeout: 1,
         credentials: "include"
     }),
 

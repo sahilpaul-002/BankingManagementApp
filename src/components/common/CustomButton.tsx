@@ -17,7 +17,7 @@ const CustomButton = forwardRef<HTMLButtonElement, ButtonPropsTypes>((props, ref
                 id={id}
                 ref={ref}
                 className={clsx(
-                    "customButton-container w-full h-full bg-[var(--color-100)] text-[var(--color-text6)] border hover:border-gray-600 rounded-xl hover:bg-[var(--color-600)] hover:text-[var(--color-text1)] text-[12px] sm:text-[14ps] lg:text-[16px] font-semibold tracking-tight",
+                    "customButton-container w-full h-full bg-[var(--color-100)] text-[var(--color-text6)] border hover:border-gray-600 rounded-xl hover:bg-[var(--color-100)]/80 hover:shadow-2xl text-[12px] sm:text-[14ps] lg:text-[16px] font-semibold tracking-tight cursor-pointer",
                     className
                 )}
                 {...restAttributes}

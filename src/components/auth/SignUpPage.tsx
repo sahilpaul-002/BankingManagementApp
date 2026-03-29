@@ -139,7 +139,7 @@ export default function SignUpPage() {
     // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
     return (
-        <div className="signupPage-wrapper w-full min-h-screen flex justify-center items- center px-0! lg:px-20! py-2!">
+        <div className="signupPage-wrapper w-full min-h-[calc(100vh-76px)] flex justify-center items- center px-0! lg:px-20! py-2!">
             <div className="signupPage-container w-[80vw] md:w-[50vw] min-h-[80vh] lg:w-full lg:h-full flex flex-col justify-start items-center gap-4">
                 {/* Welcome Text */}
                 <span className="signupPage-text w-fit h-fit text-[36px] sm:text-[6vw] md:text-[4vw] xl:text-[3.6vw] text-[var(--color-text1)] font-semibold tracking-tight">

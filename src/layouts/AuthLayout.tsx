@@ -1,10 +1,28 @@
 import { useState, Activity, useEffect } from "react";
 import HourGlassLoader from "../components/common/loaders/HourGlassLoader";
 import AuthPage from "../pages/AuthPage";
+import { useGetDnsConfigQuery } from "@/redux/features/config/configApi";
+import { useNavigate } from "react-router";
 
 
 export default function AuthLayout() {
-  const dnsConfigData = {};
+  // Configure useNavigate
+  const navigate = useNavigate();
+
+  // Dns Config Data
+  const { data, isLoading, isSuccess, error, isError } = useGetDnsConfigQuery({
+      domainName: 'business.banking-management.com',
+  })
+  useEffect(() => {
+      if (isSuccess) {
+          console.log(data);
+      }
+      else if (isError) {
+          console.error(error);
+          navigate("/serviceUnavailable");
+
+      }
+  }, [data, error])
   // -------------------------------------- Logic to display the loader -------------------------------------- \\
   // State to manage the display of page loader
   const [displayPageLoader, setDisplayPageLoader] = useState(true);
@@ -17,13 +35,13 @@ export default function AuthLayout() {
     }, 3000)
 
     // If dnsDetails arrives early → stop loader immediately
-    if (Object.keys(dnsConfigData || {}).length > 0) {
+    if (isSuccess && Object.keys(data || {}).length > 0) {
       clearTimeout(timer)
       setDisplayPageLoader(false)
     }
 
     return () => clearTimeout(timer)
-  }, [dnsConfigData])
+  }, [data])
   // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\ 
 
 
