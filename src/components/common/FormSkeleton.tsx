@@ -73,9 +73,9 @@ const FormSkeleton: FC = () => {
 
       <div className="min-h-screen flex items-center justify-center bg-white px-4">
         <div className="w-full max-w-md fade-up" style={{ animationDelay: "0.1s" }}>
-          <div className="p-8">
+          <div className="p-8!">
             {/* Title block */}
-            <div className="flex flex-col gap-2 mb-8">
+            <div className="flex flex-col gap-2 mb-8!">
               <Skeleton width="w-40" height="h-5" className="rounded-md" delay={0.1} />
               <Skeleton width="w-64" height="h-3" delay={0.15} />
             </div>
@@ -89,7 +89,7 @@ const FormSkeleton: FC = () => {
             </div>
 
             {/* Submit button */}
-            <div className="mt-6">
+            <div className="mt-6!">
               <Skeleton width="w-full" height="h-11" className="rounded-xl" delay={0.6} />
             </div>
           </div>
