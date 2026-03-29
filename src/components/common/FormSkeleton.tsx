@@ -35,96 +35,73 @@ const shimmerStyle = `
   }
 `;
 
-// ✅ Skeleton Props
 interface SkeletonProps {
-    width?: string;
-    height?: string;
-    className?: string;
-    delay?: number;
+  width?: string;
+  height?: string;
+  className?: string;
+  delay?: number;
 }
 
 const Skeleton: FC<SkeletonProps> = ({
-    width = "w-full",
-    height = "h-4",
-    className = "",
-    delay = 0,
+  width = "w-full",
+  height = "h-4",
+  className = "",
+  delay = 0,
 }) => (
-    <div
-        className={`shimmer ${width} ${height} ${className}`}
-        style={{ animationDelay: `${delay}s` }}
-    />
+  <div
+    className={`shimmer ${width} ${height} ${className}`}
+    style={{ animationDelay: `${delay}s` }}
+  />
 );
 
-// ✅ Field Props
 interface FieldProps {
-    labelWidth?: string;
-    delay?: number;
+  labelWidth?: string;
+  delay?: number;
 }
 
-const Field: FC<FieldProps> = ({
-    labelWidth = "w-20",
-    delay = 0,
-}) => (
-    <div className="flex flex-col gap-2">
-        <Skeleton width={labelWidth} height="h-3" delay={delay} />
-        <Skeleton
-            width="w-full"
-            height="h-11"
-            className="rounded-lg"
-            delay={delay + 0.05}
-        />
-    </div>
+const Field: FC<FieldProps> = ({ labelWidth = "w-20", delay = 0 }) => (
+  <div className="flex flex-col gap-2">
+    <Skeleton width={labelWidth} height="h-3" delay={delay} />
+    <Skeleton width="w-full" height="h-11" className="rounded-lg" delay={delay + 0.05} />
+  </div>
 );
 
-// ✅ Main Component
 const FormSkeleton: FC = () => {
-    return (
-        <>
-            <style>{shimmerStyle}</style>
+  return (
+    <>
+      <style>{shimmerStyle}</style>
 
-            <div className="min-h-screen flex items-center justify-center bg-white px-4">
-                <div
-                    className="w-full max-w-md fade-up"
-                    style={{ animationDelay: "0.1s" }}
-                >
-                    {/* Card */}
-                    <div className="p-8 space-y-6">
-                        {/* Title */}
-                        <div className="space-y-2 pb-2">
-                            <Skeleton
-                                width="w-40"
-                                height="h-5"
-                                className="rounded-md"
-                                delay={0.1}
-                            />
-                            <Skeleton width="w-64" height="h-3" delay={0.15} />
-                        </div>
-
-                        {/* Fields */}
-                        <Field labelWidth="w-16" delay={0.2} />
-                        <Field labelWidth="w-24" delay={0.3} />
-                        <Field labelWidth="w-20" delay={0.4} />
-                        <Field labelWidth="w-28" delay={0.5} />
-
-                        {/* Submit button */}
-                        <div className="pt-2">
-                            <Skeleton
-                                width="w-full"
-                                height="h-11"
-                                className="rounded-xl"
-                                delay={0.6}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="mt-4 flex justify-center">
-                        <Skeleton width="w-48" height="h-3" delay={0.7} />
-                    </div>
-                </div>
+      <div className="min-h-screen flex items-center justify-center bg-white px-4">
+        <div className="w-full max-w-md fade-up" style={{ animationDelay: "0.1s" }}>
+          <div className="p-8">
+            {/* Title block */}
+            <div className="flex flex-col gap-2 mb-8">
+              <Skeleton width="w-40" height="h-5" className="rounded-md" delay={0.1} />
+              <Skeleton width="w-64" height="h-3" delay={0.15} />
             </div>
-        </>
-    );
+
+            {/* Fields — all in one flex column with uniform gap */}
+            <div className="flex flex-col gap-5">
+              <Field labelWidth="w-16" delay={0.2} />
+              <Field labelWidth="w-24" delay={0.3} />
+              <Field labelWidth="w-20" delay={0.4} />
+              <Field labelWidth="w-28" delay={0.5} />
+            </div>
+
+            {/* Submit button */}
+            <div className="mt-6">
+              <Skeleton width="w-full" height="h-11" className="rounded-xl" delay={0.6} />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="mt-4 flex justify-center">
+            <Skeleton width="w-48" height="h-3" delay={0.7} />
+          </div>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default FormSkeleton;

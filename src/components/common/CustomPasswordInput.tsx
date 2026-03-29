@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { EyeOff, Eye } from "lucide-react";
 import validatePassword, { type validatePasswordType } from '@/utils/validatePassword';
 import checkPasswordStrength, { type passwordStrengthType } from "../../utils/checkPasswordStrength"
-import PasswordValidationRules from '../PasswordValidationRules';
+import PasswordValidationRules from './PasswordValidationRules';
 
 interface InputPropsTypes extends InputHTMLAttributes<HTMLInputElement> {
     id: string,
