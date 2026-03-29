@@ -22,14 +22,11 @@ const headerValidations = (req: Request, res: Response, next: NextFunction): Res
     }
     // Extract access token
     const authorizationHeaderToken: string = authorizationHeader.split(" ")[1] as string;
-    // Check if authorization header matches the signed access tooken in cookie
-    const unsignedAuthorizationHeaderToken: string | boolean = cookieParser.signedCookie(authorizationHeaderToken, process.env.COOKIE_SECRET_KEY || "jsev4jdls6sb15h2n5lujfj8b8m8sz5gv1f2d4eg1hfs")
-    // console.log(unsignedAuthorizationHeaderToken);
-    if (unsignedAuthorizationHeaderToken && (unsignedAuthorizationHeaderToken !== req.signedCookies?.accessToken && req.session?.sessiondata?.accessToken)) {
+    if (authorizationHeaderToken && (authorizationHeaderToken !== req.session?.sessiondata?.accessToken)) {
         return res.status(400).json({ status: "UNAUTHORIZED", message: "Invalid authorization token" });
     }
     // Extract token value of authorization header access token
-    const jwtTokenVerificationResult1: successResponseJson = extractJwtTokenValue(unsignedAuthorizationHeaderToken as string);
+    const jwtTokenVerificationResult1: successResponseJson = extractJwtTokenValue(authorizationHeaderToken as string);
     if (jwtTokenVerificationResult1.status !== "SUCCESS") {
         return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to extract JWT token value from authorization header" });
     }
@@ -47,8 +44,8 @@ const headerValidations = (req: Request, res: Response, next: NextFunction): Res
     // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
 
     // Skip user existance check for selcted pathes
-    const excludedPaths: string[] = ["/api/v1/user/signUp"];
-    if (excludedPaths.includes(req.originalUrl)) {
+    const excludedPaths2: string[] = ["/api/v1/user/signUp"];
+    if (excludedPaths2.includes(req.originalUrl)) {
         return next();
     }
     else {

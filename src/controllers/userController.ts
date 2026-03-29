@@ -14,6 +14,9 @@ import z from "zod";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
 import userLoginValidationSchema from "../validations/userLoginValidation.js";
 import type { sessiondata } from "../types/sessionTypes.js";
+import setResponseCookie from "../utils/setResponseCookie.js";
+import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
+import generateJwtToken from "../utils/generateJwtToken.js";
 
 // ------------------------------ FUNCTION TO SET USERCONTROLLER HEADERS ------------------------------ \\
 const userControllerHeader = (req: Request) => {
@@ -248,13 +251,37 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         // Update sessiondata with userId
         req.session.sessiondata = {
             ...req.session.sessiondata,
-            userId: updatedUserDetails._id.toString()
+            userId: updatedUserDetails._id.toString(),
+            email: updatedUserDetails.email
         };
 
         // Update the session validity
         req.session.valid = true;
 
         console.log("Session data after login: ", req.session);
+
+        // Extract token value of sessiondata access token
+        const jwtTokenVerificationResult: successResponseJson = extractJwtTokenValue(req.session?.sessiondata?.accessToken as string);
+        if (jwtTokenVerificationResult.status !== "SUCCESS") {
+            return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to extract JWT token value from sessiondata access token" });
+        }
+        const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
+
+        // Create Auth Token
+        const jwtAuthToken = generateJwtToken({ accessToken: accessToken, role: "user"}, "12m", accessToken);
+        // Set Auth Token Cookie
+        const setResponseAuthCookieResult: successResponseJson = setResponseCookie(res, "authToken", jwtAuthToken, 1000 * 60 * 12);
+        if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
+            return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
+        }
+
+        // Create Auth Token
+        const jwtRefreshToken = generateJwtToken({ accessToken: accessToken, role: "user"}, "30m", accessToken);
+        // Set Refresh Token Cookie
+        const setResponseRefreshCookieResult: successResponseJson = setResponseCookie(res, "refreshToken", jwtRefreshToken, 1000 * 60 * 30);
+        if (setResponseRefreshCookieResult.status.toUpperCase() !== "SUCCESS") {
+            return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
+        }
 
         return res.status(200).json({ status: "SUCCESS", message: "User login successfull", data: updatedUserDetails });
     }
@@ -263,3 +290,6 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
+export const check = async (req: any, res: any) => {
+    return res.status(200).json({ status: "SUCCESS", message: "User login successfull"});
+}

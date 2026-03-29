@@ -24,6 +24,7 @@ export type sessiondata = {
     requestXApiKey: string;
     accessToken: string;
     userId?: string;
+    email?: string;
 }
 
 // User Type Value TYpes

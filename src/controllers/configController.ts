@@ -14,6 +14,7 @@ import { dnsConfigCache, type LRUCachedData } from '../utils/lruCache.js';
 import checkStringParams from '../utils/checkStringParams.js';
 import checkStringQueryParams from '../utils/checkStringQueryParams.js';
 import type { portalConfigurationDataType } from '../types/apiResponseDataObjectType.js';
+import generateJwtToken from '../utils/generateJwtToken.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
@@ -52,19 +53,18 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
         }
 
         // Create Access Token
-        const setResponseCookieResult: successResponseJson = setResponseCookie(res, dnsData.domain_name);
-        if (setResponseCookieResult.status.toUpperCase() !== "SUCCESS") {
-            return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
-        }
-        const jwtAccessToken: string | undefined = (setResponseCookieResult.data as { jwtAuthToken?: string })?.jwtAuthToken;
-        if (!jwtAccessToken) {
-            return res.status(400).json({status: "INTERNAL_SERVER_ERROR", message: "Failed to generate access token"})
-        }
+        const jwtToken = generateJwtToken(dnsData.domain_name);
+
+        // Set Cookie
+        // const setResponseCookieResult: successResponseJson = setResponseCookie(res, "token", jwtToken);
+        // if (setResponseCookieResult.status.toUpperCase() !== "SUCCESS") {
+        //     return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
+        // }
 
         // Create response data
         const responseDnsData = {
             ...dnsData, 
-            accessToken: jwtAccessToken
+            accessToken: jwtToken
         }
 
         // Set DNS configuration data in DNS configuration cache
@@ -83,7 +83,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             programId: dnsData.program_id,
             clientId: dnsData.client_id,
             requestXApiKey: dnsData.x_api_key,
-            accessToken: jwtAccessToken || ""
+            accessToken: jwtToken || ""
         };
 
         // console.log("Session data: ", req.session);

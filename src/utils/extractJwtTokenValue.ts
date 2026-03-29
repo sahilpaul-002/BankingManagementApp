@@ -9,7 +9,7 @@ const jswtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a
 const extractJwtTokenValue = (token: string): successResponseJson => {
     try {
         const decodedToken: jwt.JwtPayload = jwt.verify(token, jswtSecretKey) as object;
-        return {status: "SUCCESS", message: "JWT token valid and data extracted.", data: {jwtTokenValue: decodedToken?.jwtTokenValue}};
+        return {status: "SUCCESS", message: "JWT token valid and data extracted.", data: {jwtTokenValue: decodedToken}};
     } catch (error) {
         throw new Error("Invalid JWT token");
     }
