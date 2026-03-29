@@ -1,0 +1,127 @@
+import mongoose, { Schema, Types } from "mongoose";
+import { userBankDetailsModel as user_bank_details } from "./user_bank_details.js";
+import { userAddressModel as user_addresses } from "./user_addresses.js";
+import { type userDetailsSchema } from "../types/schemaTypes.js";
+
+const userDetailsSchema = new Schema<userDetailsSchema>({
+    full_name: {
+        type: String,
+        required: true,
+        trim: true,
+        index: true
+    },
+    agent_code: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    subagent_code: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    program_id: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    business_id: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    client_id: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    email: {
+        type: String,
+        required: true,
+        lowercase: true,
+        trim: true,
+        index: true,
+        unique: true
+    },
+    password: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    mobile_country_code: {
+        type: String,
+        required: true
+    },
+    mobile_country_name: {
+        type: String,
+        required: true
+    },
+    phone_number: {
+        type: String,
+        required: true,
+        index: true
+    },
+    date_of_birth: {
+        type: Date,
+        required: true
+    },
+    gender: {
+        type: String,
+        enum: ["MALE", "FEMALE", "OTHER"],
+        required: true
+    },
+    kyc_status: {
+        type: String,
+        enum: ["PENDING", "VERIFIED", "REJECTED"],
+        default: "PENDING",
+    },
+    is_admin: {
+        type: String,
+        enum: ["Y", "N"],
+        default: "N"
+    },
+    is_master_admin: {
+        type: String,
+        enum: ["Y", "N"],
+        default: "N"
+    },
+    risk_category: {
+        type: String,
+        enum: ["LOW", "MEDIUM", "HIGH"],
+        default: "LOW"
+    },
+    wallet_id: {
+        type: String,
+        default: null
+    },
+    status: {
+        type: String,
+        enum: ["ACTIVE", "DISABLED", "BLOCKED"],
+        default: "DISABLED"
+    },
+    is_active: {
+        type: Boolean,
+        default: false
+    },
+    is_email_verified: {
+        type: Boolean,
+        default: false
+    },
+    is_phone_verified: {
+        type: Boolean,
+        default: false
+    },
+    is_2fa_enabled: {
+        type: String,
+        enum: ["AUTHENTICATOR", "EMAIL", "SMS", "DISABLED"],
+        default: null
+    },
+    last_login_at: {
+        type: Date
+    }
+}, { timestamps: true, minimize: false }
+);
+
+const userDetailsModel = mongoose.model<userDetailsSchema>("UserDetails", userDetailsSchema, "user_details");
+
+export {userDetailsModel};
