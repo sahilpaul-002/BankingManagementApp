@@ -1,9 +1,32 @@
+<<<<<<< Updated upstream
 import React from 'react'
 import BrandingComponent from '../components/auth/BrandingComponent';
 import { Outlet } from 'react-router';
 
 export default function AuthPage() {
 
+=======
+import React, { Activity, useEffect } from 'react'
+import BrandingComponent from '../components/auth/BrandingComponent';
+import { data, Outlet } from 'react-router';
+import SignInPage from '@/components/auth/SignInPage';
+import { useGetDnsConfigQuery, useLazyGetDnsConfigQuery } from '@/redux/features/config/configApi';
+import FormSkeleton from "../components/common/FormSkeleton";
+
+export default function AuthPage() {
+
+    // Dns Config Query
+    const { data, isLoading, isSuccess, error } = useGetDnsConfigQuery({
+        domainName: 'business.banking-management.com',
+    })
+    useEffect(() => {
+        if (isSuccess) {
+            console.log(data);
+            console.log(error);
+        }
+    }, [data, error])
+
+>>>>>>> Stashed changes
     // Get current year for footer
     const currentYear = new Date().getFullYear();
     const dnsDetails: { dashboard_name?: string } = {}
@@ -16,11 +39,26 @@ export default function AuthPage() {
             </div> */}
 
             {/* Main Content */}
+<<<<<<< Updated upstream
             <div className="authPage-mainContent w-full h-full flex justify-center items-center relative">
                 <BrandingComponent />
                 
                 <div className="authPage-mainContent-authPages-wrapper bg-[var(--color-800)] w-[100vw] lg:w-[56vw] h-[100vh] lg:rounded-l-4xl p-4! absolute top-0 right-0 z-90">
                     <Outlet />
+=======
+            <div className="authPage-mainContent w-full min-h-screen flex justify-center items-start">
+                <div className="authPage-mainContent-brnadingContainer-wrapper w-[50vw] min-h-screen hidden lg:flex">
+                    <BrandingComponent />
+                </div>
+
+                <div className="authPage-mainContent-authPages-wrapper bg-[var(--color-800)] w-screen lg:w-[50vw] min-h-screen lg:rounded-l-4xl pt-4! z-10">
+                    <Activity mode={!isSuccess ? "visible" : "hidden"}>
+                        <FormSkeleton />
+                    </Activity>
+                    <Activity mode={isSuccess ? "visible" : "hidden"}>
+                        <Outlet />
+                    </Activity>
+>>>>>>> Stashed changes
                 </div>
             </div>
 
