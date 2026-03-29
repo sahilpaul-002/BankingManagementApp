@@ -1,5 +1,5 @@
 import { LRUCache } from 'lru-cache'
-import type { portalConfigurationSchema } from '../types/schemaTypes.js';
+import type { portalConfigurationDataType } from '../types/apiResponseDataObjectType.js';
 
 export type LRUCachedData = {
     ttl: number;
@@ -49,4 +49,4 @@ const options = {
     updateTTLOnHas: false,
 }
 
-export const dnsConfigCache: LRUCache<string, portalConfigurationSchema> = new LRUCache(options)
+export const dnsConfigCache: LRUCache<string, portalConfigurationDataType> = new LRUCache(options)

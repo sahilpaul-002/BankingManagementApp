@@ -24,7 +24,7 @@ const headerValidations = (req: Request, res: Response, next: NextFunction): Res
     const authorizationHeaderToken: string = authorizationHeader.split(" ")[1] as string;
     // Check if authorization header matches the signed access tooken in cookie
     const unsignedAuthorizationHeaderToken: string | boolean = cookieParser.signedCookie(authorizationHeaderToken, process.env.COOKIE_SECRET_KEY || "jsev4jdls6sb15h2n5lujfj8b8m8sz5gv1f2d4eg1hfs")
-    console.log(unsignedAuthorizationHeaderToken);
+    // console.log(unsignedAuthorizationHeaderToken);
     if (unsignedAuthorizationHeaderToken && (unsignedAuthorizationHeaderToken !== req.signedCookies?.accessToken && req.session?.sessiondata?.accessToken)) {
         return res.status(400).json({ status: "UNAUTHORIZED", message: "Invalid authorization token" });
     }

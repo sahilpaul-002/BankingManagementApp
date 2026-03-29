@@ -11,6 +11,9 @@ import { getAsymmetricKeyPair } from '../utils/asymmetricEncryptionDecryption.js
 import listCountryMobileCodes from '../utils/listCountryMobileCodes.js';
 import setResponseCookie from '../utils/setResponseCookie.js';
 import { dnsConfigCache, type LRUCachedData } from '../utils/lruCache.js';
+import checkStringParams from '../utils/checkStringParams.js';
+import checkStringQueryParams from '../utils/checkStringQueryParams.js';
+import type { portalConfigurationDataType } from '../types/apiResponseDataObjectType.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
@@ -27,14 +30,14 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             return res.status(400).json({ status: "INVALID_HEADER", message: "'x-api-key MISSING OR NOT STRING" });
         }
         // Validate domain name in request body
-        const domainName: string | null = checkStringBody(req, "domainName");
+        const domainName: string | null = checkStringQueryParams(req, "domainName");
 
         if (!domainName) {
             return res.status(400).json({ status: "INVALID_REQUEST_BODY_PARAMETER", message: "'domainName' MISSING OR NOT STRING" });
         }
 
         // Check cached DNS configuration data
-        const cachedDnsConfigData: portalConfigurationSchema | undefined = dnsConfigCache.get(domainName);
+        const cachedDnsConfigData: portalConfigurationDataType | undefined = dnsConfigCache.get(domainName);
         if (cachedDnsConfigData) {
             console.log("DNS configuration data fetched from cache", cachedDnsConfigData);
             return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: cachedDnsConfigData });
@@ -48,13 +51,6 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             return res.status(404).json({ status: "NOT_FOUND", message: "DNS configuration not found" });
         }
 
-        // Set DNS configuration data in DNS configuration cache
-        dnsConfigCache.set(domainName, dnsData);
-
-        // INITIATE SESSION
-        req.session.initiated = true;
-        req.session.lastActivity = Date.now();
-
         // Create Access Token
         const setResponseCookieResult: successResponseJson = setResponseCookie(res, dnsData.domain_name);
         if (setResponseCookieResult.status.toUpperCase() !== "SUCCESS") {
@@ -65,6 +61,19 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             return res.status(400).json({status: "INTERNAL_SERVER_ERROR", message: "Failed to generate access token"})
         }
 
+        // Create response data
+        const responseDnsData = {
+            ...dnsData, 
+            accessToken: jwtAccessToken
+        }
+
+        // Set DNS configuration data in DNS configuration cache
+        dnsConfigCache.set(domainName, responseDnsData);
+
+        // INITIATE SESSION
+        req.session.initiated = true;
+        req.session.lastActivity = Date.now();
+        
         // Set DNS data in session
         req.session.sessiondata = {
             domainName: dnsData.domain_name,
@@ -79,7 +88,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
 
         // console.log("Session data: ", req.session);
 
-        return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: dnsData });
+        return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: responseDnsData });
     }
     catch (error) {
         errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET DNS CONFIG FACING ISSUE.");

@@ -39,6 +39,7 @@ app.use(express.text());
 
 // CORS Middleware
 const corsOptions: cors.CorsOptions = {
+    origin: true,
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false,
     optionsSuccessStatus: 204,
