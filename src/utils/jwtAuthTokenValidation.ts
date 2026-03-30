@@ -1,77 +1,98 @@
-import { Request, Response, NextFunction } from "express"
-import { failedResponseJson } from "../types/responseJson.js"
+import jwt, { type JwtPayload } from "jsonwebtoken"
+import type { Request, Response, NextFunction } from "express"
+import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import verifyJwtAuth from "../utils/verifyJwtAuth.js"
-import type { sessiondata } from "../types/sessionTypes.js"
+import extractJwtTokenValue from "./extractJwtTokenValue.js"
+import setResponseCookie from "./setResponseCookie.js"
+
+interface jwtAuthDataType extends JwtPayload {
+  accessToken: string
+  userType: string
+}
 
 const jwtAuthTokenValidation = async (
-  req: Request & { session: sessiondata },
+  req: Request,
   res: Response,
   next: NextFunction
-): Promise<failedResponseJson | void> => {
-  const jwtAuthToken = req.signedCookies?.authToken as string | undefined
-  const jwtRefreshToken = req.signedCookies?.refreshToken as string | undefined
-  const sessionEmail = req.session?.email
-  const sessionAccessToken = req.session?.sessiondata?.accessToken
-
-  if (!jwtAuthToken || !jwtRefreshToken) {
-    res.status(400).json({
-      status: "BAD_REQUEST",
-      message: "Unauthorized session",
-      error: "Missing authentication token"
-    })
-    return
-  }
+): Promise<Response<failedResponseJson> | void> => {
+  const jwtAuthToken: string = req.signedCookies?.authToken
+  const jwtRefreshToken: string = req.signedCookies?.refreshToken
+  const sessionAccessToken: string | undefined = req.session?.sessiondata?.accessToken
+  const sessionUserType: string | undefined = req.session?.userType
+  const sessionClientId: string | undefined = req.session?.sessiondata?.clientId;
+  const sessionBusinessId: string | undefined = req.session?.sessiondata?.businessId;
 
   try {
+    if (!sessionAccessToken || !sessionUserType || !sessionClientId || !sessionBusinessId) {
+      return res.status(400).json({ status: "UNAUTHENTICATED", message: "Session not authenticated" })
+    }
+
+    // Extract token value of sessiondata access token
+    const jwtTokenVerificationResult: successResponseJson = extractJwtTokenValue(sessionAccessToken as string);
+    if (jwtTokenVerificationResult.status !== "SUCCESS") {
+      return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to extract JWT token value from sessiondata access token" });
+    }
+    const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
+    const jwtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
+
+
+    if (!jwtAuthToken || !jwtRefreshToken) {
+      res.status(400).json({
+        status: "UNAUTHORIZED",
+        message: "Missing authentication token"
+      })
+      return
+    }
+
     const jwtAuthVerifyResponse = await verifyJwtAuth(
       jwtAuthToken,
       jwtRefreshToken,
-      sessionEmail,
-      sessionAccessToken
+      accessToken,
+      sessionUserType,
+      jwtSecretKey
     )
 
-    if (jwtAuthVerifyResponse?.status?.toUpperCase() === "NEW_TOKEN") {
-      const authToken = jwtAuthVerifyResponse.jwtAuthToken
+    if (jwtAuthVerifyResponse?.status === "NEW_TOKEN") {
+      const authToken: string = jwtAuthVerifyResponse?.jwtAuthToken;
 
-      res.cookie("authToken", authToken, {
-        httpOnly: true,
-        secure:
-          (process.env.NODE_ENV ?? "").toUpperCase() === "DEVELOPMENT"
-            ? false
-            : true,
-        sameSite:
-          (process.env.NODE_ENV ?? "").toUpperCase() === "DEVELOPMENT"
-            ? "lax"
-            : "none",
-        signed: true,
-        maxAge: 14 * 60 * 1000
-      })
+      // Set Auth Token Cookie
+      const setResponseAuthCookieResult: successResponseJson = setResponseCookie(res, "authToken", authToken, 1000 * 60 * 12);
+      if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
+        return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
+      }
+
+      // res.cookie("authToken", authToken, {
+      //   httpOnly: true,
+      //   secure:
+      //     (process.env.NODE_ENV ?? "").toUpperCase() === "DEVELOPMENT"
+      //       ? false
+      //       : true,
+      //   sameSite:
+      //     (process.env.NODE_ENV ?? "").toUpperCase() === "DEVELOPMENT"
+      //       ? "lax"
+      //       : "none",
+      //   signed: true,
+      //   maxAge: 12 * 60 * 1000
+      // })
 
       next()
       return
     }
 
-    if (jwtAuthVerifyResponse?.status?.toUpperCase() !== "SUCCESS") {
+    if (jwtAuthVerifyResponse?.status !== "SUCCESS") {
       res.status(400).json({
-        status: "BAD_REQUEST",
-        message: "Unauthorized session",
-        error: "Error occurred while verifying authentication token"
+        status: "UNAUTHORIZED",
+        message: "Error occurred while verifying authentication token"
       })
       return
     }
 
-    const { email, accessToken } = jwtAuthVerifyResponse.jwtAuthData || {}
+    const jwtAuthData = jwtAuthVerifyResponse.jwtAuthData
 
-    if (
-      !email ||
-      email !== sessionEmail ||
-      !accessToken ||
-      accessToken !== sessionAccessToken
-    ) {
+    if (jwtAuthData?.accessToken !== accessToken || jwtAuthData?.userType !== sessionUserType) {
       res.status(400).json({
         status: "UNAUTHORIZED",
-        message: "Unauthorized session",
-        error: "Invalid or tampered authentication token"
+        message: "Invalid or tampered authentication token",
       })
       return
     }

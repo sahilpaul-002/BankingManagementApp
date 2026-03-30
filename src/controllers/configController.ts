@@ -53,7 +53,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
         }
 
         // Create Access Token
-        const jwtToken = generateJwtToken(dnsData.domain_name);
+        const jwtAccessToken = generateJwtToken(dnsData.domain_name);
 
         // Set Cookie
         // const setResponseCookieResult: successResponseJson = setResponseCookie(res, "token", jwtToken);
@@ -64,7 +64,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
         // Create response data
         const responseDnsData = {
             ...dnsData, 
-            accessToken: jwtToken
+            accessToken: jwtAccessToken
         }
 
         // Set DNS configuration data in DNS configuration cache
@@ -83,7 +83,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             programId: dnsData.program_id,
             clientId: dnsData.client_id,
             requestXApiKey: dnsData.x_api_key,
-            accessToken: jwtToken || ""
+            accessToken: jwtAccessToken || ""
         };
 
         // console.log("Session data: ", req.session);

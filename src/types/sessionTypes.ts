@@ -23,8 +23,6 @@ export type sessiondata = {
     clientId: string;
     requestXApiKey: string;
     accessToken: string;
-    userId?: string;
-    email?: string;
 }
 
 // User Type Value TYpes
@@ -39,6 +37,7 @@ export interface SessionItems {
     privateKey: string;
     encryptionKey: string,
     userEmail: string;
+    userId?: string;
     passwordHash: string;
     userType: userType;
     sessiondata: sessiondata;

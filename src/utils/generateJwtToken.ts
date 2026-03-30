@@ -24,12 +24,18 @@ import dotenv from "dotenv"
 
 dotenv.config()
 
-type TokenWithRole = {
+type authTokenType = {
     accessToken: string
-    role: string
+    userType: string
 }
 
-type JwtPayloadType = string | TokenWithRole
+type refreshTokenType = {
+    accessToken: string
+    clientId: string
+    businessId: string
+}
+
+type JwtPayloadType = string | authTokenType | refreshTokenType
 
 const generateJwtToken = (
     data: JwtPayloadType,

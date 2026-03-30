@@ -42,7 +42,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
             // Get user from DB
             const checkUserExistInDB = async (req: Request): Promise<userDetailsSchema | null> => {
-                const userExistResponse: userDetailsSchema | null = await user_details.findById(req.session.userEmail);
+                const userExistResponse: userDetailsSchema | null = await user_details.findById(req.session.userId);
                 return userExistResponse;
             }
             const userDetails: userDetailsSchema | null = await checkUserExistInDB(req);
@@ -74,17 +74,17 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
                 }
             }
 
-            // Check user activated
+            // // Check user activated
             if (!userDetails?.is_active) {
                 const destroySessionResponse = await destroySession(req, res);
                 return res.status(400).json({ status: "UNAUTHORIZED", message: "User is not activated" });
             }
 
-            // Check user status
-            if (["DISABLED", "BLOCKED"].includes(userDetails?.status?.toUpperCase() as string)) {
-                const destroySessionResponse = await destroySession(req, res);
-                return res.status(400).json({ status: "UNAUTHORIZED", message: "User account is disabled or blocked" });
-            }
+            // // Check user status
+            // if (["DISABLED", "BLOCKED"].includes(userDetails?.status?.toUpperCase() as string)) {
+            //     const destroySessionResponse = await destroySession(req, res);
+            //     return res.status(400).json({ status: "UNAUTHORIZED", message: "User account is disabled or blocked" });
+            // }
 
             // Check user session version
             // if (req.session.sessionVersion !== user.sessionVersion) {

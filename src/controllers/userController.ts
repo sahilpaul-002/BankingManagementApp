@@ -225,7 +225,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         }
 
         // Check if session is already valid, if yes then delete the old session and create a new session
-        if (req.session.valid && req.session.sessiondata?.userId === updatedUserDetails._id.toString()) {
+        if (req.session.valid && req.session.userId === updatedUserDetails._id.toString()) {
             // Get sessiondata from session before destroying the session
             const sessionData: sessiondata = req.session.sessiondata;
 
@@ -248,12 +248,10 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             req.session.sessiondata = sessionData;
         }
 
-        // Update sessiondata with userId
-        req.session.sessiondata = {
-            ...req.session.sessiondata,
-            userId: updatedUserDetails._id.toString(),
-            email: updatedUserDetails.email
-        };
+        // Update session with userId and email
+        req.session.userEmail = updatedUserDetails.email;
+        req.session.userId = updatedUserDetails._id.toString();
+        req.session.userType = updatedUserDetails.is_master_admin === "Y" ? "SUPERADMIN" : updatedUserDetails.is_admin === "Y" ? "ADMIN" : "USER";
 
         // Update the session validity
         req.session.valid = true;
@@ -266,9 +264,10 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to extract JWT token value from sessiondata access token" });
         }
         const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
+        const jwtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
 
         // Create Auth Token
-        const jwtAuthToken = generateJwtToken({ accessToken: accessToken, role: "user"}, "12m", accessToken);
+        const jwtAuthToken = generateJwtToken({ accessToken: accessToken, userType: req.session.userType }, "12m", jwtSecretKey);
         // Set Auth Token Cookie
         const setResponseAuthCookieResult: successResponseJson = setResponseCookie(res, "authToken", jwtAuthToken, 1000 * 60 * 12);
         if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
@@ -276,7 +275,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         }
 
         // Create Auth Token
-        const jwtRefreshToken = generateJwtToken({ accessToken: accessToken, role: "user"}, "30m", accessToken);
+        const jwtRefreshToken = generateJwtToken({ accessToken: accessToken, clientId: req.session.sessiondata.clientId, businessId: req.session.sessiondata.businessId }, "30m", jwtSecretKey);
         // Set Refresh Token Cookie
         const setResponseRefreshCookieResult: successResponseJson = setResponseCookie(res, "refreshToken", jwtRefreshToken, 1000 * 60 * 30);
         if (setResponseRefreshCookieResult.status.toUpperCase() !== "SUCCESS") {
@@ -291,5 +290,5 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
 export const check = async (req: any, res: any) => {
-    return res.status(200).json({ status: "SUCCESS", message: "User login successfull"});
+    return res.status(200).json({ status: "SUCCESS", message: "User login successfull" });
 }
