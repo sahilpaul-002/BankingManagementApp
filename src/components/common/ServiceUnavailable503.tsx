@@ -3,7 +3,6 @@ import CustomButton from "./CustomButton";
 import { useGetDnsConfigQuery, useLazyGetDnsConfigQuery } from "@/redux/features/config/configApi";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
-import PropagateLoaderComponent from "./loaders/PropogateLoaderComponent";
 
 type PulseRing = {
     delay: string;
@@ -170,12 +169,6 @@ export default function ServiceUnavailable503() {
                 <div className="serviceUnavailable503-button-wrapper w-full h-fit flex justify-center items-center">
                     <div className="serviceUnavailablePage-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]" onClick={() => onTryAgainClick()}>
                         <CustomButton id={"serviceUnavailablePage-button"} label={"Try Again"} showButtonLoader={showButtonLoader}/>
-                        {/* <Activity mode={!showButtonLoader ? "visible" : "hidden"}>
-                            <CustomButton id={"serviceUnavailablePage-button"} label={"Try Again"} />
-                        </Activity>
-                        <Activity mode={showButtonLoader ? "visible" : "hidden"}>
-                            <PropagateLoaderComponent />
-                        </Activity> */}
                     </div>
                 </div>
 

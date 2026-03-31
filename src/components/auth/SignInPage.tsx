@@ -86,20 +86,11 @@ export default function SignInPage() {
             </div>
 
             {/* Button */}
-            <Activity mode={!isLoading ? "visible" : "hidden"}>
-              <div className="signinPage-signinForm-button-wrapper w-full h-fit flex justify-center items-center">
-                <div className="signinPage-signinForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                  <CustomButton id={"signPage-signinForm-button"} label={"Sign In"} />
-                </div>
+            <div className="signinPage-signinForm-button-wrapper w-full h-fit flex justify-center items-center">
+              <div className="signinPage-signinForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
+                <CustomButton id={"signPage-signinForm-button"} label={"Sign In"} showButtonLoader={isLoading} />
               </div>
-            </Activity>
-            <Activity mode={isLoading ? "visible" : "hidden"}>
-              <div className="signinPage-signinForm-button-wrapper w-full h-fit flex justify-center items-center">
-                <div className="signinPage-signinForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                  Loading
-                </div>
-              </div>
-            </Activity>
+            </div>
 
             {/* Create New Account */}
             <div className="signinPage-signinForm-createNewAccount-container w-full h-fit flex justify-center items-center">
