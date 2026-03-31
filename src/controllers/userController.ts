@@ -13,7 +13,7 @@ import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
 import userLoginValidationSchema from "../validations/userLoginValidation.js";
-import type { sessiondata } from "../types/sessionTypes.js";
+import type { sessionData } from "../types/sessionTypes.js";
 import setResponseCookie from "../utils/setResponseCookie.js";
 import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
 import generateJwtToken from "../utils/generateJwtToken.js";
@@ -227,7 +227,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         // Check if session is already valid, if yes then delete the old session and create a new session
         if (req.session.valid && req.session.userId === updatedUserDetails._id.toString()) {
             // Get sessiondata from session before destroying the session
-            const sessionData: sessiondata = req.session.sessiondata;
+            const sessionData: sessionData = req.session.sessiondata;
 
             // Regenerate a new session after destroying older session
             await new Promise<void>((resolve, reject) => {
@@ -275,7 +275,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         }
 
         // Create Auth Token
-        const jwtRefreshToken = generateJwtToken({ accessToken: accessToken, clientId: req.session.sessiondata.clientId, businessId: req.session.sessiondata.businessId }, "30m", jwtSecretKey);
+        const jwtRefreshToken = generateJwtToken({ accessToken: accessToken, clientId: req?.session?.sessiondata?.clientId as string, businessId: req?.session?.sessiondata?.businessId as string }, "30m", jwtSecretKey);
         // Set Refresh Token Cookie
         const setResponseRefreshCookieResult: successResponseJson = setResponseCookie(res, "refreshToken", jwtRefreshToken, 1000 * 60 * 30);
         if (setResponseRefreshCookieResult.status.toUpperCase() !== "SUCCESS") {

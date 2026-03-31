@@ -24,6 +24,7 @@ import userRoutes from "../routes/userRoutes.js";
 import headerTypeValidation from "../middlewares/headerTypeValidation.js";
 import sessionValidation from "../middlewares/sessionValidation.js";
 import headerValidations from "../middlewares/headerValidations.js";
+import checkRequestSource from "../middlewares/checkRequestSource.js";
 
 dotenv.config();
 
@@ -93,6 +94,9 @@ app.use(checkOriginExist)
 // Check Portal Header Exist Middleware
 app.use(portalHeaderCheck);
 
+// REQUEST SOURCE CHECK
+app.use(checkRequestSource);
+
 // Dynamic Session Middleware
 app.use(dynamicSession())
 
@@ -106,7 +110,7 @@ app.use(sessionExistance);
 // ---------------------------------------- Routes ---------------------------------------- \\
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
-app.use("/api/v1/user", sessionValidation, headerTypeValidation, headerValidations, checkTimeout(5), userRoutes);
+app.use("/api/v1/user", headerTypeValidation, headerValidations, checkTimeout(5), userRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 
