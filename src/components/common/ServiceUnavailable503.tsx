@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { Activity, useEffect, useState } from "react";
 import CustomButton from "./CustomButton";
 import { useGetDnsConfigQuery, useLazyGetDnsConfigQuery } from "@/redux/features/config/configApi";
 import { useNavigate } from "react-router";
+import { toast } from "react-toastify";
+import PropagateLoaderComponent from "./loaders/PropogateLoaderComponent";
 
 type PulseRing = {
     delay: string;
@@ -22,23 +24,33 @@ export default function ServiceUnavailable503() {
     // Configure useNavigate
     const navigate = useNavigate();
 
-    // Dns Config Query
-    const [fetchDnsConfigQueryTrigger, { isSuccess, data, isError, error }] = useLazyGetDnsConfigQuery()
-    // Function to call dnsConfig api on try again click
-    const onTryAgainClick = (): void => {
-        fetchDnsConfigQueryTrigger({
-            domainName: 'business.banking-management.com'
-        });
+    // State to manage the button loader
+    const [showButtonLoader, setShowButtonLoader] = useState(false);
 
-        // Check Dns Config Status
-        if (isSuccess) {
-            console.log("Dns data: ", data);
+    // Dns Config Query
+    const [fetchDnsConfigQueryTrigger] = useLazyGetDnsConfigQuery()
+    // Function to manage tryAgain click action
+    const onTryAgainClick = async (): Promise<void> => {
+        try {
+            setShowButtonLoader(true);
+            const result = await fetchDnsConfigQueryTrigger({
+                domainName: 'business.banking-management.com'
+            }).unwrap();
+
+            if (result?.status?.toUpperCase() !== "SUCCESS") {
+                toast.error("Still service unavailable. Please try again later!");
+                console.error("Still service unavailable. Please try again later!");
+                return
+            }
             navigate("/");
+        } catch (err) {
+            toast.error("Still service unavailable. Please try again later!");
+            console.error(err);
         }
-        if (isError) {
-            console.error(error);
+        finally {
+            setShowButtonLoader(false);
         }
-    }
+    };
 
     // State to manage the animated dots in subheading
     const [dots, setDots] = useState<number>(0);
@@ -157,7 +169,13 @@ export default function ServiceUnavailable503() {
                 {/* Try Again Button */}
                 <div className="serviceUnavailable503-button-wrapper w-full h-fit flex justify-center items-center">
                     <div className="serviceUnavailablePage-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]" onClick={() => onTryAgainClick()}>
-                        <CustomButton id={"serviceUnavailablePage-button"} label={"Try Again"} />
+                        <CustomButton id={"serviceUnavailablePage-button"} label={"Try Again"} showButtonLoader={showButtonLoader}/>
+                        {/* <Activity mode={!showButtonLoader ? "visible" : "hidden"}>
+                            <CustomButton id={"serviceUnavailablePage-button"} label={"Try Again"} />
+                        </Activity>
+                        <Activity mode={showButtonLoader ? "visible" : "hidden"}>
+                            <PropagateLoaderComponent />
+                        </Activity> */}
                     </div>
                 </div>
 

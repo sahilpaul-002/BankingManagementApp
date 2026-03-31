@@ -50,7 +50,7 @@ export default function AuthLayout() {
       {/* Display Page Loader */}
       <Activity mode={displayPageLoader ? 'visible' : 'hidden'}>
         <div className="hourGlassLoader-wrapper w-full h-screen">
-          <HourGlassLoader primaryColor={'--color-200'} secondaryColor={'--color-400'} />
+          <HourGlassLoader primaryColor={'--color-200'} secondaryColor={'--color-400'} wrappperClassName={"bg-white/15 backdrop-blur-2xl fixed top-0 left-0 z-100"}/>
         </div>
       </Activity>
 
