@@ -2,6 +2,8 @@ import { CONFIG_URL } from '@/configs/constants'
 import { setDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
+const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
+
 const dnsBaseUrl = import.meta.env.VITE_DNS_BASE_URL
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
 
@@ -54,8 +56,7 @@ export const configApis = createApi({
             headers.set('Content-Type', 'application/json')
             return headers
         },
-        timeout: 5000,
-        // timeout: 1,
+        ...(ENVIRONMENT?.toUpperCase() === "PRODUCTION" && { timeout: 5000 }),
         credentials: "include"
     }),
 
