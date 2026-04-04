@@ -2,12 +2,6 @@ import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
 
 const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
-    // Skip portal header check for helper paths
-    // const excludedHelperPath: string = "/api/v1/helper";
-    // if (req.path.includes(excludedHelperPath)) {
-    //     return next();
-    // }
-
     // Skip portal header check for selcted pathes
     const excludedPaths: string[] = ["/api/v1/helper", "/api/v1/config/getMobileCountryCodes"];
     if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
