@@ -27,6 +27,7 @@ import headerValidations from "../middlewares/headerValidations.js";
 import checkRequestSource from "../middlewares/checkRequestSource.js";
 
 dotenv.config();
+const ENVIRONMENT: string = process.env.NODE_ENV || "production";
 
 // ---------------------------------------- Initialize Express Application --------------------------------------- \\
 const app: express.Application = express();
@@ -95,6 +96,9 @@ app.use(checkOriginExist)
 app.use(portalHeaderCheck);
 
 // REQUEST SOURCE CHECK
+// if (ENVIRONMENT?.toUpperCase() === "PRODUCTION") {
+//     app.use(checkRequestSource);
+// }
 app.use(checkRequestSource);
 
 // Dynamic Session Middleware

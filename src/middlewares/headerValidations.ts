@@ -45,7 +45,7 @@ const headerValidations = (req: Request, res: Response, next: NextFunction): Res
 
     // Skip user existance check for selcted pathes
     const excludedPaths2: string[] = ["/api/v1/user/signUp"];
-    if (excludedPaths2.includes(req.originalUrl)) {
+    if (excludedPaths2.some(path => req.path === path || req.path.startsWith(path + "/"))) {
         return next();
     }
     else {

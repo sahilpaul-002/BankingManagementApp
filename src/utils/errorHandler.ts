@@ -6,7 +6,7 @@ const errorHandler = (req: Request, res: Response, error: any, statusCode: numbe
     logger.error({
         message: error.message,
         stack: error.stack,
-        url: req.originalUrl,
+        url: req.path,
         method: req.method
     });
 

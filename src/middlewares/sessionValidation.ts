@@ -25,13 +25,13 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
     // Skip user existance check for selcted pathes
     const excludedPaths: string[] = ["/api/v1/user/signUp"];
-    if (excludedPaths.includes(req.originalUrl)) {
+    if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
         return next();
     }
     else {
         // Skip session validity check for selcted pathes
         const excludedPaths: string[] = ["/api/v1/user/login"];
-        if (excludedPaths.includes(req.originalUrl)) {
+        if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
         else {
