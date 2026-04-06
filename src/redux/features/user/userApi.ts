@@ -21,19 +21,6 @@ interface SigninResponse {
 }
 
 // ==============================
-// DYNAMIC AXIOS INSTANCE
-// ==============================
-const axiosInstance = createAxiosInstance(
-    'http://localhost:3000',
-    {
-        'portal': 'business',
-        'from-portal': 'false',
-        'Content-Type': 'application/json',
-    },
-    ENVIRONMENT
-)
-
-// ==============================
 // CUSTOM BASE QUERY USING AXIOS
 // ==============================
 const axiosBaseQuery = (): BaseQueryFn<
