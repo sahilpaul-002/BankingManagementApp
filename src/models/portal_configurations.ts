@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
-import type { portalConfigurationSchema } from "../types/schemaTypes.js";
+import type { portalConfigurationSchemaTypes } from "../types/schemaTypes.js";
 
-const portalConfigurationsSchema = new Schema<portalConfigurationSchema>({
+const portalConfigurationsSchema = new Schema<portalConfigurationSchemaTypes>({
     domain_name: {
         type: String,
         required: true,
@@ -142,6 +142,6 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchema>({
     },
 }, { minimize: false, timestamps: true });
 
-const portalConfigurationsModel = mongoose.model<portalConfigurationSchema>("PortalConfigurations", portalConfigurationsSchema, "portal_configurations");
+const portalConfigurationsModel = mongoose.model<portalConfigurationSchemaTypes>("PortalConfigurations", portalConfigurationsSchema, "portal_configurations");
 
 export { portalConfigurationsModel };

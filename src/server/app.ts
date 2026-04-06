@@ -95,17 +95,17 @@ app.use(checkOriginExist)
 // Check Portal Header Exist Middleware
 app.use(portalHeaderCheck);
 
-// REQUEST SOURCE CHECK
-// if (ENVIRONMENT?.toUpperCase() === "PRODUCTION") {
-//     app.use(checkRequestSource);
-// }
-app.use(checkRequestSource);
-
 // Dynamic Session Middleware
 app.use(dynamicSession())
 
 // Rate Limiter Middleware
 app.use(rateLimiter());
+
+// REQUEST SOURCE CHECK
+// if (ENVIRONMENT?.toUpperCase() === "PRODUCTION") {
+//     app.use(checkRequestSource);
+// }
+app.use(checkRequestSource);
 
 // Check session existance  middleware 
 app.use(sessionExistance);

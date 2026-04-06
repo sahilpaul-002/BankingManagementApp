@@ -3,11 +3,12 @@ import type { failedResponseJson, successResponseJson } from "../types/responseJ
 import { asymmetricDecryptionMsg } from "../utils/asymmetricEncryptionDecryption.js";
 import type { decryptionFailedJson, decryptionSuccessJson } from "../types/decryptionRespoonseTypes.js";
 import { userDetailsModel as user_details } from '../models/user_details.js';
+import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_details.js";
 import errorHandler from "../utils/errorHandler.js";
 import destroySession from "../utils/destroySession.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import mongoose from "mongoose";
-import type { userDetailsSchema } from "../types/schemaTypes.js";
+import type { userDetailsSchemaTypes, userMetaDetailsSchemaTypes } from "../types/schemaTypes.js";
 import userDetailsValidationSchema from "../validations/userDetailsValidation.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
@@ -17,6 +18,7 @@ import type { sessionData } from "../types/sessionTypes.js";
 import setResponseCookie from "../utils/setResponseCookie.js";
 import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
 import generateJwtToken from "../utils/generateJwtToken.js";
+import normalizeIp from "../utils/normalizeIp.js";
 
 // ------------------------------ FUNCTION TO SET USERCONTROLLER HEADERS ------------------------------ \\
 const userControllerHeader = (req: Request) => {
@@ -87,7 +89,7 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
 
         // Get user from DB
         const checkUserExistInDB = async (req: Request): Promise<boolean | null> => {
-            const userExistResponse: userDetailsSchema | null = await user_details.findOne({ email: reqBody.email });
+            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: reqBody.email });
             return userExistResponse !== null;
         }
         const userExistance: boolean | null = await checkUserExistInDB(req);
@@ -190,11 +192,11 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         }
 
         // Get user from DB
-        const checkUserExistInDB = async (req: Request): Promise<userDetailsSchema | null> => {
-            const userExistResponse: userDetailsSchema | null = await user_details.findOne({ email: reqBody.email });
+        const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
+            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: reqBody.email });
             return userExistResponse;
         }
-        const userDetails: userDetailsSchema | null = await checkUserExistInDB(req);
+        const userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB(req);
 
         // Check user exist in DB
         if (!userDetails) {
@@ -216,12 +218,39 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         }
 
         // Update user status in DB if not already activated
-        let updatedUserDetails: userDetailsSchema
+        let updatedUserDetails: userDetailsSchemaTypes
         if (userDetails?.is_active === false) {
-            updatedUserDetails = await user_details.findByIdAndUpdate(userDetails._id, { is_active: true, status: "ACTIVE" }, { new: true }) as userDetailsSchema;
+            updatedUserDetails = await user_details.findByIdAndUpdate(userDetails._id, { is_active: true, status: "ACTIVE" }, { new: true }) as userDetailsSchemaTypes;
         }
         else {
             updatedUserDetails = userDetails;
+        }
+
+        // Get the client IP address
+        const getClientIP = (req: Request): string => {
+            let ip =
+                (typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"].split(",")[0]?.trim() : undefined) ||
+                req.socket?.remoteAddress ||
+                req.connection?.remoteAddress ||
+                req.ip
+
+            return normalizeIp(ip) as string;
+        };
+        const clientIp = getClientIP(req)
+
+        // Get the device id from header
+        const deviceId = req.headers['x-device-id'];
+
+        // Insert user meta details
+        const userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
+            { user_id: updatedUserDetails._id},
+            { device_id: deviceId, ip_address: clientIp, userAgent: req.headers["user-agent"], login_at: new Date() },
+            { upsert: true, new: true }
+        )
+
+        // Check if meta user data updated
+        if (!userMetaDetailsDoc) {
+            return res.status(400).json({ status: "ERROR", message: "Failed to update user meta details" });
         }
 
         // Check if session is already valid, if yes then delete the old session and create a new session
@@ -255,6 +284,13 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
 
         // Update the session validity
         req.session.valid = true;
+
+        // Store client IP and device id in session meta
+        req.session.meta = {
+            ...req.session.meta,
+            clientIp: clientIp as string,
+            deviceId: deviceId as string,
+        }
 
         console.log("Session data after login: ", req.session);
 

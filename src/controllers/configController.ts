@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
-import type { portalConfigurationSchema } from '../types/schemaTypes.js';
+import type { portalConfigurationSchemaTypes } from '../types/schemaTypes.js';
 import { portalConfigurationsModel as portal_configurations } from "../models/portal_configurations.js";
 import checkMongoDbCollectionExist from '../utils/checkMongoDbCollectionExist.js';
 import checkStringHeader from '../utils/checkStringHeader.js';
@@ -15,6 +15,7 @@ import checkStringParams from '../utils/checkStringParams.js';
 import checkStringQueryParams from '../utils/checkStringQueryParams.js';
 import type { portalConfigurationDataType } from '../types/apiResponseDataObjectType.js';
 import generateJwtToken from '../utils/generateJwtToken.js';
+import normalizeIp from '../utils/normalizeIp.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
@@ -45,7 +46,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
         }
 
         // Fetch DNS configuration data from database
-        const dnsData: portalConfigurationSchema | null = await portal_configurations.findOne({ dns_x_api_key: xApiKey, domain_name: domainName }, { _id: 0, __v: 0, createdAt: 0, updatedAt: 0 }).lean();
+        const dnsData: portalConfigurationSchemaTypes | null = await portal_configurations.findOne({ dns_x_api_key: xApiKey, domain_name: domainName }, { _id: 0, __v: 0, createdAt: 0, updatedAt: 0 }).lean();
 
         // Cehck DNS Config Data
         if (!dnsData) {
@@ -63,7 +64,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
 
         // Create response data
         const responseDnsData = {
-            ...dnsData, 
+            ...dnsData,
             accessToken: jwtAccessToken
         }
 
@@ -73,7 +74,7 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
         // INITIATE SESSION
         req.session.initiated = true;
         req.session.lastActivity = Date.now();
-        
+
         // Set DNS data in session
         req.session.sessiondata = {
             domainName: dnsData.domain_name,
@@ -85,6 +86,28 @@ export const getDnsConfig = async (req: Request, res: Response): Promise<Respons
             requestXApiKey: dnsData.x_api_key,
             accessToken: jwtAccessToken || ""
         };
+
+        // Get the client IP address
+        const getClientIP = (req: Request): string => {
+            let ip =
+                (typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"].split(",")[0]?.trim() : undefined) ||
+                req.socket?.remoteAddress ||
+                req.connection?.remoteAddress ||
+                req.ip
+
+            return normalizeIp(ip) as string;
+        };
+        const clientIp = getClientIP(req)
+
+        // Get the device id from header
+        const deviceId = req.headers['x-device-id'];
+
+        // Store client IP and device id in session meta
+        req.session.meta = {
+            ...req.session.meta,
+            clientIp: clientIp as string,
+            deviceId: deviceId as string,
+        }
 
         // console.log("Session data: ", req.session);
 

@@ -1,11 +1,11 @@
 import dotenv from "dotenv";
 import type { Request, RequestHandler } from "express";
-import type { SessionConfig, SessionError } from "../types/sessionTypes.js";
+import type { sessionConfig, sessionError } from "../types/sessionTypes.js";
 import type { RedisStore } from "connect-redis";
 
 dotenv.config();
 
-const buildSession = (req: Request, store: RedisStore | undefined): SessionConfig | SessionError => {
+const buildSession = (req: Request, store: RedisStore | undefined): sessionConfig | sessionError => {
     if (!store) {
         return {status: "INTERNAL_SERVER_ERROR", message: "Redis store is not initialised"};
     }

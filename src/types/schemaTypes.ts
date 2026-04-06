@@ -1,7 +1,7 @@
 import { Document, Types } from "mongoose";
 
 // Type for Portal Configuration Model Schema
-export interface portalConfigurationSchema extends Document {
+export interface portalConfigurationSchemaTypes extends Document {
     domain_name: string;
     agent_code: string;
     subagent_code: string;
@@ -34,7 +34,7 @@ export interface portalConfigurationSchema extends Document {
 }
 
 // Type for User Details Model Schema
-export interface userDetailsSchema extends Document{
+export interface userDetailsSchemaTypes extends Document{
     full_name: string;
     agent_code: string;
     subagent_code: string;
@@ -61,8 +61,16 @@ export interface userDetailsSchema extends Document{
     last_login_at?: Date;
 }
 
+export interface userMetaDetailsSchemaTypes extends Document {
+    user_id: Types.ObjectId | string;
+    device_id: string;
+    ip_address: string;
+    userAgent?: string;
+    login_at?: Date;
+}
+
 // Type for User Bank Details Model Schema
-export interface userBankDetailsSchema extends Document{
+export interface userBankDetailsSchemaTypes extends Document{
     user_id: Types.ObjectId;
     account_holder_name: string;
     account_number: string;
@@ -74,7 +82,7 @@ export interface userBankDetailsSchema extends Document{
 }
 
 // TYPE for USER ADDRESS MODEL SCHEMA
-export interface BillingAddress {
+export interface BillingAddressTypes {
     line1: string;
     line2?: string | null;
     city: string;
@@ -83,7 +91,7 @@ export interface BillingAddress {
     country: string;
     type: "Billing";
 }
-export interface DeliveryAddress {
+export interface DeliveryAddressTypes {
     line1: string;
     line2?: string | null;
     city: string;
@@ -92,8 +100,8 @@ export interface DeliveryAddress {
     country: string;
     type: "Billing";
 }
-export interface UserAddressModelSchema extends Document {
+export interface UserAddressModelSchemaTypes extends Document {
     user_id: Types.ObjectId;
-    billing_address: BillingAddress;
-    delivery_address: DeliveryAddress;
+    billing_address: BillingAddressTypes;
+    delivery_address: DeliveryAddressTypes;
 }

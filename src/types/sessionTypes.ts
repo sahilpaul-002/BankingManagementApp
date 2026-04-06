@@ -75,9 +75,9 @@ type UserType = "ADMIN" | "USER" | "SUPERADMIN";
 // Meta information stored in session
 export interface sessionMeta {
     clientIp: string;
+    deviceId: string;
     userAgent?: string;
     createdAt?: number;
-    key: string;
 }
 
 // Session items stored in session
