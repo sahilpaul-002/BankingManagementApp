@@ -5,6 +5,7 @@ import type { rootStateType } from '@/redux/sotre'
 import { configApis } from '../config/configApi'
 import { USER_URL } from '@/configs/constants'
 import { createAxiosInstance } from '@/configs/axiosConfig'
+import GetDeviceId from '@/utils/GetDeviceId'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 
@@ -53,7 +54,9 @@ const axiosBaseQuery = (): BaseQueryFn<
                 dynamicHeaders['program-id'] = dnsConfig.program_id
                 dynamicHeaders['business-id'] = dnsConfig.business_id
                 dynamicHeaders['client-id'] = dnsConfig.client_id
-                dynamicHeaders['authorization'] = `Bearer ${dnsConfig.accessToken}`
+                dynamicHeaders['authorization'] = `Bearer ${dnsConfig.accessToken}`,
+                dynamicHeaders["request-id"] = crypto.randomUUID(),
+                dynamicHeaders["x-device-id"] = await GetDeviceId()
             }
 
             // ✅ Create instance dynamically per request
