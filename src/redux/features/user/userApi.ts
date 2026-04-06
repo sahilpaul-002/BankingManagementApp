@@ -1,9 +1,10 @@
-import axios, { AxiosError } from 'axios'
+import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { createApi, type BaseQueryFn } from '@reduxjs/toolkit/query/react'
 import { selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
 import type { rootStateType } from '@/redux/sotre'
 import { configApis } from '../config/configApi'
 import { USER_URL } from '@/configs/constants'
+import { createAxiosInstance } from '@/configs/axiosConfig'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 
@@ -20,67 +21,79 @@ interface SigninResponse {
 }
 
 // ==============================
-// AXIOS INSTANCE
+// DYNAMIC AXIOS INSTANCE
 // ==============================
-const axiosInstance = axios.create({
-    baseURL: 'http://localhost:3000', // 🔥 static base URL
-    withCredentials: true,
-    ...(ENVIRONMENT?.toUpperCase() === "PRODUCTION" && { timeout: 5000 }),
-    headers: {
+const axiosInstance = createAxiosInstance(
+    'http://localhost:3000',
+    {
         'portal': 'business',
         'from-portal': 'false',
         'Content-Type': 'application/json',
     },
-})
+    ENVIRONMENT
+)
 
 // ==============================
 // CUSTOM BASE QUERY USING AXIOS
 // ==============================
 const axiosBaseQuery = (): BaseQueryFn<
-        {
-            url: string
-            method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-            data?: unknown
-            params?: unknown
-            headers?: Record<string, string>
-        },
-        unknown,
-        unknown
-    > =>
-        async ({ url, method, data, params }, { getState }) => {
-            try {
-                const state = getState() as rootStateType
-                const dnsConfig = selectDnsConfigDetails(state)
+    {
+        url: string
+        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+        data?: unknown
+        params?: unknown
+        headers?: Record<string, string>
+    },
+    unknown,
+    unknown
+> =>
+    async ({ url, method, data, params }, { getState }) => {
+        try {
+            const state = getState() as rootStateType
+            const dnsConfig = selectDnsConfigDetails(state)
 
-                // ✅ Dynamic headers from Redux
-                if (dnsConfig) {
-                    axiosInstance.defaults.headers['x-api-key'] = dnsConfig.x_api_key
-                    axiosInstance.defaults.headers['agent-code'] = dnsConfig.agent_code
-                    axiosInstance.defaults.headers['subagent-code'] = dnsConfig.subagent_code
-                    axiosInstance.defaults.headers['program-id'] = dnsConfig.program_id
-                    axiosInstance.defaults.headers['business-id'] = dnsConfig.business_id
-                    axiosInstance.defaults.headers['client-id'] = dnsConfig.client_id
-                    axiosInstance.defaults.headers['authorization'] = `Bearer ${dnsConfig.accessToken}`
-                }
+            // ✅ Build headers dynamically from Redux state
+            const dynamicHeaders: Record<string, string> = {
+                'portal': 'business',
+                'from-portal': 'false',
+                'Content-Type': 'application/json',
+            }
 
-                const result = await axiosInstance.request({
-                    url,
-                    method,
-                    data,
-                    params,
-                })
+            if (dnsConfig) {
+                dynamicHeaders['x-api-key'] = dnsConfig.x_api_key
+                dynamicHeaders['agent-code'] = dnsConfig.agent_code
+                dynamicHeaders['subagent-code'] = dnsConfig.subagent_code
+                dynamicHeaders['program-id'] = dnsConfig.program_id
+                dynamicHeaders['business-id'] = dnsConfig.business_id
+                dynamicHeaders['client-id'] = dnsConfig.client_id
+                dynamicHeaders['authorization'] = `Bearer ${dnsConfig.accessToken}`
+            }
 
-                return { data: result.data }
-            } catch (axiosError) {
-                const err = axiosError as AxiosError
-                return {
-                    error: {
-                        status: err.response?.status || 500,
-                        data: err.response?.data || err.message,
-                    },
-                }
+            // ✅ Create instance dynamically per request
+            const axiosInstance: AxiosInstance = createAxiosInstance(
+                dnsConfig?.base_url_api || 'http://localhost:3000',
+                dynamicHeaders,
+                ENVIRONMENT
+            )
+
+            const result = await axiosInstance.request({
+                url,
+                method,
+                data,
+                params,
+            })
+
+            return { data: result.data }
+        } catch (axiosError) {
+            const err = axiosError as AxiosError
+            return {
+                error: {
+                    status: err.response?.status || 500,
+                    data: err.response?.data || err.message,
+                },
             }
         }
+    }
 
 // ==============================
 // API
