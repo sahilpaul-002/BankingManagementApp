@@ -7,7 +7,7 @@ const validateUniqueRequests = async (req: Request, res: Response, next: NextFun
         const requestId: string | undefined = req.headers["request-id"] as string | undefined;
 
         if (!requestId) {
-            res.status(400).json({ status: "UNAUTHORIZED", message: "Request Id missing the request header" });
+            res.status(400).json({ status: "INVALID_HEADER", message: "'request id' MISSING OR NOT STRING" });
             return;
         }
 

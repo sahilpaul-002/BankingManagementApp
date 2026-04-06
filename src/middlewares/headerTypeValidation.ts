@@ -36,6 +36,11 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
         return next();
     }
     else {
+        // Validate the device-id type header
+        const devideId: string | null = checkStringHeader(req, "x-device-id");
+        if (!devideId) {
+            return res.status(400).json({ status: "INVALID_HEADER", message: "'device-id' MISSING OR NOT STRING" });
+        }
         // Validate Agent Code header
         const agentCode: string | null = checkStringHeader(req, "agent-code")
         if (!agentCode) {
