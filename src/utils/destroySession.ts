@@ -21,6 +21,12 @@ const destroySession = async (req: Request, res: Response): Promise<successRespo
                     });
                 }
 
+                res.clearCookie("BMA_Business_Session");
+                res.clearCookie("BMA_Admin_Session");
+                res.clearCookie("BMA_User_Session");
+                res.clearCookie("authToken");
+                res.clearCookie("refreshToken");
+
                 resolve({
                     status: "SUCCESS",
                     message: "SESSION DESTROYED SUCCESSFULLY",

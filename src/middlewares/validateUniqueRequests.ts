@@ -3,6 +3,12 @@ import { getRedisClient } from '../configs/redisConfig.js';
 import type { failedResponseJson } from '../types/responseJson.js';
 
 const validateUniqueRequests = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
+    // // Skip portal header check for selcted pathes
+    // const excludedPaths: string[] = ["/signUp", "/login"];
+    // if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+    //     return next();
+    // }
+
     try {
         const requestId: string | undefined = req.headers["request-id"] as string | undefined;
 

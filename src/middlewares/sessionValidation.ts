@@ -8,123 +8,141 @@ import destroySession from '../utils/destroySession.js';
 import normalizeIp from '../utils/normalizeIp.js';
 import { userMetaDetailsModel as user_meta_details } from '../models/user_meta_details.js';
 import type { ObjectId } from 'mongoose';
+import { AppErrorClass } from '../utils/AppErrorClass.js';
 
 const sessionValidation = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
+    // // Skip portal header check for selcted pathes
+    // const excludedPaths: string[] = ["/signUp", "/login"];
+    // if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+    //     return next();
+    // }
 
     // Check session exist
     if (!req.session) {
-        return res.status(400).json({ status: "NOT_FOUND", message: "SESSION NOT FOUND" });
+        throw new AppErrorClass(400, "NOT_FOUND", "SESSION NOT FOUND")
     }
 
     // Check if session is tampered(if tampered then newly created session)
     if (req.session?.isNew) {
-        return res.status(400).json({ status: "INVALID_SESSION", message: "SESSION INVALID OR TAMPERED" });
+        throw new AppErrorClass(400, "INVALID_SESSION", "SESSION INVALID OR TAMPERED")
     }
 
     // Check if session is initialised
     if (!req.session?.initiated && !req.session?.lastActivity) {
-        return res.status(400).json({ status: "INVALID_SESSION", message: "SESSION NOT INITIATED OR SESSION TIMEDOUT" });
+        throw new AppErrorClass(400, "INVALID_SESSION", "SESSION NOT INITIATED OR SESSION TIMEDOUT")
     }
 
     // Skip user existance check for selcted pathes
-    const excludedPaths: string[] = ["/api/v1/user/signUp"];
-    if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+    const excludedPaths1: string[] = ["/api/v1/user/signUp"];
+    if (excludedPaths1.some(path => req.path === path || req.path.startsWith(path + "/"))) {
         return next();
     }
     else {
         // Skip session validity check for selcted pathes
-        const excludedPaths: string[] = ["/api/v1/user/login"];
-        if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+        const excludedPaths2: string[] = ["/api/v1/user/login"];
+        if (excludedPaths2.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
         else {
             // Check session valid
             if (!req.session?.valid) {
-                return res.status(400).json({ status: "INVALID_SESSION", message: "SESSION NOT VALID" });
+                throw new AppErrorClass(400, "INVALID_SESSION", "SESSION NOT VALID")
             }
 
-            // Get user from DB
-            const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
-                const userExistResponse: userDetailsSchemaTypes | null = await user_details.findById(req.session.userId);
-                return userExistResponse;
-            }
-            const userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB(req);
+            let userDetails: userDetailsSchemaTypes | null
+            try {
+                // Get user from DB
+                const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
+                    const userExistResponse: userDetailsSchemaTypes | null = await user_details.findById(req.session.userId);
+                    return userExistResponse;
+                }
+                userDetails = await checkUserExistInDB(req);
 
-            // Check user exist in DB
-            if (!userDetails) {
-                try {
-                    if (!req.session) {
-                        return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
-                    }
-
-                    const sessionId = req.sessionID;
-
-                    req.session.destroy((err): Response<successResponseJson> | Response<failedResponseJson> => {
-                        if (err) {
-                            console.error("Session destroy error:", err);
-                            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "FAILED TO DESTROY SESSION", error: err });
+                // Check user exist in DB
+                if (!userDetails) {
+                    try {
+                        if (!req.session) {
+                            throw new AppErrorClass(400, "NOT_FOUND", "SESSION NOT FOUND")
                         }
 
-                        res.clearCookie("BMA_Business_Session");
-                        res.clearCookie("BMA_Admin_Session");
-                        res.clearCookie("BMA_User_Session");
+                        const sessionId = req.sessionID;
 
-                        return res.status(400).json({ status: "FORBIDDEN", message: "User does not exists" });
-                    });
+                        req.session.destroy((err): Response<successResponseJson> | Response<failedResponseJson> => {
+                            if (err) {
+                                console.error("Session destroy error:", err);
+                                throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION")
+                            }
+
+                            res.clearCookie("BMA_Business_Session");
+                            res.clearCookie("BMA_Admin_Session");
+                            res.clearCookie("BMA_User_Session");
+                            res.clearCookie("authToken");
+                            res.clearCookie("refreshToken");
+
+                            throw new AppErrorClass(400, "FORBIDDEN", "User does not exists");
+                        });
+                    }
+                    catch (error) {
+                        throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "DESTROY SESSION SERVICE FACING ISSUE.");
+                    }
                 }
-                catch (error) {
-                    errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "DESTROY SESSION SERVICE FACING ISSUE.");
+
+                // Check user activated
+                if (!userDetails?.is_active) {
+                    const destroySessionResponse = await destroySession(req, res);
+                    throw new AppErrorClass(400, "UNAUTHORIZED", "User is not activated");
                 }
             }
-
-            // Check user activated
-            if (!userDetails?.is_active) {
-                const destroySessionResponse = await destroySession(req, res);
-                return res.status(400).json({ status: "UNAUTHORIZED", message: "User is not activated" });
+            catch {
+                throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "Session user validation using databse is facing issue");
             }
 
-            // Check user meta details
-            // Get the client IP address
-            const getClientIP = (req: Request): string => {
-                let ip =
-                    (typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"].split(",")[0]?.trim() : undefined) ||
-                    req.socket?.remoteAddress ||
-                    req.connection?.remoteAddress ||
-                    req.ip
+            try {
+                // Check user meta details
+                // Get the client IP address
+                const getClientIP = (req: Request): string => {
+                    let ip =
+                        (typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"].split(",")[0]?.trim() : undefined) ||
+                        req.socket?.remoteAddress ||
+                        req.connection?.remoteAddress ||
+                        req.ip
 
-                return normalizeIp(ip) as string;
-            };
-            const clientIp = getClientIP(req)
+                    return normalizeIp(ip) as string;
+                };
+                const clientIp = getClientIP(req)
 
-            // Get the device id from header
-            const deviceId = req.headers['x-device-id'];
+                // Get the device id from header
+                const deviceId = req.headers['x-device-id'];
 
-            // Check client-ip and device-id in session meata
-            if (!req.session?.meta?.clientIp || !req.session?.meta?.deviceId || req.session.meta.clientIp !== clientIp || req.session.meta.deviceId !== deviceId) {
-                const destroySessionResponse = await destroySession(req, res);
-                return res.status(400).json({ status: "UNAUTHORIZED", message: "User is not authorized - Invalid user meta details" });
+                // Check client-ip and device-id in session meata
+                if (!req.session?.meta?.clientIp || !req.session?.meta?.deviceId || req.session.meta.clientIp !== clientIp || req.session.meta.deviceId !== deviceId) {
+                    const destroySessionResponse = await destroySession(req, res);
+                    throw new AppErrorClass(400, "UNAUTHORIZED", "User is not authorized - Invalid user meta details");
+                }
+
+                // Function to validate client IP and device ID
+                async function validateUserMetaDetails(
+                    userId: string,
+                    clientIp: string,
+                    deviceId: string
+                ): Promise<boolean> {
+                    const userMetaDetails = await user_meta_details.findOne({
+                        user_id: userId,
+                        device_id: deviceId,
+                        ip_address: clientIp,
+                    }).lean();
+
+                    return userMetaDetails !== null;
+                }
+                const isValidMeta = await validateUserMetaDetails(userDetails._id.toString(), clientIp, deviceId as string);
+
+                if (!isValidMeta) {
+                    const destroySessionResponse = await destroySession(req, res);
+                    throw new AppErrorClass(400, "UNAUTHORIZED", "User is not authorized - Invalid user meta details");
+                }
             }
-
-
-            // Function to validate client IP and device ID
-            async function validateUserMetaDetails(
-                userId: string,
-                clientIp: string,
-                deviceId: string
-            ): Promise<boolean> {
-                const userMetaDetails = await user_meta_details.findOne({
-                    user_id: userId,
-                    device_id: deviceId,
-                    ip_address: clientIp,
-                }).lean();
-
-                return userMetaDetails !== null;
-            }
-            const isValidMeta = await validateUserMetaDetails(userDetails._id.toString(), clientIp, deviceId as string);
-
-            if (!isValidMeta) {
-                const destroySessionResponse = await destroySession(req, res);
-                return res.status(400).json({ status: "UNAUTHORIZED", message: "User is not authorized - Invalid user meta details" });
+            catch {
+                throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "Session IP validation using databse is facing issue");
             }
 
             // // Check user status

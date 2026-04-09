@@ -51,6 +51,8 @@ export const destroySession = (req: Request, res: Response): Response<successRes
             res.clearCookie("BMA_Ausiness_Session");
             res.clearCookie("BMA_Admin_Session");
             res.clearCookie("BMA_User_Session");
+            res.clearCookie("authToken");
+            res.clearCookie("refreshToken");
 
             return res.json({ status: "SUCCESS", message: "SESSION DESTROYED SUCCESSFULLY", data: { sessionId: sessionId } });
         });

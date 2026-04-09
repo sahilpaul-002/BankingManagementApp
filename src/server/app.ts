@@ -25,6 +25,8 @@ import headerTypeValidation from "../middlewares/headerTypeValidation.js";
 import sessionValidation from "../middlewares/sessionValidation.js";
 import headerValidations from "../middlewares/headerValidations.js";
 import checkRequestSource from "../middlewares/checkRequestSource.js";
+import globalResponseHandler from "../middlewares/globalResponseHandler.js";
+import globalErrorHandler from "../middlewares/globalErrorHandler.js";
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -89,33 +91,42 @@ app.locals.redisClient = redisClient;
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ---------------------------------------- Custom Middlewares ---------------------------------------- \\
+// Dynamic Session Middleware
+app.use(dynamicSession())
+
+// Check session existance  middleware 
+app.use(sessionExistance);
+
 // Cehck Origin Header Exist Middleware
 app.use(checkOriginExist)
 
 // Check Portal Header Exist Middleware
 app.use(portalHeaderCheck);
 
-// Dynamic Session Middleware
-app.use(dynamicSession())
+// REQUEST SOURCE CHECK
+app.use(checkRequestSource);
 
 // Rate Limiter Middleware
 app.use(rateLimiter());
 
-// REQUEST SOURCE CHECK
-// if (ENVIRONMENT?.toUpperCase() === "PRODUCTION") {
-//     app.use(checkRequestSource);
-// }
-app.use(checkRequestSource);
 
-// Check session existance  middleware 
-app.use(sessionExistance);
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
+
+// ------------------------- \\
+// Custom Response Handler
+// ------------------------- \\
+app.use(globalResponseHandler);
 
 // ---------------------------------------- Routes ---------------------------------------- \\
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
-app.use("/api/v1/user", headerTypeValidation, headerValidations, checkTimeout(5), userRoutes);
+app.use("/api/v1/user", sessionValidation, sessionExpiration, headerTypeValidation, headerValidations, checkTimeout(5), userRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
+
+// ------------------------- \\
+// Custom Error Handler
+// ------------------------- \\
+app.use(globalErrorHandler);
 
 
 export default app;

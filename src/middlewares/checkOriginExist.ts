@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express"
 import type { failedResponseJson } from "../types/responseJson.js";
+import { AppErrorClass } from "../utils/AppErrorClass.js";
 
 const checkOriginExist = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
     const allowedOrigins: string[] = [
@@ -14,10 +15,11 @@ const checkOriginExist = (req: Request, res: Response, next: NextFunction): Resp
     }
 
     if (!allowedOrigins.includes(origin)) {
-        return res.status(403).json({
-            status: "FORBIDDEN",
-            message: "ORIGIN NOT ALLOWED"
-        });
+        throw new AppErrorClass(
+            400,
+            "FORBIDDEN",
+            "ORIGIN NOT ALLOWED"
+        )
     }
     next();
 }

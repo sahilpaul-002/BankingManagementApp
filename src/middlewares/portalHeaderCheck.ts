@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
+import { AppErrorClass } from "../utils/AppErrorClass.js";
 
 const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
     // Skip portal header check for selcted pathes
@@ -17,12 +18,22 @@ const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Res
 
     // Check if header portal exist and  is string
     if (!portal || typeof portal !== "string") {
-        return res.status(400).json({status: "FORBIDDEN", message: "'portal' IS MISSING OR NOT STRING"});}
+        throw new AppErrorClass(
+            400,
+            "FORBIDDEN",
+            "'portal' IS MISSING OR NOT STRING"
+        )
+    }
 
 
     // Validate the portal header value
     if (portal?.toString()?.toUpperCase() !== "ADMIN" && portal?.toString()?.toUpperCase() !== "USER" && portal?.toString()?.toUpperCase() !== "BUSINESS") {
         return res.status(400).json({ status: "FORBIDDEN", message: "Invalid portal header value. Allowed values are 'admin' or 'user' or 'business'" });
+        throw new AppErrorClass(
+            400,
+            "FORBIDDEN",
+            "Invalid portal header value. Allowed values are 'admin' or 'user' or 'business'"
+        )
     }
 
     next();

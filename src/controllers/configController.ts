@@ -16,106 +16,107 @@ import checkStringQueryParams from '../utils/checkStringQueryParams.js';
 import type { portalConfigurationDataType } from '../types/apiResponseDataObjectType.js';
 import generateJwtToken from '../utils/generateJwtToken.js';
 import normalizeIp from '../utils/normalizeIp.js';
+import { AppErrorClass } from '../utils/AppErrorClass.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
-export const getDnsConfig = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
-    try {
-        // Check if collection exist in MongoDB
-        const isCollectionPresent = await checkMongoDbCollectionExist("portal_configurations");
-        if (isCollectionPresent.status !== "SUCCESS") {
-            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Required collection does not exist in MongoDB" });
-        }
-
-        // Validate X-API-Key header
-        const xApiKey: string | null = checkStringHeader(req, "x-api-key");
-        if (!xApiKey) {
-            return res.status(400).json({ status: "INVALID_HEADER", message: "'x-api-key MISSING OR NOT STRING" });
-        }
-        // Validate domain name in request body
-        const domainName: string | null = checkStringQueryParams(req, "domainName");
-
-        if (!domainName) {
-            return res.status(400).json({ status: "INVALID_REQUEST_BODY_PARAMETER", message: "'domainName' MISSING OR NOT STRING" });
-        }
-
-        // Check cached DNS configuration data
-        const cachedDnsConfigData: portalConfigurationDataType | undefined = dnsConfigCache.get(domainName);
-        if (cachedDnsConfigData) {
-            console.log("DNS configuration data fetched from cache", cachedDnsConfigData);
-            return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: cachedDnsConfigData });
-        }
-
-        // Fetch DNS configuration data from database
-        const dnsData: portalConfigurationSchemaTypes | null = await portal_configurations.findOne({ dns_x_api_key: xApiKey, domain_name: domainName }, { _id: 0, __v: 0, createdAt: 0, updatedAt: 0 }).lean();
-
-        // Cehck DNS Config Data
-        if (!dnsData) {
-            return res.status(404).json({ status: "NOT_FOUND", message: "DNS configuration not found" });
-        }
-
-        // Create Access Token
-        const jwtAccessToken = generateJwtToken(dnsData.domain_name);
-
-        // Set Cookie
-        // const setResponseCookieResult: successResponseJson = setResponseCookie(res, "token", jwtToken);
-        // if (setResponseCookieResult.status.toUpperCase() !== "SUCCESS") {
-        //     return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
-        // }
-
-        // Create response data
-        const responseDnsData = {
-            ...dnsData,
-            accessToken: jwtAccessToken
-        }
-
-        // Set DNS configuration data in DNS configuration cache
-        dnsConfigCache.set(domainName, responseDnsData);
-
-        // INITIATE SESSION
-        req.session.initiated = true;
-        req.session.lastActivity = Date.now();
-
-        // Set DNS data in session
-        req.session.sessiondata = {
-            domainName: dnsData.domain_name,
-            agentCode: dnsData.agent_code,
-            subAgentCode: dnsData.subagent_code,
-            businessId: dnsData.business_id,
-            programId: dnsData.program_id,
-            clientId: dnsData.client_id,
-            requestXApiKey: dnsData.x_api_key,
-            accessToken: jwtAccessToken || ""
-        };
-
-        // Get the client IP address
-        const getClientIP = (req: Request): string => {
-            let ip =
-                (typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"].split(",")[0]?.trim() : undefined) ||
-                req.socket?.remoteAddress ||
-                req.connection?.remoteAddress ||
-                req.ip
-
-            return normalizeIp(ip) as string;
-        };
-        const clientIp = getClientIP(req)
-
-        // Get the device id from header
-        const deviceId = req.headers['x-device-id'];
-
-        // Store client IP and device id in session meta
-        req.session.meta = {
-            ...req.session.meta,
-            clientIp: clientIp as string,
-            deviceId: deviceId as string,
-        }
-
-        // console.log("Session data: ", req.session);
-
-        return res.status(200).json({ status: "SUCCESS", message: "DNS config fetch successfully", data: responseDnsData });
+export const getDnsConfig = async (req: Request, res: Response<successResponseJson | failedResponseJson>): Promise<Response<successResponseJson> | void> => {
+    // Check if collection exist in MongoDB
+    const isCollectionPresent = await checkMongoDbCollectionExist("portal_configurations");
+    if (isCollectionPresent.status !== "SUCCESS") {
+        throw new AppErrorClass(
+            500,
+            "INTERNAL_SERVER_ERROR",
+            "Required collection does not exist in MongoDB"
+        );
     }
-    catch (error) {
-        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET DNS CONFIG FACING ISSUE.");
+
+    // Validate X-API-Key header
+    const xApiKey: string | null = checkStringHeader(req, "x-api-key");
+    if (!xApiKey) {
+        throw new AppErrorClass(
+            400,
+            "INVALID_HEADER",
+            "'x-api-key MISSING OR NOT STRING"
+        );
     }
+    // Validate domain name in request body
+    const domainName: string | null = checkStringQueryParams(req, "domainName");
+
+    if (!domainName) {
+        throw new AppErrorClass(
+            400,
+            "INVALID_REQUEST_BODY_PARAMETER",
+            "'domainName' MISSING OR NOT STRING"
+        );
+    }
+
+    // Check cached DNS configuration data
+    const cachedDnsConfigData: portalConfigurationDataType | undefined = dnsConfigCache.get(domainName);
+    if (cachedDnsConfigData) {
+        console.log("DNS configuration data fetched from cache", cachedDnsConfigData);
+        return res.success("DNS config fetch successfully", cachedDnsConfigData, 200);
+    }
+
+    // Fetch DNS configuration data from database
+    const dnsData: portalConfigurationSchemaTypes | null = await portal_configurations.findOne({ dns_x_api_key: xApiKey, domain_name: domainName }, { _id: 0, __v: 0, createdAt: 0, updatedAt: 0 }).lean();
+
+    // Cehck DNS Config Data
+    if (!dnsData) {
+        return res.fail("NOT_FOUND", "DNS configuration not found", 400);
+    }
+
+    // Create Access Token
+    const jwtAccessToken = generateJwtToken(dnsData.domain_name);
+
+    // Create response data
+    const responseDnsData = {
+        ...dnsData,
+        accessToken: jwtAccessToken
+    }
+
+    // Set DNS configuration data in DNS configuration cache
+    dnsConfigCache.set(domainName, responseDnsData);
+
+    // INITIATE SESSION
+    req.session.initiated = true;
+    req.session.lastActivity = Date.now();
+
+    // Set DNS data in session
+    req.session.sessiondata = {
+        domainName: dnsData.domain_name,
+        agentCode: dnsData.agent_code,
+        subAgentCode: dnsData.subagent_code,
+        businessId: dnsData.business_id,
+        programId: dnsData.program_id,
+        clientId: dnsData.client_id,
+        requestXApiKey: dnsData.x_api_key,
+        accessToken: jwtAccessToken || ""
+    };
+
+    // Get the client IP address
+    const getClientIP = (req: Request): string => {
+        let ip =
+            (typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"].split(",")[0]?.trim() : undefined) ||
+            req.socket?.remoteAddress ||
+            req.connection?.remoteAddress ||
+            req.ip
+
+        return normalizeIp(ip) as string;
+    };
+    const clientIp = getClientIP(req)
+
+    // Get the device id from header
+    const deviceId = req.headers['x-device-id'];
+
+    // Store client IP and device id in session meta
+    req.session.meta = {
+        ...req.session.meta,
+        clientIp: clientIp as string,
+        deviceId: deviceId as string,
+    }
+
+    // console.log("Session data: ", req.session);
+    return res.success("DNS config fetch successfully", responseDnsData, 200);
 }
 
 // FUNCTION TO GET THE SYMMETRIC ENCRYPTION KEY

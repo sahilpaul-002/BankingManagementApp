@@ -82,7 +82,7 @@ export interface userBankDetailsSchemaTypes extends Document{
 }
 
 // TYPE for USER ADDRESS MODEL SCHEMA
-export interface BillingAddressTypes {
+export interface billingAddressTypes {
     line1: string;
     line2?: string | null;
     city: string;
@@ -91,7 +91,7 @@ export interface BillingAddressTypes {
     country: string;
     type: "Billing";
 }
-export interface DeliveryAddressTypes {
+export interface deliveryAddressTypes {
     line1: string;
     line2?: string | null;
     city: string;
@@ -100,8 +100,8 @@ export interface DeliveryAddressTypes {
     country: string;
     type: "Billing";
 }
-export interface UserAddressModelSchemaTypes extends Document {
+export interface userAddressModelSchemaTypes extends Document {
     user_id: Types.ObjectId;
-    billing_address: BillingAddressTypes;
-    delivery_address: DeliveryAddressTypes;
+    billing_address: billingAddressTypes;
+    delivery_address: deliveryAddressTypes;
 }
