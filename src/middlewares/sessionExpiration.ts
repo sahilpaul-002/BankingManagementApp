@@ -38,7 +38,7 @@ const sessionExpiration = async (req: Request, res: Response, next: NextFunction
                 //         message: "Session expired due to inactivity"
                 //     });
                 // });
-                return;
+                throw new AppErrorClass(500, "UNAUTHORIZED", "Session expired due to inactivity")
             }
         }
         else {

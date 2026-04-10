@@ -9,6 +9,7 @@ const router: Router = express.Router();
 
 router.post("/signUp", userSignUp);
 router.post("/login", userLogin);
-router.get("/check", validateUniqueRequests, sessionValidation, jwtAuthTokenValidation, check);
+// router.get("/check", validateUniqueRequests, sessionValidation, jwtAuthTokenValidation, check);
+router.get("/check", jwtAuthTokenValidation, check);
 
 export default router;
