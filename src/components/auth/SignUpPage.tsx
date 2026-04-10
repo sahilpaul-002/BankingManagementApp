@@ -337,7 +337,7 @@ export default function SignUpPage() {
                                 {/* Button */}
                                 <div className="signupPage-signupForm2-button-wrapper w-full h-fit flex justify-center items-center">
                                     <div className="signupPage-signupForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                                        <CustomButton id={"signPage-signinForm-button"} label={"Sign In"} />
+                                        <CustomButton id={"signPage-signinForm-button"} label={"Sign Up"} />
                                     </div>
                                 </div>
 
