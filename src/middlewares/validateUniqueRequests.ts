@@ -1,36 +1,34 @@
 import type { Request, Response, NextFunction } from 'express';
 import { getRedisClient } from '../configs/redisConfig.js';
 import type { failedResponseJson } from '../types/responseJson.js';
+import { AppErrorClass } from '../utils/AppErrorClass.js';
 
 const validateUniqueRequests = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
-    // // Skip portal header check for selcted pathes
-    // const excludedPaths: string[] = ["/signUp", "/login"];
-    // if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
-    //     return next();
-    // }
-
     try {
+        // // Skip portal header check for selcted pathes
+        // const excludedPaths: string[] = ["/signUp", "/login"];
+        // if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+        //     return next();
+        // }
+
         const requestId: string | undefined = req.headers["request-id"] as string | undefined;
 
         if (!requestId) {
-            res.status(400).json({ status: "INVALID_HEADER", message: "'request id' MISSING OR NOT STRING" });
-            return;
+            throw new AppErrorClass(400, "INVALID_HEADER", "'request id' MISSING OR NOT STRING")
         }
 
         const key: string = `request-id:${requestId}`;
 
         const getRedisClientResponse = getRedisClient();
         if (!('client' in getRedisClientResponse) || !getRedisClientResponse.client) {
-            res.status(500).json({ status: "ERROR", message: "Internal server error", error: "Redis client unavailable" });
-            return;
+            throw new AppErrorClass(400, "ERROR", "Redis client unavailable")
         }
         const redisClient = getRedisClientResponse?.client;
 
         const exists: number = await redisClient.exists(key);
 
         if (exists) {
-            res.status(400).json({ status: "UNAUTHORIZED", message: "Unauthorized session" });
-            return;
+            throw new AppErrorClass(400, "UNAUTHORIZED", "Unauthorized session")
         }
 
         await redisClient.set(key, "used", {
@@ -38,9 +36,12 @@ const validateUniqueRequests = async (req: Request, res: Response, next: NextFun
         });
 
         next();
-    } catch (err: unknown) {
-        console.error(err);
-        res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Error occured while api request validation" });
+    }
+    catch (error) {
+        if (error instanceof AppErrorClass) {
+            throw error; // ✅ preserve original error
+        }
+        throw new Error("Api unique request id validation is facing issue.")
     }
 };
 

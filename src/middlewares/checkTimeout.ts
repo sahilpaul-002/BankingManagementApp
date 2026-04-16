@@ -13,22 +13,40 @@ const checkTimeout = (seconds: number): RequestHandler => {
         };
     }
 
-    return (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
-        const timer = setTimeout(() => {
+    return (req: Request, res: Response, next: NextFunction): void => {
+
+        const timeoutMs = seconds * 1000;
+
+        // ✅ 1. Application-level timeout (for user response)
+        const appTimer = setTimeout(() => {
             if (!res.headersSent) {
-                // return res.status(503).json({status: "SERVICE_UNAVAILABLE", message: "SERVICE TIME OUT"})
-                errorHandler(req, res, new Error("API TIMEOUT"), 503, "SERVICE_UNAVAILABLE", "SERVICE TIME OUT")
+                res.status(503).json({
+                    status: "SERVICE_UNAVAILABLE",
+                    message: "SERVICE TIME OUT"
+                });
             }
-        }, seconds * 1000);
+        }, timeoutMs);
 
-        const clearTimout = () => clearTimeout(timer);
+        // ✅ 2. Socket-level timeout (for killing stuck connections)
+        req.setTimeout(timeoutMs + 1000, () => {
+            // slight buffer so app timeout runs first
+            if (!res.headersSent) {
+                req.destroy(); // force close connection
+            }
+        });
 
-        res.on("finish", clearTimout);
-        res.on("close", clearTimout);
-        res.on("error", clearTimout);
+        // ✅ Cleanup (VERY IMPORTANT)
+        const cleanup = () => {
+            clearTimeout(appTimer);
+            req.setTimeout(0); // remove socket timeout
+        };
+
+        res.on("finish", cleanup);
+        res.on("close", cleanup);
+        res.on("error", cleanup);
 
         next();
-    }
-}
+    };
+};
 
 export default checkTimeout;

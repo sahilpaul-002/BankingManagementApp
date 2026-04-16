@@ -11,7 +11,7 @@ const checkOriginExist = (req: Request, res: Response, next: NextFunction): Resp
     const origin: string | undefined = req.headers["origin"];
 
     if (!origin) {
-        return res.status(400).json({ status: "FORBIDDEN", message: "'origin' HEADER IS MISSING" });
+        throw new AppErrorClass(400, "FORBIDDEN", "'origin' HEADER IS MISSING");
     }
 
     if (!allowedOrigins.includes(origin)) {

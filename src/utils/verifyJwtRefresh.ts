@@ -25,6 +25,10 @@ type verifyJwtRefreshResponse = {
 {
     status: "ERROR";
     error: unknown;
+} | 
+{
+    status: "UNAUTHORIZED";
+    message: string;
 };
 
 // 🔐 Function
@@ -33,6 +37,10 @@ const verifyJwtRefresh = async (
     jwtRefreshSecretKey?: string
 ): Promise<verifyJwtRefreshResponse> => {
     try {
+        if (!jwtRefreshToken) {
+            return { status: "UNAUTHORIZED", message: "Missing auth token or refresh token" }
+        }
+
         const jwtSecretKey: string =
             jwtRefreshSecretKey ||
             process.env.JWT_SECRET_KEY ||

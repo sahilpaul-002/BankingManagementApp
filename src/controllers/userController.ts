@@ -305,7 +305,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         // Create Auth Token
         const jwtAuthToken = generateJwtToken({ accessToken: accessToken, userType: req.session.userType }, "12m", jwtSecretKey);
         // Set Auth Token Cookie
-        const setResponseAuthCookieResult: successResponseJson = setResponseCookie(res, "authToken", jwtAuthToken, 1000 * 60 * 12);
+        const setResponseAuthCookieResult: successResponseJson = setResponseCookie(res, "authToken", jwtAuthToken, 1000 * 60 * 20);
         if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
             return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
         }
@@ -313,7 +313,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         // Create Auth Token
         const jwtRefreshToken = generateJwtToken({ accessToken: accessToken, clientId: req?.session?.sessiondata?.clientId as string, businessId: req?.session?.sessiondata?.businessId as string }, "30m", jwtSecretKey);
         // Set Refresh Token Cookie
-        const setResponseRefreshCookieResult: successResponseJson = setResponseCookie(res, "refreshToken", jwtRefreshToken, 1000 * 60 * 30);
+        const setResponseRefreshCookieResult: successResponseJson = setResponseCookie(res, "refreshToken", jwtRefreshToken, 1000 * 60 * 60);
         if (setResponseRefreshCookieResult.status.toUpperCase() !== "SUCCESS") {
             return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
         }
@@ -325,6 +325,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
+
 export const check = async (req: any, res: any) => {
     return res.status(200).json({ status: "SUCCESS", message: "User login successfull" });
 }

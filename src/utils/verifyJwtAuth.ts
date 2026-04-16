@@ -38,15 +38,15 @@ const verifyJwtAuth = async (
         process.env.JWT_SECRET_KEY ||
         "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
     try {
-
+        if (!jwtAuthToken || !jwtRefreshToken) {
+            return {status: "UNAUTHORIZED", message: "Missing auth token or refresh token"}
+        }
 
         // Verify JWT Auth Token
         const authData = await jwt.verify(jwtAuthToken, jwtSecretKey) as jwtAuthDataType;
 
         return { status: "SUCCESS", jwtAuthData: authData }
     } catch (error: any) {
-        console.log({ status: "ERROR", error })
-
         if (error.name === "TokenExpiredError") {
             try {
                 const jwtRefreshAuthVerifyResponse = await verifyJwtRefresh(jwtRefreshToken, jwtSecretKey)
@@ -72,7 +72,7 @@ const verifyJwtAuth = async (
                         accessToken: accessToken,
                         userType: sessionUserType
                     },
-                    "1m",
+                    "12m",
                     jwtSecretKey
                 )
 

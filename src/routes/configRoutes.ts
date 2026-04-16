@@ -6,7 +6,6 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const router: Router = express.Router();
 
 
-// router.get("/getDnsConfig", getDnsConfig);
 router.get("/getDnsConfig", asyncHandler(getDnsConfig));
 router.get("/getEncryptionKey", getEncryptionKey);
 router.get("/getPublicKey", getPublicKey);

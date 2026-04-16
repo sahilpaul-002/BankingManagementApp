@@ -4,6 +4,7 @@ import type { failedResponseJson, successResponseJson } from "../types/responseJ
 import verifyJwtAuth from "../utils/verifyJwtAuth.js"
 import extractJwtTokenValue from "./extractJwtTokenValue.js"
 import setResponseCookie from "./setResponseCookie.js"
+import { AppErrorClass } from "./AppErrorClass.js"
 
 interface jwtAuthDataType extends JwtPayload {
   accessToken: string
@@ -24,24 +25,20 @@ const jwtAuthTokenValidation = async (
 
   try {
     if (!sessionAccessToken || !sessionUserType || !sessionClientId || !sessionBusinessId) {
-      return res.status(400).json({ status: "UNAUTHENTICATED", message: "Session not authenticated" })
+      throw new AppErrorClass(400, "UNAUTHENTICATED", "Session not authenticated")
     }
 
     // Extract token value of sessiondata access token
     const jwtTokenVerificationResult: successResponseJson = extractJwtTokenValue(sessionAccessToken as string);
     if (jwtTokenVerificationResult.status !== "SUCCESS") {
-      return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to extract JWT token value from sessiondata access token" });
+      throw new AppErrorClass(400, "INTERNAL_SERVER_ERROR", "Failed to extract JWT token value from sessiondata access token")
     }
     const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
     const jwtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
 
 
-    if (!jwtAuthToken || !jwtRefreshToken) {
-      res.status(400).json({
-        status: "UNAUTHORIZED",
-        message: "Missing authentication token"
-      })
-      return
+    if (!jwtRefreshToken) {
+      throw new AppErrorClass(400, "UNAUTHENTICATED", "Missing authentication token")
     }
 
     const jwtAuthVerifyResponse = await verifyJwtAuth(
@@ -56,54 +53,32 @@ const jwtAuthTokenValidation = async (
       const authToken: string = jwtAuthVerifyResponse?.jwtAuthToken;
 
       // Set Auth Token Cookie
-      const setResponseAuthCookieResult: successResponseJson = setResponseCookie(res, "authToken", authToken, 1000 * 60 * 12);
+      const setResponseAuthCookieResult: successResponseJson = setResponseCookie(res, "authToken", authToken, 1000 * 60 * 20);
       if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
-        return res.status(400).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to set response cookie" });
+        throw new AppErrorClass(400, "INTERNAL_SERVER_ERROR", "Failed to set response cookie")
       }
-
-      // res.cookie("authToken", authToken, {
-      //   httpOnly: true,
-      //   secure:
-      //     (process.env.NODE_ENV ?? "").toUpperCase() === "DEVELOPMENT"
-      //       ? false
-      //       : true,
-      //   sameSite:
-      //     (process.env.NODE_ENV ?? "").toUpperCase() === "DEVELOPMENT"
-      //       ? "lax"
-      //       : "none",
-      //   signed: true,
-      //   maxAge: 12 * 60 * 1000
-      // })
 
       next()
       return
     }
 
     if (jwtAuthVerifyResponse?.status !== "SUCCESS") {
-      res.status(400).json({
-        status: "UNAUTHORIZED",
-        message: "Error occurred while verifying authentication token"
-      })
-      return
+      throw new AppErrorClass(400, "UNAUTHORIZED", "Error occurred while verifying authentication token")
     }
 
     const jwtAuthData = jwtAuthVerifyResponse.jwtAuthData
 
     if (jwtAuthData?.accessToken !== accessToken || jwtAuthData?.userType !== sessionUserType) {
-      res.status(400).json({
-        status: "UNAUTHORIZED",
-        message: "Invalid or tampered authentication token",
-      })
-      return
+      throw new AppErrorClass(400, "UNAUTHORIZED", "Invalid or tampered authentication token")
     }
 
     next()
-  } catch (err) {
-    res.status(400).json({
-      status: "INTERNAL_SERVER_ERROR",
-      message: "Internal server error",
-      error: err
-    })
+  }
+  catch (error) {
+    if (error instanceof AppErrorClass) {
+      throw error; // ✅ preserve original error
+    }
+    throw new Error("JWT auth validation is facing issue.")
   }
 }
 

@@ -36,7 +36,7 @@ const globalErrorHandler = (
     // ❌ Unknown errors
     res.status(500).json({
         status: "INTERNAL_SERVER_ERROR",
-        message: "Internal Server Error",
+        message: err?.message || err.stack?.split('\n').slice(0, 2).join('\n') || "Internal Server Error",
     });
 };
 

@@ -52,7 +52,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
 
     // Check cached DNS configuration data
     const cachedDnsConfigData: portalConfigurationDataType | undefined = dnsConfigCache.get(domainName);
-    if (cachedDnsConfigData) {
+    if (cachedDnsConfigData && req.session.initiated && req.session.lastActivity && req.session.sessiondata && req.session.meta) {
         console.log("DNS configuration data fetched from cache", cachedDnsConfigData);
         return res.success("DNS config fetch successfully", cachedDnsConfigData, 200);
     }
