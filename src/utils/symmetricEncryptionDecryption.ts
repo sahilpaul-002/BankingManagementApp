@@ -19,15 +19,26 @@ export const getSymmetricEncryptionKey = (req: Request): {status: string, key: s
     }
 }
 
-export const symmetricDecryptionMsg = (req: Request, { ciphertextHex, ivHex }: {ciphertextHex: string, ivHex: string}): decryptionSuccessJson | decryptionFailedJson => {
+export const symmetricDecryptionMsg = (req: Request, ciphertextHex: string, ivHex: string): decryptionSuccessJson | decryptionFailedJson => {
     const response = getSymmetricEncryptionKey(req); // hex → raw bytes
-    let key: Buffer;
-    if (response?.status.toUpperCase() === "SUCCESS") {
-        key = Buffer.from(response?.key as string, "hex");
+    const key: string | undefined = req.session?.encryptionKey;
+    // if (response?.status.toUpperCase() === "SUCCESS") {
+    //     key = Buffer.from(response?.key as string, "hex");
+    // }
+    // else {
+    //     return { status: "NOT_FOUND", message: "Failed to fetch web encryption key" };
+    // }
+    if (!key) {
+        return {status: "NOT_FOUND", message: "Symmetric encryption key not found in the session"}
     }
-    else {
-        return { status: "ERROR", message: "Failed to fetch web encryption key" };
+
+    if (!ciphertextHex) {
+        return {status: "BAD_REQUEST", message: "Cipher text not found in the function parameter"}
     }
+    if (!ivHex) {
+        return {status: "BAD_REQUEST", message: "IvHex not found in the function parameter"}
+    }
+
     const data: Buffer = Buffer.from(ciphertextHex, "hex");
     const iv: Buffer = Buffer.from(ivHex, "hex");
 

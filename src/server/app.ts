@@ -104,12 +104,11 @@ app.use(checkOriginExist)
 // Check Portal Header Exist Middleware
 app.use(portalHeaderCheck);
 
-// REQUEST SOURCE CHECK
+// Request Source Check
 app.use(checkRequestSource);
 
 // Rate Limiter Middleware
 app.use(rateLimiter());
-
 
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 

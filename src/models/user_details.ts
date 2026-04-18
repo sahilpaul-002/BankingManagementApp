@@ -1,9 +1,9 @@
 import mongoose, { Schema, Types } from "mongoose";
 import { userBankDetailsModel as user_bank_details } from "./user_bank_details.js";
 import { userAddressModel as user_addresses } from "./user_addresses.js";
-import { type userDetailsSchema } from "../types/schemaTypes.js";
+import { type userDetailsSchemaTypes } from "../types/schemaTypes.js";
 
-const userDetailsSchema = new Schema<userDetailsSchema>({
+const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     full_name: {
         type: String,
         required: true,
@@ -122,6 +122,6 @@ const userDetailsSchema = new Schema<userDetailsSchema>({
 }, { timestamps: true, minimize: false }
 );
 
-const userDetailsModel = mongoose.model<userDetailsSchema>("UserDetails", userDetailsSchema, "user_details");
+const userDetailsModel = mongoose.model<userDetailsSchemaTypes>("UserDetails", userDetailsSchema, "user_details");
 
 export {userDetailsModel};

@@ -12,6 +12,36 @@ const userDetailsValidationSchema = z.object({
         .max(100, "Full name cannot exceed 100 characters")
         .regex(/^[a-zA-Z\s.'-]+$/, "Full name can only contain letters, spaces, dots (.), apostrophes ('), and hyphens (-)."),
 
+    agent_code: z
+        .string("Agent code is required and must be string")
+        .trim()
+        .min(1, "Subagent code is required")
+        .optional(),
+    
+    subagent_code: z
+        .string("Subagent code is required and must be a string")
+        .trim()
+        .min(1, "Subagent code is required")
+        .optional(),
+
+    program_id: z
+        .string("Subagent code is required and must be a string")
+        .trim()
+        .min(1, "Subagent code is required")
+        .optional(),
+
+    business_id: z
+        .string("Business-id is required and must be a string")
+        .trim()
+        .min(1, "Business-id is required")
+        .optional(),
+    
+    client_id: z
+        .string("Client-id, is required and must be a string")
+        .trim()
+        .min(1, "Client-id is required")
+        .optional(),
+
     email: z
         .email("Invalid email format")
         .trim()

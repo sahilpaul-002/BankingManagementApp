@@ -5,6 +5,12 @@ import { AppErrorClass } from "../utils/AppErrorClass.js";
 
 const sessionExpiration = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
+        // Skip portal header check for selcted pathes
+        const excludedPaths: string[] = ["/signUp", "/login"];
+        if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+            return next();
+        }
+
         if (req.session) {
             // Check session expiry
             const now: number = Date.now();

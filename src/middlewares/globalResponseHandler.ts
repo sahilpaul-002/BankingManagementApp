@@ -8,7 +8,7 @@ import { logWarn } from "../utils/loggerWrappper.js";
 declare module "express-serve-static-core" {
     interface Response {
         success: <T>(message: string, data: T, statusCode?: number) => Response;
-        fail: (status: errorStatusTypes, message: string, statusCode?: number) => Response;
+        fail: (status: errorStatusTypes, message: string, statusCode?: number, error?: any) => Response;
     }
 }
 
@@ -34,7 +34,8 @@ const globalResponseHandler = (
     res.fail = function (
         status: errorStatusTypes,
         message: string,
-        statusCode = 400
+        statusCode = 400,
+        error: any
     ) {
         // Prevet response already sent error
         if (res.headersSent) {
@@ -53,6 +54,7 @@ const globalResponseHandler = (
         return res.status(statusCode).json({
             status,
             message,
+            error
         });
     };
 

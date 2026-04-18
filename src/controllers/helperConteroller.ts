@@ -63,67 +63,58 @@ export const destroySession = (req: Request, res: Response): Response<successRes
 }
 
 export const checkTimeoutApi = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
-    try {
-        await new Promise(resolve => setTimeout(resolve, 6000));
-        if (!res.headersSent) {
-            return res.status(200).json({ status: "SUCCESS", message: "Request finished" });
-        }
-    }
-    catch (error) {
-        errorHandler(req, res, error, 500, "SERVICE_UNAVAILABLE", "CHECK TIMEOUT SERVICE FACING ISSUE.");
+    await new Promise(resolve => setTimeout(resolve, 6000));
+    if (!res.headersSent) {
+        return res.status(200).json({ status: "SUCCESS", message: "Request finished" });
     }
 }
 
 export const insertDDocumentIntoCollection = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
-    try {
-        // Cehck request body
-        if (!req?.body?.collectionName) {
-            return res.status(400).json({ status: "BAD_REQUEST", message: "Collection name is required in request body" });
-        }
-        if (!req?.body?.document) {
-            return res.status(400).json({ status: "BAD_REQUEST", message: "Document is required in request body" });
-        }
-
-        const collectionNameString: string = req?.body?.collectionName
-        const document: object = req?.body?.document;
-        // Check if collection exist in MongoDB
-        const isCollectionPresent: successResponseJson | failedResponseJson = await checkMongoDbCollectionExist(collectionNameString);
-        if (isCollectionPresent.status !== "SUCCESS") {
-            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Collection does not exist in MongoDB" });
-        }
-
-
-        // // Connect to db
-        // const db = mongoose.connection.db;
-        // // Cehck db connection exists
-        // if (!db) {
-        //     return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "MongoDB connection is not established" });
-        // }
-        // // Get collection in db
-        // const collection = db.collection(collectionNameString);
-
-        // All DB Models mapped
-        const modelsMap: Record<string, any> = {
-            portal_configurations: portalConfigurationsModel,
-            user_details: userDetailsModel,
-            user_addresses: userAddressModel,
-            user_bank_details: userBankDetailsModel
-        };
-        // Get Model
-        const Model = modelsMap[collectionNameString];
-
-        // Check if the model exist
-        if (!Model) {
-            return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Required collection does not exist in MongoDB" });
-        }
-
-        // Insert document in collection
-        // const insertedDocument = await collection.insertOne(document);
-        const insertedDocument = await Model.create(document);
-
-        // console.log("Document inserted: ", insertedDocument);
-        return res.status(200).json({ status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument });
-    } catch (error) {
-        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "DATA INSERTION SERVICE FACING ISSUE.");
+    // Cehck request body
+    if (!req?.body?.collectionName) {
+        return res.status(400).json({ status: "BAD_REQUEST", message: "Collection name is required in request body" });
     }
+    if (!req?.body?.document) {
+        return res.status(400).json({ status: "BAD_REQUEST", message: "Document is required in request body" });
+    }
+
+    const collectionNameString: string = req?.body?.collectionName
+    const document: object = req?.body?.document;
+    // Check if collection exist in MongoDB
+    const isCollectionPresent: successResponseJson | failedResponseJson = await checkMongoDbCollectionExist(collectionNameString);
+    if (isCollectionPresent.status !== "SUCCESS") {
+        return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Collection does not exist in MongoDB" });
+    }
+
+
+    // // Connect to db
+    // const db = mongoose.connection.db;
+    // // Cehck db connection exists
+    // if (!db) {
+    //     return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "MongoDB connection is not established" });
+    // }
+    // // Get collection in db
+    // const collection = db.collection(collectionNameString);
+
+    // All DB Models mapped
+    const modelsMap: Record<string, any> = {
+        portal_configurations: portalConfigurationsModel,
+        user_details: userDetailsModel,
+        user_addresses: userAddressModel,
+        user_bank_details: userBankDetailsModel
+    };
+    // Get Model
+    const Model = modelsMap[collectionNameString];
+
+    // Check if the model exist
+    if (!Model) {
+        return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Required collection does not exist in MongoDB" });
+    }
+
+    // Insert document in collection
+    // const insertedDocument = await collection.insertOne(document);
+    const insertedDocument = await Model.create(document);
+
+    // console.log("Document inserted: ", insertedDocument);
+    return res.status(200).json({ status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument });
 }

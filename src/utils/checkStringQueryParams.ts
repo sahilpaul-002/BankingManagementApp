@@ -1,7 +1,8 @@
 import type { Request } from "express";
+import type {ParsedQs} from "qs";
 
-const checkStringQueryParams = (req: Request, name: string): string | null => {
-    const value = req.query?.[name];
+const checkStringQueryParams = (query: Record<string, string> | ParsedQs | undefined, name: string): string | null => {
+    const value = query?.[name];
 
     if (typeof value === "string") {
         return value.toLowerCase();
