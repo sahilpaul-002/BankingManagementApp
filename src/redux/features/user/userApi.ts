@@ -8,6 +8,7 @@ import { createAxiosInstance } from '@/configs/axiosConfig'
 import GetDeviceId from '@/utils/GetDeviceId'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
+const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
 
 interface SigninRequest {
     email: string
@@ -42,8 +43,9 @@ const axiosBaseQuery = (): BaseQueryFn<
 
             // ✅ Build headers dynamically from Redux state
             const dynamicHeaders: Record<string, string> = {
-                'portal': 'business',
-                'from-portal': 'false',
+                // 'portal': 'business',
+                // 'from-portal': 'false',
+                'dns-x-api-key': dnsXApiKey,
                 'Content-Type': 'application/json',
             }
 
@@ -54,9 +56,7 @@ const axiosBaseQuery = (): BaseQueryFn<
                 dynamicHeaders['program-id'] = dnsConfig.program_id
                 dynamicHeaders['business-id'] = dnsConfig.business_id
                 dynamicHeaders['client-id'] = dnsConfig.client_id
-                dynamicHeaders['authorization'] = `Bearer ${dnsConfig.accessToken}`,
-                dynamicHeaders["request-id"] = crypto.randomUUID(),
-                dynamicHeaders["x-device-id"] = await GetDeviceId()
+                dynamicHeaders['authorization'] = `Bearer ${dnsConfig.accessToken}`
             }
 
             // ✅ Create instance dynamically per request
@@ -119,6 +119,9 @@ export const userApis = createApi({
                 const result = await baseQuery({
                     url: `${dnsConfig?.base_url_api}${USER_URL}/login`,
                     method: 'POST',
+                    params: {
+                        domainName: dnsConfig?.domain_name
+                    },
                     data: payload,
                 })
 

@@ -52,10 +52,7 @@ interface ConfigResponse {
 const axiosInstance = createAxiosInstance(
     `${dnsBaseUrl}${CONFIG_URL}`,
     {
-        'portal': 'business',
-        'x-api-key': dnsXApiKey,
-        "request-id": crypto.randomUUID(),
-        "x-device-id": await GetDeviceId(),
+        'dns-x-api-key': dnsXApiKey,
         'Content-Type': 'application/json',
     },
     ENVIRONMENT
