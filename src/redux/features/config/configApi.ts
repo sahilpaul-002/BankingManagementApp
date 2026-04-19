@@ -1,7 +1,6 @@
 import { axiosBaseQuery, createAxiosInstance } from '@/configs/axiosConfig'
 import { CONFIG_URL } from '@/configs/constants'
 import { setDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
-import GetDeviceId from '@/utils/GetDeviceId'
 import { createApi } from '@reduxjs/toolkit/query/react'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV

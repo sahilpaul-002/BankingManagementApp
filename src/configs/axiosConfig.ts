@@ -21,8 +21,8 @@ export const createAxiosInstance = (
     // ==========================
     instance.interceptors.request.use(
         async (config) => {
-             config.headers["portal"] = "business";
-             config.headers["from-portal"] = "false";
+            config.headers["portal"] = "business";
+            config.headers["from-portal"] = "false";
             config.headers["request-id"] = crypto.randomUUID();
 
             const deviceId = await GetDeviceId();
@@ -42,6 +42,10 @@ export const createAxiosInstance = (
             return response;
         },
         async (error) => {
+            console.log("INTERCEPTOR ERROR HIT", {"URL": error.config?.url, "Status": error.response?.status, "Data": error.response?.data});
+
+            // debugger;
+
             // error handling (global)
             if (error.response?.status === 400) {
                 console.error("BAD_REQUEST / ERROR");

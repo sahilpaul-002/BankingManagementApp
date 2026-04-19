@@ -5,7 +5,6 @@ import type { rootStateType } from '@/redux/sotre'
 import { configApis } from '../config/configApi'
 import { USER_URL } from '@/configs/constants'
 import { createAxiosInstance } from '@/configs/axiosConfig'
-import GetDeviceId from '@/utils/GetDeviceId'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
