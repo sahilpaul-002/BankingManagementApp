@@ -21,7 +21,7 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
         const isCollectionPresent = await checkMongoDbCollectionExist("portal_configurations");
         if (isCollectionPresent.status !== "SUCCESS") {
             throw new AppErrorClass(
-                400,
+                404,
                 "NOT_FOUND",
                 "Required collection does not exist in MongoDB"
             );
@@ -41,7 +41,7 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
 
         if (!domainName) {
             throw new AppErrorClass(
-                400,
+                406,
                 "INVALID_REQUEST_QUERY_PARAMETER",
                 "'domainName' MISSING OR NOT STRING"
             );
@@ -59,7 +59,7 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
 
         // Cehck DNS Config Data
         if (!dnsData) {
-            throw new AppErrorClass(400, "NOT_FOUND", "DNS configuration not found")
+            throw new AppErrorClass(404, "NOT_FOUND", "DNS configuration not found")
         }
 
         // Create Access Token

@@ -30,7 +30,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
 
             if (!isLikelyBrowser) {
                 throw new AppErrorClass(
-                    400,
+                    403,
                     "FORBIDDEN",
                     "User is not allowed to access the application"
                 )
@@ -55,7 +55,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
             // Check client domain matches the session domain
             if (!req?.session?.sessiondata?.domainName) {
                 throw new AppErrorClass(
-                    400,
+                    401,
                     "UNAUTHENTICATED",
                     "Unauthenticated session"
                 );
@@ -74,7 +74,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
 
                 if (originHost !== sessionDomain && !originHost.endsWith(`.${sessionDomain}`)) {
                     throw new AppErrorClass(
-                        400,
+                        401,
                         "UNAUTHENTICATED",
                         "Unauthenticated session"
                     );
@@ -96,7 +96,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
 
                 if (req?.session?.meta?.clientIp !== clientIp) {
                     throw new AppErrorClass(
-                        400,
+                        401,
                         "UNAUTHENTICATED",
                         "Unauthenticated session"
                     );

@@ -25,20 +25,20 @@ const jwtAuthTokenValidation = async (
 
   try {
     if (!sessionAccessToken || !sessionUserType || !sessionClientId || !sessionBusinessId) {
-      throw new AppErrorClass(400, "UNAUTHENTICATED", "Session not authenticated")
+      throw new AppErrorClass(401, "UNAUTHENTICATED", "Session not authenticated")
     }
 
     // Extract token value of sessiondata access token
     const jwtTokenVerificationResult: successResponseJson = extractJwtTokenValue(sessionAccessToken as string);
     if (jwtTokenVerificationResult.status !== "SUCCESS") {
-      throw new AppErrorClass(400, "INTERNAL_SERVER_ERROR", "Failed to extract JWT token value from sessiondata access token")
+      throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "ExtractJwtTokenValue service is unavaibale")
     }
     const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
     const jwtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
 
 
     if (!jwtRefreshToken) {
-      throw new AppErrorClass(400, "UNAUTHENTICATED", "Missing authentication token")
+      throw new AppErrorClass(401, "UNAUTHENTICATED", "Missing authentication token")
     }
 
     const jwtAuthVerifyResponse = await verifyJwtAuth(
@@ -55,7 +55,7 @@ const jwtAuthTokenValidation = async (
       // Set Auth Token Cookie
       const setResponseAuthCookieResult: successResponseJson = setResponseCookie(res, "authToken", authToken, 1000 * 60 * 20);
       if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
-        throw new AppErrorClass(400, "INTERNAL_SERVER_ERROR", "Failed to set response cookie")
+        throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "SetResponseCookie service is unavaibale")
       }
 
       next()
@@ -63,13 +63,13 @@ const jwtAuthTokenValidation = async (
     }
 
     if (jwtAuthVerifyResponse?.status !== "SUCCESS") {
-      throw new AppErrorClass(400, "UNAUTHORIZED", "Error occurred while verifying authentication token")
+      throw new AppErrorClass(401, "UNAUTHORIZED", "Error occurred while verifying authentication token")
     }
 
     const jwtAuthData = jwtAuthVerifyResponse.jwtAuthData
 
     if (jwtAuthData?.accessToken !== accessToken || jwtAuthData?.userType !== sessionUserType) {
-      throw new AppErrorClass(400, "UNAUTHORIZED", "Invalid or tampered authentication token")
+      throw new AppErrorClass(401, "UNAUTHORIZED", "Invalid or tampered authentication token")
     }
 
     next()

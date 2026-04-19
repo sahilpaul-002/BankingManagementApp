@@ -20,22 +20,22 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
         // Check session exist
         if (!req.session) {
-            throw new AppErrorClass(400, "INVALID_SESSION", "SESSION NOT FOUND")
+            throw new AppErrorClass(401, "INVALID_SESSION", "SESSION NOT FOUND")
         }
 
         // Check if session is tampered(if tampered then newly created session)
         if (req.session?.isNew) {
-            throw new AppErrorClass(400, "INVALID_SESSION", "SESSION INVALID OR TAMPERED")
+            throw new AppErrorClass(401, "INVALID_SESSION", "SESSION INVALID OR TAMPERED")
         }
 
         // Check if session is initialised
         if (!req.session?.initiated && !req.session?.lastActivity) {
-            throw new AppErrorClass(400, "INVALID_SESSION", "SESSION NOT INITIATED OR SESSION TIMEDOUT")
+            throw new AppErrorClass(401, "UNAUTHENTICATED", "SESSION NOT INITIATED OR SESSION TIMEDOUT")
         }
 
         // Check session valid
         if (!req.session?.valid) {
-            throw new AppErrorClass(400, "INVALID_SESSION", "SESSION NOT VALID")
+            throw new AppErrorClass(401, "UNAUTHENTICATED", "SESSION NOT VALID")
         }
 
         let userDetails: userDetailsSchemaTypes | null
@@ -60,7 +60,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
                             throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION")
                         }
                     }
-                    throw new AppErrorClass(400, "FORBIDDEN", "User does not exists");
+                    throw new AppErrorClass(403, "FORBIDDEN", "User does not exists");
                 }
                 catch (error) {
                     throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "DESTROY SESSION SERVICE FACING ISSUE.");
@@ -70,7 +70,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             // Check user activated
             if (!userDetails?.is_active) {
                 const destroySessionResponse = await destroySession(req, res);
-                throw new AppErrorClass(400, "UNAUTHORIZED", "User is not activated");
+                throw new AppErrorClass(401, "UNAUTHORIZED", "User is not activated");
             }
         }
         catch {
@@ -97,7 +97,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             // Check client-ip and device-id in session meata
             if (!req.session?.meta?.clientIp || !req.session?.meta?.deviceId || req.session.meta.clientIp !== clientIp || req.session.meta.deviceId !== deviceId) {
                 const destroySessionResponse = await destroySession(req, res);
-                throw new AppErrorClass(400, "UNAUTHORIZED", "User is not authorized - Invalid user meta details");
+                throw new AppErrorClass(401, "UNAUTHORIZED", "User is not authorized - Invalid user meta details");
             }
 
             // Function to validate client IP and device ID
@@ -118,7 +118,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
             if (!isValidMeta) {
                 const destroySessionResponse = await destroySession(req, res);
-                throw new AppErrorClass(400, "UNAUTHORIZED", "User is not authorized - Invalid user meta details");
+                throw new AppErrorClass(401, "UNAUTHORIZED", "User is not authorized - Invalid user meta details");
             }
         }
         catch {
@@ -128,7 +128,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
         // // Check user status
         // if (["DISABLED", "BLOCKED"].includes(userDetails?.status?.toUpperCase() as string)) {
         //     const destroySessionResponse = await destroySession(req, res);
-        //     return res.status(400).json({ status: "UNAUTHORIZED", message: "User account is disabled or blocked" });
+        //     return res.status(401).json({ status: "UNAUTHORIZED", message: "User account is disabled or blocked" });
         // }
 
         // Check user session version

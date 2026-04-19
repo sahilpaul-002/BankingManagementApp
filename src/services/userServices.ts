@@ -27,13 +27,13 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         }
 
         if (!req.session || !req.session?.initiated || !req.session?.lastActivity || !req.session?.sessiondata || !req.session?.meta) {
-            throw new AppErrorClass(400, "UNAUTHENTICATED", "Unauthenticated acccess")
+            throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated acccess")
         }
 
         // Check if collection exist in MongoDB
         const isCollectionPresent = await checkMongoDbCollectionExist("user_details");
         if (isCollectionPresent.status !== "SUCCESS") {
-            throw new AppErrorClass(400, "NOT_FOUND", "Required collection does not exist in MongoDB");
+            throw new AppErrorClass(404, "NOT_FOUND", "Required collection does not exist in MongoDB");
         }
 
         // Check email present in request body
@@ -73,7 +73,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         // Check user exist in DB
         if (userExistance) {
             const destroySessionResponse = await destroySession(req, res);
-            throw new AppErrorClass(400, "FORBIDDEN", "User already exists");
+            throw new AppErrorClass(403, "FORBIDDEN", "User already exists");
         }
 
         // HashPassword
@@ -127,7 +127,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Check if collection exist in MongoDB
         const isCollectionPresent = await checkMongoDbCollectionExist("user_details");
         if (isCollectionPresent.status !== "SUCCESS") {
-            throw new AppErrorClass(400, "NOT_FOUND", "Required collection does not exist in MongoDB");
+            throw new AppErrorClass(404, "NOT_FOUND", "Required collection does not exist in MongoDB");
         }
 
         // Check email present in request body
@@ -167,20 +167,20 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Check user exist in DB
         if (!userDetails) {
             const destroySessionResponse = await destroySession(req, res);
-            throw new AppErrorClass(400, "FORBIDDEN", "User does not exist")
+            throw new AppErrorClass(403, "FORBIDDEN", "User does not exist")
         }
 
         // Check user input password validity
         const isPasswordValid = compareSync(aesDecryptedBodyData?.password as string, userDetails?.password);
         if (!isPasswordValid) {
             const destroySessionResponse = await destroySession(req, res);
-            throw new AppErrorClass(400, "FORBIDDEN", "Invalid credentials")
+            throw new AppErrorClass(403, "FORBIDDEN", "Invalid credentials")
         }
 
         // Check user configuration
         if (userDetails.agent_code !== req.session?.sessiondata?.agentCode || userDetails.subagent_code !== req.session?.sessiondata?.subAgentCode || userDetails.program_id !== req.session?.sessiondata?.programId || userDetails.business_id !== req.session?.sessiondata?.businessId || userDetails.client_id !== req.session?.sessiondata?.clientId) {
             const destroySessionResponse = await destroySession(req, res);
-            throw new AppErrorClass(400, "FORBIDDEN", "User configuration does not match")
+            throw new AppErrorClass(403, "FORBIDDEN", "User configuration does not match")
         }
 
         // Update user status in DB if not already activated
@@ -263,7 +263,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Extract token value of sessiondata access token
         const jwtTokenVerificationResult: successResponseJson = await extractJwtTokenValue(req.session?.sessiondata?.accessToken as string);
         if (jwtTokenVerificationResult.status !== "SUCCESS") {
-            throw new AppErrorClass(400, "SERVICE_UNAVAILABLE", "Failed to extract JWT token value from sessiondata access token");
+            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Failed to extract JWT token value from sessiondata access token");
         }
         const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
         const jwtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
@@ -273,7 +273,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Set Auth Token Cookie
         const setResponseAuthCookieResult: successResponseJson = await setResponseCookie(res, "authToken", jwtAuthToken, 1000 * 60 * 20);
         if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
-            throw new AppErrorClass(400, "SERVICE_UNAVAILABLE", "Failed to set response auth-token cookie");
+            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Failed to set response auth-token cookie");
         }
 
         // Create Auth Token
@@ -281,7 +281,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Set Refresh Token Cookie
         const setResponseRefreshCookieResult: successResponseJson = await setResponseCookie(res, "refreshToken", jwtRefreshToken, 1000 * 60 * 60);
         if (setResponseRefreshCookieResult.status.toUpperCase() !== "SUCCESS") {
-            throw new AppErrorClass(400, "SERVICE_UNAVAILABLE", "Failed to set response refresh-token cookie");
+            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Failed to set response refresh-token cookie");
         }
 
         return { status: "SUCCESS", message: "User login successfull", data: updatedUserDetails }

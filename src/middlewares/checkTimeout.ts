@@ -20,8 +20,8 @@ const checkTimeout = (seconds: number): RequestHandler => {
         // ✅ 1. Application-level timeout (for user response)
         const appTimer = setTimeout(() => {
             if (!res.headersSent) {
-                res.status(503).json({
-                    status: "SERVICE_UNAVAILABLE",
+                res.status(408).json({
+                    status: "SERVICE_TIMEOUT",
                     message: "SERVICE TIME OUT"
                 });
             }

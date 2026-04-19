@@ -48,7 +48,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                 else if (decryptionMsgResponse1 && ["NOT_FOUND", "BAD_REQUEST"].includes(decryptionMsgResponse1.status.toUpperCase())) {
                     const errorResponse: decryptionFailedJson = decryptionMsgResponse1 as decryptionFailedJson;
                     if (errorResponse?.message?.includes("Assymetric private key not found in session")) {
-                        throw new AppErrorClass(400, "UNAUTHENTICATED", "Unauthenticated Access: Private key not found in session");
+                        throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: Private key not found in session");
                     }
                     else if (errorResponse?.message?.includes("Cipher text not found in the function parameter")) {
                         throw new AppErrorClass(400, "ERROR", "Asymmetric decryption error - cipher text not found.");
@@ -59,7 +59,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                 }
             }
             catch (error) {
-                throw new AppErrorClass(400, "SERVICE_UNAVAILABLE", "Asymmetric decryption service is not working.");
+                throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Asymmetric decryption service is not working.");
             }
 
             // AES Symmetric payload decryption
@@ -81,7 +81,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                 else if (decryptionMsgResponse2 && ["NOT_FOUND", "BAD_REQUEST"].includes(decryptionMsgResponse2.status.toUpperCase())) {
                     const errorResponse: decryptionFailedJson = decryptionMsgResponse2 as decryptionFailedJson;
                     if (errorResponse?.message?.includes("Symmetric encryption key not found in the session")) {
-                        throw new AppErrorClass(400, "UNAUTHENTICATED", "Unauthenticated Access: Private key not found in session");
+                        throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: Private key not found in session");
                     }
                     else if (errorResponse?.message?.includes("Cipher text not found in the function parameter")) {
                         throw new AppErrorClass(400, "ERROR", "Symmetric decryption error - cipher text not found.");
@@ -95,7 +95,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                 }
             }
             catch (error) {
-                throw new AppErrorClass(400, "SERVICE_UNAVAILABLE", "Symmetric decryption service is not working.");
+                throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Symmetric decryption service is not working.");
             }
         }
         else {

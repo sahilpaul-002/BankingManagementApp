@@ -11,12 +11,12 @@ const checkOriginExist = (req: Request, res: Response, next: NextFunction): Resp
     const origin: string | undefined = req.headers["origin"];
 
     if (!origin) {
-        throw new AppErrorClass(400, "FORBIDDEN", "'origin' HEADER IS MISSING");
+        throw new AppErrorClass(403, "FORBIDDEN", "'origin' HEADER IS MISSING");
     }
 
     if (!allowedOrigins.includes(origin)) {
         throw new AppErrorClass(
-            400,
+            403,
             "FORBIDDEN",
             "ORIGIN NOT ALLOWED"
         )

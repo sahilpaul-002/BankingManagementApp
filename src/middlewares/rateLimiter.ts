@@ -71,5 +71,6 @@ const rateLimiter = (): any => {
         skip: (req, res) => req.ip ? isIpAllowed(req.ip) : false,
     })
 }
+// RATE LIMITING STATUS CODE 429
 
 export default rateLimiter;

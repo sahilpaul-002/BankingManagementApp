@@ -28,15 +28,15 @@ const sessionExpiration = async (req: Request, res: Response, next: NextFunction
                             throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION")
                         }
                     }
-                    throw new AppErrorClass(500, "UNAUTHENTICATED", "Session expired due to inactivity")
+                    throw new AppErrorClass(401, "UNAUTHENTICATED", "Session expired due to inactivity")
                 }
             }
             else {
-                throw new AppErrorClass(400, "UNAUTHENTICATED", "Unauthorised Access: No Active Session Found")
+                throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: No Active Session Found")
             }
         }
         else {
-            throw new AppErrorClass(400, "UNAUTHENTICATED", "Unauthorised Access: No Active Session Found")
+            throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: No Active Session Found")
         }
 
         // Update the lastActivity timestamp

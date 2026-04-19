@@ -19,38 +19,38 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
         const xApiKey: string = req.headers["x-api-key"] as string;
 
         if (xApiKey !== req.session?.sessiondata?.requestXApiKey) {
-            throw new AppErrorClass(400, "UNAUTHORIZED", "INVALID 'x-api-key'")
+            throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'x-api-key'")
         }
 
         // ----------------------------------- Logic to validate authorization header ----------------------------------- \\
         // Validate Authorization header
         const authorizationHeader = req.headers["authorization"] as string;
         if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {
-            throw new AppErrorClass(400, "INVALID_HEADER", "'authorization' header missing or not in Bearer token format")
+            throw new AppErrorClass(406, "INVALID_HEADER", "'authorization' header missing or not in Bearer token format")
         }
         if (!authorizationHeader.split(" ")[1]) {
-            throw new AppErrorClass(400, "INVALID_HEADER", "'authorization' header missing token")
+            throw new AppErrorClass(406, "INVALID_HEADER", "'authorization' header missing token")
         }
         // Extract access token
         const authorizationHeaderToken: string = authorizationHeader.split(" ")[1] as string;
         if (authorizationHeaderToken && (authorizationHeaderToken !== req.session?.sessiondata?.accessToken)) {
-            throw new AppErrorClass(400, "UNAUTHORIZED", "Invalid authorization token")
+            throw new AppErrorClass(401, "UNAUTHORIZED", "Invalid authorization token")
         }
         // Extract token value of authorization header access token
         const jwtTokenVerificationResult1: successResponseJson = extractJwtTokenValue(authorizationHeaderToken as string);
         if (jwtTokenVerificationResult1.status !== "SUCCESS") {
-            throw new AppErrorClass(400, "INTERNAL_SERVER_ERROR", "Failed to extract JWT token value from authorization header")
+            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "ExtractJwtTokenValue service unavailbale")
         }
         const jwtAccessTokenValue1: string | undefined = (jwtTokenVerificationResult1.data as { jwtTokenValue?: string })?.jwtTokenValue;
 
         // Extract token value of sessiondata access token
         const jwtTokenVerificationResult2: successResponseJson = extractJwtTokenValue(req.session?.sessiondata?.accessToken as string);
         if (jwtTokenVerificationResult2.status !== "SUCCESS") {
-            throw new AppErrorClass(400, "INTERNAL_SERVER_ERROR", "Failed to extract JWT token value from sessiondata access token")
+            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "ExtractJwtTokenValue service unavailbale")
         }
         const jwtAccessTokenValue2: string | undefined = (jwtTokenVerificationResult2.data as { jwtTokenValue?: string })?.jwtTokenValue;
         if (!jwtAccessTokenValue1 || !jwtAccessTokenValue2 || jwtAccessTokenValue1 !== jwtAccessTokenValue2) {
-            throw new AppErrorClass(400, "UNAUTHENTICATED", "Invalid or expired access token")
+            throw new AppErrorClass(401, "UNAUTHENTICATED", "Invalid or expired access token")
         }
         // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
 
@@ -63,31 +63,31 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
             // Validate Agent Code header
             const agentCode: string = req.headers["agent-code"] as string;
             if (agentCode !== req.session?.sessiondata?.agentCode) {
-                throw new AppErrorClass(400, "UNAUTHORIZED", "INVALID 'agent-code'")
+                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'agent-code'")
             }
 
             // Validate Subagent Code header
             const subAgentCode: string = req.headers["subagent-code"] as string;
             if (subAgentCode !== req.session?.sessiondata?.subAgentCode) {
-                throw new AppErrorClass(400, "UNAUTHORIZED", "INVALID 'subagent-code'")
+                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'subagent-code'")
             }
 
             // Validate Program Id header
             const programId: string = req.headers["program-id"] as string;
             if (programId !== req.session?.sessiondata?.programId) {
-                throw new AppErrorClass(400, "UNAUTHORIZED", "INVALID 'program-id'")
+                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'program-id'")
             }
 
             // Validate Business Id header
             const businessId: string = req.headers["business-id"] as string;
             if (businessId !== req.session?.sessiondata?.businessId) {
-                throw new AppErrorClass(400, "UNAUTHORIZED", "INVALID 'business-id'")
+                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'business-id'")
             }
 
             // Validate Client Id header
             const clientId: string = req.headers["client-id"] as string;
             if (clientId !== req.session?.sessiondata?.clientId) {
-                throw new AppErrorClass(400, "UNAUTHORIZED", "INVALID 'client-id'")
+                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'client-id'")
             }
 
             // Skip user existance check for selcted pathes
@@ -118,7 +118,7 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
                                 throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION")
                             }
                         }
-                        throw new AppErrorClass(400, "FORBIDDEN", "User does not exists");
+                        throw new AppErrorClass(403, "FORBIDDEN", "User does not exists");
                     }
                     catch (error) {
                         throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "DESTROY SESSION SERVICE FACING ISSUE.");
@@ -127,7 +127,7 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
 
                 // Check agent-code and subagent-code
                 if (!userDetails?.agent_code || userDetails?.agent_code !== agentCode || !userDetails?.subagent_code || userDetails?.subagent_code !== subAgentCode) {
-                    throw new AppErrorClass(500, "UNAUTHORIZED", "Unauthorized access");
+                    throw new AppErrorClass(401, "UNAUTHORIZED", "Unauthorized access");
                 }
             }
             catch {

@@ -14,7 +14,7 @@ const validateUniqueRequests = async (req: Request, res: Response, next: NextFun
         const requestId: string | undefined = req.headers["request-id"] as string | undefined;
 
         if (!requestId) {
-            throw new AppErrorClass(400, "INVALID_HEADER", "'request id' MISSING OR NOT STRING")
+            throw new AppErrorClass(406, "INVALID_HEADER", "'request id' MISSING OR NOT STRING")
         }
 
         const key: string = `request-id:${requestId}`;
@@ -28,7 +28,7 @@ const validateUniqueRequests = async (req: Request, res: Response, next: NextFun
         const exists: number = await redisClient.exists(key);
 
         if (exists) {
-            throw new AppErrorClass(400, "UNAUTHORIZED", "Unauthorized session")
+            throw new AppErrorClass(401, "UNAUTHORIZED", "Unauthorized session")
         }
 
         await redisClient.set(key, "used", {

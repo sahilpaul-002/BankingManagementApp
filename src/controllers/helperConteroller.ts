@@ -37,7 +37,7 @@ export const getSession = (req: Request, res: Response): Response<successRespons
 export const destroySession = (req: Request, res: Response): Response<successResponseJson> | void => {
     try {
         if (!req.session) {
-            return res.status(200).json({ status: "NOT_FOUND", message: "NO ACTIVE SESSION FOUND" });
+            return res.status(404).json({ status: "NOT_FOUND", message: "NO ACTIVE SESSION FOUND" });
         }
 
         const sessionId = req.sessionID;
