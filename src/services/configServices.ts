@@ -33,7 +33,7 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
             throw new AppErrorClass(
                 400,
                 "INVALID_HEADER",
-                "'x-api-key MISSING OR NOT STRING"
+                "'dns-x-api-key MISSING OR NOT STRING"
             );
         }
         // Validate domain name in request body

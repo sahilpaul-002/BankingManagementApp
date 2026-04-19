@@ -171,7 +171,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         // Check user input password validity
-        const isPasswordValid = compareSync(aesDecryptedBodyData?.password as string, userDetails?.password);
+        const isPasswordValid = compareSync(password, userDetails?.password);
         if (!isPasswordValid) {
             const destroySessionResponse = await destroySession(req, res);
             throw new AppErrorClass(403, "FORBIDDEN", "Invalid credentials")

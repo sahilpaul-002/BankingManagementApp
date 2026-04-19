@@ -5,7 +5,7 @@ import { portalConfigurationsModel as portal_configurations } from "../models/po
 import checkMongoDbCollectionExist from '../utils/checkMongoDbCollectionExist.js';
 import checkStringHeader from '../utils/checkStringHeader.js';
 import checkStringBody from '../utils/checkStringBody.js';
-import { getSymmetricEncryptionKey, symmetricDecryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
+import { getSymmetricEncryptionKey, symmetricDecryptionMsg, symmetricEncryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
 import errorHandler from '../utils/errorHandler.js';
 import { asymmetricDecryptionMsg, getAsymmetricKeyPair } from '../utils/asymmetricEncryptionDecryption.js';
 import listCountryMobileCodes from '../utils/listCountryMobileCodes.js';
@@ -23,6 +23,7 @@ import { getDnsConfigService } from '../services/configServices.js';
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response<successResponseJson | failedResponseJson>): Promise<Response<successResponseJson> | void> => {
     let aesDecryptedQueryData: any = null;
+    let ivHex: string | undefined
     try {
         // Get request header "from_portal" to check the sorce the api call
         const fromPortal: string = req?.headers["from-portal"] as string;
@@ -30,7 +31,6 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
         // Check if the api call is not from portal
         if (fromPortal === "true") {
             let rsaDecryptedData: { ivHex: string };
-            let ivHex: string | undefined
 
             // RSA Asummetric payload decryption
             try {
@@ -59,7 +59,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                 }
             }
             catch (error) {
-                throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Asymmetric decryption service is not working.");
+                throw new AppErrorClass(400, "SERVICE_UNAVAILABLE", "Asymmetric decryption service is not working.");
             }
 
             // AES Symmetric payload decryption
@@ -95,7 +95,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                 }
             }
             catch (error) {
-                throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Symmetric decryption service is not working.");
+                throw new AppErrorClass(400, "SERVICE_UNAVAILABLE", "Symmetric decryption service is not working.");
             }
         }
         else {
@@ -114,7 +114,15 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
         if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
             res.fail("ERROR", "getDnsConfigService facing isssue", 400);
         }
-        return res.success("DNS config fetch successfully", getDnsConfigServiceResponse?.data, 200);
+
+        // Encrypt response using AES
+        const responseObj = getDnsConfigServiceResponse?.data;
+        const symmetricEncryptionMsgResponse = symmetricEncryptionMsg(req, responseObj, ivHex as string);
+        if (symmetricEncryptionMsgResponse?.status !== "SUCCESS") {
+            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Symmetric encryption service unavailbale")
+        }
+
+        return res.success("DNS config fetch successfully", symmetricEncryptionMsgResponse?.ciphertextHex, 200);
     }
     catch (error) {
         if (error instanceof AppErrorClass) {

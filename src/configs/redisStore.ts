@@ -12,11 +12,11 @@ const getRedisStore = async (redisClient: RedisClientType | undefined): Promise<
             return ({status: "SUCCESS", message: "Redis store created successfully.", store: redisStore});
         }
         else {
-            return ({status: "FAILED", message: "Redis store not initialised."});
+            return ({status: "INTERNAL_SERVER_ERROR", message: "Redis store not initialised."});
         }
     }
     else {
-        return ({status: "FAILED", message: "Redis client is not initialized."});
+        return ({status: "INTERNAL_SERVER_ERROR", message: "Redis client is not initialized."});
     }
 }
 
