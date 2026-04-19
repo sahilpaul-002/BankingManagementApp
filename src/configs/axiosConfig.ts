@@ -22,7 +22,7 @@ export const createAxiosInstance = (
     instance.interceptors.request.use(
         async (config) => {
             config.headers["portal"] = "business";
-            config.headers["from-portal"] = "false";
+            config.headers["from-portal"] = "true";
             config.headers["request-id"] = crypto.randomUUID();
 
             const deviceId = await GetDeviceId();
