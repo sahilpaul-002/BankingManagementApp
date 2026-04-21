@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express"
 import type { failedResponseJson } from "../types/responseJson.js";
-import { AppErrorClass } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError } from "../utils/AppErrorClass.js";
 
 const checkOriginExist = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
     const allowedOrigins: string[] = [
@@ -11,7 +11,7 @@ const checkOriginExist = (req: Request, res: Response, next: NextFunction): Resp
     const origin: string | undefined = req.headers["origin"];
 
     if (!origin) {
-        throw new AppErrorClass(403, "FORBIDDEN", "'origin' HEADER IS MISSING");
+        throw new ForbiddenError("'origin' HEADER IS MISSING");
     }
 
     if (!allowedOrigins.includes(origin)) {

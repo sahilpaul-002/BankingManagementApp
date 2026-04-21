@@ -23,7 +23,7 @@ type verifyJwtRefreshResponse = {
     error: unknown;
 } |
 {
-    status: "ERROR";
+    status: "SERVICE_ERROR";
     error: unknown;
 } | 
 {
@@ -54,7 +54,7 @@ const verifyJwtRefresh = async (
             jwtAuthData: authData,
         };
     } catch (error: any) {
-        console.log({ status: "ERROR", error });
+        console.log({ status: "SERVICE_ERROR", error });
 
         if (error.name === "TokenExpiredError") {
             return {
@@ -73,7 +73,7 @@ const verifyJwtRefresh = async (
         }
         else {
             return {
-                status: "ERROR",
+                status: "SERVICE_ERROR",
                 error,
             };
         }

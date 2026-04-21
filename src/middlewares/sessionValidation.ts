@@ -8,7 +8,7 @@ import destroySession from '../utils/destroySession.js';
 import normalizeIp from '../utils/normalizeIp.js';
 import { userMetaDetailsModel as user_meta_details } from '../models/user_meta_details.js';
 import type { ObjectId } from 'mongoose';
-import { AppErrorClass } from '../utils/AppErrorClass.js';
+import { AppErrorClass, ForbiddenError, InterSeverError, InvalidSessionError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
 
 const sessionValidation = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
@@ -20,22 +20,22 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
         // Check session exist
         if (!req.session) {
-            throw new AppErrorClass(401, "INVALID_SESSION", "SESSION NOT FOUND")
+            throw new InvalidSessionError("SESSION NOT FOUND")
         }
 
         // Check if session is tampered(if tampered then newly created session)
         if (req.session?.isNew) {
-            throw new AppErrorClass(401, "INVALID_SESSION", "SESSION INVALID OR TAMPERED")
+            throw new InvalidSessionError("SESSION INVALID OR TAMPERED")
         }
 
         // Check if session is initialised
         if (!req.session?.initiated && !req.session?.lastActivity) {
-            throw new AppErrorClass(401, "UNAUTHENTICATED", "SESSION NOT INITIATED OR SESSION TIMEDOUT")
+            throw new UnauthenticatedError("SESSION NOT INITIATED OR SESSION TIMEDOUT")
         }
 
         // Check session valid
         if (!req.session?.valid) {
-            throw new AppErrorClass(401, "UNAUTHENTICATED", "SESSION NOT VALID")
+            throw new UnauthenticatedError("SESSION NOT VALID")
         }
 
         let userDetails: userDetailsSchemaTypes | null
@@ -54,27 +54,27 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
                     if (destroySessionResponse?.status !== "SUCCESS") {
                         if ((destroySessionResponse as failedResponseJson)?.error) {
-                            throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
+                            throw new InterSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
                         }
                         else {
-                            throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION")
+                            throw new InterSeverError("FAILED TO DESTROY SESSION")
                         }
                     }
-                    throw new AppErrorClass(403, "FORBIDDEN", "User does not exists");
+                    throw new ForbiddenError("User does not exists");
                 }
                 catch (error) {
-                    throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "DESTROY SESSION SERVICE FACING ISSUE.");
+                    throw new InterSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
                 }
             }
 
             // Check user activated
             if (!userDetails?.is_active) {
                 const destroySessionResponse = await destroySession(req, res);
-                throw new AppErrorClass(401, "UNAUTHORIZED", "User is not activated");
+                throw new UnauthorizedError("User is not activated");
             }
         }
         catch {
-            throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "Session user validation using databse is facing issue");
+            throw new InterSeverError("Session user validation using databse is facing issue");
         }
 
         try {
@@ -97,7 +97,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             // Check client-ip and device-id in session meata
             if (!req.session?.meta?.clientIp || !req.session?.meta?.deviceId || req.session.meta.clientIp !== clientIp || req.session.meta.deviceId !== deviceId) {
                 const destroySessionResponse = await destroySession(req, res);
-                throw new AppErrorClass(401, "UNAUTHORIZED", "User is not authorized - Invalid user meta details");
+                throw new UnauthorizedError("User is not authorized - Invalid user meta details");
             }
 
             // Function to validate client IP and device ID
@@ -118,11 +118,11 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
             if (!isValidMeta) {
                 const destroySessionResponse = await destroySession(req, res);
-                throw new AppErrorClass(401, "UNAUTHORIZED", "User is not authorized - Invalid user meta details");
+                throw new UnauthorizedError("User is not authorized - Invalid user meta details");
             }
         }
         catch {
-            throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "Session IP validation using databse is facing issue");
+            throw new InterSeverError("Session IP validation using databse is facing issue");
         }
 
         // // Check user status

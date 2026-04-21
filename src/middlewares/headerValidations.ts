@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
 import cookieParser from "cookie-parser";
-import { AppErrorClass } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InterSeverError, InvalidHeaderError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import type { userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import destroySession from "../utils/destroySession.js";
@@ -19,38 +19,38 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
         const xApiKey: string = req.headers["x-api-key"] as string;
 
         if (xApiKey !== req.session?.sessiondata?.requestXApiKey) {
-            throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'x-api-key'")
+            throw new UnauthorizedError("INVALID 'x-api-key'")
         }
 
         // ----------------------------------- Logic to validate authorization header ----------------------------------- \\
         // Validate Authorization header
         const authorizationHeader = req.headers["authorization"] as string;
         if (!authorizationHeader || !authorizationHeader.startsWith("Bearer ")) {
-            throw new AppErrorClass(406, "INVALID_HEADER", "'authorization' header missing or not in Bearer token format")
+            throw new InvalidHeaderError("'authorization' header missing or not in Bearer token format")
         }
         if (!authorizationHeader.split(" ")[1]) {
-            throw new AppErrorClass(406, "INVALID_HEADER", "'authorization' header missing token")
+            throw new InvalidHeaderError("'authorization' header missing token")
         }
         // Extract access token
         const authorizationHeaderToken: string = authorizationHeader.split(" ")[1] as string;
         if (authorizationHeaderToken && (authorizationHeaderToken !== req.session?.sessiondata?.accessToken)) {
-            throw new AppErrorClass(401, "UNAUTHORIZED", "Invalid authorization token")
+            throw new UnauthorizedError("Invalid authorization token")
         }
         // Extract token value of authorization header access token
         const jwtTokenVerificationResult1: successResponseJson = extractJwtTokenValue(authorizationHeaderToken as string);
         if (jwtTokenVerificationResult1.status !== "SUCCESS") {
-            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "ExtractJwtTokenValue service unavailbale")
+            throw new ServiceUnavailableError("ExtractJwtTokenValue service unavailbale")
         }
         const jwtAccessTokenValue1: string | undefined = (jwtTokenVerificationResult1.data as { jwtTokenValue?: string })?.jwtTokenValue;
 
         // Extract token value of sessiondata access token
         const jwtTokenVerificationResult2: successResponseJson = extractJwtTokenValue(req.session?.sessiondata?.accessToken as string);
         if (jwtTokenVerificationResult2.status !== "SUCCESS") {
-            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "ExtractJwtTokenValue service unavailbale")
+            throw new ServiceUnavailableError("ExtractJwtTokenValue service unavailbale")
         }
         const jwtAccessTokenValue2: string | undefined = (jwtTokenVerificationResult2.data as { jwtTokenValue?: string })?.jwtTokenValue;
         if (!jwtAccessTokenValue1 || !jwtAccessTokenValue2 || jwtAccessTokenValue1 !== jwtAccessTokenValue2) {
-            throw new AppErrorClass(401, "UNAUTHENTICATED", "Invalid or expired access token")
+            throw new UnauthenticatedError("Invalid or expired access token")
         }
         // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
 
@@ -63,31 +63,31 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
             // Validate Agent Code header
             const agentCode: string = req.headers["agent-code"] as string;
             if (agentCode !== req.session?.sessiondata?.agentCode) {
-                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'agent-code'")
+                throw new UnauthorizedError("INVALID 'agent-code'")
             }
 
             // Validate Subagent Code header
             const subAgentCode: string = req.headers["subagent-code"] as string;
             if (subAgentCode !== req.session?.sessiondata?.subAgentCode) {
-                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'subagent-code'")
+                throw new UnauthorizedError("INVALID 'subagent-code'")
             }
 
             // Validate Program Id header
             const programId: string = req.headers["program-id"] as string;
             if (programId !== req.session?.sessiondata?.programId) {
-                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'program-id'")
+                throw new UnauthorizedError("INVALID 'program-id'")
             }
 
             // Validate Business Id header
             const businessId: string = req.headers["business-id"] as string;
             if (businessId !== req.session?.sessiondata?.businessId) {
-                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'business-id'")
+                throw new UnauthorizedError("INVALID 'business-id'")
             }
 
             // Validate Client Id header
             const clientId: string = req.headers["client-id"] as string;
             if (clientId !== req.session?.sessiondata?.clientId) {
-                throw new AppErrorClass(401, "UNAUTHORIZED", "INVALID 'client-id'")
+                throw new UnauthorizedError("INVALID 'client-id'")
             }
 
             // Skip user existance check for selcted pathes
@@ -112,26 +112,26 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
 
                         if (destroySessionResponse?.status !== "SUCCESS") {
                             if ((destroySessionResponse as failedResponseJson)?.error) {
-                                throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
+                                throw new InterSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
                             }
                             else {
-                                throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION")
+                                throw new InterSeverError("FAILED TO DESTROY SESSION")
                             }
                         }
-                        throw new AppErrorClass(403, "FORBIDDEN", "User does not exists");
+                        throw new ForbiddenError("User does not exists");
                     }
                     catch (error) {
-                        throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "DESTROY SESSION SERVICE FACING ISSUE.");
+                        throw new InterSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
                     }
                 }
 
                 // Check agent-code and subagent-code
                 if (!userDetails?.agent_code || userDetails?.agent_code !== agentCode || !userDetails?.subagent_code || userDetails?.subagent_code !== subAgentCode) {
-                    throw new AppErrorClass(401, "UNAUTHORIZED", "Unauthorized access");
+                    throw new UnauthorizedError("Unauthorized access");
                 }
             }
             catch {
-                throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "Session user validation using databse is facing issue");
+                throw new InterSeverError("Session user validation using databse is facing issue");
             }
         }
 

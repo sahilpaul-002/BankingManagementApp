@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction, RequestHandler } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
 import errorHandler from "../utils/errorHandler.js";
 import dotenv from "dotenv";
+import { ServiceTimeoutError } from "../utils/AppErrorClass.js";
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "PRODUCTION";
@@ -20,10 +21,7 @@ const checkTimeout = (seconds: number): RequestHandler => {
         // ✅ 1. Application-level timeout (for user response)
         const appTimer = setTimeout(() => {
             if (!res.headersSent) {
-                res.status(408).json({
-                    status: "SERVICE_TIMEOUT",
-                    message: "SERVICE TIME OUT"
-                });
+                throw new ServiceTimeoutError("Service has timed out")
             }
         }, timeoutMs);
 
@@ -43,7 +41,7 @@ const checkTimeout = (seconds: number): RequestHandler => {
 
         res.on("finish", cleanup);
         res.on("close", cleanup);
-        res.on("error", cleanup);
+        res.on("SERVICE_ERROR", cleanup);
 
         next();
     };

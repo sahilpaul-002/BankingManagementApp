@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import { AppErrorClass } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
@@ -23,36 +23,36 @@ import userDetailsValidationSchema from "../validations/userDetailsValidation.js
 export const userSignUpService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
-            throw new AppErrorClass(400, "BAD_REQUEST", "Invalid body data");
+            throw new BadRequestError("Invalid body data");
         }
 
         if (!req.session || !req.session?.initiated || !req.session?.lastActivity || !req.session?.sessiondata || !req.session?.meta) {
-            throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated acccess")
+            throw new UnauthenticatedError("Unauthenticated acccess")
         }
 
         // Check if collection exist in MongoDB
         const isCollectionPresent = await checkMongoDbCollectionExist("user_details");
         if (isCollectionPresent.status !== "SUCCESS") {
-            throw new AppErrorClass(404, "NOT_FOUND", "Required collection does not exist in MongoDB");
+            throw new NotFoundError("Required collection does not exist in MongoDB");
         }
 
         // Check email present in request body
         const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
         if (!email) {
-            throw new AppErrorClass(400, "BAD_REQUEST", "Email not present in the request body");
+            throw new InvalidRequestBodyError("Email not present in the request body");
         }
 
         // Check password present in request body
         const userPassword: string | null = checkStringBody(aesDecryptedBodyData, "password")
         if (!userPassword) {
-            throw new AppErrorClass(400, "BAD_REQUEST", "Email not present in the request body");
+            throw new InvalidRequestBodyError("Email not present in the request body");
         }
 
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof userDetailsValidationSchema>> = userDetailsValidationSchema.safeParse(aesDecryptedBodyData);
         if (!validationResult.success) {
             // return res.status(400).json({
-            //     status: "ERROR",
+            //     status: "SERVICE_ERROR",
             //     message: "Invalid request body",
             //     // errors: validationResult.error.issues.map(issue => issue.message)
             //     // errors: validationResult.error.issues.map(issue => ({
@@ -60,7 +60,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
             //     // }))
             //     errors: z.flattenError(validationResult.error)
             // });
-            throw new AppErrorClass(400, "ERROR", "Invalid request", z.flattenError(validationResult.error));
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
 
         // Get user from DB
@@ -73,7 +73,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         // Check user exist in DB
         if (userExistance) {
             const destroySessionResponse = await destroySession(req, res);
-            throw new AppErrorClass(403, "FORBIDDEN", "User already exists");
+            throw new ForbiddenError("User already exists");
         }
 
         // HashPassword
@@ -111,42 +111,42 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
 export const userLoginService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
-            throw new AppErrorClass(400, "BAD_REQUEST", "Invalid request body data");
+            throw new BadRequestError("Invalid request body data");
         }
         if (!aesDecryptedQueryData) {
-            throw new AppErrorClass(400, "BAD_REQUEST", "Invalid query data");
+            throw new BadRequestError("Invalid query data");
         }
         if (!req.session || !req.session?.initiated || !req.session?.lastActivity || !req.session?.sessiondata || !req.session?.meta) {
             const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, res, aesDecryptedQueryData);
 
             if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
-                throw new AppErrorClass(400, "ERROR", "getDnsConfigService facing isssue");
+                throw new ServiceError("getDnsConfigService facing isssue");
             }
         }
 
         // Check if collection exist in MongoDB
         const isCollectionPresent = await checkMongoDbCollectionExist("user_details");
         if (isCollectionPresent.status !== "SUCCESS") {
-            throw new AppErrorClass(404, "NOT_FOUND", "Required collection does not exist in MongoDB");
+            throw new NotFoundError("Required collection does not exist in MongoDB");
         }
 
         // Check email present in request body
         const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
         if (!email) {
-            throw new AppErrorClass(400, "BAD_REQUEST", "Email not present in the request body");
+            throw new InvalidRequestBodyError("Email not present in the request body");
         }
 
         // Check password present in request body
         const password: string | null = checkStringBody(aesDecryptedBodyData, "password")
         if (!password) {
-            throw new AppErrorClass(400, "BAD_REQUEST", "Email not present in the request body");
+            throw new InvalidRequestBodyError("Email not present in the request body");
         }
 
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof userLoginValidationSchema>> = userLoginValidationSchema.safeParse(aesDecryptedBodyData);
         if (!validationResult.success) {
             // return res.status(400).json({
-            //     status: "ERROR",
+            //     status: "SERVICE_ERROR",
             //     message: "Invalid request body",
             //     // errors: validationResult.error.issues.map(issue => issue.message)
             //     // errors: validationResult.error.issues.map(issue => ({
@@ -154,7 +154,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             //     // }))
             //     errors: z.flattenError(validationResult.error)
             // });
-            throw new AppErrorClass(400, "ERROR", "Invalid request", z.flattenError(validationResult.error));
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
 
         // Get user from DB
@@ -167,20 +167,20 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Check user exist in DB
         if (!userDetails) {
             const destroySessionResponse = await destroySession(req, res);
-            throw new AppErrorClass(403, "FORBIDDEN", "User does not exist")
+            throw new ForbiddenError("User does not exist")
         }
 
         // Check user input password validity
         const isPasswordValid = compareSync(password, userDetails?.password);
         if (!isPasswordValid) {
             const destroySessionResponse = await destroySession(req, res);
-            throw new AppErrorClass(403, "FORBIDDEN", "Invalid credentials")
+            throw new ForbiddenError("Invalid credentials")
         }
 
         // Check user configuration
         if (userDetails.agent_code !== req.session?.sessiondata?.agentCode || userDetails.subagent_code !== req.session?.sessiondata?.subAgentCode || userDetails.program_id !== req.session?.sessiondata?.programId || userDetails.business_id !== req.session?.sessiondata?.businessId || userDetails.client_id !== req.session?.sessiondata?.clientId) {
             const destroySessionResponse = await destroySession(req, res);
-            throw new AppErrorClass(403, "FORBIDDEN", "User configuration does not match")
+            throw new ForbiddenError("User configuration does not match")
         }
 
         // Update user status in DB if not already activated
@@ -216,7 +216,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 
         // Check if meta user data updated
         if (!userMetaDetailsDoc) {
-            throw new AppErrorClass(400, "ERROR", "Failed to update user meta details");
+            throw new ServiceError("Failed to update user meta details");
         }
 
         // Check if session is already valid, if yes then delete the old session and create a new session
@@ -263,7 +263,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Extract token value of sessiondata access token
         const jwtTokenVerificationResult: successResponseJson = await extractJwtTokenValue(req.session?.sessiondata?.accessToken as string);
         if (jwtTokenVerificationResult.status !== "SUCCESS") {
-            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Failed to extract JWT token value from sessiondata access token");
+            throw new ServiceUnavailableError("Failed to extract JWT token value from sessiondata access token");
         }
         const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
         const jwtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
@@ -273,7 +273,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Set Auth Token Cookie
         const setResponseAuthCookieResult: successResponseJson = await setResponseCookie(res, "authToken", jwtAuthToken, 1000 * 60 * 20);
         if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
-            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Failed to set response auth-token cookie");
+            throw new ServiceUnavailableError("Failed to set response auth-token cookie");
         }
 
         // Create Auth Token
@@ -281,7 +281,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Set Refresh Token Cookie
         const setResponseRefreshCookieResult: successResponseJson = await setResponseCookie(res, "refreshToken", jwtRefreshToken, 1000 * 60 * 60);
         if (setResponseRefreshCookieResult.status.toUpperCase() !== "SUCCESS") {
-            throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Failed to set response refresh-token cookie");
+            throw new ServiceUnavailableError("Failed to set response refresh-token cookie");
         }
 
         return { status: "SUCCESS", message: "User login successfull", data: updatedUserDetails }

@@ -1,5 +1,5 @@
 import { response, type Request, type Response } from "express"
-import { AppErrorClass } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, NotFoundError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import checkStringHeader from "../utils/checkStringHeader.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
@@ -15,7 +15,7 @@ import type { ParsedQs } from "qs";
 export const getDnsConfigService = async (req: Request, res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
     try {
         if (!aesDecryptedQueryData) {
-            throw new AppErrorClass(400, "BAD_REQUEST", "Invalid query data");
+            throw new BadRequestError("Invalid query data");
         }
         // Check if collection exist in MongoDB
         const isCollectionPresent = await checkMongoDbCollectionExist("portal_configurations");
@@ -59,7 +59,7 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
 
         // Cehck DNS Config Data
         if (!dnsData) {
-            throw new AppErrorClass(404, "NOT_FOUND", "DNS configuration not found")
+            throw new NotFoundError("DNS configuration not found")
         }
 
         // Create Access Token

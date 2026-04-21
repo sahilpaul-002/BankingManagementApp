@@ -1,7 +1,7 @@
 import type { Response, Request, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
 import destroySession from "../utils/destroySession.js";
-import { AppErrorClass } from "../utils/AppErrorClass.js";
+import { AppErrorClass, InterSeverError, UnauthenticatedError } from "../utils/AppErrorClass.js";
 
 const sessionExpiration = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
@@ -22,21 +22,21 @@ const sessionExpiration = async (req: Request, res: Response, next: NextFunction
 
                     if (destroySessionResponse?.status !== "SUCCESS") {
                         if ((destroySessionResponse as failedResponseJson)?.error) {
-                            throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
+                            throw new InterSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
                         }
                         else {
-                            throw new AppErrorClass(500, "INTERNAL_SERVER_ERROR", "FAILED TO DESTROY SESSION")
+                            throw new InterSeverError("FAILED TO DESTROY SESSION")
                         }
                     }
-                    throw new AppErrorClass(401, "UNAUTHENTICATED", "Session expired due to inactivity")
+                    throw new UnauthenticatedError("Session expired due to inactivity")
                 }
             }
             else {
-                throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: No Active Session Found")
+                throw new UnauthenticatedError("Unauthenticated Access: No Active Session Found")
             }
         }
         else {
-            throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: No Active Session Found")
+            throw new UnauthenticatedError("Unauthenticated Access: No Active Session Found")
         }
 
         // Update the lastActivity timestamp

@@ -10,7 +10,7 @@ import userDetailsValidationSchema from "../validations/userDetailsValidation.js
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
-import { AppErrorClass } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
 import { symmetricDecryptionMsg } from "../utils/symmetricEncryptionDecryption.js";
 import { userLoginService, userSignUpService } from "../services/userServices.js";
 import type { ParsedQs } from "qs";
@@ -51,24 +51,24 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
                 else if (decryptionMsgResponse1 && ["NOT_FOUND", "BAD_REQUEST"].includes(decryptionMsgResponse1.status.toUpperCase())) {
                     const errorResponse: decryptionFailedJson = decryptionMsgResponse1 as decryptionFailedJson;
                     if (errorResponse?.message?.includes("Assymetric private key not found in session")) {
-                        throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: Private key not found in session");
+                        throw new UnauthenticatedError("Unauthenticated Access: Private key not found in session");
                     }
                     else if (errorResponse?.message?.includes("Cipher text not found in the function parameter")) {
-                        throw new AppErrorClass(400, "ERROR", "Asymmetric decryption error - cipher text not found.");
+                        throw new ServiceError("Asymmetric decryption error - cipher text not found.");
                     }
                 }
                 else {
-                    throw new AppErrorClass(400, "ERROR", "Asymmetric decryption service unavailable");
+                    throw new ServiceError("Asymmetric decryption service unavailable");
                 }
             }
             catch (error) {
-                throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Asymmetric decryption service is not working.");
+                throw new ServiceUnavailableError("Asymmetric decryption service is not working.");
             }
 
             // AES Symmetric payload decryption
             try {
                 if (!ivHex) {
-                    throw new AppErrorClass(400, "ERROR", "IV not generated from asymmetric decryption");
+                    throw new ServiceError("IV not generated from asymmetric decryption");
                 }
 
                 // Get encrypted payload2
@@ -84,21 +84,21 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
                 else if (decryptionMsgResponse2 && ["NOT_FOUND", "BAD_REQUEST"].includes(decryptionMsgResponse2.status.toUpperCase())) {
                     const errorResponse: decryptionFailedJson = decryptionMsgResponse2 as decryptionFailedJson;
                     if (errorResponse?.message?.includes("Symmetric encryption key not found in the session")) {
-                        throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: Private key not found in session");
+                        throw new UnauthenticatedError("Unauthenticated Access: Private key not found in session");
                     }
                     else if (errorResponse?.message?.includes("Cipher text not found in the function parameter")) {
-                        throw new AppErrorClass(400, "ERROR", "Symmetric decryption error - cipher text not found.");
+                        throw new ServiceError("Symmetric decryption error - cipher text not found.");
                     }
                     else if (errorResponse?.message?.includes("IvHex not found in the function parameter")) {
-                        throw new AppErrorClass(400, "ERROR", "Symmetric decryption error - ivHex not found.");
+                        throw new ServiceError("Symmetric decryption error - ivHex not found.");
                     }
                 }
                 else {
-                    throw new AppErrorClass(400, "ERROR", "Symmetric decryption service unavailable");
+                    throw new ServiceError("Symmetric decryption service unavailable");
                 }
             }
             catch (error) {
-                throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Symmetric decryption service is not working.");
+                throw new ServiceUnavailableError("Symmetric decryption service is not working.");
             }
         }
         else {
@@ -117,7 +117,7 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
         const userSignUpResponse = await userSignUpService(req, res, aesDecryptedBodyData);
 
         if (userSignUpResponse?.status !== "SUCCESS") {
-            res.fail("ERROR", "getDnsConfigService facing isssue", 400);
+            res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
         }
         return res.success("User login successfull", userSignUpResponse?.data, 200);
     }
@@ -159,24 +159,24 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
                 else if (decryptionMsgResponse1 && ["NOT_FOUND", "BAD_REQUEST"].includes(decryptionMsgResponse1.status.toUpperCase())) {
                     const errorResponse: decryptionFailedJson = decryptionMsgResponse1 as decryptionFailedJson;
                     if (errorResponse?.message?.includes("Assymetric private key not found in session")) {
-                        throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: Private key not found in session");
+                        throw new UnauthenticatedError("Unauthenticated Access: Private key not found in session");
                     }
                     else if (errorResponse?.message?.includes("Cipher text not found in the function parameter")) {
-                        throw new AppErrorClass(400, "ERROR", "Asymmetric decryption error - cipher text not found.");
+                        throw new ServiceError("Asymmetric decryption error - cipher text not found.");
                     }
                 }
                 else {
-                    throw new AppErrorClass(400, "ERROR", "Asymmetric decryption service unavailable");
+                    throw new ServiceError("Asymmetric decryption service unavailable");
                 }
             }
             catch (error) {
-                throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Asymmetric decryption service is not working.");
+                throw new ServiceUnavailableError("Asymmetric decryption service is not working.");
             }
 
             // AES Symmetric payload decryption
             try {
                 if (!ivHex) {
-                    throw new AppErrorClass(400, "ERROR", "IV not generated from asymmetric decryption");
+                    throw new ServiceError("IV not generated from asymmetric decryption");
                 }
 
                 // Get encrypted payload2
@@ -192,27 +192,27 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
                 else if (decryptionMsgResponse2 && ["NOT_FOUND", "BAD_REQUEST"].includes(decryptionMsgResponse2.status.toUpperCase())) {
                     const errorResponse: decryptionFailedJson = decryptionMsgResponse2 as decryptionFailedJson;
                     if (errorResponse?.message?.includes("Symmetric encryption key not found in the session")) {
-                        throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: Private key not found in session");
+                        throw new UnauthenticatedError("Unauthenticated Access: Private key not found in session");
                     }
                     else if (errorResponse?.message?.includes("Cipher text not found in the function parameter")) {
-                        throw new AppErrorClass(400, "ERROR", "Symmetric decryption error - cipher text not found.");
+                        throw new ServiceError("Symmetric decryption error - cipher text not found.");
                     }
                     else if (errorResponse?.message?.includes("IvHex not found in the function parameter")) {
-                        throw new AppErrorClass(400, "ERROR", "Symmetric decryption error - ivHex not found.");
+                        throw new ServiceError("Symmetric decryption error - ivHex not found.");
                     }
                 }
                 else {
-                    throw new AppErrorClass(400, "ERROR", "Symmetric decryption service unavailable");
+                    throw new ServiceError("Symmetric decryption service unavailable");
                 }
             }
             catch (error) {
-                throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Symmetric decryption service is not working.");
+                throw new ServiceUnavailableError("Symmetric decryption service is not working.");
             }
 
             // AES Symmetric payload decryption
             try {
                 if (!ivHex) {
-                    throw new AppErrorClass(400, "ERROR", "IV not generated from asymmetric decryption");
+                    throw new ServiceError("IV not generated from asymmetric decryption");
                 }
 
                 // Get encrypted payload2
@@ -228,21 +228,21 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
                 else if (decryptionMsgResponse3 && ["NOT_FOUND", "BAD_REQUEST"].includes(decryptionMsgResponse3.status.toUpperCase())) {
                     const errorResponse: decryptionFailedJson = decryptionMsgResponse3 as decryptionFailedJson;
                     if (errorResponse?.message?.includes("Symmetric encryption key not found in the session")) {
-                        throw new AppErrorClass(401, "UNAUTHENTICATED", "Unauthenticated Access: Private key not found in session");
+                        throw new UnauthenticatedError("Unauthenticated Access: Private key not found in session");
                     }
                     else if (errorResponse?.message?.includes("Cipher text not found in the function parameter")) {
-                        throw new AppErrorClass(400, "ERROR", "Symmetric decryption error - cipher text not found.");
+                        throw new ServiceError("Symmetric decryption error - cipher text not found.");
                     }
                     else if (errorResponse?.message?.includes("IvHex not found in the function parameter")) {
-                        throw new AppErrorClass(400, "ERROR", "Symmetric decryption error - ivHex not found.");
+                        throw new ServiceError("Symmetric decryption error - ivHex not found.");
                     }
                 }
                 else {
-                    throw new AppErrorClass(400, "ERROR", "Symmetric decryption service unavailable");
+                    throw new ServiceError("Symmetric decryption service unavailable");
                 }
             }
             catch (error) {
-                throw new AppErrorClass(503, "SERVICE_UNAVAILABLE", "Symmetric decryption service is not working.");
+                throw new ServiceUnavailableError("Symmetric decryption service is not working.");
             }
         }
         else {
@@ -260,7 +260,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
 
         if (userLoginServiceResponse?.status !== "SUCCESS") {
-            res.fail("ERROR", "getDnsConfigService facing isssue", 400);
+            res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
         }
         return res.success("User login successfull", userLoginServiceResponse?.data, 200);
     }

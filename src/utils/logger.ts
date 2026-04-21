@@ -45,7 +45,7 @@
 
 //     new winston.transports.File({
 //       filename: "logs/error.log",
-//       level: "error"
+//       level: "SERVICE_ERROR"
 //     }),
 
 //     new winston.transports.File({
@@ -86,7 +86,7 @@ ${Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""}
 
     new winston.transports.File({
       filename: "logs/error.log",
-      level: "error"
+      level: "SERVICE_ERROR"
     }),
 
     new winston.transports.File({

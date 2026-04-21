@@ -20,7 +20,7 @@ type VerifyResponse =
         jwtAuthToken: string
     }
     | {
-        status: "UNAUTHORIZED" | "ERROR" | "EXPIRED" | "INVALID"
+        status: "UNAUTHORIZED" | "SERVICE_ERROR" | "EXPIRED" | "INVALID"
         message?: string
         error?: unknown
         expiredAt?: Date
@@ -78,7 +78,7 @@ const verifyJwtAuth = async (
 
                 if (!generateJwtAuthToken) {
                     return {
-                        status: "ERROR",
+                        status: "SERVICE_ERROR",
                         message: "Error generating new JWT token"
                     }
                 }
@@ -89,7 +89,7 @@ const verifyJwtAuth = async (
                     jwtAuthToken: generateJwtAuthToken
                 }
             } catch (error: any) {
-                console.log({ status: "ERROR", error })
+                console.log({ status: "SERVICE_ERROR", error })
 
                 if (error.name === "TokenExpiredError") {
                     return {
@@ -108,7 +108,7 @@ const verifyJwtAuth = async (
                     }
                 }
 
-                return { status: "ERROR", error }
+                return { status: "SERVICE_ERROR", error }
             }
         }
 
@@ -120,7 +120,7 @@ const verifyJwtAuth = async (
             }
         }
 
-        return { status: "ERROR", error }
+        return { status: "SERVICE_ERROR", error }
     }
 }
 
