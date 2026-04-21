@@ -5,11 +5,11 @@ import type { rootStateType } from '../../sotre'
 interface UserDetails {
   _id: string | null
   full_name: string | null
-  agent_code: string | null
-  subagent_code: string | null
-  program_id: string | null
-  business_id: string | null
-  client_id: string | null
+  // agent_code: string | null
+  // subagent_code: string | null
+  // program_id: string | null
+  // business_id: string | null
+  // client_id: string | null
   email: string | null
   mobile_country_code: string | null
   mobile_country_name: string | null
@@ -17,7 +17,7 @@ interface UserDetails {
   date_of_birth: string | null
   gender: string | null
   kyc_status: string | null
-  risk_category: string | null
+  // risk_category: string | null
   wallet_id: string | null
   status: string | null
   is_active: boolean | null
@@ -49,6 +49,16 @@ const userSlice = createSlice({
       state.userDetails = action.payload
     },
 
+    // Set Authenticated
+    setAuthenticated: (state, action: PayloadAction<boolean>) => {
+      state.isAuthenticated = action.payload
+    },
+
+    // Set Login
+    setLogin: (state, action: PayloadAction<boolean>) => {
+      state.isLogin = action.payload
+    },
+
     // ❌ Logout
     logout: (state) => {
       state.isLogin = false
@@ -63,6 +73,6 @@ export const { setUserDetails, logout } = userSlice.actions
 // 📤 Export reducer
 export default userSlice
 
-// 📌 Selectors (best practice)
+// 📌 Selectors
 export const selectUserDetails = (state: rootStateType) => state.user.userDetails
 export const selectIsAuthenticated = (state: rootStateType) => state.user.isAuthenticated

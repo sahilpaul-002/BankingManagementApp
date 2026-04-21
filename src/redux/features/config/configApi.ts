@@ -88,6 +88,7 @@ export const configApis = createApi({
                     if (!aesEncryptionKeyHex) {
                         throw new Error("Failed to get AES key");
                     }
+                    sessionStorage.setItem('keyHex', aesEncryptionKeyHex);
                     // console.log("aesEncryptionKeyHex: ", aesEncryptionKeyHex)
                     // ----------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
                     // ----------------------------- Get AES Encryption Key ----------------------------- \\
@@ -99,6 +100,7 @@ export const configApis = createApi({
                     if (!rsaEncryptionPublicKey) {
                         throw new Error("Failed to get RSA key");
                     }
+                    sessionStorage.setItem('publicKey', rsaEncryptionPublicKey);
                     // console.log("RsaEncryptionPublicKey : ", rsaEncryptionPublicKey)
                     // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
 
@@ -185,9 +187,9 @@ export const configApis = createApi({
 
             async onQueryStarted(payload, { dispatch, queryFulfilled }) {
                 try {
-                    const {data} = await queryFulfilled
+                    const { data } = await queryFulfilled
                     // ✅ Store DNS config in slice
-                    dispatch(setDnsConfigDetails( data?.data as dnsConfigResponseType))
+                    dispatch(setDnsConfigDetails(data?.data as dnsConfigResponseType))
                 } catch (err) {
                     console.error('Failed to store DNS config')
                 }
@@ -204,6 +206,19 @@ export const configApis = createApi({
             transformResponse: (response: ApiResponse<encryptionKeyResponseType>) => response,
 
             transformErrorResponse: (response: any) => response,
+
+            async onQueryStarted(_, { queryFulfilled }) {
+                try {
+                    const { data } = await queryFulfilled;
+
+                    const key = data?.data?.key;
+                    if (key) {
+                        sessionStorage.setItem('keyHex', key);
+                    }
+                } catch (err) {
+                    console.error('Failed to store AES key');
+                }
+            }
         }),
 
         // RSA ENCRYPTION PUBLIC KEY
@@ -216,6 +231,20 @@ export const configApis = createApi({
             transformResponse: (response: ApiResponse<encryptionKeyResponseType>) => response,
 
             transformErrorResponse: (response: any) => response,
+
+            async onQueryStarted(_, { queryFulfilled }) {
+                try {
+                    const { data } = await queryFulfilled;
+                    console.log(data);
+
+                    const publicKey = data?.data?.key;
+                    if (publicKey) {
+                        sessionStorage.setItem('publicKey', publicKey);
+                    }
+                } catch (err) {
+                    console.error('Failed to store RSA key');
+                }
+            },
         }),
     }),
 })
