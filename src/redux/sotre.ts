@@ -12,8 +12,8 @@ export const store = configureStore({
         user: userSlice.reducer,
 
         // RTK Query reducer
-        [userApis.reducerPath]: userApis.reducer,
         [configApis.reducerPath]: configApis.reducer, 
+        [userApis.reducerPath]: userApis.reducer,
     },
 
     // 🔥 RTK Query middleware

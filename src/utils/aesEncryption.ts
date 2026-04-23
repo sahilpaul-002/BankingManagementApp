@@ -27,9 +27,10 @@ interface encryptErrorType {
 
 type encryptResultType = encryptSuccessType | encryptErrorType;
 
-export async function aesEncryption(
+export async function aesEncryption<T extends object>(
     sessionKeyHex: string,
-    requestObj: Record<string, unknown>,
+    // requestObj: Record<string, unknown>,
+    requestObj: T,
     ivHex: string
 ): Promise<encryptResultType> {
     try {

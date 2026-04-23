@@ -1,6 +1,7 @@
 import { axiosBaseQuery, createAxiosInstance } from '@/configs/axiosConfig'
 import { CONFIG_URL } from '@/configs/constants'
 import { setDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
+import { getAesEncryptionKey, getRsaPublicKey } from '@/services/getEncryptionKeys'
 import { aesDecryption, type DecryptResult } from '@/utils/aesDecryption'
 import { aesEncryption } from '@/utils/aesEncryption'
 import { rsaEncryption } from '@/utils/rsaEncryption'
@@ -48,7 +49,7 @@ interface dnsConfigResponseType extends dnsDataObjectType { }
 
 type encryptionKeyResponseType = { key: string }
 
-interface ApiResponse<T> {
+interface apiResponseType<T> {
     status: string;
     message: string;
     data?: T;
@@ -75,7 +76,7 @@ export const configApis = createApi({
     baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // DNS CONFIG DATA
-        getDnsConfig: build.query<ApiResponse<dnsConfigResponseType>, dnsConfigRequestType>({
+        getDnsConfig: build.query<apiResponseType<dnsConfigResponseType>, dnsConfigRequestType>({
             async queryFn(payload, { dispatch }, _extraOptions, baseQuery) {
                 try {
                     // ---------------------------- Get AES Encryption Key ---------------------------- \\
@@ -84,7 +85,7 @@ export const configApis = createApi({
                         url: `/getEncryptionKey`,
                         method: 'GET',
                     });
-                    const aesEncryptionKeyHex = (getAesEncryptionKeyResponse.data as ApiResponse<encryptionKeyResponseType>)?.data?.key;
+                    const aesEncryptionKeyHex = (getAesEncryptionKeyResponse.data as apiResponseType<encryptionKeyResponseType>)?.data?.key;
                     if (!aesEncryptionKeyHex) {
                         throw new Error("Failed to get AES key");
                     }
@@ -96,7 +97,7 @@ export const configApis = createApi({
                         url: `/getPublicKey`,
                         method: 'GET',
                     });
-                    const rsaEncryptionPublicKey = (getrsaEncryptionPublicKeyResponse.data as ApiResponse<encryptionKeyResponseType>)?.data?.key;
+                    const rsaEncryptionPublicKey = (getrsaEncryptionPublicKeyResponse.data as apiResponseType<encryptionKeyResponseType>)?.data?.key;
                     if (!rsaEncryptionPublicKey) {
                         throw new Error("Failed to get RSA key");
                     }
@@ -109,20 +110,21 @@ export const configApis = createApi({
                     const iv = window.crypto.getRandomValues(new Uint8Array(12));
                     const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
                     // Encrypt payload using RSA
-                    const rsaEncryptionResponse = await rsaEncryption({ ivHex }, rsaEncryptionPublicKey)
+                    const rsaEncryptionResponse = await rsaEncryption({ ivHex }, rsaEncryptionPublicKey as string)
                     if (rsaEncryptionResponse?.status !== "SUCCESS") {
                         throw new Error("Failed to encrypt payload using RSA");
                     }
                     // console.log("RsaEncryptionResponse: ", rsaEncryptionResponse)
 
                     // Encrypt payload using AES
-                    const aesEncryptionResponse = await aesEncryption(aesEncryptionKeyHex, { domainName: payload.domainName }, ivHex)
+                    const aesEncryptionResponse = await aesEncryption(aesEncryptionKeyHex as string, { domainName: payload.domainName }, ivHex)
                     if (aesEncryptionResponse?.status !== "SUCCESS") {
                         throw new Error("Failed to encrypt payload using AES");
                     }
                     // console.log("AesEncryptionResponse: ", aesEncryptionResponse)
 
                     const encryptedPayloads = { encryptedPayload1: rsaEncryptionResponse?.ciphertextBase64, encryptedPayload2: aesEncryptionResponse?.ciphertextHex }
+                    // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
 
                     const result = await baseQuery({
                         url: `/getDnsConfig`,
@@ -197,13 +199,13 @@ export const configApis = createApi({
         }),
 
         // AES ENCRYPTION KEY
-        getAesEncryptionKey: build.query<ApiResponse<encryptionKeyResponseType>, void>({
+        getAesEncryptionKey: build.query<apiResponseType<encryptionKeyResponseType>, void>({
             query: () => ({
                 url: `/getEncryptionKey`,
                 method: 'GET'
             }),
 
-            transformResponse: (response: ApiResponse<encryptionKeyResponseType>) => response,
+            transformResponse: (response: apiResponseType<encryptionKeyResponseType>) => response,
 
             transformErrorResponse: (response: any) => response,
 
@@ -222,13 +224,13 @@ export const configApis = createApi({
         }),
 
         // RSA ENCRYPTION PUBLIC KEY
-        getRsaEncryptionPublicKey: build.query<ApiResponse<encryptionKeyResponseType>, void>({
+        getRsaEncryptionPublicKey: build.query<apiResponseType<encryptionKeyResponseType>, void>({
             query: () => ({
                 url: `/getPublicKey`,
                 method: 'GET'
             }),
 
-            transformResponse: (response: ApiResponse<encryptionKeyResponseType>) => response,
+            transformResponse: (response: apiResponseType<encryptionKeyResponseType>) => response,
 
             transformErrorResponse: (response: any) => response,
 
