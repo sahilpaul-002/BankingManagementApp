@@ -262,7 +262,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             throw new ServiceUnavailableError("Symmetric encryption service unavailbale")
         }
 
-        return res.success("DNS config fetch successfully", symmetricEncryptionMsgResponse?.ciphertextHex, 200);
+        return res.success("Sign in successfull", symmetricEncryptionMsgResponse?.ciphertextHex, 200);
     }
     catch (error) {
         if (error instanceof AppErrorClass) {
