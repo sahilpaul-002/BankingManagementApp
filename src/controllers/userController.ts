@@ -2,16 +2,8 @@ import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import { asymmetricDecryptionMsg } from "../utils/asymmetricEncryptionDecryption.js";
 import type { decryptionFailedJson, decryptionSuccessJson } from "../types/decryptionRespoonseTypes.js";
-import { userDetailsModel as user_details } from '../models/user_details.js';
-import destroySession from "../utils/destroySession.js";
-import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
-import type { userDetailsSchemaTypes, userMetaDetailsSchemaTypes } from "../types/schemaTypes.js";
-import userDetailsValidationSchema from "../validations/userDetailsValidation.js";
-import type { SafeParseResult } from "../types/zodTypes.js";
-import z from "zod";
-import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
 import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
-import { symmetricDecryptionMsg } from "../utils/symmetricEncryptionDecryption.js";
+import { symmetricDecryptionMsg, symmetricEncryptionMsg } from "../utils/symmetricEncryptionDecryption.js";
 import { userLoginService, userSignUpService } from "../services/userServices.js";
 import type { ParsedQs } from "qs";
 
@@ -37,11 +29,11 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
 
             // RSA Asummetric payload decryption
             try {
-                // Get encrypted payload1
-                const encryptedPayload1: string = req?.body?.encryptedPayload1
+                // Get encrypted request payload payload1
+                const encryptedRequestBodyPayload1: string = req?.body?.encryptedRequestBodyPayload1
 
-                // Decrypt encryptedPayload1
-                const decryptionMsgResponse1 = asymmetricDecryptionMsg(req, encryptedPayload1);
+                // Decrypt encryptedRequestBodyPayload1
+                const decryptionMsgResponse1 = asymmetricDecryptionMsg(req, encryptedRequestBodyPayload1);
                 if (decryptionMsgResponse1 && decryptionMsgResponse1.status.toUpperCase() === "SUCCESS") {
                     const successResponse: decryptionSuccessJson = decryptionMsgResponse1 as decryptionSuccessJson;
                     rsaDecryptedData = JSON.parse(successResponse?.decryptedText);
@@ -71,11 +63,11 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
                     throw new ServiceError("IV not generated from asymmetric decryption");
                 }
 
-                // Get encrypted payload2
-                const encryptedPayload2: string = req?.body?.encryptedPayload2
+                // Get encrypted request payload  payload2
+                const encrypteRequestBodyPayload2: string = req?.body?.encrypteRequestBodyPayload2
 
-                // Decrypt encryptedPayload1
-                const decryptionMsgResponse2 = symmetricDecryptionMsg(req, encryptedPayload2, ivHex);
+                // Decrypt encrypteRequestBodyPayload2
+                const decryptionMsgResponse2 = symmetricDecryptionMsg(req, encrypteRequestBodyPayload2, ivHex);
                 if (decryptionMsgResponse2 && decryptionMsgResponse2.status.toUpperCase() === "SUCCESS") {
                     const successResponse: decryptionSuccessJson = decryptionMsgResponse2 as decryptionSuccessJson;
                     aesDecryptedData = JSON.parse(successResponse?.decryptedText);
@@ -134,6 +126,7 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
 export const userLogin = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     let aesDecryptedBodyData: Record<string, string> | undefined = undefined;
     let aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined = undefined;
+    let ivHex: string | undefined
     try {
         // Get request header "from_portal" to check the sorce the api call
         const fromPortal: string = req?.headers["from-portal"] as string;
@@ -141,15 +134,14 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         // Check if the api call is not from portal
         if (fromPortal === "true") {
             let rsaDecryptedData: { ivHex: string };
-            let ivHex: string | undefined
 
             // RSA Asummetric payload decryption
             try {
-                // Get encrypted payload1
-                const encryptedPayload1: string = req?.body?.encryptedPayload1
+                // Get encrypted request body payload1
+                const encryptedRequestBodyPayload1: string = req?.body?.encryptedRequestBodyPayload1
 
-                // Decrypt encryptedPayload1
-                const decryptionMsgResponse1 = asymmetricDecryptionMsg(req, encryptedPayload1);
+                // Decrypt encryptedRequestBodyPayload1
+                const decryptionMsgResponse1 = asymmetricDecryptionMsg(req, encryptedRequestBodyPayload1);
                 if (decryptionMsgResponse1 && decryptionMsgResponse1.status.toUpperCase() === "SUCCESS") {
                     const successResponse: decryptionSuccessJson = decryptionMsgResponse1 as decryptionSuccessJson;
                     rsaDecryptedData = JSON.parse(successResponse?.decryptedText);
@@ -179,11 +171,11 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
                     throw new ServiceError("IV not generated from asymmetric decryption");
                 }
 
-                // Get encrypted payload2
-                const encryptedPayload2: string = req?.body?.encryptedPayload2
+                // Get encrypted request body payload2
+                const encryptedRequestBodyPayload2 : string = req?.body?.encryptedRequestBodyPayload2 
 
-                // Decrypt encryptedPayload1
-                const decryptionMsgResponse2 = symmetricDecryptionMsg(req, encryptedPayload2, ivHex);
+                // Decrypt encryptedRequestBodyPayload2 
+                const decryptionMsgResponse2 = symmetricDecryptionMsg(req, encryptedRequestBodyPayload2 , ivHex);
                 if (decryptionMsgResponse2 && decryptionMsgResponse2.status.toUpperCase() === "SUCCESS") {
                     const successResponse: decryptionSuccessJson = decryptionMsgResponse2 as decryptionSuccessJson;
                     aesDecryptedBodyData = JSON.parse(successResponse?.decryptedText);
@@ -215,11 +207,11 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
                     throw new ServiceError("IV not generated from asymmetric decryption");
                 }
 
-                // Get encrypted payload2
-                const encryptedQueryPayload: string = req?.query?.encryptedPayload as string
+                // Get encrypted query params payload2
+                const encryptedQueryPayload1: string = req?.query?.encryptedQueryParam1 as string
 
                 // Decrypt encryptedPayload1
-                const decryptionMsgResponse3 = symmetricDecryptionMsg(req, encryptedQueryPayload, ivHex);
+                const decryptionMsgResponse3 = symmetricDecryptionMsg(req, encryptedQueryPayload1, ivHex);
                 if (decryptionMsgResponse3 && decryptionMsgResponse3.status.toUpperCase() === "SUCCESS") {
                     const successResponse: decryptionSuccessJson = decryptionMsgResponse3 as decryptionSuccessJson;
                     aesDecryptedQueryData = JSON.parse(successResponse?.decryptedText);
@@ -262,7 +254,15 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         if (userLoginServiceResponse?.status !== "SUCCESS") {
             res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
         }
-        return res.success("User login successfull", userLoginServiceResponse?.data, 200);
+
+        // Encrypt response using AES
+        const responseObj = userLoginServiceResponse?.data;
+        const symmetricEncryptionMsgResponse = symmetricEncryptionMsg(req, responseObj, ivHex as string);
+        if (symmetricEncryptionMsgResponse?.status !== "SUCCESS") {
+            throw new ServiceUnavailableError("Symmetric encryption service unavailbale")
+        }
+
+        return res.success("DNS config fetch successfully", symmetricEncryptionMsgResponse?.ciphertextHex, 200);
     }
     catch (error) {
         if (error instanceof AppErrorClass) {

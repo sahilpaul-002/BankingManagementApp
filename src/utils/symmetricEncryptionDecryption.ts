@@ -65,7 +65,7 @@ interface EncryptErrorType {
 
 type EncryptResultType = EncryptSuccessType | EncryptErrorType;
 
-export const symmetricEncryptionMsg = (req: Request, responseObj: Record<string, unknown>, ivHex: string): EncryptResultType => {
+export const symmetricEncryptionMsg = <T> (req: Request, responseObj: T, ivHex: string): EncryptResultType => {
     if (!req.session || !req.session.encryptionKey) {
         return { status: "SERVICE_ERROR", message: "Failed to retrieve aes encryption key in session" };
     }
