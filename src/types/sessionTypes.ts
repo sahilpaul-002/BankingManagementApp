@@ -36,6 +36,12 @@ export interface sessionMeta {
     createdAt?: number;
 }
 
+// Encryption keys for headers
+type headerKeysType = {
+    publicKey: string,
+    privateKey: string
+}
+
 // Session items stored in session
 export interface sessionItems {
     initiated: boolean;
@@ -48,6 +54,7 @@ export interface sessionItems {
     userId?: string;
     passwordHash: string;
     userType: UserType;
+    headerKeys: headerKeysType;
     sessiondata: sessionDataTypes;
     meta?: sessionMeta;
 }

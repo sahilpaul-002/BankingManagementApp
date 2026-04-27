@@ -1,24 +1,12 @@
 import type { Request, Response } from 'express';
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
-import type { portalConfigurationSchemaTypes } from '../types/schemaTypes.js';
-import { portalConfigurationsModel as portal_configurations } from "../models/portal_configurations.js";
-import checkMongoDbCollectionExist from '../utils/checkMongoDbCollectionExist.js';
-import checkStringHeader from '../utils/checkStringHeader.js';
-import checkStringBody from '../utils/checkStringBody.js';
 import { getSymmetricEncryptionKey, symmetricDecryptionMsg, symmetricEncryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
-import errorHandler from '../utils/errorHandler.js';
 import { asymmetricDecryptionMsg, getAsymmetricKeyPair } from '../utils/asymmetricEncryptionDecryption.js';
 import listCountryMobileCodes from '../utils/listCountryMobileCodes.js';
-import setResponseCookie from '../utils/setResponseCookie.js';
-import { dnsConfigCache, type LRUCachedData } from '../utils/lruCache.js';
-import checkStringParams from '../utils/checkStringParams.js';
-import checkStringQueryParams from '../utils/checkStringQueryParams.js';
-import type { portalConfigurationDataType } from '../types/apiResponseDataObjectType.js';
-import generateJwtToken from '../utils/generateJwtToken.js';
-import normalizeIp from '../utils/normalizeIp.js';
 import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError } from '../utils/AppErrorClass.js';
 import type { decryptionFailedJson, decryptionSuccessJson } from '../types/decryptionRespoonseTypes.js';
 import { getDnsConfigService } from '../services/configServices.js';
+import { getHeaderAsymmetricKeyPair } from '../utils/asymmetricHeaderEncryptionDecryption.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response<successResponseJson | failedResponseJson>): Promise<Response<successResponseJson> | void> => {
@@ -106,7 +94,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("UserSignUP-requestPayload decryption is facing issue.")
+        throw new Error("GetDnsConfig-requestPayload decryption is facing issue.")
     }
     try {
         const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, res, aesDecryptedQueryData);
@@ -128,7 +116,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("UserSignUP is facing issue.")
+        throw new Error("GetDnsConfig is facing issue.")
     }
 }
 
@@ -188,5 +176,25 @@ export const getMobileCountryCodes = (req: Request, res: Response): Response<suc
             throw error; // ✅ preserve original error
         }
         throw new Error("GetMobileCountryCodes is facing issue.")
+    }
+}
+
+// FUNCTION TO GET THE HEADER ASYMMETRIC ENCRPTION PUBLIC KEY
+export const getHeaderPublicKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
+    try {
+        // Get public encryption key
+        const publicKeyResponse = getHeaderAsymmetricKeyPair(req);
+        if (publicKeyResponse?.status.toUpperCase() === "SUCCESS") {
+            return res.success("Public key fetch successfully", { key: publicKeyResponse.publicKey }, 200);
+        }
+        else {
+            return res.fail("SERVICE_ERROR", "Failed to generate asymeetric public key", 400);
+        }
+    }
+    catch (error) {
+        if (error instanceof AppErrorClass) {
+            throw error; // ✅ preserve original error
+        }
+        throw new Error("GetHeaderPublicKey is facing issue.")
     }
 }
