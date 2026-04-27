@@ -1,3 +1,4 @@
+import handleErrors from '@/errorHandling/handleErrors';
 import GetDeviceId from '@/utils/GetDeviceId';
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 
@@ -42,37 +43,39 @@ export const createAxiosInstance = (
             return response;
         },
         async (error) => {
-            console.log("INTERCEPTOR ERROR HIT", {"URL": error.config?.url, "Status": error.response?.status, "Data": error.response?.data});
+            // console.log("INTERCEPTOR ERROR HIT", {"URL": error.config?.url, "Status": error.response?.status, "Data": error.response?.data});
 
             // debugger;
 
             // error handling (global)
-            if (error.response?.status === 400) {
-                console.error("BAD_REQUEST / ERROR");
-            }
-            else if (error.response?.status === 401) {
-                console.error("Unauthenticated / Unauthorized / INVALID_SESSION");
-            }
-            else if (error.response?.status === 403) {
-                console.error("FORBIDDEN");
-            }
-            else if (error.response?.status === 404) {
-                console.error("NOT_FOUND");
-            }
-            else if (error.response?.status === 406) {
-                console.error("INVALID_HEADER / INVALID_REQUEST_BODY_PARAMETER / INVALID_REQUEST_QUERY_PARAMETER");
-            }
-            else if (error.response?.status === 429) {
-                console.error("SERVICE_TIMEOUT");
-            }
-            else if (error.response?.status === 500) {
-                console.error("INTERNAL_SERVER_ERROR");
-            }
-            else if (error.response?.status === 503) {
-                console.error("SERVICE_UNAVAILABLE");
-            }
+            // if (error.response?.status === 400) {
+            //     console.error("BAD_REQUEST / ERROR");
+            // }
+            // else if (error.response?.status === 401) {
+            //     console.error("Unauthenticated / Unauthorized / INVALID_SESSION");
+            // }
+            // else if (error.response?.status === 403) {
+            //     console.error("FORBIDDEN");
+            // }
+            // else if (error.response?.status === 404) {
+            //     console.error("NOT_FOUND");
+            // }
+            // else if (error.response?.status === 406) {
+            //     console.error("INVALID_HEADER / INVALID_REQUEST_BODY_PARAMETER / INVALID_REQUEST_QUERY_PARAMETER");
+            // }
+            // else if (error.response?.status === 429) {
+            //     console.error("SERVICE_TIMEOUT");
+            // }
+            // else if (error.response?.status === 500) {
+            //     console.error("INTERNAL_SERVER_ERROR");
+            // }
+            // else if (error.response?.status === 503) {
+            //     console.error("SERVICE_UNAVAILABLE");
+            // }
 
-            return Promise.reject(error);
+            // return Promise.reject(error);
+            
+            handleErrors(error);
         }
     );
 

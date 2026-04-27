@@ -1,3 +1,6 @@
+import { AppErrorClass } from "@/errorHandling/appError";
+import { InternalApplicationError } from "@/errorHandling/error";
+
 // Utility to convert hex string to Uint8Array
 function hexToBytes(hex: string): Uint8Array {
     const bytes = new Uint8Array(hex.length / 2);
@@ -32,7 +35,7 @@ export async function aesEncryption<T extends object>(
     // requestObj: Record<string, unknown>,
     requestObj: T,
     ivHex: string
-): Promise<encryptResultType> {
+): Promise<encryptSuccessType> {
     try {
         const keyBytes = hexToBytes(sessionKeyHex);
         const iv: BufferSource = hexToBytes(ivHex) as BufferSource;
@@ -61,7 +64,12 @@ export async function aesEncryption<T extends object>(
             ciphertextHex,
             ivHex
         };
-    } catch (err) {
-        return { status: "error", message: "Encryption failed" };
+    } catch (error) {
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        // fallback for non-error types
+        throw new InternalApplicationError("AES Encryption service caused an unknown error", error);
     }
 }

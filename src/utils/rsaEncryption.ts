@@ -1,3 +1,6 @@
+import { AppErrorClass } from "@/errorHandling/appError";
+import { ApplicationServiceError, InternalApplicationError } from "@/errorHandling/error";
+
 const enc = new TextEncoder();
 
 /**
@@ -45,11 +48,11 @@ type encryptResultType = encryptSuccessType | encryptErrorType;
 /**
  * Encrypt a message using RSA-OAEP and return Base64 string
  */
-export async function rsaEncryption(message: Record<string, any>, publicKeyPem: string): Promise<encryptResultType> {
+export async function rsaEncryption(message: Record<string, any>, publicKeyPem: string): Promise<encryptSuccessType> {
     try {
         const publicKey = await importPublicKey(publicKeyPem);
         if (!publicKey) {
-            throw new Error("Invalid public key");
+            throw new ApplicationServiceError("Encryption failed - Invalid public key");
         }
 
         const encrypted = await crypto.subtle.encrypt(
@@ -62,13 +65,18 @@ export async function rsaEncryption(message: Record<string, any>, publicKeyPem: 
         const encryptedBytes = new Uint8Array(encrypted);
         const encryptedString = String.fromCharCode(...encryptedBytes);
         const ciphertextBase64 = btoa(encryptedString);
-        
+        debugger;
         return {
             status: "SUCCESS",
             ciphertextBase64
         };
     }
     catch (error) {
-        return { status: "error", message: "Encryption failed" };
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        // fallback for non-error types
+        throw new InternalApplicationError("RSA Encryption service caused an unknown error", error);
     }
 }

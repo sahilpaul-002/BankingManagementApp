@@ -1,3 +1,6 @@
+import { AppErrorClass } from "@/errorHandling/appError";
+import { InternalApplicationError } from "@/errorHandling/error";
+
 interface DecryptSuccess {
     status: "SUCCESS";
     decryptedText: string;
@@ -25,7 +28,7 @@ function hexToArrayBuffer(hex: string): ArrayBuffer {
     return bytes.buffer;
 }
 
-export async function aesDecryption({ cipherTextHex, ivHex, aesEncryptionKeyHex }: DecryptParams): Promise<DecryptResult> {
+export async function aesDecryption({ cipherTextHex, ivHex, aesEncryptionKeyHex }: DecryptParams): Promise<DecryptSuccess> {
     try {
         const keyBytes = new Uint8Array(hexToArrayBuffer(aesEncryptionKeyHex));
         const iv = new Uint8Array(hexToArrayBuffer(ivHex));
@@ -56,6 +59,11 @@ export async function aesDecryption({ cipherTextHex, ivHex, aesEncryptionKeyHex 
         return { status: "SUCCESS", decryptedText };
     } catch (error: any) {
         console.error("Decryption error:", error);
-        return { status: "ERROR", message: error?.message ?? "Decryption failed", error };
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        // fallback for non-error types
+        throw new InternalApplicationError("AES Decryption function caused an unknown error", error);
     }
 }
