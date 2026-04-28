@@ -108,7 +108,7 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
                 // Check user exist in DB
                 if (!userDetails) {
                     try {
-                        const destroySessionResponse = await destroySession(req, res);
+                        const destroySessionResponse = await destroySession(req.session, res);
 
                         if (destroySessionResponse?.status !== "SUCCESS") {
                             if ((destroySessionResponse as failedResponseJson)?.error) {

@@ -18,7 +18,7 @@ const sessionExpiration = async (req: Request, res: Response, next: NextFunction
 
             if (req.session?.lastActivity) {
                 if (now - req.session?.lastActivity > maxAge) {
-                    const destroySessionResponse = await destroySession(req, res);
+                    const destroySessionResponse = await destroySession(req.session, res);
 
                     if (destroySessionResponse?.status !== "SUCCESS") {
                         if ((destroySessionResponse as failedResponseJson)?.error) {
