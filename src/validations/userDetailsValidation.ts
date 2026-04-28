@@ -17,7 +17,7 @@ const userDetailsValidationSchema = z.object({
         .trim()
         .min(1, "Subagent code is required")
         .optional(),
-    
+
     subagent_code: z
         .string("Subagent code is required and must be a string")
         .trim()
@@ -35,7 +35,7 @@ const userDetailsValidationSchema = z.object({
         .trim()
         .min(1, "Business-id is required")
         .optional(),
-    
+
     client_id: z
         .string("Client-id, is required and must be a string")
         .trim()
@@ -87,7 +87,7 @@ const userDetailsValidationSchema = z.object({
                     message: "Password must contain at least one uppercase letter (A-Z)"
                 });
             }
-            
+
             if (!/[a-z]/.test(password)) {
                 ctx.addIssue({
                     code: "custom",
@@ -129,8 +129,7 @@ const userDetailsValidationSchema = z.object({
         .string("Mobile country name is required and must be a string")
         .trim()
         .min(2, "Mobile country name must be at least 2 characters")
-        .max(2, "Mobile country name cannot exceed 2 characters")
-        .regex(/^[A-Z]{2}$/, "Country code must be exactly 2 uppercase letters (Example: IN, US)"),
+        .regex(/^[A-Za-z]+$/, "Mobile country name can contain only alphabets"),
 
     phone_number: z
         .string("Phone number is required and must be a string")
@@ -147,9 +146,50 @@ const userDetailsValidationSchema = z.object({
             message: "User must be at least 18 years old"
         }),
 
-    // gender: z.enum(["MALE", "FEMALE", "OTHER"]),
     gender: z
-        .enum(["MALE", "FEMALE", "OTHER"], "Gender must be one of MALE | FEMAlLE | OTHER")
+        .enum(["MALE", "FEMALE", "OTHER"], "Gender must be one of MALE | FEMAlLE | OTHER"),
+
+    kyc_status: z
+        .enum(["PENDING", "IN-PROGRESS", "COMPLETED"], "Kyc status must be one of PENDING | IN-PROGRESS | COMPLETED")
+        .optional(),
+    is_admin: z
+        .enum(["Y", "N"], "IsAdmin must be one of Y | N")
+        .optional(),
+    is_master_admin: z
+        .enum(["Y", "N"], "IsMasterAdmin must be one of Y | N")
+        .optional(),
+    risk_category: z
+        .enum(["LOW", "MEDIUM", "HIGH"], "Risk category must be one of LOW | MEDIUM | HIGH")
+        .optional(),
+    wallet_id: z
+        .string("Wallet id must be a string")
+        .trim()
+        .min(1, "Wallet id must be atleast of 1 character length")
+        .nullable()
+        .optional(),
+    status: z
+        .enum(["DISABLED", "PRE-VERIFIED", "VERIFIED", "ACTIVE"], "Status must be one of DISABLED | PRE-VERIFIED | VERIFIED | ACTIVE")
+        .optional(),
+    is_active: z
+        .enum(["Y", "N"], "IsActive must be one of Y | N")
+        .optional(),
+    is_email_verified: z
+        .enum(["Y", "N"], "IsEmailVerified must be one of Y | N")
+        .optional(),
+    is_phone_verified: z
+        .enum(["Y", "N"], "IsPhoneVerified must be one of Y | N")
+        .optional(),
+    is_2fa_enabled: z
+        .enum(["Y", "N"], "Is2FaEnabled must be one of Y | N")
+        .optional(),
+    two_fa_type: z
+        .enum(["SMS-OTP", "EMAIL-OTP", "TOTP"], "Is2FaEnabled must be one of SMS-OTP | EMAIL-OTP | TOTP")
+        .nullable()
+        .optional(),
+    last_login_at: z
+        .date()
+        .nullable()
+        .optional()
 })
     .strict() // 🚨 VERY IMPORTANT → Disallow extra fields
     .superRefine((data, ctx) => {
@@ -159,11 +199,20 @@ const userDetailsValidationSchema = z.object({
         );
 
         if (!result.isValid) {
-            ctx.addIssue({
-                path: ["phone_number"],
-                code: "custom",
-                message: result.message || "Invalid phone number"
-            });
+            if (result.message?.includes("Phone number must be  digits")) {
+                ctx.addIssue({
+                    path: ["phone_number"],
+                    code: "custom",
+                    message: "Invalid phone number length"
+                });
+            }
+            else {
+                ctx.addIssue({
+                    path: ["phone_number"],
+                    code: "custom",
+                    message: result.message || "Invalid phone number"
+                });
+            }
         }
     });
 

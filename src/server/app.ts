@@ -109,6 +109,8 @@ app.use(asyncRequestHandler(portalHeaderCheck));
 // Request Source Check
 app.use(asyncRequestHandler(checkRequestSource));
 
+app.use(asyncRequestHandler(sessionExpiration));
+
 // Rate Limiter Middleware
 app.use(rateLimiter());
 
@@ -122,7 +124,7 @@ app.use(globalResponseHandler);
 // ---------------------------------------- Routes ---------------------------------------- \\
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
-app.use("/api/v1/user", sessionValidation, sessionExpiration, validateUniqueRequests, headerTypeValidation, headerValidations, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
+app.use("/api/v1/user", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\

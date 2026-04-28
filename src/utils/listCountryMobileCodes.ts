@@ -6,6 +6,7 @@ type mobileCountryCodesType = Array<{ country: CountryCode, code: string }>;
 const listCountryMobileCodes = (): successResponseJson => {
     try {
         const countries: CountryCode[] = getCountries();
+        console.log(countries);
 
         const mobileCountryCodes: mobileCountryCodesType = countries.map(country => ({
             country, // ISO 2-letter (needed internally)

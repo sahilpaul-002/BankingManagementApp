@@ -15,7 +15,7 @@
 3. After successfull login update the session item (valid) to make the session the valid
 4. The user configuration sent from login api will be saved in redux and attached to next request headers to pass header validations
 
-Add requestTenantContext - include req.session
-complete sign up
+Add requestTenantContext - include req.session - done
+complete sign up - refine the return data with only needed data
 completed 2fa
 Add global session logout in frontend

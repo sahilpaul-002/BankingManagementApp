@@ -5,9 +5,7 @@ import { AppErrorClass, InterSeverError, UnauthenticatedError } from "../utils/A
 
 const sessionExpiration = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
-        // Skip portal header check for selcted pathes
-        const excludedPaths: string[] = ["/signUp", "/login"];
-        if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+        if (!req.session || !req.session?.lastActivity) {
             return next();
         }
 
@@ -42,7 +40,7 @@ const sessionExpiration = async (req: Request, res: Response, next: NextFunction
         // Update the lastActivity timestamp
         req.session.lastActivity = Date.now();
 
-        next();
+        return next();
     }
     catch (error) {
         if (error instanceof AppErrorClass) {

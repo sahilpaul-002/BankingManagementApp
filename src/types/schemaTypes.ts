@@ -48,16 +48,17 @@ export interface userDetailsSchemaTypes extends Document{
     phone_number: string;
     date_of_birth: Date;
     gender: "MALE" | "FEMALE" | "OTHER";
-    kyc_status: "PENDING" | "VERIFIED" | "REJECTED";
+    kyc_status: "PENDING" | "IN-PROGRESS" | "COMPLETED";
     risk_category?: "LOW" | "MEDIUM" | "HIGH";
     wallet_id?: string | null;
-    status?: "ACTIVE" | "DISABLED" | "BLOCKED";
+    status?: "DISABLED" | "PRE-VERIFIED" | "VERIFIED" | "ACTIVE";
     is_admin?: "Y" | "N";
     is_master_admin?: "Y" | "N";
-    is_active?: boolean;
-    is_email_verified?: boolean;
-    is_phone_verified?: boolean;
-    is_2fa_enabled?: "AUTHENTICATOR" | "EMAIL" | "SMS" | "DISABLED" | null;
+    is_active?: "Y" | "N";
+    is_email_verified?: "Y" | "N";
+    is_phone_verified?: "Y" | "N";
+    is_2fa_enabled?: "Y" | "N";
+    two_fa_type: "SMS-OTP" | "EMAIL-OTP" | "TOTP" | null
     last_login_at?: Date;
 }
 

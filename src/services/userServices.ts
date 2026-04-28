@@ -20,13 +20,13 @@ import { getDnsConfigService } from "./configServices.js";
 import type { ParsedQs } from "qs";
 import userDetailsValidationSchema from "../validations/userDetailsValidation.js";
 
-export const userSignUpService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
+export const userSignUpService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid body data");
         }
 
-        if (!req.session || !req.session?.initiated || !req.session?.lastActivity || !req.session?.sessiondata || !req.session?.meta) {
+        if (!requestSession || !requestSession?.initiated || !requestSession?.lastActivity || !requestSession?.sessiondata || !requestSession?.meta) {
             throw new UnauthenticatedError("Unauthenticated acccess")
         }
 
@@ -64,15 +64,15 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         }
 
         // Get user from DB
-        const checkUserExistInDB = async (req: Request): Promise<boolean | null> => {
+        const checkUserExistInDB = async (): Promise<boolean | null> => {
             const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: email });
             return userExistResponse !== null;
         }
-        const userExistance: boolean | null = await checkUserExistInDB(req);
+        const userExistance: boolean | null = await checkUserExistInDB();
 
         // Check user exist in DB
         if (userExistance) {
-            const destroySessionResponse = await destroySession(req.session, res);
+            const destroySessionResponse = await destroySession(requestSession, res);
             throw new ForbiddenError("User already exists");
         }
 
@@ -87,11 +87,20 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         const document: object = {
             ...restBody,
             password: hashedPassword,
-            agent_code: aesDecryptedBodyData?.agent_code || req.session?.sessiondata?.agentCode,
-            subagent_code: aesDecryptedBodyData?.subagent_code || req.session?.sessiondata?.subAgentCode,
-            program_id: aesDecryptedBodyData?.program_id || req.session?.sessiondata?.programId,
-            business_id: aesDecryptedBodyData?.business_id || req.session?.sessiondata?.businessId,
-            client_id: aesDecryptedBodyData?.client_id || req.session?.sessiondata?.clientId
+            agent_code: aesDecryptedBodyData?.agent_code || requestSession?.sessiondata?.agentCode,
+            subagent_code: aesDecryptedBodyData?.subagent_code || requestSession?.sessiondata?.subAgentCode,
+            program_id: aesDecryptedBodyData?.program_id || requestSession?.sessiondata?.programId,
+            business_id: aesDecryptedBodyData?.business_id || requestSession?.sessiondata?.businessId,
+            client_id: aesDecryptedBodyData?.client_id || requestSession?.sessiondata?.clientId,
+            // kyc_status: "PENDING",
+            // is_admin: "N",
+            // is_master_admin: "N",
+            // "status": "DISABLED",
+            // "is_active": false,
+            // "is_email_verified": false,
+            // "is_phone_verified": false,
+            // "is_2fa_enabled": null,
+            // "last_login_at": null
         };
 
         // Insert document in collection
@@ -185,7 +194,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 
         // Update user status in DB if not already activated
         let updatedUserDetails: userDetailsSchemaTypes
-        if (userDetails?.is_active === false) {
+        if (userDetails?.is_active === "N") {
             updatedUserDetails = await user_details.findByIdAndUpdate(userDetails._id, { is_active: true, status: "ACTIVE" }, { new: true }) as userDetailsSchemaTypes;
         }
         else {

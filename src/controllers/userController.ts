@@ -72,6 +72,21 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
                 if (decryptionMsgResponse2 && decryptionMsgResponse2.status.toUpperCase() === "SUCCESS") {
                     const successResponse: decryptionSuccessJson = decryptionMsgResponse2 as decryptionSuccessJson;
                     aesDecryptedBodyData = JSON.parse(successResponse?.decryptedText);
+                    const transformedPayload = {
+                        full_name: aesDecryptedBodyData?.fullName,
+                        email: aesDecryptedBodyData?.email,
+                        password: aesDecryptedBodyData?.password,
+
+                        mobile_country_code: aesDecryptedBodyData?.dialCode,
+                        mobile_country_name: aesDecryptedBodyData?.countryCode,
+
+                        phone_number: aesDecryptedBodyData?.phoneNumber,
+
+                        date_of_birth: aesDecryptedBodyData?.dateOfBirth,
+
+                        gender: aesDecryptedBodyData?.gender?.toUpperCase(),
+                    };
+                    aesDecryptedBodyData = transformedPayload as Record<string, string>;
                     // console.log(aesDecryptedBodyData)
                 }
                 else if (decryptionMsgResponse2 && ["NOT_FOUND", "BAD_REQUEST"].includes(decryptionMsgResponse2.status.toUpperCase())) {
@@ -143,12 +158,28 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
     }
 
     try {
-        const userSignUpResponse = await userSignUpService(req, res, aesDecryptedBodyData);
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+        const requestHeaders: Request["headers"] | undefined = getRequestHeaders();
+        if (!requestHeaders) {
+            throw new BadRequestError("Bad request - headers not found in request");
+        }
+        const userSignUpResponse = await userSignUpService(requestSession, res, aesDecryptedBodyData);
 
         if (userSignUpResponse?.status !== "SUCCESS") {
             res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
         }
-        return res.success("User login successfull", userSignUpResponse?.data, 200);
+
+        // Encrypt response using AES
+        const responseObj = userSignUpResponse?.data;
+        const symmetricEncryptionMsgResponse = symmetricEncryptionMsg(req, responseObj, ivHex as string);
+        if (symmetricEncryptionMsgResponse?.status !== "SUCCESS") {
+            throw new ServiceUnavailableError("Symmetric encryption service unavailbale")
+        }
+
+        return res.success("Sign up successfull", symmetricEncryptionMsgResponse?.ciphertextHex, 200);
     }
     catch (error) {
         if (error instanceof AppErrorClass) {
@@ -283,18 +314,9 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("UserSignUP-requestPayload decryption is facing issue.")
+        throw new Error("UserSignIn-requestPayload decryption is facing issue.")
     }
     try {
-        const requestSession: Request["session"] | undefined = getRequestSession();
-        if (!requestSession) {
-            throw new UnauthenticatedError("Unauthenticated session");
-        }
-        const requestHeaders: Request["headers"] | undefined = getRequestHeaders();
-        if (!requestHeaders) {
-            throw new BadRequestError("Bad request - headers not found in request");
-        }
-        // const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
         const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
 
         if (userLoginServiceResponse?.status !== "SUCCESS") {

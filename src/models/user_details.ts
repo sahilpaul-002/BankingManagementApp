@@ -59,7 +59,7 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     phone_number: {
         type: String,
         required: true,
-        index: true
+        index: true,
     },
     date_of_birth: {
         type: Date,
@@ -72,7 +72,7 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     },
     kyc_status: {
         type: String,
-        enum: ["PENDING", "VERIFIED", "REJECTED"],
+        enum: ["PENDING", "IN-PROGRESS", "COMPLETED"],
         default: "PENDING",
     },
     is_admin: {
@@ -96,24 +96,32 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     },
     status: {
         type: String,
-        enum: ["ACTIVE", "DISABLED", "BLOCKED"],
+        enum: ["DISABLED", "PRE-VERIFIED", "VERIFIED", "ACTIVE"],
         default: "DISABLED"
     },
     is_active: {
-        type: Boolean,
-        default: false
+        type: String,
+        enum: ["Y", "N"],
+        default: "N"
     },
     is_email_verified: {
-        type: Boolean,
-        default: false
+        type: String,
+        enum: ["Y", "N"],
+        default: "N"
     },
     is_phone_verified: {
-        type: Boolean,
-        default: false
+        type: String,
+        enum: ["Y", "N"],
+        default: "N"
     },
     is_2fa_enabled: {
         type: String,
-        enum: ["AUTHENTICATOR", "EMAIL", "SMS", "DISABLED"],
+        enum: ["Y", "N"],
+        default: "N"
+    },
+    two_fa_type: {
+        type: String,
+        enum: ["SMS-OTP", "EMAIL-OTP", "TOTP", null],
         default: null
     },
     last_login_at: {
