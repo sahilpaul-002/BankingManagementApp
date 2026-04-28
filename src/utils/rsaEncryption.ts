@@ -65,7 +65,7 @@ export async function rsaEncryption(message: Record<string, any>, publicKeyPem: 
         const encryptedBytes = new Uint8Array(encrypted);
         const encryptedString = String.fromCharCode(...encryptedBytes);
         const ciphertextBase64 = btoa(encryptedString);
-        debugger;
+
         return {
             status: "SUCCESS",
             ciphertextBase64

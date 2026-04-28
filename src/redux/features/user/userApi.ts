@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { createApi, type BaseQueryFn } from '@reduxjs/toolkit/query/react'
-import { selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
+import { selectApplicaitonHeaders, selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
 import type { rootStateType } from '@/redux/sotre'
 import { configApis } from '../config/configApi'
 import { USER_URL } from '@/configs/constants'
@@ -46,7 +46,8 @@ const axiosBaseQuery = (): BaseQueryFn<
     async ({ url, method, data, params }, { getState }) => {
         try {
             const state = getState() as rootStateType
-            const dnsConfig = selectDnsConfigDetails(state)
+            const dnsConfig = selectDnsConfigDetails(state);
+            const applicationHeaders = selectApplicaitonHeaders(state);
 
             // ✅ Build headers dynamically from Redux state
             const dynamicHeaders: Record<string, string> = {
@@ -54,14 +55,15 @@ const axiosBaseQuery = (): BaseQueryFn<
                 'Content-Type': 'application/json',
             }
 
-            if (dnsConfig) {
-                dynamicHeaders['x-api-key'] = dnsConfig.x_api_key
-                dynamicHeaders['agent-code'] = dnsConfig.agent_code
-                dynamicHeaders['subagent-code'] = dnsConfig.subagent_code
-                dynamicHeaders['program-id'] = dnsConfig.program_id
-                dynamicHeaders['business-id'] = dnsConfig.business_id
-                dynamicHeaders['client-id'] = dnsConfig.client_id
-                dynamicHeaders['authorization'] = `Bearer ${dnsConfig.accessToken}`
+            // if (dnsConfig) {
+            if (applicationHeaders) {
+                dynamicHeaders['x-api-key'] = applicationHeaders.x_api_key
+                dynamicHeaders['agent-code'] = applicationHeaders.agent_code
+                dynamicHeaders['subagent-code'] = applicationHeaders.subagent_code
+                dynamicHeaders['program-id'] = applicationHeaders.program_id
+                dynamicHeaders['business-id'] = applicationHeaders.business_id
+                dynamicHeaders['client-id'] = applicationHeaders.client_id
+                dynamicHeaders['authorization'] = `Bearer ${applicationHeaders.accessToken}`
             }
 
             // ✅ Create instance dynamically per request

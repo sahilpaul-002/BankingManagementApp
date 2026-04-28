@@ -65,7 +65,7 @@ export default function AuthPage() {
                                 </div>
 
                                 {/* Separator */}
-                                <div className="authPage-footer-separator text-[var(--color-text3)] hidden sm:inline-block lg:hidden">|</div>
+                                <div className="authPage-footer-separator text-[var(--color-text3)] hidden">|</div>
 
                                 {/* Copy Right Text */}
                                 <span className="authPage-footer-copyrightText text-[var(--color-text2)] text-start text-[12px] font-normal tracking-tight">CopyRight © {currentYear} {dnsDetails?.dashboard_name || 'Banking Management App'} - All Right Reserved.</span>

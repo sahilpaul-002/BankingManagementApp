@@ -3,80 +3,16 @@ import { CONFIG_URL } from '@/configs/constants'
 import { ApplicationServiceError } from '@/errorHandling/error'
 import type { apiErrorType } from '@/errorHandling/handleErrors'
 import mapToRtkError from '@/errorHandling/mapToRtkError'
-import { setDnsConfigDetails } from '@/redux/slice/config/configSlice'
+import { setAppliationHeaders, setDnsConfigDetails, type applicationHeaderItemsType } from '@/redux/slice/config/configSlice'
 import { aesDecryption, type DecryptResult } from '@/utils/aesDecryption'
 import { aesEncryption } from '@/utils/aesEncryption'
 import { rsaEncryption } from '@/utils/rsaEncryption'
 import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react'
+import type { apiResponseType, applicationHeadersType, dnsConfigRequestType, dnsConfigResponseType, encryptionKeyResponseType } from './configApisDataTypes'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsBaseUrl = import.meta.env.VITE_DNS_BASE_URL
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
-
-interface dnsDataObjectType {
-    domain_name: string
-    agent_code: string
-    subagent_code: string
-    business_id: string
-    dashboard_name: string
-    program_id: string
-    prefund_flag: boolean
-    client_id: string
-    x_api_key: string
-    logo_url?: string | null
-    base_url_api: string
-    favicon?: string | null
-    add_card_allowed: boolean
-    crypto_allowed: boolean
-    slogan_line_1?: string | null
-    slogan_line_2?: string | null
-    logo?: string | null
-    currency_symbol: string
-    currency_name: string
-    currency_img: string
-    signup_required: boolean
-    dns_x_api_key: string
-    portal_type: string
-    m2p_allowed: boolean
-    p2p_allowed: boolean
-    accessToken: string
-}
-
-type processedDnsDataObjectType = {
-    domain_name: string
-    dashboard_name: string
-    prefund_flag: boolean
-    logo_url?: string | null
-    base_url_api: string
-    favicon?: string | null
-    add_card_allowed: boolean
-    crypto_allowed: boolean
-    slogan_line_1?: string | null
-    slogan_line_2?: string | null
-    logo?: string | null
-    currency_symbol: string
-    currency_name: string
-    currency_img: string
-    signup_required: boolean
-    portal_type: string
-    m2p_allowed: boolean
-    p2p_allowed: boolean
-}
-
-interface dnsConfigRequestType {
-    domainName: string
-}
-
-interface dnsConfigResponseType extends dnsDataObjectType { }
-
-type encryptionKeyResponseType = { key: string }
-
-interface apiResponseType<T> {
-    status: string;
-    message: string;
-    data?: T;
-    error?: any;
-}
 
 // ==============================
 // DYNAMIC AXIOS INSTANCE
@@ -173,8 +109,8 @@ export const configApis = createApi({
                     // console.log("Config dns data: ", decryptedData);
                     // --------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------- \\
 
-                    // -------------------------------- Create Application Headers -------------------------------- \\
-                    const applicationHeaders = {
+                    // ================================ Create Application Headers ================================ \\
+                    const applicationHeaders: applicationHeadersType = {
                         'x-api-key': decryptedData?.x_api_key,
                         'agent-code': decryptedData?.agent_code,
                         'subagent-code': decryptedData?.subagent_code,
@@ -194,24 +130,29 @@ export const configApis = createApi({
                     if (!rsaHeaderEncryptionPublicKey) {
                         throw new ApplicationServiceError("Failed to get Header RSA key");
                     }
-                    sessionStorage.setItem('headerPublicKey', rsaEncryptionPublicKey);
+                    sessionStorage.setItem('headerPublicKey', rsaHeaderEncryptionPublicKey);
                     // console.log("RsaEncryptionPublicKey : ", rsaEncryptionPublicKey)
                     // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
                     // Encrypt header using RSA
-                    const encryptedHeaders: Record<string, string> = {};
+                    let encryptedHeaders: Partial<Record<keyof applicationHeadersType, string>> = {};
 
-                    for (const [key, value] of Object.entries(applicationHeaders)) {
-                        if (!value) continue; // skip undefined/null
+                    for (const key in applicationHeaders) {
+                        const typedKey = key as keyof applicationHeadersType;
+
+                        const value = applicationHeaders[typedKey];
+
+                        if (!value) continue;
 
                         const response = await rsaEncryption(
-                            { value }, // wrap if your function expects object
-                            rsaHeaderEncryptionPublicKey as string
+                            { value },
+                            rsaHeaderEncryptionPublicKey
                         );
 
-                        encryptedHeaders[key] = response?.ciphertextBase64;
+                        encryptedHeaders[typedKey] = response?.ciphertextBase64;
                     }
-                    console.log("Encrypted headers: ", )
-                    // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
+                    // console.log("Encrypted headers: ", encryptedHeaders)
+                    dispatch(setAppliationHeaders(encryptedHeaders as applicationHeaderItemsType))
+                    // ================================ XXXXXXXXXXXXXXXXXXXXXX ================================ \\
 
                     return {
                         data: {
@@ -229,8 +170,9 @@ export const configApis = createApi({
             async onQueryStarted(payload, { dispatch, queryFulfilled }) {
                 try {
                     const { data } = await queryFulfilled
+                    const { x_api_key, agent_code, subagent_code, program_id, business_id, client_id, accessToken, ...rest } = data?.data as dnsConfigResponseType
                     // ✅ Store DNS config in slice
-                    dispatch(setDnsConfigDetails(data?.data as dnsConfigResponseType))
+                    dispatch(setDnsConfigDetails(rest))
                 } catch (err) {
                     console.error('Failed to store DNS config')
                 }
