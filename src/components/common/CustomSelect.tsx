@@ -73,9 +73,9 @@ const CustomSelect = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref
 
                             return (
                                 <SelectItem key={index} value={item.value} className='w-full'>
-                                    <div className="min-w-36 flex justify-between items-center gap-4">
-                                        <span>{item.label}</span>
-                                        <span className="text-muted-foreground">
+                                    <div className="min-w-36 w-full border-b border-gray-300 flex justify-between items-center gap-4">
+                                        <span className='w-[30vw]'>{item.label}</span>
+                                        <span className="w-[10vw] text-muted-foreground">
                                             {item.value}
                                         </span>
                                     </div>

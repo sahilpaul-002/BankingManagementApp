@@ -10,27 +10,35 @@ import { Controller, useForm, type SubmitHandler, type SubmitErrorHandler } from
 import { Link, useNavigate } from 'react-router';
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useSignUpMutation } from '@/redux/features/user/userApi';
 
 export default function SignUpPage() {
+    // SignUp Api Mutation
+    const [signUp, { isLoading, error, data, isSuccess, reset: resetMutation }] = useSignUpMutation()
+
     // Configure useNavigate
     const nav = useNavigate();
 
     // ---------------------------------- LOGIC TO GET COUNTRY CODES LIST ---------------------------------- \\
     // State to manage countryCodes list
     const [mobileDialCodes, setMobileDialCodes] = useState<Array<{ label: string; value: string }> | null>(null);
-    const [mobileCountryCodes, setMobileCountryCodes] = useState<Array<string> | null>(null);
+    const [mobileCountryCodes, setMobileCountryCodes] = useState<Array<{ label: string; value: string }> | null>(null);
     // UseState to get mobile country codes values
     useEffect(() => {
         const listMobileCountryCodes = mobileCountryCodesLists();
         const mobileDialCodesList = listMobileCountryCodes.map(item => ({
             id: item.name,
-            label: item.name,
+            label: item.country,
             value: item.code
         }));
         setMobileDialCodes(mobileDialCodesList);
-        // console.log(mobileCountryCodes);
+        // console.log(mobileDialCodesList);
 
-        const mobileCountryCodes = listMobileCountryCodes.map(item => item.name);
+        const mobileCountryCodes = listMobileCountryCodes.map(item => ({
+            id: item.name,
+            label: item.name,
+            value: item.country
+        }));
         setMobileCountryCodes(mobileCountryCodes);
         // console.log(mobileCountryCodes);
     }, [])
@@ -112,8 +120,16 @@ export default function SignUpPage() {
         resolver: zodResolver(signupFormValidationSchema),
     })
 
-    const onValid: SubmitHandler<SignupFormData> = (data) => {
-        console.log(data);
+    const onValid: SubmitHandler<SignupFormData> = async (formData) => {
+        console.log(formData);
+        try {
+            const signUpResponse = await signUp(formData).unwrap()
+            console.log('Success:', signUpResponse)
+            console.log(data);
+        }
+        catch (error) {
+            console.log('Error:', error)
+        }
     };
 
     const onError: SubmitErrorHandler<SignupFormData> = (errors) => {

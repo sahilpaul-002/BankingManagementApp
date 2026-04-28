@@ -1,5 +1,5 @@
 // FALLBACK COUNTRY DIAL CODES , COUNTRY NAME, COUNTRY ISO CODE ARRAY
-const fallbackCoutries = [
+const fallbackCoutries: mobileCountryCodesType  = [
   { country: "IN", code: "+91", name: "India" },
   { country: "US", code: "+1", name: "United States of America" },
   { country: "GB", code: "+44", name: "United Kingdom" },
@@ -133,7 +133,8 @@ const mobileCountryCodesLists = (): mobileCountryCodesType => {
     name: countries.getName(country, "en") || country, // fallback
   }));
 
-  return mobileCountryCodes || fallbackCoutries;
+  // return mobileCountryCodes || fallbackCoutries;
+  return fallbackCoutries;
 };
 
 export default mobileCountryCodesLists;

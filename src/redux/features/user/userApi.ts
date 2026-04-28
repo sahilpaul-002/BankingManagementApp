@@ -11,17 +11,29 @@ import { aesEncryption } from '@/utils/aesEncryption'
 import { aesDecryption, type DecryptResult } from '@/utils/aesDecryption'
 import { ApplicationServiceError } from '@/errorHandling/error'
 import mapToRtkError from '@/errorHandling/mapToRtkError'
-import { helperApis, useGetSessionQuery } from '../helper/helperApis'
+import { helperApis } from '../helper/helperApis'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
+
+type apiResponseDataType = Record<string, any>
+
+interface signupRequestType {
+    fullName: string
+    email: string
+    password: string
+    confirmPassword: string
+    gender: string
+    dialCode: string
+    countryCode: string
+    phoneNumber: string
+    dateOfBirth: Date
+}
 
 interface signinRequestType {
     email: string
     password: string
 }
-
-type signinResponseType = Record<string, any>
 
 interface apiResponseType<T> {
     status: string;
@@ -93,11 +105,129 @@ export const userApis = createApi({
     reducerPath: 'userApis',
     baseQuery: axiosBaseQuery(),
     endpoints: (build) => ({
-        signIn: build.mutation<apiResponseType<signinResponseType>, signinRequestType>({
+        // =====================================
+        // Sign Up Api
+        // =====================================
+        signUp: build.mutation<apiResponseType<apiResponseDataType>, signupRequestType>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     const state = getState() as rootStateType
-                    
+
+                    // Check backend session
+                    const getSessionResult = await dispatch(helperApis.endpoints.getSession.initiate())
+                    const isSessionValid = (getSessionResult?.isSuccess && (getSessionResult?.data?.status?.toUpperCase() === "SUCCESS")) ? true : false
+
+                    let dnsConfig = selectDnsConfigDetails(state)
+                    if (!dnsConfig || !isSessionValid) {
+                        const result = await dispatch(
+                            configApis.endpoints.getDnsConfig.initiate(
+                                {
+                                    domainName: 'business.banking-management.com',
+                                },
+                                {
+                                    forceRefetch: true  // Force RTK to refetch the query
+                                }
+                            )
+                        )
+
+                        if (result.isError) {
+                            throw new ApplicationServiceError("SIGN-UP - Failed to fetch DNS Config data")
+                        }
+
+                        dnsConfig = result.data?.data as dnsConfigDataType
+                    }
+
+                    // ---------------------------- Get AES Encryption Key ---------------------------- \\
+                    const aesEncryptionKeyHex = await getAesEncryptionKey(dispatch, configApis.endpoints.getAesEncryptionKey.initiate)
+                    if (!aesEncryptionKeyHex) {
+                        throw new ApplicationServiceError("Failed to get AES key")
+                    }
+                    // console.log("aesEncryptionKeyHex: ", aesEncryptionKeyHex)
+                    // ----------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
+                    // ----------------------------- Get RSA Encryption Key ----------------------------- \\
+                    const rsaEncryptionPublicKey = await getRsaPublicKey(dispatch, configApis.endpoints.getRsaEncryptionPublicKey.initiate)
+                    if (!rsaEncryptionPublicKey) {
+                        throw new ApplicationServiceError("Failed to get RSA key");
+                    }
+                    // console.log("RsaEncryptionPublicKey : ", rsaEncryptionPublicKey)
+                    // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
+
+                    // --------------------------- Request Payload Creation --------------------------- \\ 
+                    // Generate IV for decryption
+                    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                    const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
+                    // Encrypt payload using RSA
+                    const rsaEncryptionResponse = await rsaEncryption({ ivHex }, rsaEncryptionPublicKey as string)
+                    // console.log("RsaEncryptionResponse: ", rsaEncryptionResponse)
+
+                    // Encrypt payload using AES
+                    const aesEncryptionResponse = await aesEncryption(aesEncryptionKeyHex as string, payload, ivHex)
+                    // console.log("AesEncryptionResponse: ", aesEncryptionResponse)
+
+                    const encryptedRequestBody = { encryptedRequestBodyPayload1: rsaEncryptionResponse?.ciphertextBase64, encryptedRequestBodyPayload2: aesEncryptionResponse?.ciphertextHex }
+
+                    // Encrypt query payload using AES
+                    const aesQueryEncryptionResponse = await aesEncryption(aesEncryptionKeyHex as string, { domainName: dnsConfig?.domain_name }, ivHex)
+                    const encryptedQueryParams = { encryptedQueryParam1: aesQueryEncryptionResponse.ciphertextHex }
+                    // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
+
+                    const result = await baseQuery({
+                        url: `${dnsConfig?.base_url_api}${USER_URL}/signUp`,
+                        method: 'POST',
+                        params: encryptedQueryParams,
+                        data: encryptedRequestBody,
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    // ---------------------------- Decrypt the respnose data using AES ---------------------------- \\
+                    let decryptedData: apiResponseType<apiResponseDataType>;
+
+                    if (typeof result.data?.data === "string") {
+                        // Decrypt response
+                        const cipherTextHex = result.data?.data;
+                        const decryptAesMessageResponse: DecryptResult = await aesDecryption({
+                            cipherTextHex,
+                            ivHex,
+                            aesEncryptionKeyHex
+                        });
+
+                        const unParsedDecryptedData = decryptAesMessageResponse?.decryptedText;
+                        try {
+                            decryptedData = JSON.parse(unParsedDecryptedData);
+                        }
+                        catch {
+                            throw new ApplicationServiceError("USER-SIGNUP - Invalid JSON after decryption")
+                        }
+                    }
+                    else {
+                        decryptedData = result.data as apiResponseType<apiResponseDataType>;
+                    }
+                    console.log("Sign up data: ", decryptedData);
+                    // --------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------- \\
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    }
+                }
+                catch (error) {
+                    console.log(error);
+                    return mapToRtkError(error, "USER-SIGNUP faced appilcation error ");
+                }
+            },
+        }),
+
+
+
+        // ======================================
+        // Sign In Api
+        // ======================================
+        signIn: build.mutation<apiResponseType<apiResponseDataType>, signinRequestType>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    const state = getState() as rootStateType
+
                     // Check backend session
                     const getSessionResult = await dispatch(helperApis.endpoints.getSession.initiate())
                     const isSessionValid = (getSessionResult?.isSuccess && (getSessionResult?.data?.status?.toUpperCase() === "SUCCESS")) ? true : false
@@ -162,12 +292,12 @@ export const userApis = createApi({
                         params: encryptedQueryParams,
                         data: encryptedRequestBody,
                     }) as {
-                        data?: apiResponseType<signinResponseType>
+                        data?: apiResponseType<apiResponseDataType>
                         error?: unknown
                     }
 
                     // ---------------------------- Decrypt the respnose data using AES ---------------------------- \\
-                    let decryptedData: apiResponseType<signinResponseType>;
+                    let decryptedData: apiResponseType<apiResponseDataType>;
 
                     if (typeof result.data?.data === "string") {
                         // Decrypt response
@@ -187,21 +317,21 @@ export const userApis = createApi({
                         }
                     }
                     else {
-                        decryptedData = result.data as apiResponseType<signinResponseType>;
+                        decryptedData = result.data as apiResponseType<apiResponseDataType>;
                     }
                     console.log("Sign in data: ", decryptedData);
                     // --------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------- \\
 
                     return {
-                        data: result.data as apiResponseType<signinResponseType>,
+                        data: result.data as apiResponseType<apiResponseDataType>,
                     }
                 }
                 catch (error) {
-                    return mapToRtkError(error, "GET-DNS-CONFIG faced appilcation error ");
+                    return mapToRtkError(error, "USER-SIGNIN faced appilcation error ");
                 }
             },
         }),
     }),
 })
 
-export const { useSignInMutation } = userApis
+export const { useSignInMutation, useSignUpMutation } = userApis
