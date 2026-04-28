@@ -11,6 +11,7 @@ import { aesEncryption } from '@/utils/aesEncryption'
 import { aesDecryption, type DecryptResult } from '@/utils/aesDecryption'
 import { ApplicationServiceError } from '@/errorHandling/error'
 import mapToRtkError from '@/errorHandling/mapToRtkError'
+import { helperApis, useGetSessionQuery } from '../helper/helperApis'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
@@ -55,20 +56,19 @@ const axiosBaseQuery = (): BaseQueryFn<
                 'Content-Type': 'application/json',
             }
 
-            // if (dnsConfig) {
             if (applicationHeaders) {
-                dynamicHeaders['x-api-key'] = applicationHeaders.x_api_key
-                dynamicHeaders['agent-code'] = applicationHeaders.agent_code
-                dynamicHeaders['subagent-code'] = applicationHeaders.subagent_code
-                dynamicHeaders['program-id'] = applicationHeaders.program_id
-                dynamicHeaders['business-id'] = applicationHeaders.business_id
-                dynamicHeaders['client-id'] = applicationHeaders.client_id
-                dynamicHeaders['authorization'] = `Bearer ${applicationHeaders.accessToken}`
+                dynamicHeaders['x-api-key'] = applicationHeaders['x-api-key'];
+                dynamicHeaders['agent-code'] = applicationHeaders['agent-code'];
+                dynamicHeaders['subagent-code'] = applicationHeaders['subagent-code'];
+                dynamicHeaders['program-id'] = applicationHeaders['program-id'];
+                dynamicHeaders['business-id'] = applicationHeaders['business-id'];
+                dynamicHeaders['client-id'] = applicationHeaders['client-id'];
+                dynamicHeaders['authorization'] = applicationHeaders['authorization'];
             }
 
             // ✅ Create instance dynamically per request
             const axiosInstance: AxiosInstance = createAxiosInstance(
-                dnsConfig?.base_url_api || 'http://localhost:3000',
+                `${dnsConfig?.base_url_api}${USER_URL}` || `http://localhost:3000${USER_URL}`,
                 dynamicHeaders,
                 ENVIRONMENT
             )
@@ -81,14 +81,8 @@ const axiosBaseQuery = (): BaseQueryFn<
             })
 
             return { data: result.data }
-        } catch (axiosError) {
-            const err = axiosError as AxiosError
-            return {
-                error: {
-                    status: err.response?.status || 500,
-                    data: err.response?.data || err.message,
-                },
-            }
+        } catch (error) {
+            throw new ApplicationServiceError("User-Apis-BaseQuery faced application error", error)
         }
     }
 
@@ -102,17 +96,43 @@ export const userApis = createApi({
         signIn: build.mutation<apiResponseType<signinResponseType>, signinRequestType>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
+                    const state = getState() as rootStateType
+                    
+                    // Check backend session
+                    const getSessionResult = await dispatch(helperApis.endpoints.getSession.initiate())
+                    const isSessionValid = (getSessionResult?.isSuccess && (getSessionResult?.data?.status?.toUpperCase() === "SUCCESS")) ? true : false
+
+                    let dnsConfig = selectDnsConfigDetails(state)
+                    if (!dnsConfig || !isSessionValid) {
+                        const result = await dispatch(
+                            configApis.endpoints.getDnsConfig.initiate(
+                                {
+                                    domainName: 'business.banking-management.com',
+                                },
+                                {
+                                    forceRefetch: true  // Force RTK to refetch the query
+                                }
+                            )
+                        )
+
+                        if (result.isError) {
+                            throw new ApplicationServiceError("SIGN-IN - Failed to fetch DNS Config data")
+                        }
+
+                        dnsConfig = result.data?.data as dnsConfigDataType
+                    }
+
                     // ---------------------------- Get AES Encryption Key ---------------------------- \\
                     const aesEncryptionKeyHex = await getAesEncryptionKey(dispatch, configApis.endpoints.getAesEncryptionKey.initiate)
                     if (!aesEncryptionKeyHex) {
-                        throw new Error("Failed to get AES key");
+                        throw new ApplicationServiceError("Failed to get AES key")
                     }
                     // console.log("aesEncryptionKeyHex: ", aesEncryptionKeyHex)
                     // ----------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
                     // ----------------------------- Get RSA Encryption Key ----------------------------- \\
                     const rsaEncryptionPublicKey = await getRsaPublicKey(dispatch, configApis.endpoints.getRsaEncryptionPublicKey.initiate)
                     if (!rsaEncryptionPublicKey) {
-                        throw new Error("Failed to get RSA key");
+                        throw new ApplicationServiceError("Failed to get RSA key");
                     }
                     // console.log("RsaEncryptionPublicKey : ", rsaEncryptionPublicKey)
                     // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
@@ -132,26 +152,9 @@ export const userApis = createApi({
                     const encryptedRequestBody = { encryptedRequestBodyPayload1: rsaEncryptionResponse?.ciphertextBase64, encryptedRequestBodyPayload2: aesEncryptionResponse?.ciphertextHex }
 
                     // Encrypt query payload using AES
-                    const aesQueryEncryptionResponse = await aesEncryption(aesEncryptionKeyHex as string, payload, ivHex)
+                    const aesQueryEncryptionResponse = await aesEncryption(aesEncryptionKeyHex as string, { domainName: dnsConfig?.domain_name }, ivHex)
                     const encryptedQueryParams = { encryptedQueryParam1: aesQueryEncryptionResponse.ciphertextHex }
                     // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
-
-                    const state = getState() as rootStateType
-                    let dnsConfig = selectDnsConfigDetails(state)
-
-                    if (!dnsConfig) {
-                        const result = await dispatch(
-                            configApis.endpoints.getDnsConfig.initiate({
-                                domainName: 'business.banking-management.com',
-                            })
-                        )
-
-                        if (result.isError) {
-                            throw new ApplicationServiceError("SIGN-IN - Failed to fetch DNS Config data")
-                        }
-
-                        dnsConfig = result.data?.data as dnsConfigDataType
-                    }
 
                     const result = await baseQuery({
                         url: `${dnsConfig?.base_url_api}${USER_URL}/login`,
@@ -175,26 +178,12 @@ export const userApis = createApi({
                             aesEncryptionKeyHex
                         });
 
-                        if (decryptAesMessageResponse?.status !== "SUCCESS") {
-                            return {
-                                error: {
-                                    status: 500,
-                                    data: "AES decryption failed"
-                                }
-                            };
-                        }
-
                         const unParsedDecryptedData = decryptAesMessageResponse?.decryptedText;
                         try {
                             decryptedData = JSON.parse(unParsedDecryptedData);
                         }
                         catch {
-                            return {
-                                error: {
-                                    status: 500,
-                                    data: "Invalid JSON after decryption"
-                                }
-                            };
+                            throw new ApplicationServiceError("USER-SIGNIN - Invalid JSON after decryption")
                         }
                     }
                     else {

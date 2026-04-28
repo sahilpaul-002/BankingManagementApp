@@ -5,13 +5,13 @@ import type { rootStateType } from '../../sotre'
 export type portalType = 'admin' | 'business' | 'user'
 
 export interface applicationHeaderItemsType {
-  agent_code: string;
-  subagent_code: string;
-  business_id: string;
-  program_id: string;
-  client_id: string;
-  x_api_key: string;
-  accessToken: string
+  "agent-code": string;
+  "subagent-code": string;
+  "business-id": string;
+  "program-id": string;
+  "client-id": string;
+  "x-api-key": string;
+  "authorization": string
 }
 
 export interface dnsConfigDataType {

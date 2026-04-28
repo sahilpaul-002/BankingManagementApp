@@ -43,7 +43,7 @@ export default function SignInPage() {
   })
 
   const onSigninFormSubmit: SubmitHandler<SigninFormData> = async (formData) => {
-    console.log(formData);
+    // console.log(formData);
     const { email, password } = formData
     try {
       const signInResponse = await signIn({ email, password }).unwrap()

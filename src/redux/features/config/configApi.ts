@@ -173,6 +173,7 @@ export const configApis = createApi({
                     const { x_api_key, agent_code, subagent_code, program_id, business_id, client_id, accessToken, ...rest } = data?.data as dnsConfigResponseType
                     // ✅ Store DNS config in slice
                     dispatch(setDnsConfigDetails(rest))
+                    // dispatch(setDnsConfigDetails(data?.data as dnsConfigResponseType))
                 } catch (err) {
                     console.error('Failed to store DNS config')
                 }
@@ -284,7 +285,7 @@ export const configApis = createApi({
 
 
         // =======================================================
-        // RSA ENCRYPTION PUBLIC KEY
+        // RSA HEADER ENCRYPTION PUBLIC KEY
         // =======================================================
         getHeaderRsaEncryptionPublicKey: build.query<apiResponseType<encryptionKeyResponseType>, void>({
             query: () => ({

@@ -3,6 +3,7 @@ import { userApis } from './features/user/userApi'
 import userSlice from "./slice/user/userSlice.js"
 import configSlice from './slice/config/configSlice.js'
 import { configApis } from './features/config/configApi.js'
+import { helperApis } from './features/helper/helperApis.js'
 
 // EXPORT RTK STORE
 export const store = configureStore({
@@ -13,12 +14,13 @@ export const store = configureStore({
 
         // RTK Query reducer
         [configApis.reducerPath]: configApis.reducer, 
+        [helperApis.reducerPath]: helperApis.reducer,
         [userApis.reducerPath]: userApis.reducer,
     },
 
     // 🔥 RTK Query middleware
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(userApis.middleware, configApis.middleware),
+        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware),
 })
 
 // EXPORT HOOKS TYPES

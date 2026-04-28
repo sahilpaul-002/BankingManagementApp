@@ -9,7 +9,7 @@ const getSessionItem = (key: string): string | null => {
 
 export const getAesEncryptionKey = async (dispatch: any, initiate: any): Promise<string | null> => {
     try {
-        let keyHex: string | null = sessionStorage.getItem("key");
+        let keyHex: string | null = sessionStorage.getItem("keyHex");
 
         if (!keyHex) {
             try {
@@ -18,7 +18,7 @@ export const getAesEncryptionKey = async (dispatch: any, initiate: any): Promise
                 const aesEncryptionKey = result?.data?.key;
 
                 if (aesEncryptionKey) {
-                    sessionStorage.setItem("key", aesEncryptionKey);
+                    sessionStorage.setItem("keyHex", aesEncryptionKey);
                     keyHex = aesEncryptionKey;
                 }
 
