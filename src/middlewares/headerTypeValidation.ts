@@ -2,9 +2,99 @@ import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
 import checkStringHeader from "../utils/checkStringHeader.js";
 import { request } from "node:http";
-import { AppErrorClass, InvalidHeaderError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, InvalidHeaderError, ServiceError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
+import { headerAsymmetricDecryptionMsg } from "../utils/asymmetricHeaderEncryptionDecryption.js";
+import type { decryptionFailedJson, decryptionSuccessJson } from "../types/decryptionRespoonseTypes.js";
 
 const headerTypeValidation = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
+    if (!req.session.headerKeys?.publicKey || !req.session.headerKeys.privateKey) {
+        throw new UnauthenticatedError("Unauthenticated session");
+    }
+
+    // -------------------------------------- Decrypt Header Items
+    const encryptedHeaderKeys = [
+        'x-api-key',
+        'agent-code',
+        'subagent-code',
+        'program-id',
+        'business-id',
+        'client-id',
+        'authorization'
+    ];
+
+    try {
+
+        for (const headerKey of encryptedHeaderKeys) {
+
+            const encryptedValue = req.headers[headerKey] as string;
+
+            // Skip if header not present
+            if (!encryptedValue) continue;
+
+            // Decrypt header
+            const decryptionResponse = headerAsymmetricDecryptionMsg(req, encryptedValue);
+
+            if (
+                decryptionResponse &&
+                decryptionResponse.status.toUpperCase() === "SUCCESS"
+            ) {
+
+                const successResponse =
+                    decryptionResponse as decryptionSuccessJson;
+
+                let decryptedValue = successResponse.decryptedText;
+
+                // Convert JSON string to object
+                const parsedValue = JSON.parse(decryptedValue);
+
+                // Populate decrypted value back into req.headers
+                req.headers[headerKey] = parsedValue.value;
+            }
+
+            else if (
+                decryptionResponse &&
+                ["NOT_FOUND", "BAD_REQUEST"].includes(
+                    decryptionResponse.status.toUpperCase()
+                )
+            ) {
+
+                const errorResponse =
+                    decryptionResponse as decryptionFailedJson;
+
+                if (
+                    errorResponse?.message?.includes(
+                        "Assymetric private key not found in session"
+                    )
+                ) {
+                    throw new UnauthenticatedError(
+                        "Unauthenticated Access: Private key not found in session"
+                    );
+                }
+
+                throw new ServiceError(
+                    `Header decryption failed for ${headerKey}`
+                );
+            }
+
+            else {
+                throw new ServiceUnavailableError(
+                    `Asymmetric header decryption service unavailable for ${headerKey}`
+                );
+            }
+        }
+
+    } catch (error) {
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceUnavailableError(
+            "Asymmetric header decryption service is not working."
+        );
+    }
+    // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
+
     try {
         // Validate Content-Type header for POST, PUT, PATCH requests
         if (["POST", "PUT", "PATCH"].includes(req.method)) {

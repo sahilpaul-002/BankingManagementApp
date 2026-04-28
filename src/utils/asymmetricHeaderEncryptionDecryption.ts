@@ -45,7 +45,7 @@ export const getHeaderAsymmetricKeyPair = (req: Request) => {
     };
 }
 
-export const asymmetricDecryptionMsg = (req: Request, ciphertextBase64: string): decryptionSuccessJson | decryptionFailedJson => {
+export const headerAsymmetricDecryptionMsg = (req: Request, ciphertextBase64: string): decryptionSuccessJson | decryptionFailedJson => {
     // Get Private Key from session
     const privateKey: string | undefined = req.session.headerKeys?.privateKey;
 
