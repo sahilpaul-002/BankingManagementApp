@@ -15,11 +15,7 @@ const checkOriginExist = (req: Request, res: Response, next: NextFunction): Resp
     }
 
     if (!allowedOrigins.includes(origin)) {
-        throw new AppErrorClass(
-            403,
-            "FORBIDDEN",
-            "ORIGIN NOT ALLOWED"
-        )
+        throw new ForbiddenError("ORIGIN NOT ALLOWED");
     }
     next();
 }

@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import type { failedResponseJson } from '../types/responseJson.js';
 import normalizeIp from '../utils/normalizeIp.js';
 import dotenv from "dotenv";
-import { AppErrorClass } from '../utils/AppErrorClass.js';
+import { AppErrorClass, ForbiddenError, UnauthenticatedError } from '../utils/AppErrorClass.js';
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -29,11 +29,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
                 isValidClientHint;
 
             if (!isLikelyBrowser) {
-                throw new AppErrorClass(
-                    403,
-                    "FORBIDDEN",
-                    "User is not allowed to access the application"
-                )
+                throw new ForbiddenError("User is not allowed to access the application")
             }
         }
     }
@@ -54,11 +50,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
         try {
             // Check client domain matches the session domain
             if (!req?.session?.sessiondata?.domainName) {
-                throw new AppErrorClass(
-                    401,
-                    "UNAUTHENTICATED",
-                    "Unauthenticated session"
-                );
+                throw new UnauthenticatedError("Unauthenticated session")
             }
 
             let origin: string | undefined = req.headers.origin || req.headers.referer;
@@ -73,11 +65,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
                 const originHost: string = new URL(origin).hostname;
 
                 if (originHost !== sessionDomain && !originHost.endsWith(`.${sessionDomain}`)) {
-                    throw new AppErrorClass(
-                        401,
-                        "UNAUTHENTICATED",
-                        "Unauthenticated session"
-                    );
+                    throw new UnauthenticatedError("Unauthenticated session")
                 }
                 // -------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------- \\
 
@@ -95,11 +83,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
                 const clientIp: string | null = getClientIP(req);
 
                 if (req?.session?.meta?.clientIp !== clientIp) {
-                    throw new AppErrorClass(
-                        401,
-                        "UNAUTHENTICATED",
-                        "Unauthenticated session"
-                    );
+                    throw new UnauthenticatedError("Unauthenticated session")
                 }
                 // ------------------------------- XXXXXXXXXXXXXXXXXXXXX ------------------------------- \\
             }

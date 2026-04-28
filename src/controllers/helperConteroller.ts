@@ -7,6 +7,7 @@ import { userDetailsModel } from "../models/user_details.js";
 import { userAddressModel } from "../models/user_addresses.js";
 import { userBankDetailsModel } from "../models/user_bank_details.js";
 import { portalConfigurationsModel } from "../models/portal_configurations.js";
+import { NotFoundError, ServiceError, ServiceUnavailableError } from "../utils/AppErrorClass.js";
 
 // Health Check
 export const healthCheck = (req: Request, res: Response): Response<successResponseJson> | void => {
@@ -14,22 +15,22 @@ export const healthCheck = (req: Request, res: Response): Response<successRespon
         return res.status(200).json({ status: "OK", message: "SERVER IS HEALTHY" });
     }
     catch (error) {
-        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "HEALTH CHECK SERVICE FACING ISSUE.");
+        throw new ServiceUnavailableError("Application service unvailable - application not healthy")
     }
 }
 
 // Get Session
 export const getSession = (req: Request, res: Response): Response<successResponseJson> | void => {
     try {
-        if (!req.session) {
-            return res.status(200).json({ status: "SUCCESS", message: "NO ACTIVE SESSION FOUND" });
+        if (!req.session || !req.session?.initiated) {
+            return res.status(200).json({ status: "ERROR", message: "NO ACTIVE SESSION FOUND" });
         }
 
         const sessionId = req.sessionID;
-        return res.status(200).json({ status: "SUCCESS", message: "SESSION FOUND", data: { session: req.session, sessionId: sessionId } })
+        return res.success("SESSION FOUND", { sessionId: sessionId }, 200)
     }
     catch (error) {
-        errorHandler(req, res, error, 500, "INTERNAL_SERVER_ERROR", "GET SESSION SERVICE FACING ISSUE.");
+        throw new ServiceError("GET SESSION SERVICE FACING ISSUE.")
     }
 }
 
@@ -83,7 +84,8 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
     // Check if collection exist in MongoDB
     const isCollectionPresent: successResponseJson | failedResponseJson = await checkMongoDbCollectionExist(collectionNameString);
     if (isCollectionPresent.status !== "SUCCESS") {
-        return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Collection does not exist in MongoDB" });
+        // return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Collection does not exist in MongoDB" });
+        throw new NotFoundError("Collection does not exist in MongoDB")
     }
 
 
@@ -108,7 +110,8 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
 
     // Check if the model exist
     if (!Model) {
-        return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Required collection does not exist in MongoDB" });
+        // return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Required collection does not exist in MongoDB" });
+        throw new NotFoundError("Collection does not exist in MongoDB")
     }
 
     // Insert document in collection
@@ -116,5 +119,6 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
     const insertedDocument = await Model.create(document);
 
     // console.log("Document inserted: ", insertedDocument);
-    return res.status(200).json({ status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument });
+    // return res.status(200).json({ status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument });
+    return res.success("Document inserted successfully", insertedDocument, 200)
 }

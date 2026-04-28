@@ -1,16 +1,20 @@
 import type { Request, Response } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 
-const destroySession = async (req: Request, res: Response): Promise<successResponseJson | failedResponseJson | void> => {
+// const destroySession = async (req: Request, res: Response): Promise<successResponseJson | failedResponseJson | void> => {
+const destroySession = async (requestSession: Request["session"] & {destroy: (callback: (err?: any) => void) => void;
+}, res: Response): Promise<successResponseJson | failedResponseJson | void> => {
     try {
-        if (!req.session) {
+        // if (!req.session) {
+        if (!requestSession) {
             return { status: "NOT_FOUND", message: "NO ACTIVE SESSION FOUND" };
         }
 
-        const sessionId = req.sessionID;
+        // const sessionId = req.sessionID;
 
         return await new Promise<successResponseJson | failedResponseJson>((resolve) => {
-            req.session.destroy((err) => {
+            // req.session.destroy((err) => {
+            requestSession.destroy((err) => {
                 if (err) {
                     console.error("Session destroy error:", err);
 
@@ -30,7 +34,7 @@ const destroySession = async (req: Request, res: Response): Promise<successRespo
                 resolve({
                     status: "SUCCESS",
                     message: "SESSION DESTROYED SUCCESSFULLY",
-                    data: { sessionId }
+                    // data: { sessionId }
                 });
             });
         });

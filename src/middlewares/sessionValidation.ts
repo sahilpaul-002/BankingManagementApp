@@ -50,7 +50,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             // Check user exist in DB
             if (!userDetails) {
                 try {
-                    const destroySessionResponse = await destroySession(req, res);
+                    const destroySessionResponse = await destroySession(req.session, res);
 
                     if (destroySessionResponse?.status !== "SUCCESS") {
                         if ((destroySessionResponse as failedResponseJson)?.error) {
@@ -69,7 +69,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
             // Check user activated
             if (!userDetails?.is_active) {
-                const destroySessionResponse = await destroySession(req, res);
+                const destroySessionResponse = await destroySession(req.session , res);
                 throw new UnauthorizedError("User is not activated");
             }
         }
@@ -96,7 +96,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
             // Check client-ip and device-id in session meata
             if (!req.session?.meta?.clientIp || !req.session?.meta?.deviceId || req.session.meta.clientIp !== clientIp || req.session.meta.deviceId !== deviceId) {
-                const destroySessionResponse = await destroySession(req, res);
+                const destroySessionResponse = await destroySession(req.session, res);
                 throw new UnauthorizedError("User is not authorized - Invalid user meta details");
             }
 
@@ -117,7 +117,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             const isValidMeta = await validateUserMetaDetails(userDetails._id.toString(), clientIp, deviceId as string);
 
             if (!isValidMeta) {
-                const destroySessionResponse = await destroySession(req, res);
+                const destroySessionResponse = await destroySession(req.session, res);
                 throw new UnauthorizedError("User is not authorized - Invalid user meta details");
             }
         }

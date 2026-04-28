@@ -43,7 +43,7 @@ type headerKeysType = {
 }
 
 // Session items stored in session
-export interface sessionItems {
+export interface sessionItemsTypes {
     initiated: boolean;
     lastActivity: number;
     valid: boolean;
@@ -59,7 +59,7 @@ export interface sessionItems {
     meta?: sessionMeta;
 }
 
-// Augment express-session to include custom session fields
-declare module "express-session" {
-    interface SessionData extends sessionItems {}
-}
+// // Augment express-session to include custom session fields
+// declare module "express-session" {
+//     interface SessionData extends sessionItemsTypes {}
+// }

@@ -28,6 +28,8 @@ import checkRequestSource from "../middlewares/checkRequestSource.js";
 import globalResponseHandler from "../middlewares/globalResponseHandler.js";
 import globalErrorHandler from "../middlewares/globalErrorHandler.js";
 import validateUniqueRequests from "../middlewares/validateUniqueRequests.js";
+import { requestContextMiddleware } from "../middlewares/requestContextMiddleware.js";
+import asyncRequestHandler from "../middlewares/asyncRequestHandler.js";
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -99,13 +101,13 @@ app.use(dynamicSession())
 app.use(sessionExistance);
 
 // Cehck Origin Header Exist Middleware
-app.use(checkOriginExist)
+app.use(asyncRequestHandler(checkOriginExist))
 
 // Check Portal Header Exist Middleware
-app.use(portalHeaderCheck);
+app.use(asyncRequestHandler(portalHeaderCheck));
 
 // Request Source Check
-app.use(checkRequestSource);
+app.use(asyncRequestHandler(checkRequestSource));
 
 // Rate Limiter Middleware
 app.use(rateLimiter());
@@ -120,7 +122,7 @@ app.use(globalResponseHandler);
 // ---------------------------------------- Routes ---------------------------------------- \\
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
-app.use("/api/v1/user", sessionValidation, sessionExpiration, validateUniqueRequests, headerTypeValidation, headerValidations, checkTimeout(5), userRoutes);
+app.use("/api/v1/user", sessionValidation, sessionExpiration, validateUniqueRequests, headerTypeValidation, headerValidations, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\

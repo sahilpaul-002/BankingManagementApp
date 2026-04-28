@@ -10,7 +10,7 @@ import destroySession from "../utils/destroySession.js";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
 import normalizeIp from "../utils/normalizeIp.js";
 import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_details.js";
-import type { sessionDataTypes } from "../types/sessionTypes.js";
+import type { sessionDataTypes, sessionItemsTypes } from "../types/sessionTypes.js";
 import type { successResponseJson } from "../types/responseJson.js";
 import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
 import generateJwtToken from "../utils/generateJwtToken.js";
@@ -72,7 +72,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
 
         // Check user exist in DB
         if (userExistance) {
-            const destroySessionResponse = await destroySession(req, res);
+            const destroySessionResponse = await destroySession(req.session, res);
             throw new ForbiddenError("User already exists");
         }
 
@@ -158,28 +158,28 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         // Get user from DB
-        const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
+        const checkUserExistInDB = async (): Promise<userDetailsSchemaTypes | null> => {
             const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: email });
             return userExistResponse;
         }
-        const userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB(req);
+        const userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB();
 
         // Check user exist in DB
         if (!userDetails) {
-            const destroySessionResponse = await destroySession(req, res);
+            const destroySessionResponse = await destroySession(req.session, res);
             throw new ForbiddenError("User does not exist")
         }
 
         // Check user input password validity
         const isPasswordValid = compareSync(password, userDetails?.password);
         if (!isPasswordValid) {
-            const destroySessionResponse = await destroySession(req, res);
+            const destroySessionResponse = await destroySession(req.session, res);
             throw new ForbiddenError("Invalid credentials")
         }
 
         // Check user configuration
         if (userDetails.agent_code !== req.session?.sessiondata?.agentCode || userDetails.subagent_code !== req.session?.sessiondata?.subAgentCode || userDetails.program_id !== req.session?.sessiondata?.programId || userDetails.business_id !== req.session?.sessiondata?.businessId || userDetails.client_id !== req.session?.sessiondata?.clientId) {
-            const destroySessionResponse = await destroySession(req, res);
+            const destroySessionResponse = await destroySession(req.session, res);
             throw new ForbiddenError("User configuration does not match")
         }
 
@@ -202,6 +202,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 
             return normalizeIp(ip) as string;
         };
+
         const clientIp = getClientIP(req)
 
         // Get the device id from header
@@ -223,6 +224,13 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         if (req.session.valid && req.session.userId === updatedUserDetails._id.toString()) {
             // Get sessiondata from session before destroying the session
             const sessionData: sessionDataTypes = req.session.sessiondata;
+            const encryptionKey = req.session.encryptionKey
+            const headerKeys = {
+                publicKey: req.session.headerKeys?.publicKey as string,
+                privateKey: req.session.headerKeys?.privateKey as string
+            }
+            const publicKey = req.session?.publicKey
+            const privateKey = req.session?.privateKey
 
             // Regenerate a new session after destroying older session
             await new Promise<void>((resolve, reject) => {
@@ -238,6 +246,13 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             // INITIATE SESSION
             req.session.initiated = true;
             req.session.lastActivity = Date.now();
+
+            // Restore the keys
+            req.session.encryptionKey = encryptionKey as string;
+            req.session.headerKeys = headerKeys as typeof headerKeys;
+            req.session.publicKey = publicKey as string;
+            req.session.privateKey = privateKey as string;
+
 
             // Set sessiondata in new session
             req.session.sessiondata = sessionData;

@@ -2,10 +2,12 @@ import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import { asymmetricDecryptionMsg } from "../utils/asymmetricEncryptionDecryption.js";
 import type { decryptionFailedJson, decryptionSuccessJson } from "../types/decryptionRespoonseTypes.js";
-import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, ServiceError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
 import { symmetricDecryptionMsg, symmetricEncryptionMsg } from "../utils/symmetricEncryptionDecryption.js";
 import { userLoginService, userSignUpService } from "../services/userServices.js";
 import type { ParsedQs } from "qs";
+import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
+import type { sessionItemsTypes } from "../types/sessionTypes.js";
 
 // ------------------------------ FUNCTION TO SET USERCONTROLLER HEADERS ------------------------------ \\
 const userControllerHeader = (req: Request) => {
@@ -172,10 +174,10 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
                 }
 
                 // Get encrypted request body payload2
-                const encryptedRequestBodyPayload2 : string = req?.body?.encryptedRequestBodyPayload2 
+                const encryptedRequestBodyPayload2: string = req?.body?.encryptedRequestBodyPayload2
 
                 // Decrypt encryptedRequestBodyPayload2 
-                const decryptionMsgResponse2 = symmetricDecryptionMsg(req, encryptedRequestBodyPayload2 , ivHex);
+                const decryptionMsgResponse2 = symmetricDecryptionMsg(req, encryptedRequestBodyPayload2, ivHex);
                 if (decryptionMsgResponse2 && decryptionMsgResponse2.status.toUpperCase() === "SUCCESS") {
                     const successResponse: decryptionSuccessJson = decryptionMsgResponse2 as decryptionSuccessJson;
                     aesDecryptedBodyData = JSON.parse(successResponse?.decryptedText);
@@ -249,6 +251,15 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         throw new Error("UserSignUP-requestPayload decryption is facing issue.")
     }
     try {
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+        const requestHeaders: Request["headers"] | undefined = getRequestHeaders();
+        if (!requestHeaders) {
+            throw new BadRequestError("Bad request - headers not found in request");
+        }
+        // const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
         const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
 
         if (userLoginServiceResponse?.status !== "SUCCESS") {

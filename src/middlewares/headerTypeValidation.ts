@@ -11,7 +11,7 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
         throw new UnauthenticatedError("Unauthenticated session");
     }
 
-    // -------------------------------------- Decrypt Header Items
+    // -------------------------------------- Decrypt Header Items -------------------------------------- \\
     const encryptedHeaderKeys = [
         'x-api-key',
         'agent-code',
