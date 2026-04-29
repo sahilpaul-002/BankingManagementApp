@@ -64,11 +64,14 @@ const userSlice = createSlice({
       state.isLogin = false
       state.isAuthenticated = false
     },
+
+    // Reset User States 
+    resetUserState: () => initialState
   },
 })
 
 // 📤 Export actions
-export const { setUserDetails, logout } = userSlice.actions
+export const { setUserDetails, logout, resetUserState } = userSlice.actions
 
 // 📤 Export reducer
 export default userSlice

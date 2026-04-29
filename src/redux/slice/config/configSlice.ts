@@ -63,16 +63,20 @@ const configSlice = createSlice({
     setAppliationHeaders: (state, action: PayloadAction<applicationHeaderItemsType>) => {
       state.applicationHeaders = action.payload
     },
+
     // Set DNS Config Details
     setDnsConfigDetails: (state, action: PayloadAction<dnsConfigDataType>) => {
       state.dnsConfigData = action.payload
     },
 
+    // Reset Config States
+    resetConfigStates: () => initialState
+
   },
 })
 
 // 📤 Export actions
-export const { setAppliationHeaders, setDnsConfigDetails } = configSlice.actions
+export const { setAppliationHeaders, setDnsConfigDetails, resetConfigStates } = configSlice.actions
 
 // 📤 Export reducer
 export default configSlice

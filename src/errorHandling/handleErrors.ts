@@ -2,6 +2,7 @@
 
 import axios, { AxiosError } from 'axios';
 import { AppErrorClass } from './appError';
+import { toast } from 'react-toastify';
 
 export interface backendErrorType {
     status: string;
@@ -28,29 +29,44 @@ const handleErrors = (error: unknown): never => {
         switch (status) {
             case 400:
                 console.error("BAD_REQUEST / ERROR");
+                toast.error("Internal application error")
+                throw error
 
             case 401:
                 console.error("Unauthenticated / Unauthorized / INVALID_SESSION");
+                throw error
 
             case 403:
                 console.error("FORBIDDEN");
+                throw error
 
             case 404:
                 console.error("NOT_FOUND");
+                toast.error("Request resorce or service not found")
+                throw error
 
             case 406:
                 console.error("INVALID_HEADER / INVALID_REQUEST_BODY_PARAMETER / INVALID_REQUEST_QUERY_PARAMETER");
+                toast.error("Internal application error")
+                throw error
 
             case 429:
                 console.error("SERVICE_TIMEOUT");
+                toast.error("Application time out")
+                throw error
 
             case 500:
                 console.error("INTERNAL_SERVER_ERROR");
+                toast.error("Internal server error")
+                throw error
 
             case 503:
                 console.error("SERVICE_UNAVAILABLE");
+                toast.error("Application service unavailbale")
+                throw error
 
             default:
+                toast.error("Internal application error")
                 throw new AppErrorClass(
                     status || 500,
                     data?.status || 'INTERNAL_SERVER_ERROR',
@@ -62,9 +78,11 @@ const handleErrors = (error: unknown): never => {
 
     // Non-Axios error
     if (error instanceof Error) {
+        toast.error("Application service error")
         throw new AppErrorClass(601, 'APPLICATION_SERVICE_ERROR', error.message, error);
     }
 
+    toast.error("Internal application error")
     throw new AppErrorClass(600, 'INTERNAL_APPLICATION_ERROR', 'Internal application error occured', error);
 };
 
