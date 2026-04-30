@@ -5,10 +5,6 @@ import type { rootStateType } from '@/redux/sotre'
 import { configApis } from '../config/configApi'
 import { USER_URL } from '@/configs/constants'
 import { createAxiosInstance } from '@/configs/axiosConfig'
-import { getAesEncryptionKey, getRsaPublicKey } from '@/services/getEncryptionKeys'
-import { rsaEncryption } from '@/utils/rsaEncryption'
-import { aesEncryption } from '@/utils/aesEncryption'
-import { aesDecryption, type DecryptResult } from '@/utils/aesDecryption'
 import { ApplicationServiceError } from '@/errorHandling/error'
 import mapToRtkError from '@/errorHandling/mapToRtkError'
 import { helperApis } from '../helper/helperApis'
@@ -137,75 +133,15 @@ export const userApis = createApi({
                         dnsConfig = result.data?.data as dnsConfigDataType
                     }
 
-                    // ---------------------------- Get AES Encryption Key ---------------------------- \\
-                    const aesEncryptionKeyHex = await getAesEncryptionKey(dispatch, configApis.endpoints.getAesEncryptionKey.initiate)
-                    if (!aesEncryptionKeyHex) {
-                        throw new ApplicationServiceError("Failed to get AES key")
-                    }
-                    // console.log("aesEncryptionKeyHex: ", aesEncryptionKeyHex)
-                    // ----------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
-                    // ----------------------------- Get RSA Encryption Key ----------------------------- \\
-                    const rsaEncryptionPublicKey = await getRsaPublicKey(dispatch, configApis.endpoints.getRsaEncryptionPublicKey.initiate)
-                    if (!rsaEncryptionPublicKey) {
-                        throw new ApplicationServiceError("Failed to get RSA key");
-                    }
-                    // console.log("RsaEncryptionPublicKey : ", rsaEncryptionPublicKey)
-                    // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
-
-                    // --------------------------- Request Payload Creation --------------------------- \\ 
-                    // Generate IV for decryption
-                    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-                    const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
-                    // Encrypt payload using RSA
-                    const rsaEncryptionResponse = await rsaEncryption({ ivHex }, rsaEncryptionPublicKey as string)
-                    // console.log("RsaEncryptionResponse: ", rsaEncryptionResponse)
-
-                    // Encrypt payload using AES
-                    const aesEncryptionResponse = await aesEncryption(aesEncryptionKeyHex as string, payload, ivHex)
-                    // console.log("AesEncryptionResponse: ", aesEncryptionResponse)
-
-                    const encryptedRequestBody = { encryptedRequestBodyPayload1: rsaEncryptionResponse?.ciphertextBase64, encryptedRequestBodyPayload2: aesEncryptionResponse?.ciphertextHex }
-
-                    // Encrypt query payload using AES
-                    const aesQueryEncryptionResponse = await aesEncryption(aesEncryptionKeyHex as string, { domainName: dnsConfig?.domain_name }, ivHex)
-                    const encryptedQueryParams = { encryptedQueryParam1: aesQueryEncryptionResponse.ciphertextHex }
-                    // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
-
                     const result = await baseQuery({
                         url: `${dnsConfig?.base_url_api}${USER_URL}/signUp`,
                         method: 'POST',
-                        params: encryptedQueryParams,
-                        data: encryptedRequestBody,
+                        params: { domainName: dnsConfig?.domain_name },
+                        data: payload,
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown
                     }
-
-                    // ---------------------------- Decrypt the respnose data using AES ---------------------------- \\
-                    let decryptedData: apiResponseType<apiResponseDataType>;
-
-                    if (typeof result.data?.data === "string") {
-                        // Decrypt response
-                        const cipherTextHex = result.data?.data;
-                        const decryptAesMessageResponse: DecryptResult = await aesDecryption({
-                            cipherTextHex,
-                            ivHex,
-                            aesEncryptionKeyHex
-                        });
-
-                        const unParsedDecryptedData = decryptAesMessageResponse?.decryptedText;
-                        try {
-                            decryptedData = JSON.parse(unParsedDecryptedData);
-                        }
-                        catch {
-                            throw new ApplicationServiceError("USER-SIGNUP - Invalid JSON after decryption")
-                        }
-                    }
-                    else {
-                        decryptedData = result.data as apiResponseType<apiResponseDataType>;
-                    }
-                    console.log("Sign up data: ", decryptedData);
-                    // --------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------- \\
 
                     return {
                         data: result.data as apiResponseType<apiResponseDataType>,
@@ -252,75 +188,15 @@ export const userApis = createApi({
                         dnsConfig = result.data?.data as dnsConfigDataType
                     }
 
-                    // ---------------------------- Get AES Encryption Key ---------------------------- \\
-                    const aesEncryptionKeyHex = await getAesEncryptionKey(dispatch, configApis.endpoints.getAesEncryptionKey.initiate)
-                    if (!aesEncryptionKeyHex) {
-                        throw new ApplicationServiceError("Failed to get AES key")
-                    }
-                    // console.log("aesEncryptionKeyHex: ", aesEncryptionKeyHex)
-                    // ----------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
-                    // ----------------------------- Get RSA Encryption Key ----------------------------- \\
-                    const rsaEncryptionPublicKey = await getRsaPublicKey(dispatch, configApis.endpoints.getRsaEncryptionPublicKey.initiate)
-                    if (!rsaEncryptionPublicKey) {
-                        throw new ApplicationServiceError("Failed to get RSA key");
-                    }
-                    // console.log("RsaEncryptionPublicKey : ", rsaEncryptionPublicKey)
-                    // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
-
-                    // --------------------------- Request Payload Creation --------------------------- \\ 
-                    // Generate IV for decryption
-                    const iv = window.crypto.getRandomValues(new Uint8Array(12));
-                    const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
-                    // Encrypt payload using RSA
-                    const rsaEncryptionResponse = await rsaEncryption({ ivHex }, rsaEncryptionPublicKey as string)
-                    // console.log("RsaEncryptionResponse: ", rsaEncryptionResponse)
-
-                    // Encrypt payload using AES
-                    const aesEncryptionResponse = await aesEncryption(aesEncryptionKeyHex as string, payload, ivHex)
-                    // console.log("AesEncryptionResponse: ", aesEncryptionResponse)
-
-                    const encryptedRequestBody = { encryptedRequestBodyPayload1: rsaEncryptionResponse?.ciphertextBase64, encryptedRequestBodyPayload2: aesEncryptionResponse?.ciphertextHex }
-
-                    // Encrypt query payload using AES
-                    const aesQueryEncryptionResponse = await aesEncryption(aesEncryptionKeyHex as string, { domainName: dnsConfig?.domain_name }, ivHex)
-                    const encryptedQueryParams = { encryptedQueryParam1: aesQueryEncryptionResponse.ciphertextHex }
-                    // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
-
                     const result = await baseQuery({
                         url: `${dnsConfig?.base_url_api}${USER_URL}/login`,
                         method: 'POST',
-                        params: encryptedQueryParams,
-                        data: encryptedRequestBody,
+                        params: { domainName: dnsConfig?.domain_name },
+                        data: payload,
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown
                     }
-
-                    // ---------------------------- Decrypt the respnose data using AES ---------------------------- \\
-                    let decryptedData: apiResponseType<apiResponseDataType>;
-
-                    if (typeof result.data?.data === "string") {
-                        // Decrypt response
-                        const cipherTextHex = result.data?.data;
-                        const decryptAesMessageResponse: DecryptResult = await aesDecryption({
-                            cipherTextHex,
-                            ivHex,
-                            aesEncryptionKeyHex
-                        });
-
-                        const unParsedDecryptedData = decryptAesMessageResponse?.decryptedText;
-                        try {
-                            decryptedData = JSON.parse(unParsedDecryptedData);
-                        }
-                        catch {
-                            throw new ApplicationServiceError("USER-SIGNIN - Invalid JSON after decryption")
-                        }
-                    }
-                    else {
-                        decryptedData = result.data as apiResponseType<apiResponseDataType>;
-                    }
-                    console.log("Sign in data: ", decryptedData);
-                    // --------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------- \\
 
                     return {
                         data: result.data as apiResponseType<apiResponseDataType>,

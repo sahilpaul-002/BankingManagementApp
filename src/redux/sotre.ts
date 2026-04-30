@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit'
-import { userApis } from './features/user/userApi'
+import { userApis } from './features/user/userApi.js'
 import userSlice from "./slice/user/userSlice.js"
 import configSlice from './slice/config/configSlice.js'
 import { configApis } from './features/config/configApi.js'

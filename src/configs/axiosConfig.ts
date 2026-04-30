@@ -1,5 +1,12 @@
+import App from '@/App';
+import { AppErrorClass } from '@/errorHandling/appError';
+import { ApplicationServiceError, InternalApplicationError } from '@/errorHandling/error';
 import handleErrors from '@/errorHandling/handleErrors';
+import { getAesEncryptionKey, getRsaPublicKey } from '@/services/getEncryptionKeys';
+import { aesDecryption } from '@/utils/aesDecryption';
+import { aesEncryption } from '@/utils/aesEncryption';
 import GetDeviceId from '@/utils/GetDeviceId';
+import { rsaEncryption } from '@/utils/rsaEncryption';
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 
 // Global Dispatch Handling - (To avoid circular store dependencies)
@@ -7,6 +14,9 @@ let globalDispatch: any = null;
 export const setAxiosDispatch = (dispatch: any) => {
     globalDispatch = dispatch;
 };
+
+// Store ivHex value in WeakMap for in request cycle use
+const ivStore = new WeakMap<object, string>();
 
 // ==============================
 // FACTORY FUNCTION FOR AXIOS INSTANCE
@@ -27,15 +37,83 @@ export const createAxiosInstance = (
     // REQUEST INTERCEPTOR
     // ==========================
     instance.interceptors.request.use(
-        async (config) => {
-            config.headers["portal"] = "business";
-            config.headers["from-portal"] = "true";
-            config.headers["request-id"] = crypto.randomUUID();
+        async (req) => {
+            req.headers["portal"] = "business";
+            req.headers["from-portal"] = "true";
+            req.headers["request-id"] = crypto.randomUUID();
 
             const deviceId = await GetDeviceId();
-            config.headers["x-device-id"] = deviceId;
+            req.headers["x-device-id"] = deviceId;
 
-            return config;
+            // SKIP ENCRYPTION FOR ENCRYPTION KEY APIs
+            if (
+                req.url?.includes("/getDnsConfig") ||
+                req.url?.includes('/getEncryptionKey') ||
+                req.url?.includes('/getPublicKey') ||
+                req.url?.includes('/getHeaderPublicKey')
+            ) {
+                return req;
+            }
+
+            try {
+                // GET KEYS (SESSION FIRST)
+                let aesKey = sessionStorage.getItem('keyHex');
+                let rsaKey = sessionStorage.getItem('publicKey');
+
+                if (!aesKey || !rsaKey) {
+                    const [aesKey, rsaKey] = await Promise.all([
+                        getAesEncryptionKey(),
+                        getRsaPublicKey()
+                    ]);
+
+                    if (!aesKey || !rsaKey) {
+                        throw new ApplicationServiceError("Request payload encryption service cause error - Encryption keys missing");
+                    }
+
+                    sessionStorage.setItem('keyHex', aesKey);
+                    sessionStorage.setItem('publicKey', rsaKey);
+                }
+
+                // GENERATE IV
+                const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                const ivHex = Array.from(iv)
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+
+                // store IV for response decryption in request config using WeakMap
+                ivStore.set(req, ivHex);
+
+                // ENCRYPT BODY (POST/PUT/PATCH)
+                if (req.data) {
+                    const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
+                    const aesRes = await aesEncryption(aesKey as string, req.data, ivHex);
+
+                    req.data = {
+                        encryptedPayload1: rsaRes?.ciphertextBase64,
+                        encryptedPayload2: aesRes?.ciphertextHex,
+                    };
+                }
+
+                // ENCRYPT QUERY PARAMS (GET)
+                if (req.params) {
+                    const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
+                    const aesRes = await aesEncryption(aesKey as string, req.params, ivHex);
+
+                    req.params = {
+                        encryptedQueryPayload1: rsaRes?.ciphertextBase64,
+                        encryptedQueryPayload2: aesRes?.ciphertextHex,
+                    };
+                }
+
+                return req;
+
+            }
+            catch (err) {
+                if (err instanceof AppErrorClass) {
+                    return Promise.reject(err);
+                }
+                throw new InternalApplicationError("Request interceptor service caused unknown error", err);
+            }
         },
         (error) => Promise.reject(error)
     );
@@ -44,43 +122,44 @@ export const createAxiosInstance = (
     // RESPONSE INTERCEPTOR
     // ==========================
     instance.interceptors.response.use(
-        (response) => {
-            // success response
-            return response;
+        async (res) => {
+            try {
+                // DECRYPT RESPONSE (ONLY IF ENCRYPTED)
+                const data = res?.data;
+
+                if (data?.data && typeof data.data === 'string') {
+                    const aesKey = sessionStorage.getItem('keyHex');
+                    const ivHex = ivStore.get(res.config);
+
+                    if (aesKey && ivHex) {
+                        const decryptRes = await aesDecryption({
+                            cipherTextHex: data.data,
+                            ivHex,
+                            aesEncryptionKeyHex: aesKey,
+                        });
+
+                        try {
+                            res.data.data = JSON.parse(decryptRes.decryptedText);
+                        } catch {
+                            throw new Error("Invalid JSON after decryption");
+                        }
+                    }
+                }
+
+                return res;
+            }
+            catch (error) {
+                if (error instanceof AppErrorClass) {
+                    return Promise.reject(error);
+                }
+                throw new InternalApplicationError("Response interceptor service caused unknown error", error);
+            }
         },
         async (error) => {
             // console.log("INTERCEPTOR ERROR HIT", {"URL": error.config?.url, "Status": error.response?.status, "Data": error.response?.data});
 
-            // debugger;
-
-            // error handling (global)
-            // if (error.response?.status === 400) {
-            //     console.error("BAD_REQUEST / ERROR");
-            // }
-            // else if (error.response?.status === 401) {
-            //     console.error("Unauthenticated / Unauthorized / INVALID_SESSION");
-            // }
-            // else if (error.response?.status === 403) {
-            //     console.error("FORBIDDEN");
-            // }
-            // else if (error.response?.status === 404) {
-            //     console.error("NOT_FOUND");
-            // }
-            // else if (error.response?.status === 406) {
-            //     console.error("INVALID_HEADER / INVALID_REQUEST_BODY_PARAMETER / INVALID_REQUEST_QUERY_PARAMETER");
-            // }
-            // else if (error.response?.status === 429) {
-            //     console.error("SERVICE_TIMEOUT");
-            // }
-            // else if (error.response?.status === 500) {
-            //     console.error("INTERNAL_SERVER_ERROR");
-            // }
-            // else if (error.response?.status === 503) {
-            //     console.error("SERVICE_UNAVAILABLE");
-            // }
-
             if (globalDispatch) {
-                handleErrors(error, globalDispatch); 
+                handleErrors(error, globalDispatch);
             }
             return Promise.reject(error);
         }

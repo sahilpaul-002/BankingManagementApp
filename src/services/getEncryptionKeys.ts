@@ -1,5 +1,8 @@
 import { AppErrorClass } from "@/errorHandling/appError";
 import { InternalApplicationError } from "@/errorHandling/error";
+import axios from "axios";
+
+const baseURL = import.meta.env.VITE_DNS_BASE_URL;
 
 // Utility to safely get from sessionStorage
 const getSessionItem = (key: string): string | null => {
@@ -7,13 +10,13 @@ const getSessionItem = (key: string): string | null => {
     return value ? value : null;
 };
 
-export const getAesEncryptionKey = async (dispatch: any, initiate: any): Promise<string | null> => {
+export const getAesEncryptionKey = async (): Promise<string | null> => {
     try {
-        let keyHex: string | null = sessionStorage.getItem("keyHex");
+        let keyHex: string | null = getSessionItem("keyHex");
 
         if (!keyHex) {
             try {
-                const result = await dispatch(initiate()).unwrap();
+                const result = await axios.get(`${baseURL}/getEncryptionKey`);
 
                 const aesEncryptionKey = result?.data?.key;
 
@@ -37,15 +40,16 @@ export const getAesEncryptionKey = async (dispatch: any, initiate: any): Promise
         // fallback for non-error types
         throw new InternalApplicationError("Get AES Encryption Key service caused an unknown error", error);
     }
-};
+}
 
-export const getRsaPublicKey = async (dispatch: any, initiate: any): Promise<string | null> => {
+export const getRsaPublicKey = async (): Promise<string | null> => {
     try {
         let rsaEncryptionKey: string | null = getSessionItem("publicKey");
 
         if (!rsaEncryptionKey) {
             try {
-                const result = await dispatch(initiate()).unwrap();
+                // const result = await dispatch(initiate()).unwrap();
+                const result = await axios.get(`${baseURL}/getPublicKey`);
 
                 const key = result?.data?.key;
 
