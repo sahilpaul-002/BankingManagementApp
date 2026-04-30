@@ -25,6 +25,9 @@ export const store = configureStore({
         getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware),
 })
 
+// EXPORT STORE DISPATCH
+export const storeDispatch = store.dispatch
+
 // EXPORT HOOKS TYPES
 export type rootStateType = ReturnType<typeof store.getState>
 export type appDispatchType = typeof store.dispatch

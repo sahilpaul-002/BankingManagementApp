@@ -6,8 +6,12 @@ import ReactDOM from "react-dom/client";
 import { RouterProvider } from 'react-router-dom'
 import router from './routes/router.ts';
 import { Provider } from 'react-redux';
-import { store } from './redux/sotre.ts';
+import { store, storeDispatch } from './redux/sotre.ts';
 import 'react-toastify/dist/ReactToastify.css';
+import { setAxiosDispatch } from './configs/axiosConfig.ts';
+
+// Set Global Store Dispatch
+setAxiosDispatch(storeDispatch);
 
 // createRoot(document.getElementById('root')!).render(
 //   <StrictMode>

@@ -2,13 +2,19 @@ import handleErrors from '@/errorHandling/handleErrors';
 import GetDeviceId from '@/utils/GetDeviceId';
 import axios, { AxiosError, type AxiosInstance } from 'axios'
 
+// Global Dispatch Handling - (To avoid circular store dependencies)
+let globalDispatch: any = null;
+export const setAxiosDispatch = (dispatch: any) => {
+    globalDispatch = dispatch;
+};
+
 // ==============================
 // FACTORY FUNCTION FOR AXIOS INSTANCE
 // ==============================
 export const createAxiosInstance = (
     baseURL: string,
     headers: Record<string, string>,
-    environment?: string
+    environment?: string,
 ): AxiosInstance => {
     const instance = axios.create({
         baseURL,
@@ -73,9 +79,10 @@ export const createAxiosInstance = (
             //     console.error("SERVICE_UNAVAILABLE");
             // }
 
-            // return Promise.reject(error);
-            
-            handleErrors(error);
+            if (globalDispatch) {
+                handleErrors(error, globalDispatch); 
+            }
+            return Promise.reject(error);
         }
     );
 
