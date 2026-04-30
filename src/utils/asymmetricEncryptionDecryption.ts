@@ -26,7 +26,7 @@ export const getAsymmetricKeyPair = (req: Request) => {
         req.session.privateKey = privateKey;
 
         return {
-            status: "Success",
+            status: "SUCCESS",
             message: "Keys generated & stored in session",
             publicKey,
             privateKey
@@ -35,7 +35,7 @@ export const getAsymmetricKeyPair = (req: Request) => {
 
     // keys already exist → return existing values from session
     return {
-        status: "Success",
+        status: "SUCCESS",
         message: "Keys already exist in this session",
         publicKey: req.session.publicKey,
         privateKey: req.session.privateKey

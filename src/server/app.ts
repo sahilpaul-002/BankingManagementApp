@@ -30,6 +30,8 @@ import globalErrorHandler from "../middlewares/globalErrorHandler.js";
 import validateUniqueRequests from "../middlewares/validateUniqueRequests.js";
 import { requestContextMiddleware } from "../middlewares/requestContextMiddleware.js";
 import asyncRequestHandler from "../middlewares/asyncRequestHandler.js";
+import decryptRequestPayload from "../middlewares/decryptRequestPayload.js";
+import encryptResponseData from "../middlewares/encryptedResponseData.js";
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -115,6 +117,22 @@ app.use(asyncRequestHandler(sessionExpiration));
 app.use(rateLimiter());
 
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
+app.use((req, res, next) => {
+    console.log("URL:", req.originalUrl);
+    console.log("Method:", req.method);
+    console.log("Query:", req.query);
+    console.log("Body:", req.body);
+    next();
+});
+// ------------------------- \\
+// Decrypt Request Payload Middleware
+// ------------------------- \\
+app.use(decryptRequestPayload);
+
+// ------------------------- \\
+// Encrypt Response Data Middleware
+// ------------------------- \\
+app.use(encryptResponseData);
 
 // ------------------------- \\
 // Custom Response Handler

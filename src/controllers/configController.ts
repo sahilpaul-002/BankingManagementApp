@@ -103,14 +103,20 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
             res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
         }
 
-        // Encrypt response using AES
         const responseObj = getDnsConfigServiceResponse?.data;
-        const symmetricEncryptionMsgResponse = symmetricEncryptionMsg(req, responseObj, ivHex as string);
-        if (symmetricEncryptionMsgResponse?.status !== "SUCCESS") {
-            throw new ServiceUnavailableError("Symmetric encryption service unavailbale")
-        }
 
-        return res.success("DNS config fetch successfully", symmetricEncryptionMsgResponse?.ciphertextHex, 200);
+        const fromPortal: string = req?.headers["from-portal"] as string;
+        if (fromPortal === "true") {
+            // Encrypt response using AES
+            const symmetricEncryptionMsgResponse = symmetricEncryptionMsg(req, responseObj, ivHex as string);
+            if (symmetricEncryptionMsgResponse?.status !== "SUCCESS") {
+                throw new ServiceUnavailableError("Symmetric encryption service unavailbale")
+            }
+
+            return res.success("DNS config fetch successfully", symmetricEncryptionMsgResponse?.ciphertextHex, 200);
+        }
+        return res.success("DNS config fetch successfully", responseObj, 200)
+
     }
     catch (error) {
         if (error instanceof AppErrorClass) {

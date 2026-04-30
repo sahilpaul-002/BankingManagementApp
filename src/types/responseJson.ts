@@ -17,7 +17,8 @@ export interface responseErrorTypes {
 }
 
 // Response Data JSON Type
-export interface responseData<T extends object = object> {
+// export interface responseData<T extends object | string = object> {
+export interface responseData<T = object | string> {
     // data?: unknown;
     data?: T;
 }

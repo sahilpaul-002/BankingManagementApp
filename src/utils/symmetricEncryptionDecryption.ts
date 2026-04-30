@@ -5,7 +5,6 @@ import type { failedResponseJson, successResponseJson } from "../types/responseJ
 import type { decryptionFailedJson, decryptionSuccessJson } from "../types/decryptionRespoonseTypes.js";
 
 // Function to generate web crypto key and store it in session
-// export const getSymmetricEncryptionKey = (session: SessionData): {status: string, key: string} => {
 export const getSymmetricEncryptionKey = (req: Request): { status: string, key: string | undefined } => {
     if (req.session && !req?.session?.encryptionKey) {
         const rawKey: Buffer = crypto.randomBytes(32);  // 32 bytes = 256-bit key  AES-256 key

@@ -1,0 +1,106 @@
+import type { Request, Response, NextFunction } from 'express';
+import { skipEncryptionDecryptionRoutes } from '../utils/skipEncryptionDecryptionRoutes.js';
+import { asymmetricDecryptionMsg } from '../utils/asymmetricEncryptionDecryption.js';
+import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError } from '../utils/AppErrorClass.js';
+import { symmetricDecryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
+
+const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) => {
+    try {
+        // Skip Decryption For Specified Routes
+        if (skipEncryptionDecryptionRoutes(req)) {
+            return next();
+        }
+
+        // Get request header "from_portal" to check the sorce the api call
+        const fromPortal: string = (req?.headers["from-portal"] ?? "false") as string;
+        // Check if the api call is not from portal
+        if (fromPortal === "false") {
+            return next();
+        }
+
+        let ivHex: string | undefined;
+
+        // EXTRACT RSA PAYLOAD (IV)
+
+        const rsaPayload =
+            req.body?.encryptedPayload1 ||
+            req.query?.encryptedQueryPayload1;
+
+        if (!rsaPayload) {
+            return next(); // no encryption present
+        }
+
+        const rsaRes = asymmetricDecryptionMsg(req, rsaPayload as string);
+
+        if (rsaRes?.status !== "SUCCESS") {
+            if (rsaRes?.status === "NOT_FOUND") {
+                throw new UnauthenticatedError("Unauthenticated session")
+            }
+            else {
+                throw new ServiceError("RSA decryption service caused error");
+            }
+        }
+
+        const rsaData = JSON.parse(rsaRes.decryptedText);
+        ivHex = rsaData.ivHex;
+
+        if (!ivHex) {
+            throw new ServiceError("RSA decryption service caused error - IV missing from RSA payload");
+        }
+
+        // DECRYPT BODY (if present)
+
+        if (req.body?.encryptedPayload2) {
+            const aesRes = symmetricDecryptionMsg(
+                req,
+                req.body.encryptedPayload2 as string,
+                ivHex
+            );
+
+            if (aesRes?.status !== "SUCCESS") {
+                if (aesRes?.status === "NOT_FOUND") {
+                    throw new UnauthenticatedError("Unauthenticated session")
+                }
+                else {
+                    throw new ServiceError("AES decryption service caused error");
+                }
+            }
+
+            req.body = JSON.parse(aesRes.decryptedText);
+        }
+
+        // DECRYPT QUERY PARAMS (if present)
+
+        if (req.query?.encryptedQueryPayload2) {
+            const aesRes = symmetricDecryptionMsg(
+                req,
+                req.query.encryptedQueryPayload2 as string,
+                ivHex
+            );
+
+            if (aesRes?.status !== "SUCCESS") {
+                throw new ServiceError("AES query decryption service caused error");
+            }
+
+            // req.query = JSON.parse(aesRes.decryptedText);
+            const decryptedQuery = JSON.parse(aesRes.decryptedText);
+
+            Object.assign(req.query, decryptedQuery);
+        }
+
+        // STORE IV FOR RESPONSE
+
+        (req as any).__ivHex = ivHex;
+
+        next();
+    } catch (err) {
+        console.log("Error", err);
+        if (err instanceof AppErrorClass) {
+            return next(err);
+        }
+
+        return next(new ServiceUnavailableError("Request payload decryption service unavailable due to unknown error"));
+    }
+};
+
+export default decryptRequestPayload;
