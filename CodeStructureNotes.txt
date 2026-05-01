@@ -1,3 +1,5 @@
+ADD EMAIL SENDING WEBHOOK LATER IN PRODUCTION
+
 // ----------------------------------- GET CONFIG DNS ----------------------------------- \\
 1. After DNS data is fetch initiate the session set session items values (initiated, lastActivity)
 2. Generate JWT Auth Token using domain_name of DNS data to set acccessToken in sessionData in session

@@ -1,7 +1,6 @@
 import { response, type Request, type Response } from "express"
-import { AppErrorClass, BadRequestError, NotFoundError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, NotFoundError, ServiceError, ServiceUnavailableError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
-import checkStringHeader from "../utils/checkStringHeader.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import type { portalConfigurationDataType } from "../types/apiResponseDataObjectType.js";
 import { dnsConfigCache } from "../utils/lruCache.js";
@@ -10,9 +9,19 @@ import { portalConfigurationsModel as portal_configurations } from "../models/po
 import generateJwtToken from "../utils/generateJwtToken.js";
 import normalizeIp from "../utils/normalizeIp.js";
 import type { ParsedQs } from "qs";
+import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
+import { getSymmetricEncryptionKey } from "../utils/symmetricEncryptionDecryption.js";
+import { getAsymmetricKeyPair } from "../utils/asymmetricEncryptionDecryption.js";
+import listCountryMobileCodes from "../utils/listCountryMobileCodes.js";
+import { getHeaderAsymmetricKeyPair } from "../utils/asymmetricHeaderEncryptionDecryption.js";
+import dotenv from "dotenv"
 
-// export const getDnsConfigService = async (req: Request, requestHeaders: Request["headers"], requestParams: Request["params"], requestQeury: Request["query"], requestBody: Request["body"]) => {
-export const getDnsConfigService = async (req: Request, res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
+dotenv.config();
+
+const client1DnsXApiKey = process.env.CLIENT1_DNS_X_API_KEY || "9f4c2a7d8e1b3c6f5a2d9e7c4b1f8a6d3c0e2f9"
+
+// GET DNS CONFIG SERVICE
+export const getDnsConfigService = async (req: Request, res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");
@@ -28,7 +37,8 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
         }
 
         // Validate X-API-Key header
-        const xApiKey: string | null = checkStringHeader(req.headers, "dns-x-api-key");
+        // const xApiKey: string | null = checkStringHeader(req.headers, "dns-x-api-key");
+        const xApiKey: string | null = client1DnsXApiKey;
         if (!xApiKey) {
             throw new AppErrorClass(
                 400,
@@ -119,6 +129,98 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("GetDnsConfig is facing issue.")
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetDnsConfigService is facing issue.", error)
+    }
+}
+
+// GET SYMMETRIC AES ENCRYPTION KEY SERVICE
+export const getAesEncryptionKeyService = (req: Request): successResponseJson => {
+    try {
+        // Get the encryption key
+        const encryptionKeyResponse = getSymmetricEncryptionKey(req);
+        if (encryptionKeyResponse?.status.toUpperCase() !== "SUCCESS") {
+            throw new ServiceError("Failed to generate symmetric encryption key")
+        }
+
+        return { status: "SUCCESS", data: encryptionKeyResponse.key as string, message: "Encryption key fetch successfully" }
+    }
+    catch (error) {
+        if (error instanceof AppErrorClass) {
+            throw error; // ✅ preserve original error
+        }
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetEncryptionKeyService is facing issue.", error)
+    }
+}
+
+// GET SYMMETRIC AES ENCRYPTION KEY SERVICE
+export const getRsaPublicKeyService = (req: Request): successResponseJson => {
+    try {
+        // Get public encryption key
+        const publicKeyResponse = getAsymmetricKeyPair(req);
+        if (publicKeyResponse?.status.toUpperCase() !== "SUCCESS") {
+            throw new ServiceError("Failed to generate asymeetric public key")
+        }
+
+        return { status: "SUCCESS", data: publicKeyResponse.publicKey, message: "Public key fetch successfully" }
+    }
+    catch (error) {
+        if (error instanceof AppErrorClass) {
+            throw error; // ✅ preserve original error
+        }
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetEncryptionKeyService is facing issue.", error)
+    }
+}
+
+// GET MOBILE COUNTRY CODES SERVICE
+export const getMobileCountryCodesService = (): successResponseJson => {
+    try {
+        const mobileCountryCodesResponse = listCountryMobileCodes();
+        if (mobileCountryCodesResponse?.status.toUpperCase() !== "SUCCESS") {
+            throw new ServiceError("Failed to fetch mobile country codes")
+        }
+        return { status: "SUCCESS", data: mobileCountryCodesResponse.data as object, message: "Mobile country codes fetch successfully" }
+    }
+    catch (error) {
+        if (error instanceof AppErrorClass) {
+            throw error; // ✅ preserve original error
+        }
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetMobileCountryCodesService is facing issue.", error)
+    }
+}
+
+// GET HEADER ASYMMMETRIC ENCRYPTION PUBLIC KEY SERVICE
+export const getHeaderPublicKeyService = (req: Request): successResponseJson => {
+    try {
+        // Get public encryption key
+        const publicKeyResponse = getHeaderAsymmetricKeyPair(req);
+        if (publicKeyResponse?.status.toUpperCase() !== "SUCCESS") {
+            throw new ServiceError("Failed to generate asymeetric public key")
+        }
+
+        return { status: "SUCCESS", data: publicKeyResponse?.publicKey as string, message: "Public key fetch successfully" }
+    }
+    catch (error) {
+        if (error instanceof AppErrorClass) {
+            throw error; // ✅ preserve original error
+        }
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetHeaderPublicKeyService is facing issue.", error)
     }
 }

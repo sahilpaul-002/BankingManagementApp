@@ -1,6 +1,6 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
-import { AppErrorClass, BadRequestError, UnauthenticatedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
 import { userLoginService, userSignUpService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 
@@ -40,7 +40,7 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
         const userSignUpResponse = await userSignUpService(requestSession, res, aesDecryptedBodyData);
 
         if (userSignUpResponse?.status !== "SUCCESS") {
-            res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
+            res.fail("SERVICE_ERROR", "UserSignUp is facing isssue", 400);
         }
 
         return res.success("Sign up successfull", userSignUpResponse?.data, 200);
@@ -49,7 +49,11 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("UserSignUP is facing issue.")
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("UserSignUP is facing issue.", error)
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -62,7 +66,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
 
         if (userLoginServiceResponse?.status !== "SUCCESS") {
-            res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
+            res.fail("SERVICE_ERROR", "UserLogin is facing isssue", 400);
         }
 
         return res.success("Sign in successfull", userLoginServiceResponse?.data, 200)
@@ -71,7 +75,11 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("UserLogin is facing issue.")
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("UserLogin is facing issue.", error)
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\

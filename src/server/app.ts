@@ -9,8 +9,6 @@ import dynamicSession from "../middlewares/dynamicSession.js";
 import rateLimiter from "../middlewares/rateLimiter.js";
 import sessionExistance from "../middlewares/sessionExistance.js";
 import checkOriginExist from "../middlewares/checkOriginExist.js";
-import type { Request, Response } from "express";
-import type { failedResponseJson, successResponseJson, successResponseJsonRedisStore } from "../types/responseJson.js";
 import { redisConfig } from "../configs/redisConfig.js";
 import type { RedisClientType } from "redis";
 import portalHeaderCheck from "../middlewares/portalHeaderCheck.js";
@@ -18,9 +16,6 @@ import sessionExpiration from "../middlewares/sessionExpiration.js";
 import checkTimeout from "../middlewares/checkTimeout.js";
 import morgan from "morgan";
 import logger from "../utils/logger.js";
-import helperRoutes from "../routes/helperRoutes.js";
-import configRoutes from "../routes/configRoutes.js";
-import userRoutes from "../routes/userRoutes.js";
 import headerTypeValidation from "../middlewares/headerTypeValidation.js";
 import sessionValidation from "../middlewares/sessionValidation.js";
 import headerValidations from "../middlewares/headerValidations.js";
@@ -32,6 +27,13 @@ import { requestContextMiddleware } from "../middlewares/requestContextMiddlewar
 import asyncRequestHandler from "../middlewares/asyncRequestHandler.js";
 import decryptRequestPayload from "../middlewares/decryptRequestPayload.js";
 import encryptResponseData from "../middlewares/encryptedResponseData.js";
+import jwtAuthTokenValidation from "../utils/jwtAuthTokenValidation.js";
+
+// IMPORTS ROUTES
+import helperRoutes from "../routes/helperRoutes.js";
+import configRoutes from "../routes/configRoutes.js";
+import userRoutes from "../routes/userRoutes.js";
+import twoFaROutes from "../routes/twoFaRoutes.js";
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -143,6 +145,7 @@ app.use(globalResponseHandler);
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
 app.use("/api/v1/user", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
+app.use("/api/v1/user", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaROutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\

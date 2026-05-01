@@ -113,7 +113,11 @@ export const userSignUpService = async (requestSession: Request["session"], res:
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("UserSignUP is facing issue.")
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("UserSignUP is facing issue.", error)
     }
 }
 
@@ -314,6 +318,10 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("UserSignIn is facing issue.")
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("UserSignIn is facing issue.", error)
     }
 }

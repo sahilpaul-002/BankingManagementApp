@@ -1,12 +1,10 @@
 import type { Request, Response } from 'express';
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
-import { getSymmetricEncryptionKey, symmetricDecryptionMsg, symmetricEncryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
-import { asymmetricDecryptionMsg, getAsymmetricKeyPair } from '../utils/asymmetricEncryptionDecryption.js';
-import listCountryMobileCodes from '../utils/listCountryMobileCodes.js';
+import { symmetricDecryptionMsg, symmetricEncryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
+import { asymmetricDecryptionMsg} from '../utils/asymmetricEncryptionDecryption.js';
 import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError } from '../utils/AppErrorClass.js';
 import type { decryptionFailedJson, decryptionSuccessJson } from '../types/decryptionRespoonseTypes.js';
-import { getDnsConfigService } from '../services/configServices.js';
-import { getHeaderAsymmetricKeyPair } from '../utils/asymmetricHeaderEncryptionDecryption.js';
+import { getAesEncryptionKeyService, getDnsConfigService, getHeaderPublicKeyService, getMobileCountryCodesService, getRsaPublicKeyService } from '../services/configServices.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response<successResponseJson | failedResponseJson>): Promise<Response<successResponseJson> | void> => {
@@ -97,7 +95,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
         throw new Error("GetDnsConfig-requestPayload decryption is facing issue.")
     }
     try {
-        const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, res, aesDecryptedQueryData);
+        const getDnsConfigServiceResponse: successResponseJson = await getDnsConfigService(req, res, aesDecryptedQueryData);
 
         if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
             res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
@@ -122,7 +120,11 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("GetDnsConfig is facing issue.")
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetDnsConfig is facing issue.", error);
     }
 }
 
@@ -130,19 +132,21 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
 export const getEncryptionKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
         // Get the encryption key
-        const encryptionKeyResponse = getSymmetricEncryptionKey(req);
-        if (encryptionKeyResponse?.status.toUpperCase() === "SUCCESS") {
-            return res.success("Encryption key fetch successfully", { key: encryptionKeyResponse.key }, 200);
-        }
-        else {
+        const encryptionKeyServiceResponse = getAesEncryptionKeyService(req);
+        if (encryptionKeyServiceResponse?.status.toUpperCase() !== "SUCCESS" || !encryptionKeyServiceResponse?.data) {
             return res.fail("SERVICE_ERROR", "Failed to generate symmetric encryption key", 400);
         }
+        return res.success("Encryption key fetch successfully", { key: encryptionKeyServiceResponse?.data }, 200);
     }
     catch (error) {
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("GetEncryptionKey is facing issue.")
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetEncryptionKey is facing issue.", error)
     }
 }
 
@@ -150,38 +154,43 @@ export const getEncryptionKey = (req: Request, res: Response): Response<successR
 export const getPublicKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
         // Get public encryption key
-        const publicKeyResponse = getAsymmetricKeyPair(req);
-        if (publicKeyResponse?.status.toUpperCase() === "SUCCESS") {
-            return res.success("Public key fetch successfully", { key: publicKeyResponse.publicKey }, 200);
-        }
-        else {
+        const publicKeyServiceResponse = getRsaPublicKeyService(req);
+        if (publicKeyServiceResponse?.status.toUpperCase() !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to generate asymeetric public key", 400);
         }
+
+        return res.success("Public key fetch successfully", { key: publicKeyServiceResponse?.data }, 200);
     }
     catch (error) {
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("GetPublicKey is facing issue.")
+
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetPublicKey is facing issue.", error)
     }
 }
 
 // FUNCTION TO GET THE MOBILE COUNTRY CODES
 export const getMobileCountryCodes = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
-        const mobileCountryCodesResponse = listCountryMobileCodes();
-        if (mobileCountryCodesResponse?.status.toUpperCase() === "SUCCESS") {
-            return res.success("Mobile country codes fetch successfully", mobileCountryCodesResponse.data, 200);
+        const mobileCountryCodesServiceResponse = getMobileCountryCodesService();
+        if (mobileCountryCodesServiceResponse?.status.toUpperCase() !== "SUCCESS") {
+            throw new ServiceError("Failed to fetch mobile country codes")
         }
-        else {
-            return res.fail("SERVICE_ERROR", "Failed to fetch mobile country codes", 400);
-        }
+
+        return res.success("Mobile country codes fetch successfully", mobileCountryCodesServiceResponse.data, 200);
     }
     catch (error) {
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("GetMobileCountryCodes is facing issue.")
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetMobileCountryCodes is facing issue.", error)
     }
 }
 
@@ -189,18 +198,19 @@ export const getMobileCountryCodes = (req: Request, res: Response): Response<suc
 export const getHeaderPublicKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
         // Get public encryption key
-        const publicKeyResponse = getHeaderAsymmetricKeyPair(req);
-        if (publicKeyResponse?.status.toUpperCase() === "SUCCESS") {
-            return res.success("Public key fetch successfully", { key: publicKeyResponse.publicKey }, 200);
+        const publicKeyServiceResponse = getHeaderPublicKeyService(req);
+        if (publicKeyServiceResponse?.status.toUpperCase() !== "SUCCESS") {
+            throw new ServiceError("Failed to generate asymeetric public key")
         }
-        else {
-            return res.fail("SERVICE_ERROR", "Failed to generate asymeetric public key", 400);
-        }
+        return res.success("Public key fetch successfully", { key: publicKeyServiceResponse.data }, 200);
     }
     catch (error) {
         if (error instanceof AppErrorClass) {
             throw error; // ✅ preserve original error
         }
-        throw new Error("GetHeaderPublicKey is facing issue.")
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new ServiceUnavailableError("GetHeaderPublicKey is facing issue.", error)
     }
 }
