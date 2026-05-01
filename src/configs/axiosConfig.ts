@@ -83,27 +83,35 @@ export const createAxiosInstance = (
                 // store IV for response decryption in request config using WeakMap
                 ivStore.set(req, ivHex);
 
+                // RSA encrypt IV
+                const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
+
                 // ENCRYPT BODY (POST/PUT/PATCH)
                 if (req.data) {
-                    const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
                     const aesRes = await aesEncryption(aesKey as string, req.data, ivHex);
 
                     req.data = {
                         encryptedPayload1: rsaRes?.ciphertextBase64,
                         encryptedPayload2: aesRes?.ciphertextHex,
                     };
+                    return req;
                 }
 
-                // ENCRYPT QUERY PARAMS (GET)
+                // ENCRYPT QUERY PARAMS (GET WITH PARAMS)
                 if (req.params) {
-                    const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
                     const aesRes = await aesEncryption(aesKey as string, req.params, ivHex);
 
                     req.params = {
                         encryptedQueryPayload1: rsaRes?.ciphertextBase64,
                         encryptedQueryPayload2: aesRes?.ciphertextHex,
                     };
+                    return req;
                 }
+
+                // ENCRYPT QUERY PARAMS FOR EMPTY GET/DELETE REQUESTS
+                req.params = {
+                    encryptedQueryPayload1: rsaRes?.ciphertextBase64,
+                };
 
                 return req;
 

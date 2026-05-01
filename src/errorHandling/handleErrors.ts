@@ -29,12 +29,13 @@ const handleErrors = (error: unknown, dispatch: any): never => {
 
         switch (statusCode) {
             case 400:
-                console.error("BAD_REQUEST / ERROR");
-                toast.error("Internal application error")
+                console.error("BAD_REQUEST / SERVICE_ERROR", err);
+                // toast.error("Internal application error")
+                // dispatch(setShowInfoBanner("Application facing issue , please check the network"))
                 throw error
 
             case 401:
-                console.error("UNAUTHENTICATED / UNAUTHORIZED / INVALID_SESSION");
+                console.error("UNAUTHENTICATED / UNAUTHORIZED / INVALID_SESSION", err);
                 if (status === "UNAUTHENTICATED") {
                     dispatch(triggerDestroySession({
                         title: 'Unauthenticated Session',
@@ -56,7 +57,7 @@ const handleErrors = (error: unknown, dispatch: any): never => {
                 throw error
 
             case 403:
-                console.error("FORBIDDEN");
+                console.error("FORBIDDEN", err);
                 dispatch(triggerDestroySession({
                     title: 'Unauthorized Session',
                     type: 'DEFAULT'
@@ -64,20 +65,20 @@ const handleErrors = (error: unknown, dispatch: any): never => {
                 throw error
 
             case 404:
-                console.error("NOT_FOUND");
-                toast.error("Request resorce or service not found")
-                dispatch(setShowInfoBanner("Request resorce or service not found"))
+                console.error("NOT_FOUND", err);
+                // toast.error("Request resorce or service not found")
+                dispatch(setShowInfoBanner("Application facing issue , request resource might not be availbale"))
                 throw error
 
             case 406:
-                console.error("INVALID_HEADER / INVALID_REQUEST_BODY_PARAMETER / INVALID_REQUEST_QUERY_PARAMETER");
-                toast.error("Request parameter error")
-                dispatch(setShowInfoBanner("Request parameter error"))
+                console.error("INVALID_HEADER / INVALID_REQUEST_BODY_PARAMETER / INVALID_REQUEST_QUERY_PARAMETER", err);
+                // toast.error("Request parameter error")
+                dispatch(setShowInfoBanner("Application facing issue , please check the network"))
                 throw error
 
             case 429:
-                console.error("SERVICE_TIMEOUT");
-                toast.error("Application time out")
+                console.error("SERVICE_TIMEOUT", err);
+                // toast.error("Application time out")
                 dispatch(triggerDestroySession({
                     title: 'Session Expiring',
                     type: 'SESSION_INACTIVITY',
@@ -85,20 +86,21 @@ const handleErrors = (error: unknown, dispatch: any): never => {
                 throw error
 
             case 500:
-                console.error("INTERNAL_SERVER_ERROR");
-                toast.error("Internal server error")
-                dispatch(setShowErrorBanner("Internal server error"))
+                console.error("INTERNAL_SERVER_ERROR", err);
+                // toast.error("Internal server error")
+                dispatch(setShowErrorBanner("Application facing internal server issue."))
                 throw error
 
             case 503:
-                console.error("SERVICE_UNAVAILABLE");
-                toast.error("Application service unavailbale")
-                dispatch(setShowErrorBanner("Application service unavailbale"))
+                console.error("SERVICE_UNAVAILABLE", err);
+                // toast.error("Application service unavailbale")
+                dispatch(setShowErrorBanner("Application facing service unavaibility issue"))
                 throw error
 
             default:
-                toast.error("Internal application error")
-                dispatch(setShowErrorBanner("Internal server error"))
+                console.error("INTER_SERVER_ERROR", err)
+                // toast.error("Internal application error")
+                dispatch(setShowErrorBanner("Application facing internal server issue."))
                 throw new AppErrorClass(
                     statusCode || 500,
                     data?.status || 'INTERNAL_SERVER_ERROR',
@@ -110,13 +112,15 @@ const handleErrors = (error: unknown, dispatch: any): never => {
 
     // Non-Axios error
     if (error instanceof Error) {
-        toast.error("Application service error")
-        dispatch(setShowErrorBanner("Application service error"))
+        console.error("APPLICATION_SERVICE_ERROR", error)
+        // toast.error("Application service error")
+        dispatch(setShowErrorBanner("Application facing internal service isssue"))
         throw new AppErrorClass(601, 'APPLICATION_SERVICE_ERROR', error.message, error);
     }
 
-    toast.error("Internal application error")
-    dispatch(setShowErrorBanner("Internal application error"))
+    console.error("INTERNAL_APPLICATION_ERROR", error)
+    // toast.error("Internal application error")
+    dispatch(setShowErrorBanner("Application facing internal issue"));
     throw new AppErrorClass(600, 'INTERNAL_APPLICATION_ERROR', 'Internal application error occured', error);
 };
 

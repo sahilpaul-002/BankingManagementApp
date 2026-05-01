@@ -6,6 +6,7 @@ import { selectDestroySessionParams, selectShowDestroySession, selectShowErrorBa
 import DestroySession from './components/common/DestroySession';
 import { useDispatch, useSelector } from 'react-redux';
 import Banner from './components/common/Banner';
+import { Activity } from 'react';
 
 function App() {
   // Configure useDispatch
@@ -37,24 +38,23 @@ function App() {
       />
 
       {/* Banner */}
-      {isBannerVisible && bannerMessage && (
+      <Activity mode={(isBannerVisible && bannerMessage) ? 'visible' : 'hidden'}>
         <Banner
-          message={bannerMessage}
+          message={bannerMessage ?? ""}
           variant={showErrorBanner ? "ERROR" : "INFO"}
           visible={true}
           autoDismissMs={4000}
           onDismiss={() => dispatch(clearBanner())}
         />
-      )}
+      </Activity>
 
       {/* Destroy Session */}
-      {showDestroySession && destroySessionParams && (
+      <Activity mode={(showDestroySession && destroySessionParams) ? 'visible' : 'hidden'}>
         <DestroySession
-          title={destroySessionParams.title}
-          type={destroySessionParams.type ?? "DEFAULT"}
+          title={destroySessionParams?.title ?? ""}
+          type={destroySessionParams?.type ?? "DEFAULT"}
         />
-      )}
-
+      </Activity>
 
       <div className="application-container bg-[var(--color-800)] w-screen min-h-screen">
         <Outlet />

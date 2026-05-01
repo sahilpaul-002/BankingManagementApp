@@ -20,7 +20,7 @@ const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
 const axiosInstance = createAxiosInstance(
     `${dnsBaseUrl}${CONFIG_URL}`,
     {
-        'dns-x-api-key': dnsXApiKey,
+        // 'dns-x-api-key': dnsXApiKey,
         'Content-Type': 'application/json',
     },
     ENVIRONMENT
