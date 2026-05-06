@@ -1,6 +1,6 @@
-import { axiosBaseQuery, createAxiosInstance } from '@/configs/axiosConfig'
+import { axiosBaseQuery, getAxiosInstance } from '@/configs/axiosConfig'
 import { CONFIG_URL } from '@/configs/constants'
-import { ApplicationServiceError } from '@/errorHandling/error'
+import { ApplicationServiceError, InternalApplicationError } from '@/errorHandling/error'
 import type { apiErrorType } from '@/errorHandling/handleErrors'
 import mapToRtkError from '@/errorHandling/mapToRtkError'
 import { setAppliationHeaders, setDnsConfigDetails, type applicationHeaderItemsType } from '@/redux/slice/config/configSlice'
@@ -9,6 +9,10 @@ import { aesEncryption } from '@/utils/aesEncryption'
 import { rsaEncryption } from '@/utils/rsaEncryption'
 import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react'
 import type { apiResponseType, applicationHeadersType, dnsConfigRequestType, dnsConfigResponseType, encryptionKeyResponseType } from './configApisDataTypes'
+import { AppErrorClass } from '@/errorHandling/appError'
+import { AxiosError } from 'axios'
+import { logError } from '@/errorHandling/errorLogger'
+import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsBaseUrl = import.meta.env.VITE_DNS_BASE_URL
@@ -17,14 +21,15 @@ const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
 // ==============================
 // DYNAMIC AXIOS INSTANCE
 // ==============================
-const axiosInstance = createAxiosInstance(
-    `${dnsBaseUrl}${CONFIG_URL}`,
-    {
-        // 'dns-x-api-key': dnsXApiKey,
-        'Content-Type': 'application/json',
-    },
-    ENVIRONMENT
-)
+// const axiosInstance = createAxiosInstance(
+//     `${dnsBaseUrl}${CONFIG_URL}`,
+//     {
+//         // 'dns-x-api-key': dnsXApiKey,
+//         'Content-Type': 'application/json',
+//     },
+//     ENVIRONMENT
+// )
+const axiosInstance = getAxiosInstance("/config");
 
 // ==============================
 // APIS
@@ -162,8 +167,9 @@ export const configApis = createApi({
                         }
                     };
                 }
-                catch (error) {
-                    return mapToRtkError(error, "GET-DNS-CONFIG faced appilcation error ");
+                catch (err) {
+                    const rtkError = rtkQueryCatchError(err, "GetDnsConfigQuery");
+                    return rtkError;
                 }
             },
 
@@ -175,7 +181,16 @@ export const configApis = createApi({
                     dispatch(setDnsConfigDetails(rest))
                     // dispatch(setDnsConfigDetails(data?.data as dnsConfigResponseType))
                 } catch (err) {
-                    console.error('Failed to store DNS config')
+                    const error = err as any;
+                    const url =
+                        error?.config?.url ||
+                        error?.url ||
+                        "UNKNOWN_URL";
+                    logError("ERROR", {
+                        message: "GetDnsConfigQuery faced error while storing data in slice",
+                        error: err,
+                        context: url,
+                    });
                 }
             },
         }),
@@ -195,12 +210,25 @@ export const configApis = createApi({
             transformErrorResponse: (
                 response: FetchBaseQueryError
             ): apiErrorType => {
+                const error = response as any;
+
+                const url =
+                    error?.data?.url ||
+                    error?.url ||
+                    "UNKNOWN_URL";
+
+                logError("ERROR", {
+                    message: "GetAesEncryptionKey query failed",
+                    error: response,
+                    context: url,
+                });
+
                 if (typeof response.status === 'number') {
                     return {
                         status: response.status,
                         data: {
                             status: (response.data as any)?.status ?? "INTERNAL_APPLICATION_ERROR",
-                            message: (response.data as any)?.message ?? "GET-AES-ENCRYPTION faced application error",
+                            message: (response.data as any)?.message ?? "GetAesEncryptionKey faced external application service error",
                             error: (response.data as any)?.error ?? null,
                         }
                     };
@@ -211,7 +239,7 @@ export const configApis = createApi({
                     status: 500,
                     data: {
                         status: "INTERNAL_APPLICATION_ERROR",
-                        message: "GET-AES-ENCRYPTION faced application error",
+                        message: "GetAesEncryptionKey faced internal application service error",
                         error: response?.error
                     }
                 };
@@ -226,7 +254,16 @@ export const configApis = createApi({
                         sessionStorage.setItem('keyHex', key);
                     }
                 } catch (err) {
-                    console.error('Failed to store AES key');
+                    const error = err as any;
+                    const url =
+                        error?.config?.url ||
+                        error?.url ||
+                        "UNKNOWN_URL";
+                    logError("ERROR", {
+                        message: "GetAesEncryptionKey query failed while storing data in sessionStorage",
+                        error: err,
+                        context: url,
+                    });
                 }
             }
         }),
@@ -246,12 +283,25 @@ export const configApis = createApi({
             transformErrorResponse: (
                 response: FetchBaseQueryError
             ): apiErrorType => {
+                const error = response as any;
+
+                const url =
+                    error?.data?.url ||
+                    error?.url ||
+                    "UNKNOWN_URL";
+
+                logError("ERROR", {
+                    message: "GetRsaEncryptionPublicKey query failed",
+                    error: response,
+                    context: url,
+                });
+
                 if (typeof response.status === 'number') {
                     return {
                         status: response.status,
                         data: {
                             status: (response.data as any)?.status ?? "INTERNAL_APPLICATION_ERROR",
-                            message: (response.data as any)?.message ?? "GET-AES-ENCRYPTION faced application error",
+                            message: (response.data as any)?.message ?? "GetRsaEncryptionPublicKey faced external application service error",
                             error: (response.data as any)?.error ?? null,
                         }
                     };
@@ -262,7 +312,7 @@ export const configApis = createApi({
                     status: 500,
                     data: {
                         status: "INTERNAL_APPLICATION_ERROR",
-                        message: "GET-AES-ENCRYPTION faced application error",
+                        message: "GetRsaEncryptionPublicKey faced internal application service error",
                         error: response?.error
                     }
                 };
@@ -278,7 +328,16 @@ export const configApis = createApi({
                         sessionStorage.setItem('publicKey', publicKey);
                     }
                 } catch (err) {
-                    console.error('Failed to store RSA key');
+                    const error = err as any;
+                    const url =
+                        error?.config?.url ||
+                        error?.url ||
+                        "UNKNOWN_URL";
+                    logError("ERROR", {
+                        message: "GetRsaEncryptionPublicKey query failed while storing data in sessionStorage",
+                        error: err,
+                        context: url,
+                    });
                 }
             },
         }),
@@ -298,12 +357,25 @@ export const configApis = createApi({
             transformErrorResponse: (
                 response: FetchBaseQueryError
             ): apiErrorType => {
+                const error = response as any;
+
+                const url =
+                    error?.data?.url ||
+                    error?.url ||
+                    "UNKNOWN_URL";
+
+                logError("ERROR", {
+                    message: "GetHeaderRsaEncryptionPublicKey query failed",
+                    error: response,
+                    context: url,
+                });
+
                 if (typeof response.status === 'number') {
                     return {
                         status: response.status,
                         data: {
                             status: (response.data as any)?.status ?? "INTERNAL_APPLICATION_ERROR",
-                            message: (response.data as any)?.message ?? "GET-AES-ENCRYPTION faced application error",
+                            message: (response.data as any)?.message ?? "GetHeaderRsaEncryptionPublicKey faced external application service error",
                             error: (response.data as any)?.error ?? null,
                         }
                     };
@@ -314,7 +386,7 @@ export const configApis = createApi({
                     status: 500,
                     data: {
                         status: "INTERNAL_APPLICATION_ERROR",
-                        message: "GET-AES-ENCRYPTION faced application error",
+                        message: "GetHeaderRsaEncryptionPublicKey faced internal application service error",
                         error: response?.error
                     }
                 };
@@ -330,7 +402,16 @@ export const configApis = createApi({
                         sessionStorage.setItem('headerPublicKey', publicKey);
                     }
                 } catch (err) {
-                    console.error('Failed to store RSA key');
+                    const error = err as any;
+                    const url =
+                        error?.config?.url ||
+                        error?.url ||
+                        "UNKNOWN_URL";
+                    logError("ERROR", {
+                        message: "GetHeaderRsaEncryptionPublicKey query failed while storing data in sessionStorage",
+                        error: err,
+                        context: url,
+                    });
                 }
             },
         }),

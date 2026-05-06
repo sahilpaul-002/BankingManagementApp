@@ -1,6 +1,7 @@
 // utils/mapToRtkError.ts
 
 import { AppErrorClass } from "./appError";
+import { logError } from "./errorLogger";
 
 const serializeError = (err: unknown) => {
     if (!err) return undefined;
@@ -22,7 +23,18 @@ const serializeError = (err: unknown) => {
     }
 };
 
-const mapToRtkError = (error: unknown, errorMessage: string) => {
+const mapToRtkError = (err: unknown, errorMessage: string) => {
+    const error = err as any;
+    const url =
+        error?.config?.url ||
+        error?.url ||
+        "UNKNOWN_URL";
+
+    logError("ERROR", {
+        message: "External api application service error",
+        error: err,
+        context: url,
+    });
     if (error instanceof AppErrorClass) {
         return {
             error: {

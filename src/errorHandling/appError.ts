@@ -21,12 +21,14 @@ export class AppErrorClass extends Error {
     statusCode: number;
     status: ErrorStatusType;
     error?: any;
+    service?: string | undefined;
     isOperational: boolean;
 
     constructor(
         statusCode: number,
         status: ErrorStatusType,
         message: string,
+        service?: string | undefined,
         error?: any
     ) {
         super(message);
@@ -35,6 +37,7 @@ export class AppErrorClass extends Error {
         this.status = status;
         this.error = error;
         this.isOperational = true;
+        this.service = service;
 
         Object.setPrototypeOf(this, AppErrorClass.prototype);
     }
