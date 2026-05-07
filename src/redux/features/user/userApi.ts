@@ -1,13 +1,13 @@
-import axios, { AxiosError, type AxiosInstance } from 'axios'
 import { createApi, type BaseQueryFn } from '@reduxjs/toolkit/query/react'
 import { selectApplicaitonHeaders, selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
 import type { rootStateType } from '@/redux/sotre'
 import { configApis } from '../config/configApi'
 import { USER_URL } from '@/configs/constants'
-import { createAxiosInstance } from '@/configs/axiosConfig'
+import { axiosBaseQuery, getAxiosInstance } from '@/configs/axiosConfig'
 import { ApplicationServiceError } from '@/errorHandling/error'
 import mapToRtkError from '@/errorHandling/mapToRtkError'
 import { helperApis } from '../helper/helperApis'
+import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
@@ -38,68 +38,39 @@ interface apiResponseType<T> {
     error?: any;
 }
 
-// ==============================
-// CUSTOM BASE QUERY USING AXIOS
-// ==============================
-const axiosBaseQuery = (): BaseQueryFn<
-    {
-        url: string
-        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-        data?: unknown
-        params?: unknown
-        headers?: Record<string, string>
-    },
-    any,
-    unknown
-> =>
-    async ({ url, method, data, params }, { getState }) => {
-        try {
-            const state = getState() as rootStateType
-            const dnsConfig = selectDnsConfigDetails(state);
-            const applicationHeaders = selectApplicaitonHeaders(state);
+// =============================
+// SET UP USER API HEADERS
+// =============================
+const userApiHeaders = (state: rootStateType) => {
+    const applicationHeaders = selectApplicaitonHeaders(state);
 
-            // ✅ Build headers dynamically from Redux state
-            const dynamicHeaders: Record<string, string> = {
-                'dns-x-api-key': dnsXApiKey,
-                'Content-Type': 'application/json',
-            }
+    // Build user api headers
+    const dynamicHeaders: Record<string, string> = {}
 
-            if (applicationHeaders) {
-                dynamicHeaders['x-api-key'] = applicationHeaders['x-api-key'];
-                dynamicHeaders['agent-code'] = applicationHeaders['agent-code'];
-                dynamicHeaders['subagent-code'] = applicationHeaders['subagent-code'];
-                dynamicHeaders['program-id'] = applicationHeaders['program-id'];
-                dynamicHeaders['business-id'] = applicationHeaders['business-id'];
-                dynamicHeaders['client-id'] = applicationHeaders['client-id'];
-                dynamicHeaders['authorization'] = applicationHeaders['authorization'];
-            }
-
-            // ✅ Create instance dynamically per request
-            const axiosInstance: AxiosInstance = createAxiosInstance(
-                `${dnsConfig?.base_url_api}${USER_URL}` || `http://localhost:3000${USER_URL}`,
-                dynamicHeaders,
-                ENVIRONMENT
-            )
-
-            const result = await axiosInstance.request({
-                url,
-                method,
-                data,
-                params,
-            })
-
-            return { data: result.data }
-        } catch (error) {
-            throw new ApplicationServiceError("User-Apis-BaseQuery faced application error", error)
-        }
+    if (applicationHeaders) {
+        dynamicHeaders['x-api-key'] = applicationHeaders['x-api-key'];
+        dynamicHeaders['agent-code'] = applicationHeaders['agent-code'];
+        dynamicHeaders['subagent-code'] = applicationHeaders['subagent-code'];
+        dynamicHeaders['program-id'] = applicationHeaders['program-id'];
+        dynamicHeaders['business-id'] = applicationHeaders['business-id'];
+        dynamicHeaders['client-id'] = applicationHeaders['client-id'];
+        dynamicHeaders['authorization'] = applicationHeaders['authorization'];
     }
+    return dynamicHeaders;
+}
+
+// ============================
+// GET AXIOS INSTANCE
+// ============================
+const axiosInstance = getAxiosInstance();
 
 // ==============================
 // API
 // ==============================
 export const userApis = createApi({
     reducerPath: 'userApis',
-    baseQuery: axiosBaseQuery(),
+    // baseQuery: axiosBaseQuery(),
+    baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // =====================================
         // Sign Up Api
@@ -108,6 +79,12 @@ export const userApis = createApi({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     const state = getState() as rootStateType
+
+                    // Get user api headers
+                    const headers = userApiHeaders(state)
+                    if (!headers || Object.keys(headers).length === 0) {
+                        throw new ApplicationServiceError("UserSignUp - Missing required dynamic api headers");
+                    }
 
                     // Check backend session
                     const getSessionResult = await dispatch(helperApis.endpoints.getSession.initiate())
@@ -134,8 +111,9 @@ export const userApis = createApi({
                     }
 
                     const result = await baseQuery({
-                        url: `${dnsConfig?.base_url_api}${USER_URL}/signUp`,
+                        url: `${USER_URL}/signUp`,
                         method: 'POST',
+                        headers,
                         params: { domainName: dnsConfig?.domain_name },
                         data: payload,
                     }) as {
@@ -147,9 +125,9 @@ export const userApis = createApi({
                         data: result.data as apiResponseType<apiResponseDataType>,
                     }
                 }
-                catch (error) {
-                    console.log(error);
-                    return mapToRtkError(error, "USER-SIGNUP faced appilcation error ");
+                catch (err) {
+                    const rtkError = rtkQueryCatchError(err, "GetDnsConfigQuery");
+                    return rtkError;
                 }
             },
         }),
@@ -163,6 +141,12 @@ export const userApis = createApi({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     const state = getState() as rootStateType
+
+                    // Get user api headers
+                    const headers = userApiHeaders(state)
+                    if (!headers || Object.keys(headers).length === 0) {
+                        throw new ApplicationServiceError("UserSignIn - Missing required dynamic api headers");
+                    }
 
                     // Check backend session
                     const getSessionResult = await dispatch(helperApis.endpoints.getSession.initiate())
@@ -189,8 +173,9 @@ export const userApis = createApi({
                     }
 
                     const result = await baseQuery({
-                        url: `${dnsConfig?.base_url_api}${USER_URL}/login`,
+                        url: `${USER_URL}/login`,
                         method: 'POST',
+                        headers,
                         params: { domainName: dnsConfig?.domain_name },
                         data: payload,
                     }) as {

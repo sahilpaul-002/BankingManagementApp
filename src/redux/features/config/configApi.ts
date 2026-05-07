@@ -1,35 +1,24 @@
-import { axiosBaseQuery, getAxiosInstance } from '@/configs/axiosConfig'
-import { CONFIG_URL } from '@/configs/constants'
-import { ApplicationServiceError, InternalApplicationError } from '@/errorHandling/error'
+import { axiosBaseQuery, getAxiosInstance, setAxiosBaseURL } from '@/configs/axiosConfig'
+import { ApplicationServiceError} from '@/errorHandling/error'
 import type { apiErrorType } from '@/errorHandling/handleErrors'
-import mapToRtkError from '@/errorHandling/mapToRtkError'
 import { setAppliationHeaders, setDnsConfigDetails, type applicationHeaderItemsType } from '@/redux/slice/config/configSlice'
 import { aesDecryption, type DecryptResult } from '@/utils/aesDecryption'
 import { aesEncryption } from '@/utils/aesEncryption'
 import { rsaEncryption } from '@/utils/rsaEncryption'
 import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react'
 import type { apiResponseType, applicationHeadersType, dnsConfigRequestType, dnsConfigResponseType, encryptionKeyResponseType } from './configApisDataTypes'
-import { AppErrorClass } from '@/errorHandling/appError'
-import { AxiosError } from 'axios'
 import { logError } from '@/errorHandling/errorLogger'
 import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError'
+import { CONFIG_URL } from '@/configs/constants'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsBaseUrl = import.meta.env.VITE_DNS_BASE_URL
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
 
-// ==============================
-// DYNAMIC AXIOS INSTANCE
-// ==============================
-// const axiosInstance = createAxiosInstance(
-//     `${dnsBaseUrl}${CONFIG_URL}`,
-//     {
-//         // 'dns-x-api-key': dnsXApiKey,
-//         'Content-Type': 'application/json',
-//     },
-//     ENVIRONMENT
-// )
-const axiosInstance = getAxiosInstance("/config");
+// ============================
+// GET AXIOS INSTANCE
+// ============================
+const axiosInstance = getAxiosInstance();
 
 // ==============================
 // APIS
@@ -46,7 +35,7 @@ export const configApis = createApi({
                 try {
                     // ---------------------------- Get AES Encryption Key ---------------------------- \\
                     const getAesEncryptionKeyResponse = await baseQuery({
-                        url: `/getEncryptionKey`,
+                        url: `${CONFIG_URL}/getEncryptionKey`,
                         method: 'GET',
                     });
                     const aesEncryptionKeyHex = (getAesEncryptionKeyResponse.data as apiResponseType<encryptionKeyResponseType>)?.data?.key;
@@ -58,7 +47,7 @@ export const configApis = createApi({
                     // ----------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
                     // ----------------------------- Get RSA Encryption Key ----------------------------- \\
                     const getrsaEncryptionPublicKeyResponse = await baseQuery({
-                        url: `/getPublicKey`,
+                        url: `${CONFIG_URL}/getPublicKey`,
                         method: 'GET',
                     });
                     const rsaEncryptionPublicKey = (getrsaEncryptionPublicKeyResponse.data as apiResponseType<encryptionKeyResponseType>)?.data?.key;
@@ -83,7 +72,7 @@ export const configApis = createApi({
                     // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
 
                     const result = await baseQuery({
-                        url: `/getDnsConfig`,
+                        url: `${CONFIG_URL}/getDnsConfig`,
                         method: "GET",
                         params: encryptedPayloads,
                     });
@@ -128,7 +117,7 @@ export const configApis = createApi({
                     // Encrypt Application Headers
                     // ----------------------------- Get RSA Encryption Key ----------------------------- \\
                     const getHeaderRsaEncryptionPublicKeyResponse = await baseQuery({
-                        url: `/getHeaderPublicKey`,
+                        url: `${CONFIG_URL}/getHeaderPublicKey`,
                         method: 'GET',
                     });
                     const rsaHeaderEncryptionPublicKey = (getHeaderRsaEncryptionPublicKeyResponse.data as apiResponseType<encryptionKeyResponseType>)?.data?.key;
@@ -179,7 +168,10 @@ export const configApis = createApi({
                     const { x_api_key, agent_code, subagent_code, program_id, business_id, client_id, accessToken, ...rest } = data?.data as dnsConfigResponseType
                     // ✅ Store DNS config in slice
                     dispatch(setDnsConfigDetails(rest))
-                    // dispatch(setDnsConfigDetails(data?.data as dnsConfigResponseType))
+                    // Set the dns base url in session storage
+                    const dnsBaseUrl = rest?.base_url_api;
+                    // setAxiosBaseURL(dnsBaseUrl)
+                    sessionStorage.setItem('dnsBaseUrl', dnsBaseUrl)
                 } catch (err) {
                     const error = err as any;
                     const url =
@@ -201,7 +193,7 @@ export const configApis = createApi({
         // =======================================================
         getAesEncryptionKey: build.query<apiResponseType<encryptionKeyResponseType>, void>({
             query: () => ({
-                url: `/getEncryptionKey`,
+                url: `${CONFIG_URL}/getEncryptionKey`,
                 method: 'GET'
             }),
 
@@ -274,7 +266,7 @@ export const configApis = createApi({
         // =======================================================
         getRsaEncryptionPublicKey: build.query<apiResponseType<encryptionKeyResponseType>, void>({
             query: () => ({
-                url: `/getPublicKey`,
+                url: `${CONFIG_URL}/getPublicKey`,
                 method: 'GET'
             }),
 
@@ -348,7 +340,7 @@ export const configApis = createApi({
         // =======================================================
         getHeaderRsaEncryptionPublicKey: build.query<apiResponseType<encryptionKeyResponseType>, void>({
             query: () => ({
-                url: `/getHeaderPublicKey`,
+                url: `${CONFIG_URL}/getHeaderPublicKey`,
                 method: 'GET'
             }),
 

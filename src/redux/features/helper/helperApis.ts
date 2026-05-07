@@ -1,11 +1,8 @@
-import { createAxiosInstance } from "@/configs/axiosConfig"
+import { axiosBaseQuery, getAxiosInstance } from "@/configs/axiosConfig"
 import { HELPER_URL } from "@/configs/constants"
-import { ApplicationServiceError } from "@/errorHandling/error"
+import { logError } from "@/errorHandling/errorLogger"
 import type { apiErrorType } from "@/errorHandling/handleErrors"
-import { selectDnsConfigDetails } from "@/redux/slice/config/configSlice"
-import type { rootStateType } from "@/redux/sotre"
-import { createApi, type BaseQueryFn, type FetchBaseQueryError } from "@reduxjs/toolkit/query/react"
-import type { AxiosInstance } from "axios"
+import { createApi, type FetchBaseQueryError } from "@reduxjs/toolkit/query/react"
 
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
@@ -21,69 +18,10 @@ interface apiResponseType<T> {
     error?: any;
 }
 
-// ==============================
-// CUSTOM BASE QUERY USING AXIOS
-// ==============================
-const axiosBaseQuery = (): BaseQueryFn<
-    {
-        url: string
-        method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-        data?: unknown
-        params?: unknown
-        headers?: Record<string, string>
-    },
-    any,
-    unknown
-> =>
-    async ({ url, method, data, params }, { getState }) => {
-        try {
-            const state = getState() as rootStateType
-            const dnsConfig = selectDnsConfigDetails(state);
-
-            // ✅ Build headers dynamically from Redux state
-            const dynamicHeaders: Record<string, string> = {
-                'Content-Type': 'application/json',
-            }
-
-            // ✅ Create instance dynamically per request
-            const axiosInstance: AxiosInstance = createAxiosInstance(
-                `${dnsConfig?.base_url_api}${HELPER_URL}` || `http://localhost:3000${HELPER_URL}`,
-                dynamicHeaders,
-                ENVIRONMENT
-            )
-
-            const result = await axiosInstance.request({
-                url,
-                method,
-                data,
-                params,
-            })
-
-            return { data: result.data }
-        } catch (error: any) {
-            const formattedError: apiErrorType = {
-                status: error?.response?.status || 500,
-                data: {
-                    status:
-                        error?.response?.data?.status ??
-                        "INTERNAL_APPLICATION_ERROR",
-
-                    message:
-                        error?.response?.data?.message ??
-                        "Helper-Apis-BaseQuery faced application error",
-
-                    error:
-                        error?.response?.data?.error ??
-                        error?.message ??
-                        error
-                }
-            };
-
-            return {
-                error: formattedError
-            };
-        }
-    }
+// ============================
+// GET AXIOS INSTANCE
+// ============================
+const axiosInstance = getAxiosInstance();
 
 
 // ==============================
@@ -91,15 +29,18 @@ const axiosBaseQuery = (): BaseQueryFn<
 // ==============================
 export const helperApis = createApi({
     reducerPath: 'helperApis',
-    baseQuery: axiosBaseQuery(),
+    baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // =======================================================
         // GET SESSION
         // =======================================================
         getSession: build.query<apiResponseType<getSessionResponseType>, void>({
             query: () => ({
-                url: "/get-session",
-                method: 'GET'
+                url: `${HELPER_URL}/get-session`,
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
             }),
 
             transformResponse: (response: apiResponseType<getSessionResponseType>) => response,
@@ -107,12 +48,25 @@ export const helperApis = createApi({
             transformErrorResponse: (
                 response: FetchBaseQueryError
             ): apiErrorType => {
+                const error = response as any;
+
+                const url =
+                    error?.data?.url ||
+                    error?.url ||
+                    "UNKNOWN_URL";
+
+                logError("ERROR", {
+                    message: "GetAesEncryptionKey query failed",
+                    error: response,
+                    context: url,
+                });
+
                 if (typeof response.status === 'number') {
                     return {
                         status: response.status,
                         data: {
                             status: (response.data as any)?.status ?? "INTERNAL_APPLICATION_ERROR",
-                            message: (response.data as any)?.message ?? "GET-SESSION faced application error",
+                            message: (response.data as any)?.message ?? "GetAesEncryptionKey faced external application service error",
                             error: (response.data as any)?.error ?? null,
                         }
                     };
@@ -123,7 +77,7 @@ export const helperApis = createApi({
                     status: 500,
                     data: {
                         status: "INTERNAL_APPLICATION_ERROR",
-                        message: "GET-AES-ENCRYPTION faced application error",
+                        message: "GetAesEncryptionKey faced internal application service error",
                         error: response?.error
                     }
                 };

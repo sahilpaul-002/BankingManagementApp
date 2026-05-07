@@ -20,166 +20,6 @@ export const setAxiosDispatch = (dispatch: any) => {
 const ivStore = new WeakMap<object, string>();
 
 // ==============================
-// FACTORY FUNCTION FOR AXIOS INSTANCE
-// ==============================
-export const createAxiosInstance = (
-    baseURL: string,
-    headers: Record<string, string>,
-    environment?: string,
-): AxiosInstance => {
-    const instance = axios.create({
-        baseURL,
-        withCredentials: true,
-        ...(environment?.toUpperCase() === "PRODUCTION" && { timeout: 5000 }),
-        headers,
-    })
-
-    // ==========================
-    // REQUEST INTERCEPTOR
-    // ==========================
-    instance.interceptors.request.use(
-        async (req) => {
-            req.headers["portal"] = "business";
-            req.headers["from-portal"] = "true";
-            req.headers["request-id"] = crypto.randomUUID();
-
-            const deviceId = await GetDeviceId();
-            req.headers["x-device-id"] = deviceId;
-
-            // SKIP ENCRYPTION FOR ENCRYPTION KEY APIs
-            if (
-                req.url?.includes("/getDnsConfig") ||
-                req.url?.includes('/getEncryptionKey') ||
-                req.url?.includes('/getPublicKey') ||
-                req.url?.includes('/getHeaderPublicKey')
-            ) {
-                return req;
-            }
-
-            try {
-                // GET KEYS (SESSION FIRST)
-                let aesKey = sessionStorage.getItem('keyHex');
-                let rsaKey = sessionStorage.getItem('publicKey');
-
-                if (!aesKey || !rsaKey) {
-                    sessionStorage.clear();
-                    localStorage.clear();
-                    const [aesKey, rsaKey] = await Promise.all([
-                        getAesEncryptionKey(),
-                        getRsaPublicKey()
-                    ]);
-
-                    if (!aesKey || !rsaKey) {
-                        throw new ApplicationServiceError("Request payload encryption service cause error - Encryption keys missing");
-                    }
-
-                    sessionStorage.setItem('keyHex', aesKey);
-                    sessionStorage.setItem('publicKey', rsaKey);
-                }
-
-                // GENERATE IV
-                const iv = window.crypto.getRandomValues(new Uint8Array(12));
-                const ivHex = Array.from(iv)
-                    .map(b => b.toString(16).padStart(2, '0'))
-                    .join('');
-
-                // store IV for response decryption in request config using WeakMap
-                ivStore.set(req, ivHex);
-
-                // RSA encrypt IV
-                const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
-
-                // ENCRYPT BODY (POST/PUT/PATCH)
-                if (req.data) {
-                    const aesRes = await aesEncryption(aesKey as string, req.data, ivHex);
-
-                    req.data = {
-                        encryptedPayload1: rsaRes?.ciphertextBase64,
-                        encryptedPayload2: aesRes?.ciphertextHex,
-                    };
-                    return req;
-                }
-
-                // ENCRYPT QUERY PARAMS (GET WITH PARAMS)
-                if (req.params) {
-                    const aesRes = await aesEncryption(aesKey as string, req.params, ivHex);
-
-                    req.params = {
-                        encryptedQueryPayload1: rsaRes?.ciphertextBase64,
-                        encryptedQueryPayload2: aesRes?.ciphertextHex,
-                    };
-                    return req;
-                }
-
-                // ENCRYPT QUERY PARAMS FOR EMPTY GET/DELETE REQUESTS
-                req.params = {
-                    encryptedQueryPayload1: rsaRes?.ciphertextBase64,
-                };
-
-                return req;
-
-            }
-            catch (err) {
-                if (err instanceof AppErrorClass) {
-                    return Promise.reject(err);
-                }
-                throw new InternalApplicationError("Request interceptor service caused unknown error", "", err);
-            }
-        },
-        (error) => Promise.reject(error)
-    );
-
-    // ==========================
-    // RESPONSE INTERCEPTOR
-    // ==========================
-    instance.interceptors.response.use(
-        async (res) => {
-            try {
-                // DECRYPT RESPONSE (ONLY IF ENCRYPTED)
-                const data = res?.data;
-
-                if (data?.data && typeof data.data === 'string') {
-                    const aesKey = sessionStorage.getItem('keyHex');
-                    const ivHex = ivStore.get(res.config);
-
-                    if (aesKey && ivHex) {
-                        const decryptRes = await aesDecryption({
-                            cipherTextHex: data.data,
-                            ivHex,
-                            aesEncryptionKeyHex: aesKey,
-                        });
-
-                        try {
-                            res.data.data = JSON.parse(decryptRes.decryptedText);
-                        } catch {
-                            throw new Error("Invalid JSON after decryption");
-                        }
-                    }
-                }
-
-                return res;
-            }
-            catch (error) {
-                if (error instanceof AppErrorClass) {
-                    return Promise.reject(error);
-                }
-                throw new InternalApplicationError("Response interceptor service caused unknown error", "", error);
-            }
-        },
-        async (error) => {
-            // console.log("INTERCEPTOR ERROR HIT", {"URL": error.config?.url, "Status": error.response?.status, "Data": error.response?.data});
-
-            if (globalDispatch) {
-                handleErrors(error, globalDispatch);
-            }
-            return Promise.reject(error);
-        }
-    );
-
-    return instance;
-}
-
-// ==============================
 // SETUP INTERCEPTORS ON AXIOS INSTANCE
 // ==============================
 const setupInterceptors = (instance: AxiosInstance) => {
@@ -364,17 +204,16 @@ const setupInterceptors = (instance: AxiosInstance) => {
 };
 
 // BASE URL CONFIGURATION
-const API_BASE = window.location.hostname.includes("localhost") ? `${window.location.protocol}//${window.location.hostname}:3000/api/v1` : "";
+const API_BASE = window.location.hostname.includes("localhost") ? `${window.location.protocol}//${window.location.hostname}:3000` : "";
 
 let axiosInstance: AxiosInstance | null = null;
 
 // ==============================
 // FACTORY FUNCTION FOR AXIOS API CLIENT
 // ==============================
-export const getAxiosInstance = (route: string): AxiosInstance => {
+export const getAxiosInstance = (): AxiosInstance => {
     if (!axiosInstance) {
         axiosInstance = axios.create({
-            baseURL: `${API_BASE}${route}`,
             withCredentials: true,
         });
 
@@ -411,7 +250,7 @@ export const apiRequest = async ({
     params?: any;
     headers?: AxiosRequestConfig["headers"]
 }) => {
-    const axiosInstance = getAxiosInstance(route);
+    const axiosInstance = getAxiosInstance();
 
     return axiosInstance.request({
         url,
@@ -442,7 +281,8 @@ export const axiosBaseQuery =
         }) => {
             try {
                 const result = await axiosInstance.request({
-                    url,
+                    // url,
+                    url: `${API_BASE}${url}` || `${sessionStorage.getItem("dnsBaseUrl")}${url}`,
                     method,
                     data,
                     params,
