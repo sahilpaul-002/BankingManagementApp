@@ -15,10 +15,9 @@ import { getAsymmetricKeyPair } from "../utils/asymmetricEncryptionDecryption.js
 import listCountryMobileCodes from "../utils/listCountryMobileCodes.js";
 import { getHeaderAsymmetricKeyPair } from "../utils/asymmetricHeaderEncryptionDecryption.js";
 import dotenv from "dotenv"
+import { DNS_CONFIG_X_API_KEYS } from "../configs/configConstants.js";
 
 dotenv.config();
-
-const client1DnsXApiKey = process.env.CLIENT1_DNS_X_API_KEY || "9f4c2a7d8e1b3c6f5a2d9e7c4b1f8a6d3c0e2f9"
 
 // GET DNS CONFIG SERVICE
 export const getDnsConfigService = async (req: Request, res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
@@ -36,16 +35,6 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
             );
         }
 
-        // Validate X-API-Key header
-        // const xApiKey: string | null = checkStringHeader(req.headers, "dns-x-api-key");
-        const xApiKey: string | null = client1DnsXApiKey;
-        if (!xApiKey) {
-            throw new AppErrorClass(
-                400,
-                "INVALID_HEADER",
-                "'dns-x-api-key MISSING OR NOT STRING"
-            );
-        }
         // Validate domain name in request body
         const domainName: string | null = checkStringQueryParams(aesDecryptedQueryData, "domainName");
 
@@ -54,6 +43,17 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
                 406,
                 "INVALID_REQUEST_QUERY_PARAMETER",
                 "'domainName' MISSING OR NOT STRING"
+            );
+        }
+
+        // Validate X-API-Key header
+        // const xApiKey: string | null = checkStringHeader(req.headers, "dns-x-api-key");
+        const xApiKey: string | undefined = DNS_CONFIG_X_API_KEYS[domainName];
+        if (!xApiKey) {
+            throw new AppErrorClass(
+                400,
+                "INVALID_HEADER",
+                "'dns-x-api-key MISSING OR NOT STRING"
             );
         }
 

@@ -5,7 +5,9 @@ import { AppErrorClass, InterSeverError, UnauthenticatedError } from "../utils/A
 
 const sessionExpiration = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
-        if (!req.session || !req.session?.lastActivity) {
+        const excludedPaths1: string[] = ["/api/v1/helper", "/api/v1/config", "/api/v1/user/signUp", "/api/v1/user/login"];
+        
+        if (!req.session || !req.session?.lastActivity || excludedPaths1.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
 
@@ -20,21 +22,21 @@ const sessionExpiration = async (req: Request, res: Response, next: NextFunction
 
                     if (destroySessionResponse?.status !== "SUCCESS") {
                         if ((destroySessionResponse as failedResponseJson)?.error) {
-                            throw new InterSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
+                            return next(new InterSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error))
                         }
                         else {
-                            throw new InterSeverError("FAILED TO DESTROY SESSION")
+                            return next(new InterSeverError("FAILED TO DESTROY SESSION"))
                         }
                     }
-                    throw new UnauthenticatedError("Session expired due to inactivity")
+                    return next(new UnauthenticatedError("Session expired due to inactivity"))
                 }
             }
             else {
-                throw new UnauthenticatedError("Unauthenticated Access: No Active Session Found")
+                return next(new UnauthenticatedError("Unauthenticated Access: No Active Session Found"))
             }
         }
         else {
-            throw new UnauthenticatedError("Unauthenticated Access: No Active Session Found")
+            return next(new UnauthenticatedError("Unauthenticated Access: No Active Session Found"))
         }
 
         // Update the lastActivity timestamp
