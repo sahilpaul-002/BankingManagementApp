@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
 import cookieParser from "cookie-parser";
-import { AppErrorClass, ForbiddenError, InterSeverError, InvalidHeaderError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InternalSeverError, InvalidHeaderError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import type { userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import destroySession from "../utils/destroySession.js";
@@ -112,16 +112,16 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
 
                         if (destroySessionResponse?.status !== "SUCCESS") {
                             if ((destroySessionResponse as failedResponseJson)?.error) {
-                                throw new InterSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
+                                throw new InternalSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
                             }
                             else {
-                                throw new InterSeverError("FAILED TO DESTROY SESSION")
+                                throw new InternalSeverError("FAILED TO DESTROY SESSION")
                             }
                         }
                         throw new ForbiddenError("User does not exists");
                     }
                     catch (error) {
-                        throw new InterSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
+                        throw new InternalSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
                     }
                 }
 
@@ -131,7 +131,7 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
                 }
             }
             catch {
-                throw new InterSeverError("Session user validation using databse is facing issue");
+                throw new InternalSeverError("Session user validation using databse is facing issue");
             }
         }
 

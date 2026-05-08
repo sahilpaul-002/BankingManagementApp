@@ -1,8 +1,9 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
-import { AppErrorClass, BadRequestError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import { userLoginService, userSignUpService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
+import logger from "../utils/logger.js";
 
 // ------------------------------ FUNCTION TO SET USERCONTROLLER HEADERS ------------------------------ \\
 const userControllerHeader = (req: Request) => {
@@ -45,15 +46,31 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
 
         return res.success("Sign up successfull", userSignUpResponse?.data, 200);
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
-        }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        if (error instanceof Error) {
-            throw error;
+        logger.error({
+            serviceName: "UserSignUpController",
+            message: error.message,
+            stack: error.stack,
+            url: url,
+            method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new ServiceUnavailableError("UserSignUP is facing issue.", error)
+        throw new ServiceUnavailableError("UserSignUpController is facing unknown issue.", error)
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -71,15 +88,31 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
 
         return res.success("Sign in successfull", userLoginServiceResponse?.data, 200)
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
-        }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        if (error instanceof Error) {
-            throw error;
+        logger.error({
+            serviceName: "UserLoginController",
+            message: error.message,
+            stack: error.stack,
+            url: url,
+            method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new ServiceUnavailableError("UserLogin is facing issue.", error)
+        throw new ServiceUnavailableError("UserLoginController is facing issue.", error)
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\

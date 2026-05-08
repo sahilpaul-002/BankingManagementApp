@@ -8,7 +8,7 @@ import destroySession from '../utils/destroySession.js';
 import normalizeIp from '../utils/normalizeIp.js';
 import { userMetaDetailsModel as user_meta_details } from '../models/user_meta_details.js';
 import type { ObjectId } from 'mongoose';
-import { AppErrorClass, ForbiddenError, InterSeverError, InvalidSessionError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
+import { AppErrorClass, ForbiddenError, InternalSeverError, InvalidSessionError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
 
 const sessionValidation = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
@@ -54,16 +54,16 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
                         if (destroySessionResponse?.status !== "SUCCESS") {
                             if ((destroySessionResponse as failedResponseJson)?.error) {
-                                throw new InterSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
+                                throw new InternalSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
                             }
                             else {
-                                throw new InterSeverError("FAILED TO DESTROY SESSION")
+                                throw new InternalSeverError("FAILED TO DESTROY SESSION")
                             }
                         }
                         throw new ForbiddenError("User does not exists");
                     }
                     catch (error) {
-                        throw new InterSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
+                        throw new InternalSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
                     }
                 }
 
@@ -74,7 +74,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
                 }
             }
             catch {
-                throw new InterSeverError("Session user validation using databse is facing issue");
+                throw new InternalSeverError("Session user validation using databse is facing issue");
             }
 
             try {
@@ -122,7 +122,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
                 }
             }
             catch {
-                throw new InterSeverError("Session IP validation using databse is facing issue");
+                throw new InternalSeverError("Session IP validation using databse is facing issue");
             }
 
             // // Check user status

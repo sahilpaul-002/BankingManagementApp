@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import dotenv from "dotenv";
-import { AppErrorClass, NotFoundError, ServiceError, ServiceUnavailableError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import logger from "../utils/logger.js";
 
 dotenv.config();
 
@@ -55,14 +56,30 @@ export const resendMailSendService = async (mailConfig: mainConfigType) => {
 
         return { status: "SUCCESS", id: data?.id };
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error;
-        }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        if (error instanceof Error) {
-            throw error;
+        logger.error({
+            serviceName: "VerifyEmailController",
+            message: error.message,
+            stack: error.stack,
+            // url: url,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new ServiceUnavailableError("Resend-Mail-Send-Service is unavailable", error);
+        throw new ServiceUnavailableError("ResendMailSendService is facing unknown error", error);
     }
 }

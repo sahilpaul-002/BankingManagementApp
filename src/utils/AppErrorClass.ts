@@ -52,7 +52,7 @@ export class InvalidRequestQueryError extends AppErrorClass {
 export class ServiceTimeoutError extends AppErrorClass {
     constructor(message: string, error?: any) { super(429, 'SERVICE_TIMEOUT', message, error); }
 }
-export class InterSeverError extends AppErrorClass {
+export class InternalSeverError extends AppErrorClass {
     constructor(message: string, error?: any) { super(500, 'INTERNAL_SERVER_ERROR', message, error); }
 }
 export class ServiceUnavailableError extends AppErrorClass {

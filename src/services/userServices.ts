@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
@@ -19,6 +19,7 @@ import checkStringBody from "../utils/checkStringBody.js";
 import { getDnsConfigService } from "./configServices.js";
 import type { ParsedQs } from "qs";
 import userDetailsValidationSchema from "../validations/userDetailsValidation.js";
+import logger from "../utils/logger.js";
 
 export const userSignUpService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
     try {
@@ -109,15 +110,31 @@ export const userSignUpService = async (requestSession: Request["session"], res:
         // console.log("Document inserted: ", insertedDocument);
         return { status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument }
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
-        }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        if (error instanceof Error) {
-            throw error;
+        logger.error({
+            serviceName: "UserSignUpService",
+            message: error.message,
+            stack: error.stack,
+            // url: url,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new ServiceUnavailableError("UserSignUP is facing issue.", error)
+        throw new ServiceUnavailableError("UserSignUpService is facing unknown issue.", error)
     }
 }
 
@@ -314,14 +331,30 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 
         return { status: "SUCCESS", message: "User login successfull", data: updatedUserDetails }
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
-        }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        if (error instanceof Error) {
-            throw error;
+        logger.error({
+            serviceName: "UserLoginService",
+            message: error.message,
+            stack: error.stack,
+            // url: url,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new ServiceUnavailableError("UserSignIn is facing issue.", error)
+        throw new ServiceUnavailableError("UserLoginService is facing issue.", error)
     }
 }

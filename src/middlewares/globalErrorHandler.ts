@@ -11,8 +11,11 @@ const globalErrorHandler = (
     res: Response<failedResponseJson>,
     next: NextFunction
 ): void => {
+    const error = err as any;
+    const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
     logger.error({
+        serviceName: errorClassName,
         message: err.message,
         stack: err.stack,
         url: req.path,

@@ -1,10 +1,11 @@
 import type { Request, Response } from 'express';
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import { symmetricDecryptionMsg, symmetricEncryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
-import { asymmetricDecryptionMsg} from '../utils/asymmetricEncryptionDecryption.js';
-import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError } from '../utils/AppErrorClass.js';
+import { asymmetricDecryptionMsg } from '../utils/asymmetricEncryptionDecryption.js';
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
 import type { decryptionFailedJson, decryptionSuccessJson } from '../types/decryptionRespoonseTypes.js';
 import { getAesEncryptionKeyService, getDnsConfigService, getHeaderPublicKeyService, getMobileCountryCodesService, getRsaPublicKeyService } from '../services/configServices.js';
+import logger from '../utils/logger.js';
 
 // FUNCTION TO GET THE DNS CONFIGURATION DATA
 export const getDnsConfig = async (req: Request, res: Response<successResponseJson | failedResponseJson>): Promise<Response<successResponseJson> | void> => {
@@ -44,8 +45,8 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                     throw new ServiceError("Asymmetric decryption service unavailable");
                 }
             }
-            catch (error) {
-                throw new ServiceUnavailableError("Asymmetric decryption service is not working.");
+            catch (err) {
+                throw new ServiceUnavailableError("Asymmetric decryption service is not working.", err);
             }
 
             // AES Symmetric payload decryption
@@ -80,19 +81,39 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                     throw new ServiceError("Symmetric decryption service unavailable");
                 }
             }
-            catch (error) {
-                throw new ServiceUnavailableError("Symmetric decryption service is not working.");
+            catch (err) {
+                throw new ServiceUnavailableError("Symmetric decryption service is not working.", err);
             }
         }
         else {
             aesDecryptedQueryData = req.query;
         }
     }
-    catch (error) {
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+
+        logger.error({
+            serviceName: "GetDnsConfigRequestPayloadDecryption",
+            message: error.message,
+            stack: error.stack,
+            url: url,
+            method: req.method
+        });
+
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new Error("GetDnsConfig-requestPayload decryption is facing issue.")
+        throw new ServiceUnavailableError("GetDnsConfigRequestPayloadDecryption service is facing unknown issue.", err);
     }
     try {
         const getDnsConfigServiceResponse: successResponseJson = await getDnsConfigService(req, res, aesDecryptedQueryData);
@@ -116,15 +137,31 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
         return res.success("DNS config fetch successfully", responseObj, 200)
 
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
-        }
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        if (error instanceof Error) {
-            throw error;
+        logger.error({
+            serviceName: "GetDnsConfigController",
+            message: error.message,
+            stack: error.stack,
+            url: url,
+            method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new ServiceUnavailableError("GetDnsConfig is facing issue.", error);
+        throw new ServiceUnavailableError("GetDnsConfigController service is facing unknown issue.", error);
     }
 }
 
@@ -138,15 +175,31 @@ export const getEncryptionKey = (req: Request, res: Response): Response<successR
         }
         return res.success("Encryption key fetch successfully", { key: encryptionKeyServiceResponse?.data }, 200);
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
-        }
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        if (error instanceof Error) {
-            throw error;
+        logger.error({
+            serviceName: "GetEncryptionKeyController",
+            message: error.message,
+            stack: error.stack,
+            url: url,
+            method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new ServiceUnavailableError("GetEncryptionKey is facing issue.", error)
+        throw new ServiceUnavailableError("GetEncryptionKeyController service is facing unknown issue.", error)
     }
 }
 
@@ -161,36 +214,69 @@ export const getPublicKey = (req: Request, res: Response): Response<successRespo
 
         return res.success("Public key fetch successfully", { key: publicKeyServiceResponse?.data }, 200);
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
-        }
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        if (error instanceof Error) {
-            throw error;
+        logger.error({
+            serviceName: "GetPublicKeyController",
+            message: error.message,
+            stack: error.stack,
+            url: url,
+            method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new ServiceUnavailableError("GetPublicKey is facing issue.", error)
+        throw new ServiceUnavailableError("GetPublicKeyController service is facing unknown issue.", error)
     }
 }
 
 // FUNCTION TO GET THE MOBILE COUNTRY CODES
 export const getMobileCountryCodes = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
-        const mobileCountryCodesServiceResponse = getMobileCountryCodesService();
+        const mobileCountryCodesServiceResponse = getMobileCountryCodesService(req);
         if (mobileCountryCodesServiceResponse?.status.toUpperCase() !== "SUCCESS") {
             throw new ServiceError("Failed to fetch mobile country codes")
         }
 
         return res.success("Mobile country codes fetch successfully", mobileCountryCodesServiceResponse.data, 200);
     }
-    catch (error) {
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+
+        logger.error({
+            serviceName: "GetMobileCountryCodesController",
+            message: error.message,
+            stack: error.stack,
+            url: url,
+            method: req.method
+        });
+
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        if (error instanceof Error) {
-            throw error;
-        }
-        throw new ServiceUnavailableError("GetMobileCountryCodes is facing issue.", error)
+        throw new ServiceUnavailableError("GetMobileCountryCodesController service is facing unknown issue.", error)
     }
 }
 
@@ -204,13 +290,30 @@ export const getHeaderPublicKey = (req: Request, res: Response): Response<succes
         }
         return res.success("Public key fetch successfully", { key: publicKeyServiceResponse.data }, 200);
     }
-    catch (error) {
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+
+        logger.error({
+            serviceName: "GetHeaderPublicKeyCController",
+            message: error.message,
+            stack: error.stack,
+            url: url,
+            method: req.method
+        });
+
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        if (error instanceof Error) {
-            throw error;
-        }
-        throw new ServiceUnavailableError("GetHeaderPublicKey is facing issue.", error)
+        throw new ServiceUnavailableError("GetHeaderPublicKeyCController service is facing unknown issue.", error)
     }
 }

@@ -1,7 +1,7 @@
 import type { Response, Request, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
 import destroySession from "../utils/destroySession.js";
-import { AppErrorClass, InterSeverError, UnauthenticatedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, InternalSeverError, UnauthenticatedError } from "../utils/AppErrorClass.js";
 
 const sessionExpiration = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
@@ -22,10 +22,10 @@ const sessionExpiration = async (req: Request, res: Response, next: NextFunction
 
                     if (destroySessionResponse?.status !== "SUCCESS") {
                         if ((destroySessionResponse as failedResponseJson)?.error) {
-                            return next(new InterSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error))
+                            return next(new InternalSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error))
                         }
                         else {
-                            return next(new InterSeverError("FAILED TO DESTROY SESSION"))
+                            return next(new InternalSeverError("FAILED TO DESTROY SESSION"))
                         }
                     }
                     return next(new UnauthenticatedError("Session expired due to inactivity"))

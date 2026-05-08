@@ -1,8 +1,9 @@
 import type { Request, Response } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
-import { AppErrorClass, UnauthenticatedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import { sendEmailService } from "../services/twoFaService.js";
 import { getRequestSession } from "../utils/requestContext.js";
+import logger from "../utils/logger.js";
 
 // FUNCTION TO VERIFY EMAIL
 export const verifyEmail = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -17,14 +18,30 @@ export const verifyEmail = async (req: Request, res: Response): Promise<Response
         }
         return res.success("Email send using 'Resend' service", sendEmailServiceResponse?.data, 200)
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
-        }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        if (error instanceof Error) {
-            throw error;
+        logger.error({
+            serviceName: "VerifyEmailController",
+            message: error.message,
+            stack: error.stack,
+            url: url,
+            method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorClassName}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new Error("GetEncryptionKey is facing issue.")
+        throw new ServiceUnavailableError("VerifyEmailController is facing unknown issue.", error)
     }
 }
