@@ -16,6 +16,7 @@ export interface sessionError {
 // Session data stored in session
 export type sessionDataTypes = {
     domainName: string;
+    dashboardName: string;
     agentCode: string;
     subAgentCode: string;
     businessId: string;

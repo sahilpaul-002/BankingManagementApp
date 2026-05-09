@@ -1,9 +1,20 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { failedResponseJson, successResponseJson } from '../types/responseJson.js';
-import { skipEncryptionDecryptionRoutes } from '../utils/skipEncryptionDecryptionRoutes.js';
 import { symmetricEncryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
 import logger from '../utils/logger.js';
+
+const skipEncryptionRoutes = (req: Request): boolean => {
+    const url = req.originalUrl || req.url;
+
+    return (
+        url?.includes("/helper") ||
+        url?.includes("/getDnsConfig") ||
+        url?.includes('/getEncryptionKey') ||
+        url?.includes('/getPublicKey') ||
+        url?.includes('/getHeaderPublicKey')
+    );
+};
 
 const encryptResponseData = (
     req: Request,
@@ -25,7 +36,7 @@ const encryptResponseData = (
     res.json = function (body: successResponseJson): Response<successResponseJson> {
         try {
             // Skip Encryption For Specified Routes
-            if (skipEncryptionDecryptionRoutes(req)) {
+            if (skipEncryptionRoutes(req)) {
                 return originalJson.call(this, body);
             }
 

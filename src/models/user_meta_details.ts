@@ -22,6 +22,12 @@ const userMetaDetailsSchema = new Schema<userMetaDetailsSchemaTypes>({
         type: Date,
         default: Date.now,
     },
+    verification_code: {
+        type: String,
+    },
+    verification_code_expires_at: {
+        type: Date,
+    }
 },
     {
         timestamps: true, // adds createdAt and updatedAt automatically

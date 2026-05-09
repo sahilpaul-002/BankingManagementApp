@@ -17,11 +17,13 @@ const transporter = nodemailer.createTransport({
 interface mainConfigType {
     toEmail: string
     sendEmail: string
+    dashboardName: string
+    emailTemplate: any
 }
 
 export const gmailSendService = async (mailConfig: mainConfigType) => {
     try {
-        const { toEmail, sendEmail } = mailConfig;
+        const { toEmail, sendEmail, dashboardName, emailTemplate } = mailConfig;
 
         // Check mail config
         if (!toEmail) {
@@ -29,10 +31,10 @@ export const gmailSendService = async (mailConfig: mainConfigType) => {
         }
 
         const sendEmailResponse = await transporter.sendMail({
-            from: `"BMA" <${fromEmail}>`,
+            from: `"${dashboardName}" <${fromEmail}>`,
             to: toEmail,
-            subject: "Test Email",
-            html: `
+            subject: emailTemplate?.subject || "Test Email",
+            html: emailTemplate?.html || `
             <h1>Test Email Template</h1>
             <p>Email is working successfully.</p>
         `,

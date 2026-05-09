@@ -29,11 +29,12 @@ const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@g
 // }
 
 // SEND EMAIL SERVICE
-export const sendEmailService = async (requestSession: Request["session"], type: string): Promise<successResponseJson> => {
+export const sendEmailService = async (requestSession: Request["session"], userMail: string, type: string, emailTemplate: any): Promise<successResponseJson> => {
     try {
-        const toEmail: string = requestSession?.userEmail as string
+        const toEmail: string = userMail
         const sendEmail: string = fromEmail
-        const mainConfig = { toEmail, sendEmail }
+        const dashboardName: string = requestSession?.sessiondata?.dashboardName || "BMA"
+        const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
         // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
         const gmailMailServiceResponse = await gmailSendService(mainConfig)
 

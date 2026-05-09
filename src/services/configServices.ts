@@ -92,6 +92,7 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
         // Set DNS data in session
         req.session.sessiondata = {
             domainName: dnsData.domain_name,
+            dashboardName: dnsData.dashboard_name,
             agentCode: dnsData.agent_code,
             subAgentCode: dnsData.subagent_code,
             businessId: dnsData.business_id,

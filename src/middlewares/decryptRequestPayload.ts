@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction } from 'express';
-import { skipEncryptionDecryptionRoutes } from '../utils/skipEncryptionDecryptionRoutes.js';
 import { asymmetricDecryptionMsg } from '../utils/asymmetricEncryptionDecryption.js';
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
 import { symmetricDecryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
@@ -7,7 +6,7 @@ import logger from '../utils/logger.js';
 import { getDnsConfigService } from '../services/configServices.js';
 
 const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) => {
-    const skipEncryptionDecryptionRoute = (req: Request): boolean => {
+    const skipDecryptionRoutes = (req: Request): boolean => {
         const url = req.originalUrl || req.url;
 
         return (
@@ -22,7 +21,7 @@ const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) 
     };
     try {
         // Skip Decryption For Specified Routes
-        if (skipEncryptionDecryptionRoute(req)) {
+        if (skipDecryptionRoutes(req)) {
             return next();
         }
 

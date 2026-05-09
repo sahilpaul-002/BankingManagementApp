@@ -68,6 +68,8 @@ export interface userMetaDetailsSchemaTypes extends Document {
     ip_address: string;
     userAgent?: string;
     login_at?: Date;
+    verification_code?: string;
+    verification_code_expires_at?: Date;
 }
 
 // Type for User Bank Details Model Schema
