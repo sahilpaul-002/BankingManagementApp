@@ -79,6 +79,23 @@ const setupInterceptors = (instance: AxiosInstance) => {
 
                 // RSA encrypt IV
                 const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
+                // ENCRYPT BODY & PARAMS (POST/PUT/PATCH)
+                if (req.data && req.params) {
+                    const aesRes1 = await aesEncryption(aesKey as string, req.data, ivHex);
+
+                    req.data = {
+                        encryptedPayload1: rsaRes?.ciphertextBase64,
+                        encryptedPayload2: aesRes1?.ciphertextHex,
+                    };
+
+                    const aesRes2 = await aesEncryption(aesKey as string, req.params, ivHex);
+
+                    req.params = {
+                        encryptedQueryPayload1: rsaRes?.ciphertextBase64,
+                        encryptedQueryPayload2: aesRes2?.ciphertextHex,
+                    };
+                    return req;
+                }
 
                 // ENCRYPT BODY (POST/PUT/PATCH)
                 if (req.data) {
@@ -179,7 +196,7 @@ const setupInterceptors = (instance: AxiosInstance) => {
                 if (error instanceof AppErrorClass) {
                     return Promise.reject(error);
                 }
-                throw new InternalApplicationError(`${className}: Response interceptor service caused unknown error`,`AxiosApiResponseInterceptor`, error);
+                throw new InternalApplicationError(`${className}: Response interceptor service caused unknown error`, `AxiosApiResponseInterceptor`, error);
             }
         },
         async (err) => {

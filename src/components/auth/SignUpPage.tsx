@@ -59,7 +59,10 @@ export default function SignUpPage() {
     const signupFormValidationSchema = z.object({
         fullName: z
             .string()
-            .min(4, "Full name must be alteast 4 characters"),
+            .min(4, "Full name must be alteast 4 characters")
+            .regex(
+                /^[A-Za-z0-9 .'-]+$/,
+                "Full name can only contain letters, numbers, spaces, dots (.), apostrophes ('), and hyphens (-)"),
         email: z
             .string()
             .email("Invalid email"),
