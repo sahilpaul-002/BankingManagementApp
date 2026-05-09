@@ -1,13 +1,28 @@
 import type { Request, Response, NextFunction } from 'express';
 import { skipEncryptionDecryptionRoutes } from '../utils/skipEncryptionDecryptionRoutes.js';
 import { asymmetricDecryptionMsg } from '../utils/asymmetricEncryptionDecryption.js';
-import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError } from '../utils/AppErrorClass.js';
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
 import { symmetricDecryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
+import logger from '../utils/logger.js';
+import { getDnsConfigService } from '../services/configServices.js';
 
 const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) => {
+    const skipEncryptionDecryptionRoute = (req: Request): boolean => {
+        const url = req.originalUrl || req.url;
+
+        return (
+            url?.includes("/helper") ||
+            url?.includes("/getDnsConfig") ||
+            url?.includes('/getEncryptionKey') ||
+            url?.includes('/getPublicKey') ||
+            url?.includes('/getHeaderPublicKey') || 
+            url?.includes('/signUp') || 
+            url?.includes("/login")
+        );
+    };
     try {
         // Skip Decryption For Specified Routes
-        if (skipEncryptionDecryptionRoutes(req)) {
+        if (skipEncryptionDecryptionRoute(req)) {
             return next();
         }
 
@@ -93,13 +108,30 @@ const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) 
         (req as any).__ivHex = ivHex;
 
         next();
-    } catch (err) {
-        console.log("Error", err);
-        if (err instanceof AppErrorClass) {
-            return next(err);
-        }
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        return next(new ServiceUnavailableError("Request payload decryption service unavailable due to unknown error"));
+        logger.error(error, {
+            serviceName: "DecryptRequestPayloadMiddleware",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("DecryptRequestPayloadMiddleware service is facing unknown issue.", error)
     }
 };
 

@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 import dotenv from "dotenv";
-import { AppErrorClass, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ExternalServiceError, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 
 dotenv.config();
@@ -9,22 +9,6 @@ const resendMailServiceXApiKey = process.env.MAIL_RESEND_X_API_KEY
 
 const resend = new Resend(resendMailServiceXApiKey);
 
-// const resendMailService = async () => {
-//     const { data, error } = await resend.emails.send({
-//         from: 'Acme <onboarding@resend.dev>',
-//         to: ['delivered@resend.dev'],
-//         subject: 'Hello World',
-//         html: '<strong>It works!</strong>',
-//     });
-
-//     if (error) {
-//         return console.error({ error });
-//     }
-
-//     console.log({ data });
-// }
-
-// export default resendMailService;
 
 interface mainConfigType {
     toEmail: string
@@ -51,7 +35,7 @@ export const resendMailSendService = async (mailConfig: mainConfigType) => {
         if (error) {
             // res.status(500).json({ error: error.message });
             // return;
-            throw new ServiceError("ResendMailSendService is facing issue", error);
+            throw new ExternalServiceError("ResendMailSendService is facing issue", error);
         }
 
         return { status: "SUCCESS", id: data?.id };
@@ -61,11 +45,9 @@ export const resendMailSendService = async (mailConfig: mainConfigType) => {
         // const url = req?.path || "UNKNOWN_URL";
         const errorClassName = error?.constructor?.name || "UnknownErrorClass";
 
-        logger.error({
-            serviceName: "VerifyEmailController",
-            message: error.message,
-            stack: error.stack,
-            // url: url,
+        logger.error(error, {
+            serviceName: "ResendMailSendService",
+            // url: req.path,
             // method: req.method
         });
 

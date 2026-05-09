@@ -2,7 +2,8 @@ import type { Request, Response, NextFunction } from 'express';
 import type { failedResponseJson, successResponseJson } from '../types/responseJson.js';
 import { skipEncryptionDecryptionRoutes } from '../utils/skipEncryptionDecryptionRoutes.js';
 import { symmetricEncryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
-import { ServiceError } from '../utils/AppErrorClass.js';
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
+import logger from '../utils/logger.js';
 
 const encryptResponseData = (
     req: Request,
@@ -55,11 +56,30 @@ const encryptResponseData = (
 
             return originalJson(newBody);
 
-        } catch (err) {
-            console.error("Encryption error:", err);
+        }
+        catch (err) {
+            const error = err as any;
+            const url = req.path || "UNKNOWN_URL";
+            const errorStatus = error?.status || "UnknownErrorStatus";
 
-            // fallback (still typed)
-            return originalJson(body);
+            logger.error(error, {
+                serviceName: "DecryptRequestPayloadMiddleware",
+                // url: req.path,
+                // method: req.method
+            });
+
+            if (error instanceof AppErrorClass) {
+                if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                    throw error
+                }
+                else {
+                    throw new ServiceError(
+                        `[${errorStatus}] ${error.message}`,
+                        error
+                    );
+                }
+            }
+            throw new ServiceUnavailableError("DecryptRequestPayloadMiddleware service is facing unknown issue.", error)
         }
     };
 

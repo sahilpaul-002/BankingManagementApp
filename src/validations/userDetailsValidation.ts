@@ -10,7 +10,8 @@ const userDetailsValidationSchema = z.object({
         .trim()
         .min(3, "Full name must be at least 3 characters")
         .max(100, "Full name cannot exceed 100 characters")
-        .regex(/^[a-zA-Z\s.'-]+$/, "Full name can only contain letters, spaces, dots (.), apostrophes ('), and hyphens (-)."),
+        .regex(
+            /^[a-zA-Z0-9\s.'-]+$/, "Full name can only contain letters, numbers, spaces, dots (.), apostrophes ('), and hyphens (-)."),
 
     agent_code: z
         .string("Agent code is required and must be string")

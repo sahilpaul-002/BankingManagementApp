@@ -129,14 +129,12 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
     catch (err) {
         const error = err as any;
         const url = req.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
+        logger.error(error, {
             serviceName: "GetDnsConfigService",
-            message: error.message,
-            stack: error.stack,
-            url: url,
-            method: req.method
+            // url: req.path,
+            // method: req.method
         });
 
         if (error instanceof AppErrorClass) {
@@ -145,7 +143,7 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
             }
             else {
                 throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
+                    `[${errorStatus}] ${error.message}`,
                     error
                 );
             }
@@ -168,14 +166,12 @@ export const getAesEncryptionKeyService = (req: Request): successResponseJson =>
     catch (err) {
         const error = err as any;
         const url = req.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
+        logger.error(error, {
             serviceName: "GetEncryptionKeyService",
-            message: error.message,
-            stack: error.stack,
-            url: url,
-            method: req.method
+            // url: req.path,
+            // method: req.method
         });
 
         if (error instanceof AppErrorClass) {
@@ -184,7 +180,7 @@ export const getAesEncryptionKeyService = (req: Request): successResponseJson =>
             }
             else {
                 throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
+                    `[${errorStatus}] ${error.message}`,
                     error
                 );
             }
@@ -207,14 +203,12 @@ export const getRsaPublicKeyService = (req: Request): successResponseJson => {
     catch (err) {
         const error = err as any;
         const url = req.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
+        logger.error(error, {
             serviceName: "GetRsaPublicKeyService",
-            message: error.message,
-            stack: error.stack,
-            url: url,
-            method: req.method
+            // url: req.path,
+            // method: req.method
         });
 
         if (error instanceof AppErrorClass) {
@@ -223,7 +217,7 @@ export const getRsaPublicKeyService = (req: Request): successResponseJson => {
             }
             else {
                 throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
+                    `[${errorStatus}] ${error.message}`,
                     error
                 );
             }
@@ -244,14 +238,12 @@ export const getMobileCountryCodesService = (req: Request): successResponseJson 
     catch (err) {
         const error = err as any;
         const url = req?.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
+        logger.error(error, {
             serviceName: "GetMobileCountryCodesService",
-            message: error.message,
-            stack: error.stack,
-            url: url,
-            method: req.method
+            // url: req.path,
+            // method: req.method
         });
 
         if (error instanceof AppErrorClass) {
@@ -260,7 +252,7 @@ export const getMobileCountryCodesService = (req: Request): successResponseJson 
             }
             else {
                 throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
+                    `[${errorStatus}] ${error.message}`,
                     error
                 );
             }
@@ -283,14 +275,12 @@ export const getHeaderPublicKeyService = (req: Request): successResponseJson => 
     catch (err) {
         const error = err as any;
         const url = req?.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
+        logger.error(error, {
             serviceName: "GetHeaderPublicKeyService",
-            message: error.message,
-            stack: error.stack,
-            url: url,
-            method: req.method
+            // url: req.path,
+            // method: req.method
         });
 
         if (error instanceof AppErrorClass) {
@@ -299,7 +289,7 @@ export const getHeaderPublicKeyService = (req: Request): successResponseJson => 
             }
             else {
                 throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
+                    `[${errorStatus}] ${error.message}`,
                     error
                 );
             }

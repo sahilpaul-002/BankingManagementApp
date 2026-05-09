@@ -7,50 +7,48 @@ const logger = winston.createLogger({
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
 
-    winston.format.printf(
-      ({ timestamp, level, message, stack, serviceName, ...meta }) => {
+    winston.format.printf((info) => {
+      const {
+        timestamp,
+        level,
+        message,
+        stack,
+        serviceName,
+        ...meta
+      } = info;
 
-        let logBody = "";
+      const service = serviceName
+        ? `[${serviceName}]`
+        : "[UNKNOWN_SERVICE]";
 
-        // =========================
-        // SERVICE NAME
-        // =========================
-        const service = serviceName
-          ? `[${serviceName}]`
-          : "[UNKNOWN_SERVICE]";
+      let logBody = "";
 
-        // =========================
-        // ERROR WITH STACK
-        // =========================
-        if (stack) {
-          logBody = `${timestamp} ${service} [${level}] ${message}\n${stack}`;
-        }
+      // ERROR STACK
+      if (stack) {
+        logBody = `${timestamp} ${service} [${level}] ${message}\n${stack}`;
+      }
 
-        // =========================
-        // OBJECT MESSAGE
-        // =========================
-        else if (typeof message === "object") {
-          logBody = `${timestamp} ${service} [${level}] ${JSON.stringify(
-            message,
-            null,
-            2
-          )}`;
-        }
+      // OBJECT MESSAGE
+      else if (typeof message === "object") {
+        logBody = `${timestamp} ${service} [${level}] ${JSON.stringify(
+          message,
+          null,
+          2
+        )}`;
+      }
 
-        // =========================
-        // NORMAL STRING MESSAGE
-        // =========================
-        else {
-          logBody = `${timestamp} ${service} [${level}] ${message}`;
-        }
+      // STRING MESSAGE
+      else {
+        logBody = `${timestamp} ${service} [${level}] ${message}`;
+      }
 
-        return `
+      return `
 ----------------- LOGGER START -----------------
 ${logBody}
 ${Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ""}
 ------------------ LOGGER END ------------------
 `;
-      }
+    }
     )
   ),
 

@@ -2,7 +2,8 @@ import type { Request, Response, NextFunction } from 'express';
 import type { failedResponseJson } from '../types/responseJson.js';
 import normalizeIp from '../utils/normalizeIp.js';
 import dotenv from "dotenv";
-import { AppErrorClass, ForbiddenError, UnauthenticatedError } from '../utils/AppErrorClass.js';
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
+import logger from '../utils/logger.js';
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -33,11 +34,29 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
             }
         }
     }
-    catch (error) {
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "CheckRequestSourceMiddleware",
+            // url: req.path,
+            // method: req.method
+        });
+
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new Error("Request source header validation is facing issue.")
+        throw new ServiceUnavailableError("Request source header validation is facing unknown issue.", error)
     }
     // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
@@ -88,11 +107,29 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
                 // ------------------------------- XXXXXXXXXXXXXXXXXXXXX ------------------------------- \\
             }
         }
-        catch (error) {
+        catch (err) {
+            const error = err as any;
+            const url = req.path || "UNKNOWN_URL";
+            const errorStatus = error?.status || "UnknownErrorStatus";
+
+            logger.error(error, {
+                serviceName: "CheckRequestSourceMiddleware",
+                // url: req.path,
+                // method: req.method
+            });
+
             if (error instanceof AppErrorClass) {
-                throw error; // ✅ preserve original error
+                if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                    throw error
+                }
+                else {
+                    throw new ServiceError(
+                        `[${errorStatus}] ${error.message}`,
+                        error
+                    );
+                }
             }
-            throw new Error("Request source domain validation is facing issue.")
+            throw new ServiceUnavailableError("Request source domain validation is facing unknown issue.", error)
         }
     }
 

@@ -4,10 +4,11 @@ import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, Servi
 import { resendMailSendService } from "./resendMailService.js";
 import dotenv from "dotenv"
 import logger from "../utils/logger.js";
+import { gmailSendService } from "./gmailSendService.js";
 
 dotenv.config();
 
-const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "paulcode1234@gmail.com"
+const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 
 
 // VERIFY EMAIL SERVICE
@@ -33,23 +34,22 @@ export const sendEmailService = async (requestSession: Request["session"], type:
         const toEmail: string = requestSession?.userEmail as string
         const sendEmail: string = fromEmail
         const mainConfig = { toEmail, sendEmail }
-        const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+        // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+        const gmailMailServiceResponse = await gmailSendService(mainConfig)
 
-        if (resendMailSendServiceResponse?.status !== "SUCCESS") {
-            throw new ServiceError("ResendMailSendService is facing error")
+        if (gmailMailServiceResponse?.status !== "SUCCESS") {
+            throw new ServiceError("GmailSendService is facing error")
         }
-        return { status: "SUCCESS", data: resendMailSendServiceResponse?.id, message: "Email send using Resend email servicel" }
+        return { status: "SUCCESS", data: gmailMailServiceResponse?.id, message: "Email send using service" }
     }
     catch (err) {
         const error = err as any;
         // const url = req?.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
-            serviceName: "SendMailSendService",
-            message: error.message,
-            stack: error.stack,
-            // url: url,
+        logger.error(error, {
+            serviceName: "GmailSendService",
+            // url: req.path,
             // method: req.method
         });
 
@@ -59,11 +59,11 @@ export const sendEmailService = async (requestSession: Request["session"], type:
             }
             else {
                 throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
+                    `[${errorStatus}] ${error.message}`,
                     error
                 );
             }
         }
-        throw new ServiceUnavailableError("SendMailSendService is unavailbale as facing unknown issue.", error)
+        throw new ServiceUnavailableError("GmailSendService is unavailbale as facing unknown issue.", error)
     }
 }

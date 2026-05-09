@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
-import { AppErrorClass, ForbiddenError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import logger from "../utils/logger.js";
 
 const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
     try {
@@ -30,11 +31,29 @@ const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Res
 
         next();
     }
-    catch (error) {
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "PortalHeaderCheckMiddleware",
+            // url: req.path,
+            // method: req.method
+        });
+
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new Error("Portal header check validation is facing issue.")
+        throw new ServiceUnavailableError("Portal header check validation is facing unknown issue.", error)
     }
 }
 

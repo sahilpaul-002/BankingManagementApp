@@ -12,15 +12,13 @@ const globalErrorHandler = (
     next: NextFunction
 ): void => {
     const error = err as any;
-    const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+    const errorStatus = error?.status || "UnknownErrorStatus";
 
-    logger.error({
-        serviceName: errorClassName,
-        message: err.message,
-        stack: err.stack,
-        url: req.path,
-        method: req.method
-    });
+    logger.error(err, {
+    serviceName: errorStatus,
+    url: req.path,
+    method: req.method
+});
 
     if (res.headersSent) {
         return next(err);
@@ -31,7 +29,7 @@ const globalErrorHandler = (
         res.status(err.statusCode).json({
             status: err.status,
             message: err.message,
-            error: err.error
+            error: err
         });
         return;
     }

@@ -25,6 +25,9 @@ export class BadRequestError extends AppErrorClass {
 export class ServiceError extends AppErrorClass {
     constructor(message: string, error?: any) { super(400, 'SERVICE_ERROR', message, error); }
 }
+export class ExternalServiceError extends AppErrorClass {
+    constructor(message: string, error?: any) { super(400, 'EXTERNAL_SERVICE_ERROR', message, error); }
+}
 export class UnauthenticatedError extends AppErrorClass {
     constructor(message: string, error?: any) { super(401, 'UNAUTHENTICATED', message, error); }
 }

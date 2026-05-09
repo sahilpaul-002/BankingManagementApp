@@ -21,14 +21,21 @@ import type { ParsedQs } from "qs";
 import userDetailsValidationSchema from "../validations/userDetailsValidation.js";
 import logger from "../utils/logger.js";
 
-export const userSignUpService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
+export const userSignUpService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid body data");
         }
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
 
-        if (!requestSession || !requestSession?.initiated || !requestSession?.lastActivity || !requestSession?.sessiondata || !requestSession?.meta) {
-            throw new UnauthenticatedError("Unauthenticated acccess")
+        if (!req.session || !req.session?.initiated || !req.session?.lastActivity || !req.session?.sessiondata || !req.session?.meta) {
+            const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, res, aesDecryptedQueryData);
+
+            if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
+                throw new ServiceError("getDnsConfigService facing isssue");
+            }
         }
 
         // Check if collection exist in MongoDB
@@ -46,7 +53,7 @@ export const userSignUpService = async (requestSession: Request["session"], res:
         // Check password present in request body
         const userPassword: string | null = checkStringBody(aesDecryptedBodyData, "password")
         if (!userPassword) {
-            throw new InvalidRequestBodyError("Email not present in the request body");
+            throw new InvalidRequestBodyError("Password not present in the request body");
         }
 
         // Check Validations
@@ -73,7 +80,7 @@ export const userSignUpService = async (requestSession: Request["session"], res:
 
         // Check user exist in DB
         if (userExistance) {
-            const destroySessionResponse = await destroySession(requestSession, res);
+            const destroySessionResponse = await destroySession(req.session, res);
             throw new ForbiddenError("User already exists");
         }
 
@@ -88,11 +95,11 @@ export const userSignUpService = async (requestSession: Request["session"], res:
         const document: object = {
             ...restBody,
             password: hashedPassword,
-            agent_code: aesDecryptedBodyData?.agent_code || requestSession?.sessiondata?.agentCode,
-            subagent_code: aesDecryptedBodyData?.subagent_code || requestSession?.sessiondata?.subAgentCode,
-            program_id: aesDecryptedBodyData?.program_id || requestSession?.sessiondata?.programId,
-            business_id: aesDecryptedBodyData?.business_id || requestSession?.sessiondata?.businessId,
-            client_id: aesDecryptedBodyData?.client_id || requestSession?.sessiondata?.clientId,
+            agent_code: aesDecryptedBodyData?.agent_code || req.session?.sessiondata?.agentCode,
+            subagent_code: aesDecryptedBodyData?.subagent_code || req.session?.sessiondata?.subAgentCode,
+            program_id: aesDecryptedBodyData?.program_id || req.session?.sessiondata?.programId,
+            business_id: aesDecryptedBodyData?.business_id || req.session?.sessiondata?.businessId,
+            client_id: aesDecryptedBodyData?.client_id || req.session?.sessiondata?.clientId,
             // kyc_status: "PENDING",
             // is_admin: "N",
             // is_master_admin: "N",
@@ -113,15 +120,13 @@ export const userSignUpService = async (requestSession: Request["session"], res:
     catch (err) {
         const error = err as any;
         // const url = req?.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
-            serviceName: "UserSignUpService",
-            message: error.message,
-            stack: error.stack,
-            // url: url,
-            // method: req.method
-        });
+        logger.error(error, {
+        serviceName: "UserSignUpService",
+        // url: req.path,
+        // method: req.method
+    });
 
         if (error instanceof AppErrorClass) {
             if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
@@ -129,7 +134,7 @@ export const userSignUpService = async (requestSession: Request["session"], res:
             }
             else {
                 throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
+                    `[${errorStatus}] ${error.message}`,
                     error
                 );
             }
@@ -334,12 +339,10 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
     catch (err) {
         const error = err as any;
         // const url = req?.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
+        logger.error(error, {
             serviceName: "UserLoginService",
-            message: error.message,
-            stack: error.stack,
             // url: url,
             // method: req.method
         });
@@ -350,7 +353,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             }
             else {
                 throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
+                    `[${errorStatus}] ${error.message}`,
                     error
                 );
             }

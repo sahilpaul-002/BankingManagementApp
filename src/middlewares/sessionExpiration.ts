@@ -1,12 +1,13 @@
 import type { Response, Request, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
 import destroySession from "../utils/destroySession.js";
-import { AppErrorClass, InternalSeverError, UnauthenticatedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InternalSeverError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import logger from "../utils/logger.js";
 
 const sessionExpiration = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
         const excludedPaths1: string[] = ["/api/v1/helper", "/api/v1/config", "/api/v1/user/signUp", "/api/v1/user/login"];
-        
+
         if (!req.session || !req.session?.lastActivity || excludedPaths1.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
@@ -44,11 +45,29 @@ const sessionExpiration = async (req: Request, res: Response, next: NextFunction
 
         return next();
     }
-    catch (error) {
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "SessionExpirationMiddleware",
+            // url: req.path,
+            // method: req.method
+        });
+
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error
+                );
+            }
         }
-        throw new Error("Session expiration validation is facing issue.")
+        throw new ServiceUnavailableError("Session expiration validation is facing unknown issue.", error)
     }
 }
 

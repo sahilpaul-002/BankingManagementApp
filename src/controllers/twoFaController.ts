@@ -21,14 +21,12 @@ export const verifyEmail = async (req: Request, res: Response): Promise<Response
     catch (err) {
         const error = err as any;
         const url = req?.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
+        logger.error(error, {
             serviceName: "VerifyEmailController",
-            message: error.message,
-            stack: error.stack,
-            url: url,
-            method: req.method
+            // url: req.path,
+            // method: req.method
         });
 
         if (error instanceof AppErrorClass) {
@@ -37,7 +35,7 @@ export const verifyEmail = async (req: Request, res: Response): Promise<Response
             }
             else {
                 throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
+                    `[${errorStatus}] ${error.message}`,
                     error
                 );
             }
