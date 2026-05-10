@@ -410,4 +410,4 @@ export const configApis = createApi({
     }),
 })
 
-export const { useGetDnsConfigQuery, useLazyGetDnsConfigQuery, useGetAesEncryptionKeyQuery, useGetRsaEncryptionPublicKeyQuery } = configApis
+export const { useGetDnsConfigQuery, useLazyGetDnsConfigQuery, useGetAesEncryptionKeyQuery, useLazyGetAesEncryptionKeyQuery, useGetRsaEncryptionPublicKeyQuery, useLazyGetRsaEncryptionPublicKeyQuery, useGetHeaderRsaEncryptionPublicKeyQuery } = configApis

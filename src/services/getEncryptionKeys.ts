@@ -1,5 +1,8 @@
+import { apiRequest } from "@/configs/axiosConfig";
+import { CONFIG_URL } from "@/configs/constants";
 import { AppErrorClass } from "@/errorHandling/appError";
 import { InternalApplicationError } from "@/errorHandling/error";
+import { logError } from "@/errorHandling/errorLogger";
 import axios from "axios";
 
 const baseURL = import.meta.env.VITE_DNS_BASE_URL;
@@ -16,9 +19,13 @@ export const getAesEncryptionKey = async (): Promise<string | null> => {
 
         if (!keyHex) {
             try {
-                const result = await axios.get(`${baseURL}/getEncryptionKey`);
+                // const result = await axios.get(`${baseURL}/getEncryptionKey`);
+                const result = await apiRequest({
+                    url: `${CONFIG_URL}/getEncryptionKey`,
+                    method: 'GET',
+                })
 
-                const aesEncryptionKey = result?.data?.key;
+                const aesEncryptionKey = result?.data?.data?.key;
 
                 if (aesEncryptionKey) {
                     sessionStorage.setItem("keyHex", aesEncryptionKey);
@@ -32,13 +39,23 @@ export const getAesEncryptionKey = async (): Promise<string | null> => {
 
         return keyHex;
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error;
-        }
+    catch (err) {
+        const error = err as any;
+        const url =
+            error?.config?.url ||
+            error?.url ||
+            "UNKNOWN_URL";
 
-        // fallback for non-error types
-        throw new InternalApplicationError("Get AES Encryption Key service caused an unknown error", error);
+        logError("ERROR", {
+            message: "Api axios instance response interceptor error",
+            error: err,
+            context: url,
+        });
+        const className = error?.constructor?.name || "UnknownErrorClass";
+        if (error instanceof AppErrorClass) {
+            return Promise.reject(error);
+        }
+        throw new InternalApplicationError(`${className}: GetAesEncryptionKey service caused unknown error`, `AxiosApiResponseInterceptor`, error);
     }
 }
 
@@ -48,10 +65,13 @@ export const getRsaPublicKey = async (): Promise<string | null> => {
 
         if (!rsaEncryptionKey) {
             try {
-                // const result = await dispatch(initiate()).unwrap();
-                const result = await axios.get(`${baseURL}/getPublicKey`);
-
-                const key = result?.data?.key;
+                // const result = await axios.get(`${baseURL}/getPublicKey`);
+                const result = await apiRequest({
+                    url: `${CONFIG_URL}/getPublicKey`,
+                    method: 'GET',
+                })
+debugger
+                const key = result?.data?.data?.key;
 
                 if (key) {
                     sessionStorage.setItem("publicKey", key);
@@ -65,12 +85,22 @@ export const getRsaPublicKey = async (): Promise<string | null> => {
 
         return rsaEncryptionKey;
     }
-    catch (error) {
-        if (error instanceof AppErrorClass) {
-            throw error;
-        }
+    catch (err) {
+        const error = err as any;
+        const url =
+            error?.config?.url ||
+            error?.url ||
+            "UNKNOWN_URL";
 
-        // fallback for non-error types
-        throw new InternalApplicationError("Get RSA Encryption Key service caused an unknown error", error);
+        logError("ERROR", {
+            message: "Api axios instance response interceptor error",
+            error: err,
+            context: url,
+        });
+        const className = error?.constructor?.name || "UnknownErrorClass";
+        if (error instanceof AppErrorClass) {
+            return Promise.reject(error);
+        }
+        throw new InternalApplicationError(`${className}: GetRsaEncryptionKey service caused unknown error`, `AxiosApiResponseInterceptor`, error);
     }
 };

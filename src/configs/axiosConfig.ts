@@ -52,7 +52,7 @@ const setupInterceptors = (instance: AxiosInstance) => {
                 let aesKey = sessionStorage.getItem('keyHex');
                 let rsaKey = sessionStorage.getItem('publicKey');
 
-                if (!aesKey || !rsaKey) {
+                if (!aesKey || !rsaKey || req.url?.includes("/login") || req.url?.includes("/signUp")) {
                     sessionStorage.clear();
                     localStorage.clear();
                     const [aesKey, rsaKey] = await Promise.all([
@@ -253,14 +253,12 @@ export const setAxiosBaseURL = (baseURL: string) => {
 // FACTORY FUNCTION API REQUEST
 // ==============================
 export const apiRequest = async ({
-    route,
     url,
     method,
     data,
     params,
     headers,
 }: {
-    route: string
     url: string;
     method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
     data?: any;
@@ -270,7 +268,7 @@ export const apiRequest = async ({
     const axiosInstance = getAxiosInstance();
 
     return axiosInstance.request({
-        url,
+        url: `${API_BASE}${url}` || `${sessionStorage.getItem("dnsBaseUrl")}${url}`,
         method,
         data,
         params,
