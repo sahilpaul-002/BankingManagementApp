@@ -14,9 +14,9 @@ const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) 
             url?.includes("/getDnsConfig") ||
             url?.includes('/getEncryptionKey') ||
             url?.includes('/getPublicKey') ||
-            url?.includes('/getHeaderPublicKey') || 
-            url?.includes('/signUp') || 
-            url?.includes("/login")
+            url?.includes('/getHeaderPublicKey')
+            // url?.includes('/signUp') || 
+            // url?.includes("/login")
         );
     };
     try {

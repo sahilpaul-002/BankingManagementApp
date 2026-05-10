@@ -117,7 +117,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
         const getDnsConfigServiceResponse: successResponseJson = await getDnsConfigService(req, res, aesDecryptedQueryData);
 
         if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
-            res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
+            return res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
         }
 
         const responseObj = getDnsConfigServiceResponse?.data;

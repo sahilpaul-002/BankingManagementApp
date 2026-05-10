@@ -107,10 +107,10 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
             // is_admin: "N",
             // is_master_admin: "N",
             // "status": "DISABLED",
-            // "is_active": false,
-            // "is_email_verified": false,
-            // "is_phone_verified": false,
-            // "is_2fa_enabled": null,
+            // "is_active": "N",
+            // "is_email_verified": "N",
+            // "is_phone_verified": "N",
+            // "is_2fa_enabled": "N",
             // "last_login_at": null
         };
 
@@ -138,7 +138,8 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
+                    // error
                 );
             }
         }
@@ -224,7 +225,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Update user status in DB if not already activated
         let updatedUserDetails: userDetailsSchemaTypes
         if (userDetails?.is_active === "N") {
-            updatedUserDetails = await user_details.findByIdAndUpdate(userDetails._id, { is_active: true, status: "ACTIVE" }, { new: true }) as userDetailsSchemaTypes;
+            updatedUserDetails = await user_details.findByIdAndUpdate(userDetails._id, { is_active: "N", status: "ACTIVE" }, { new: true }) as userDetailsSchemaTypes;
         }
         else {
             updatedUserDetails = userDetails;
@@ -379,8 +380,11 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             throw new ServiceUnavailableError("Failed to set response refresh-token cookie");
         }
 
-        if (userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
+        if (userDetails.is_email_verified === "N" && userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
             return { status: "SUCCESS", message: "User login successful, verification code sent to email", data: updatedUserDetails }
+        }
+        else if (userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
+            return { status: "SUCCESS", message: "User login successful", data: updatedUserDetails }
         }
         else {
             return { status: "SUCCESS", message: "User login successfull, but failed to send verification code", data: updatedUserDetails }

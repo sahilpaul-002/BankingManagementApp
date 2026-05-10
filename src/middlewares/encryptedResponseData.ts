@@ -57,7 +57,11 @@ const encryptResponseData = (
             const encryptRes = symmetricEncryptionMsg(req, responseData, ivHex);
 
             if (encryptRes?.status !== "SUCCESS") {
-                throw new ServiceError("AES response encryption service caused error");
+                // throw new ServiceError("AES response encryption service caused error");
+                return originalJson({
+                    status: "SERVICE_ERROR",
+                    message: "AES response encryption service caused error"
+                });
             }
 
             const newBody: successResponseJson = {

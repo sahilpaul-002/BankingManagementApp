@@ -11,7 +11,8 @@ export class AppErrorClass extends Error {
 
         this.statusCode = statusCode;
         this.status = status;
-        this.error = error instanceof Error ? error.message : error;
+        // this.error = error instanceof Error ? error.message : error;
+        this.error = error;
         this.isOperational = true;
 
         Object.setPrototypeOf(this, AppErrorClass.prototype);

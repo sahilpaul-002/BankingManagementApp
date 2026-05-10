@@ -12,9 +12,9 @@ export const verifyEmail = async (req: Request, res: Response): Promise<Response
         if (!requestSession) {
             throw new UnauthenticatedError("Unauthenticated session");
         }
-        const sendEmailServiceResponse = await sendEmailService(requestSession, "EMAIL_OTP")
+        const sendEmailServiceResponse = await sendEmailService(requestSession, "", "EMAIL_VERIFICATION_CODE", "")
         if (sendEmailServiceResponse?.status !== "SUCCESS") {
-            res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
+            return res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
         }
         return res.success("Email send using 'Resend' service", sendEmailServiceResponse?.data, 200)
     }
