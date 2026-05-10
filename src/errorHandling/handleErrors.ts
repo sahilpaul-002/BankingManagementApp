@@ -59,7 +59,7 @@ const handleErrors = (error: unknown, dispatch: any): never => {
             case 403:
                 console.error("FORBIDDEN", err);
                 dispatch(triggerDestroySession({
-                    title: 'Unauthorized Session',
+                    title: 'Forbidden Session Access',
                     type: 'DEFAULT'
                 }))
                 throw error
@@ -98,7 +98,7 @@ const handleErrors = (error: unknown, dispatch: any): never => {
                 throw error
 
             default:
-                console.error("INTER_SERVER_ERROR", err)
+                console.error("INTERNAL_SERVER_ERROR", err)
                 // toast.error("Internal application error")
                 dispatch(setShowErrorBanner("Application facing internal server issue."))
                 throw new AppErrorClass(
@@ -115,13 +115,13 @@ const handleErrors = (error: unknown, dispatch: any): never => {
         console.error("APPLICATION_SERVICE_ERROR", error)
         // toast.error("Application service error")
         dispatch(setShowErrorBanner("Application facing internal service isssue"))
-        throw new AppErrorClass(601, 'APPLICATION_SERVICE_ERROR', error.message, error);
+        throw new AppErrorClass(601, 'APPLICATION_SERVICE_ERROR', error.message,"ExternalServiceHandleErrors", error);
     }
 
     console.error("INTERNAL_APPLICATION_ERROR", error)
     // toast.error("Internal application error")
     dispatch(setShowErrorBanner("Application facing internal issue"));
-    throw new AppErrorClass(600, 'INTERNAL_APPLICATION_ERROR', 'Internal application error occured', error);
+    throw new AppErrorClass(600, 'INTERNAL_APPLICATION_ERROR', 'Internal application error occured', "ExternalServiceHandleErrors", error);
 };
 
 export default handleErrors;

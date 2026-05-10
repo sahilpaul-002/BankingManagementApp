@@ -70,7 +70,6 @@ export const getRsaPublicKey = async (): Promise<string | null> => {
                     url: `${CONFIG_URL}/getPublicKey`,
                     method: 'GET',
                 })
-debugger
                 const key = result?.data?.data?.key;
 
                 if (key) {
