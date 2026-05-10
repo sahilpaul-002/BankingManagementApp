@@ -73,7 +73,6 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
                     error?.error ? error.error : error
-                    // error
                 );
             }
         }
@@ -121,7 +120,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }

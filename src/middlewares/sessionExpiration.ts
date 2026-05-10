@@ -63,7 +63,7 @@ const sessionExpiration = async (req: Request, res: Response, next: NextFunction
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }

@@ -52,7 +52,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -125,7 +125,7 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
                 else {
                     throw new ServiceError(
                         `[${errorStatus}] ${error.message}`,
-                        error
+                        error?.error ? error.error : error
                     );
                 }
             }

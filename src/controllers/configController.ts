@@ -107,7 +107,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -153,7 +153,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -189,7 +189,7 @@ export const getEncryptionKey = (req: Request, res: Response): Response<successR
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -226,7 +226,7 @@ export const getPublicKey = (req: Request, res: Response): Response<successRespo
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -262,7 +262,7 @@ export const getMobileCountryCodes = (req: Request, res: Response): Response<suc
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -298,7 +298,7 @@ export const getHeaderPublicKey = (req: Request, res: Response): Response<succes
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }

@@ -35,7 +35,7 @@ export const healthCheck = (req: Request, res: Response): Response<successRespon
             else {
                 throw new ServiceError(
                     `[${errorClassName}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -73,7 +73,7 @@ export const getSession = (req: Request, res: Response): Response<successRespons
             else {
                 throw new ServiceError(
                     `[${errorClassName}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -125,7 +125,7 @@ export const destroySession = (req: Request, res: Response): Response<successRes
             else {
                 throw new ServiceError(
                     `[${errorClassName}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -213,7 +213,7 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
             else {
                 throw new ServiceError(
                     `[${errorClassName}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }

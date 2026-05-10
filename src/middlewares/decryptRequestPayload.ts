@@ -4,24 +4,12 @@ import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, Servi
 import { symmetricDecryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
 import logger from '../utils/logger.js';
 import { getDnsConfigService } from '../services/configServices.js';
+import { skipEncryptionDecryptionRoutes } from '../utils/skipEncryptionDecryptionRoutes.js';
 
 const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) => {
-    const skipDecryptionRoutes = (req: Request): boolean => {
-        const url = req.originalUrl || req.url;
-
-        return (
-            url?.includes("/helper") ||
-            url?.includes("/getDnsConfig") ||
-            url?.includes('/getEncryptionKey') ||
-            url?.includes('/getPublicKey') ||
-            url?.includes('/getHeaderPublicKey')
-            // url?.includes('/signUp') || 
-            // url?.includes("/login")
-        );
-    };
     try {
         // Skip Decryption For Specified Routes
-        if (skipDecryptionRoutes(req)) {
+        if (skipEncryptionDecryptionRoutes(req)) {
             return next();
         }
 
@@ -63,7 +51,6 @@ const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) 
         }
 
         // DECRYPT BODY (if present)
-
         if (req.body?.encryptedPayload2) {
             const aesRes = symmetricDecryptionMsg(
                 req,
@@ -126,7 +113,7 @@ const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) 
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }

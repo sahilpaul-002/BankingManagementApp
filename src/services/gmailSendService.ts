@@ -67,7 +67,7 @@ export const gmailSendService = async (mailConfig: mainConfigType) => {
             else {
                 throw new ServiceError(
                     `[${errorClassName}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }

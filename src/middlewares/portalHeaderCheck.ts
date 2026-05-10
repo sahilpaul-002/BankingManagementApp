@@ -49,7 +49,7 @@ const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Res
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }

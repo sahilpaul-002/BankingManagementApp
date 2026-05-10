@@ -8,7 +8,8 @@ import destroySession from '../utils/destroySession.js';
 import normalizeIp from '../utils/normalizeIp.js';
 import { userMetaDetailsModel as user_meta_details } from '../models/user_meta_details.js';
 import type { ObjectId } from 'mongoose';
-import { AppErrorClass, ForbiddenError, InternalSeverError, InvalidSessionError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
+import { AppErrorClass, ForbiddenError, InternalSeverError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
+import logger from '../utils/logger.js';
 
 const sessionValidation = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
@@ -22,17 +23,17 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             throw new InvalidSessionError("SESSION INVALID OR TAMPERED")
         }
 
-        // Check if session is initialised
-        if (!req.session?.initiated && !req.session?.lastActivity) {
-            throw new UnauthenticatedError("SESSION NOT INITIATED OR SESSION TIMEDOUT")
-        }
-
         // Skip portal header check for selcted pathes
         const excludedPaths: string[] = ["/signUp", "/login"];
         if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
         else {
+            // Check if session is initialised
+            if (!req.session?.initiated && !req.session?.lastActivity) {
+                throw new UnauthenticatedError("SESSION NOT INITIATED OR SESSION TIMEDOUT")
+            }
+
             // Check session valid
             if (!req.session?.valid) {
                 throw new UnauthenticatedError("SESSION NOT VALID")
@@ -121,8 +122,29 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
                     throw new UnauthorizedError("User is not authorized - Invalid user meta details");
                 }
             }
-            catch {
-                throw new InternalSeverError("Session IP validation using databse is facing issue");
+            catch (err) {
+                const error = err as any;
+                const url = req.path || "UNKNOWN_URL";
+                const errorStatus = error?.status || "UnknownErrorStatus";
+
+                logger.error(error, {
+                    serviceName: "GetDnsConfigRequestPayloadDecryption",
+                    // url: req.path,
+                    // method: req.method
+                });
+
+                if (error instanceof AppErrorClass) {
+                    if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                        throw error
+                    }
+                    else {
+                        throw new ServiceError(
+                            `[${errorStatus}] ${error.message}`,
+                            error
+                        );
+                    }
+                }
+                throw new ServiceUnavailableError("ClientIPDeviceIdValidation service is facing unknown issue.", err);
             }
 
             // // Check user status

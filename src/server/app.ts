@@ -145,7 +145,7 @@ app.use(globalResponseHandler);
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
 app.use("/api/v1/user", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
-app.use("/api/v1/user", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaROutes);
+app.use("/api/v1/twoFa", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaROutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\

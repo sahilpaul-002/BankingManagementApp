@@ -145,7 +145,7 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -182,7 +182,7 @@ export const getAesEncryptionKeyService = (req: Request): successResponseJson =>
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -219,7 +219,7 @@ export const getRsaPublicKeyService = (req: Request): successResponseJson => {
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -254,7 +254,7 @@ export const getMobileCountryCodesService = (req: Request): successResponseJson 
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }
@@ -291,7 +291,7 @@ export const getHeaderPublicKeyService = (req: Request): successResponseJson => 
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }

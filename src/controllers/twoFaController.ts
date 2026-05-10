@@ -1,22 +1,24 @@
 import type { Request, Response } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { sendEmailService } from "../services/twoFaService.js";
+import { sendEmailService, verifyEmailService } from "../services/twoFaService.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 
 // FUNCTION TO VERIFY EMAIL
 export const verifyEmail = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
+        const aesDecryptedBodyData = req.body;
+
         const requestSession: Request["session"] | undefined = getRequestSession();
         if (!requestSession) {
             throw new UnauthenticatedError("Unauthenticated session");
         }
-        const sendEmailServiceResponse = await sendEmailService(requestSession, "", "EMAIL_VERIFICATION_CODE", "")
-        if (sendEmailServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "getDnsConfigService facing isssue", 400);
+        const verifyEmailServiceResponse = await verifyEmailService(req, res, aesDecryptedBodyData)
+        if (verifyEmailServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Email verification failed", 400);
         }
-        return res.success("Email send using 'Resend' service", sendEmailServiceResponse?.data, 200)
+        return res.success("Email verification successfull", {}, 200)
     }
     catch (err) {
         const error = err as any;
@@ -36,7 +38,7 @@ export const verifyEmail = async (req: Request, res: Response): Promise<Response
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error.error : error
                 );
             }
         }

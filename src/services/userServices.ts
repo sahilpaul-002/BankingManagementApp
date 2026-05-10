@@ -139,7 +139,6 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
                     error?.error ? error.error : error
-                    // error
                 );
             }
         }
@@ -164,9 +163,9 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         // Check if collection exist in MongoDB
-        const isCollectionPresent = await checkMongoDbCollectionExist("user_details");
-        if (isCollectionPresent.status !== "SUCCESS") {
-            throw new NotFoundError("Required collection does not exist in MongoDB");
+        const isCollectionPresent1 = await checkMongoDbCollectionExist("user_details");
+        if (isCollectionPresent1.status !== "SUCCESS") {
+            throw new NotFoundError("User_details collection does not exist in MongoDB");
         }
 
         // Check email present in request body
@@ -220,6 +219,11 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         if (userDetails.agent_code !== req.session?.sessiondata?.agentCode || userDetails.subagent_code !== req.session?.sessiondata?.subAgentCode || userDetails.program_id !== req.session?.sessiondata?.programId || userDetails.business_id !== req.session?.sessiondata?.businessId || userDetails.client_id !== req.session?.sessiondata?.clientId) {
             const destroySessionResponse = await destroySession(req.session, res);
             throw new ForbiddenError("User configuration does not match")
+        }
+
+        const isCollectionPresent2 = await checkMongoDbCollectionExist("user_meta_details");
+        if (isCollectionPresent2.status !== "SUCCESS") {
+            throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
         }
 
         // Update user status in DB if not already activated
@@ -408,7 +412,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             else {
                 throw new ServiceError(
                     `[${errorStatus}] ${error.message}`,
-                    error
+                    error?.error ? error : error
                 );
             }
         }
