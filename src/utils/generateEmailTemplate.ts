@@ -3,6 +3,7 @@
 type emailTemplateType =
     | "EMAIL_VERIFICATION_CODE"
     | "FORGET_PASSWORD_CODE"
+    | "TWO_FACTOR_AUTH_CODE"
 
 interface verificationCodePayloadType {
     verificationCode: string
@@ -224,6 +225,128 @@ const generateEmailTemplate = (
                             This code will expire shortly.
                             If you did not request a password reset,
                             please ignore this email.
+                        </p>
+
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="
+                        background: #f9fafb;
+                        padding: 20px;
+                        text-align: center;
+                        font-size: 13px;
+                        color: #6b7280;
+                    ">
+                        © ${new Date().getFullYear()} ${dashboardTitle}. All rights reserved.
+                    </div>
+
+                </div>
+            </div>
+        `
+            }
+
+        case "TWO_FACTOR_AUTH_CODE":
+
+            return {
+                subject: "Your Two-Factor Authentication Code",
+
+                html: `
+            <div style="
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f4;
+                padding: 40px 20px;
+            ">
+                <div style="
+                    max-width: 600px;
+                    margin: auto;
+                    background: #ffffff;
+                    border-radius: 10px;
+                    overflow: hidden;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                ">
+
+                    <!-- Header -->
+                    <div style="
+                        background: #111827;
+                        padding: 20px;
+                        text-align: center;
+                    ">
+                        <h1 style="
+                            color: #ffffff;
+                            margin: 0;
+                            font-size: 24px;
+                        ">
+                            ${dashboardTitle} Two-Factor Authentication
+                        </h1>
+                    </div>
+
+                    <!-- Body -->
+                    <div style="padding: 40px 30px;">
+
+                        <h2 style="
+                            margin-top: 0;
+                            color: #111827;
+                        ">
+                            Security Verification
+                        </h2>
+
+                        <p style="
+                            font-size: 16px;
+                            color: #374151;
+                            line-height: 1.6;
+                        ">
+                            ${payload?.userName
+                        ? `Hello ${payload.userName},`
+                        : "Hello,"
+                    }
+                        </p>
+
+                        <p style="
+                            font-size: 16px;
+                            color: #374151;
+                            line-height: 1.6;
+                        ">
+                            We detected a login attempt that requires
+                            two-factor authentication verification.
+                            Use the code below to continue securely.
+                        </p>
+
+                        <!-- 2FA Code -->
+                        <div style="
+                            text-align: center;
+                            margin: 35px 0;
+                        ">
+                            <span style="
+                                display: inline-block;
+                                background: #111827;
+                                color: #ffffff;
+                                padding: 16px 32px;
+                                font-size: 32px;
+                                letter-spacing: 8px;
+                                border-radius: 8px;
+                                font-weight: bold;
+                            ">
+                                ${payload.verificationCode}
+                            </span>
+                        </div>
+
+                        <p style="
+                            font-size: 14px;
+                            color: #6b7280;
+                            line-height: 1.6;
+                        ">
+                            This authentication code will expire shortly.
+                            Never share this code with anyone.
+                        </p>
+
+                        <p style="
+                            font-size: 14px;
+                            color: #ef4444;
+                            line-height: 1.6;
+                            font-weight: bold;
+                        ">
+                            If you did not attempt to sign in,
+                            please secure your account immediately.
                         </p>
 
                     </div>

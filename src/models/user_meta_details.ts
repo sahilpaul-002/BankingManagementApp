@@ -1,5 +1,8 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, type HydratedDocument } from "mongoose";
 import type { userMetaDetailsSchemaTypes } from "../types/schemaTypes.js";
+
+export type UserMetaDetailsDocument =
+    HydratedDocument<userMetaDetailsSchemaTypes>;
 
 const userMetaDetailsSchema = new Schema<userMetaDetailsSchemaTypes>({
     user_id: {
@@ -9,14 +12,15 @@ const userMetaDetailsSchema = new Schema<userMetaDetailsSchemaTypes>({
     },
     device_id: {
         type: String,
-        required: true,
+        default: null
     },
     ip_address: {
         type: String,
-        required: true,
+        default: null
     },
     userAgent: {
         type: String,
+        default: null
     },
     login_at: {
         type: Date,
@@ -24,9 +28,11 @@ const userMetaDetailsSchema = new Schema<userMetaDetailsSchemaTypes>({
     },
     verification_code: {
         type: String,
+        default: null
     },
     verification_code_expires_at: {
         type: Date,
+        default: null
     }
 },
     {

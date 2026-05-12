@@ -21,8 +21,8 @@ import type { ParsedQs } from "qs";
 import userDetailsValidationSchema from "../validations/userDetailsValidation.js";
 import logger from "../utils/logger.js";
 import { generateVerificationCodeService } from "./generateVerificationCodeService.js";
-import { sendEmailService } from "./twoFaService.js";
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
+import { sendVerificationEmailService } from "./twoFaService.js";
 
 export const userSignUpService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
     try {
@@ -273,7 +273,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             );
 
             // Send email verification code
-            const sendEmailResponse = await sendEmailService(req.session, userDetails.email, "EMAIL_VERIFICATION", emailTemplate);
+            const sendEmailResponse = await sendVerificationEmailService(req.session, userDetails.email, "EMAIL_VERIFICATION", emailTemplate);
             if (sendEmailResponse?.status === "SUCCESS") {
                 // Insert user meta details
                 userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
@@ -302,7 +302,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 
         // Check if meta user data updated
         if (!userMetaDetailsDoc) {
-            throw new ServiceError("Failed to update user meta details");
+            throw new ServiceError("UserLoginService is facing issue - failed to update user meta details");
         }
 
         // Check if session is already valid, if yes then delete the old session and create a new session
@@ -345,6 +345,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 
         // Update session with userId and email
         req.session.userEmail = updatedUserDetails.email;
+        req.session.userName = updatedUserDetails.full_name;
         req.session.userId = updatedUserDetails._id.toString();
         req.session.userType = updatedUserDetails.is_master_admin === "Y" ? "SUPERADMIN" : updatedUserDetails.is_admin === "Y" ? "ADMIN" : "USER";
 
@@ -384,11 +385,12 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             throw new ServiceUnavailableError("Failed to set response refresh-token cookie");
         }
 
-        if (userDetails.is_email_verified === "N" && userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
-            return { status: "SUCCESS", message: "User login successful, verification code sent to email", data: updatedUserDetails }
-        }
-        else if (userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
+        
+        if (userDetails.is_email_verified === "Y") {
             return { status: "SUCCESS", message: "User login successful", data: updatedUserDetails }
+        }
+        else if (userDetails.is_email_verified === "N" && userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
+            return { status: "SUCCESS", message: "User login successful, verification code sent to email", data: updatedUserDetails }
         }
         else {
             return { status: "SUCCESS", message: "User login successfull, but failed to send verification code", data: updatedUserDetails }

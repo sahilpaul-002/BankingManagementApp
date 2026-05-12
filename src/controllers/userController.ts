@@ -4,11 +4,6 @@ import { AppErrorClass, BadRequestError, ForbiddenError, InvalidSessionError, Se
 import { userLoginService, userSignUpService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
-import { sendEmailService } from "../services/twoFaService.js";
-import { asymmetricDecryptionMsg } from "../utils/asymmetricEncryptionDecryption.js";
-import type { decryptionFailedJson, decryptionSuccessJson } from "../types/decryptionRespoonseTypes.js";
-import { symmetricDecryptionMsg } from "../utils/symmetricEncryptionDecryption.js";
-import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 
 // ------------------------------ FUNCTION TO SET USERCONTROLLER HEADERS ------------------------------ \\
 const userControllerHeader = (req: Request) => {

@@ -52,6 +52,7 @@ export interface sessionItemsTypes {
     privateKey: string;
     encryptionKey: string;
     userEmail: string;
+    userName: string
     userId?: string;
     passwordHash: string;
     userType: UserType;

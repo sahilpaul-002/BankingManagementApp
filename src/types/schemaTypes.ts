@@ -64,12 +64,12 @@ export interface userDetailsSchemaTypes extends Document{
 
 export interface userMetaDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId | string;
-    device_id: string;
-    ip_address: string;
-    userAgent?: string;
-    login_at?: Date;
-    verification_code?: string;
-    verification_code_expires_at?: Date;
+    device_id?: string | null;
+    ip_address?: string | null;
+    userAgent?: string | null;
+    login_at?: Date | null;
+    verification_code?: string | null;
+    verification_code_expires_at?: Date | null;
 }
 
 // Type for User Bank Details Model Schema
