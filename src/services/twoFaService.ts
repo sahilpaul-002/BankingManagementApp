@@ -15,6 +15,8 @@ import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
 import type { Schema } from "mongoose";
 import { generateVerificationCodeService } from "./generateVerificationCodeService.js";
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
+import speakeasy, { type TotpVerifyOptions } from "speakeasy";
+import QRCode from "qrcode";
 
 dotenv.config();
 
@@ -202,10 +204,20 @@ export const send2FaCodeService = async (requestSession: Request["session"], res
         if (!userEmail) {
             throw new InvalidRequestBodyError("Email not present in the request body");
         }
+        // Check code type present in request body
+        const codeType: string | null = checkStringBody(aesDecryptedBodyData, "code_type")
+        if (!codeType) {
+            throw new InvalidRequestBodyError("Email not present in the request body");
+        }
 
         // Check user mail with session mail
         if (userEmail !== requestSession?.userEmail) {
             throw new UnauthorizedError("Unauthorized access detected");
+        }
+
+        // if (codeType !== "EMAIL-OTP" && codeType !== "TOTP" && codeType !== "SMS_OTP") {
+        if (codeType !== "EMAIL-OTP" && codeType !== "TOTP") {
+            throw new InvalidRequestBodyError("Invalid 'code_type' parameter or not a string - 'code_type' can be [EMAL-OTP | TOPT | SMS_OTP]")
         }
 
         // Check if collection exist in MongoDB
@@ -218,7 +230,54 @@ export const send2FaCodeService = async (requestSession: Request["session"], res
             throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
         }
 
+        // Get user-id from session
         const userId: unknown = requestSession?.userId;
+
+        // Generate verificaiton code and its expiry time
+        const verificationData = await generateVerificationCodeService();
+        // HashVerification code
+        const salt = genSaltSync(10);
+        const hashedVerificationCode = hashSync(verificationData.verificationCode as string, salt);
+        let secretKey: string;
+
+        // ====================================== TOTP ====================================== \\
+        if (codeType === "TOTP") {
+            secretKey = speakeasy.generateSecret({ length: 20 }).base32;
+            const issuer = requestSession?.sessiondata?.dashboardName;
+            const account = requestSession?.userEmail;
+
+            const otpauthUrl = speakeasy.otpauthURL({
+                secret: secretKey,
+                label: `${issuer}:${account}`,
+                issuer: issuer,
+                encoding: "base32",
+                algorithm: "sha1",
+            });
+            // Generate QR Code as Base64 Data URL
+            const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl);
+
+            // Update user details for 2FA email
+            const updatedUserDetailsDoc = await user_details.findByIdAndUpdate(
+                userId,
+                {
+                    is_2fa_enabled: "Y",
+                    two_fa_type: "TOTP",
+                    authenticator_secret: secretKey,
+                },
+                {
+                    new: true,
+                    runValidators: true
+                }
+            );
+            if (!updatedUserDetailsDoc) {
+                throw new ServiceError("Failed to update two factor methods for user details.")
+            }
+
+            return { status: "SUCCESS", data: { secretKey: secretKey, qrCodeUrl: qrCodeDataUrl }, message: "Authenticator configuration generated" }
+        }
+        // ===================================== XXXXXXXXXXXXXXXXXXXXXXX ===================================== \\
+
+        // ====================================== EMAIL-OTP ====================================== \\
         // Update user details for 2FA email
         const updatedUserDetailsDoc = await user_details.findByIdAndUpdate(
             userId,
@@ -234,12 +293,6 @@ export const send2FaCodeService = async (requestSession: Request["session"], res
         if (!updatedUserDetailsDoc) {
             throw new ServiceError("Failed to update two factor methods for user details.")
         }
-
-        // Generate verificaiton code and its expiry time
-        const verificationData = await generateVerificationCodeService();
-        // HashVerification code
-        const salt = genSaltSync(10);
-        const hashedVerificationCode = hashSync(verificationData.verificationCode as string, salt);
 
         // Generate email template
         const userName = requestSession?.userName || "User"
@@ -276,6 +329,7 @@ export const send2FaCodeService = async (requestSession: Request["session"], res
         }
 
         return { status: "SUCCESS", data: gmailMailServiceResponse?.id, message: "Email send using service" }
+        // ===================================== XXXXXXXXXXXXXXXXXXXXXXX ===================================== \\
     }
     catch (err) {
         const error = err as any;
@@ -321,9 +375,20 @@ export const verify2FaCodeService = async (requestSession: Request["session"], r
             throw new InvalidRequestBodyError("Email not present in the request body");
         }
 
+        // Check code type present in request body
+        const codeType: string | null = checkStringBody(aesDecryptedBodyData, "code_type")
+        if (!codeType) {
+            throw new InvalidRequestBodyError("Email not present in the request body");
+        }
+
         // Check user mail with session mail
         if (userEmail !== requestSession?.userEmail) {
             throw new UnauthorizedError("Unauthorized access detected");
+        }
+
+        // if (codeType !== "EMAIL-OTP" && codeType !== "TOTP" && codeType !== "SMS_OTP") {
+        if (codeType !== "EMAIL-OTP" && codeType !== "TOTP") {
+            throw new InvalidRequestBodyError("Invalid 'code_type' parameter or not a string - 'code_type' can be [EMAL-OTP | TOPT | SMS_OTP]")
         }
 
         // Check if collection exist in MongoDB
@@ -340,49 +405,76 @@ export const verify2FaCodeService = async (requestSession: Request["session"], r
         // Get user details
         const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ _id: userId as Schema.Types.ObjectId });
         // Check 2FA type
-        if (userDetailsDoc?.two_fa_type !== "EMAIL-OTP") {
+        // if (userDetailsDoc?.two_fa_type !== "EMAIL-OTP" && userDetailsDoc?.two_fa_type !== "TOTP" && userDetailsDoc?.two_fa_type !== "SMS-OTP") {
+        if (userDetailsDoc?.two_fa_type !== "EMAIL-OTP" && userDetailsDoc?.two_fa_type !== "TOTP") {
             throw new ServiceError("Email not in the valid state for 2 factor authentication using email - 2fa type not set or invalid")
         }
         if (!userDetailsDoc?.is_2fa_enabled) {
             throw new ServiceError("Email not in the valid state for 2 factor authentication using email - 2fa not enabled")
         }
 
-        // Get verification code and expiry from the user meta details data base
-        const twoFaVerificationDataDoc = await user_meta_details.findOne(
-            { user_id: userId as Schema.Types.ObjectId }
-        ).select("verification_code verification_code_expires_at");
-        if (!twoFaVerificationDataDoc?.verification_code || !twoFaVerificationDataDoc?.verification_code_expires_at) {
-            throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for two factor auth verification")
+        // ====================================== TOTP ====================================== \\
+        if (codeType === "TOTP") {
+            // Check authenticator secret in DB
+            if (!userDetailsDoc?.authenticator_secret) {
+                throw new ServiceError("Email not in the valid state for 2 factor authentication using authenticator - 2fa not configured for authenticator")
+            }
+
+            const time = Math.floor(Date.now() / 1000);
+
+            const codeVerificationOptions: TotpVerifyOptions = {
+                secret: userDetailsDoc?.authenticator_secret as string,
+                encoding: "base32",
+                token: verificationCode,
+                // time,
+                window: 2
+            };
+
+            const isValid = speakeasy.totp.verify(codeVerificationOptions);
+            if (!isValid) {
+                throw new ServiceError("2Fa auth code verificaiton failed");
+            }
         }
+        // ===================================== XXXXXXXXXXXXXXXX ===================================== \\
+        // ====================================== TOTP ====================================== \\
+        else if (codeType === "EMAIL-OTP") {
+            // Get verification code and expiry from the user meta details data base
+            const twoFaVerificationDataDoc = await user_meta_details.findOne(
+                { user_id: userId as Schema.Types.ObjectId }
+            ).select("verification_code verification_code_expires_at");
+            if (!twoFaVerificationDataDoc?.verification_code || !twoFaVerificationDataDoc?.verification_code_expires_at) {
+                throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for two factor auth verification")
+            }
 
-        // Check verification code expiry
-        const currentTime = new Date();
-        const verificationCodeExpiryTime = new Date(
-            twoFaVerificationDataDoc.verification_code_expires_at
-        );
-
-        if (currentTime > verificationCodeExpiryTime) {
-            // Optional: clear expired verification data
-            await user_meta_details.updateOne(
-                { user_id: userId as Schema.Types.ObjectId },
-                {
-                    $unset: {
-                        verification_code: "",
-                        verification_code_expires_at: ""
-                    }
-                }
+            // Check verification code expiry
+            const currentTime = new Date();
+            const verificationCodeExpiryTime = new Date(
+                twoFaVerificationDataDoc.verification_code_expires_at
             );
 
-            throw new ServiceError("Verification code expired");
-        }
+            if (currentTime > verificationCodeExpiryTime) {
+                // Optional: clear expired verification data
+                await user_meta_details.updateOne(
+                    { user_id: userId as Schema.Types.ObjectId },
+                    {
+                        $unset: {
+                            verification_code: "",
+                            verification_code_expires_at: ""
+                        }
+                    }
+                );
 
-        // Compare verification code with hashed value
-        const isVerificationCodeValid = await compareSync(
-            verificationCode,
-            twoFaVerificationDataDoc.verification_code
-        );
-        if (!isVerificationCodeValid) {
-            throw new ServiceError("Invalid verification code");
+                throw new ServiceError("Verification code expired");
+            }
+
+            // Compare verification code with hashed value
+            const isVerificationCodeValid = await compareSync(
+                verificationCode,
+                twoFaVerificationDataDoc.verification_code
+            );
+            if (!isVerificationCodeValid) {
+                throw new ServiceError("Invalid verification code");
+            }
         }
 
         // Update the email verified status in DB

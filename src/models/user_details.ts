@@ -124,6 +124,10 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
         enum: ["SMS-OTP", "EMAIL-OTP", "TOTP", null],
         default: null
     },
+    authenticator_secret: {
+        type: String,
+        default: null
+    },
     last_login_at: {
         type: Date
     }

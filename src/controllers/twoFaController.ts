@@ -62,7 +62,12 @@ export const send2FaVerificationCode = async (req: Request, res: Response): Prom
             return res.fail("SERVICE_ERROR", "Failed to send two factor auth verification code in email", 400);
         }
 
-        return res.success("2Fa verification code sent to email successfully", {}, 200)
+        if (send2FaCodeServiceResponse?.message === "Authenticator configuration generated") {
+            return res.success("2Fa authenticator verification configuration created successfully", send2FaCodeServiceResponse?.data, 200)
+        }
+        else {
+            return res.success("2Fa verification code sent to email successfully", {}, 200)
+        }
     }
     catch (err) {
         const error = err as any;

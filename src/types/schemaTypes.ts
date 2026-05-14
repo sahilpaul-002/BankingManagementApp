@@ -58,7 +58,8 @@ export interface userDetailsSchemaTypes extends Document{
     is_email_verified?: "Y" | "N";
     is_phone_verified?: "Y" | "N";
     is_2fa_enabled?: "Y" | "N";
-    two_fa_type: "SMS-OTP" | "EMAIL-OTP" | "TOTP" | null
+    two_fa_type: "SMS-OTP" | "EMAIL-OTP" | "TOTP" | null;
+    authenticator_secret: string | null;
     last_login_at?: Date;
 }
 
