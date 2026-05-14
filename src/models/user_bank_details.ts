@@ -1,7 +1,7 @@
 import mongoose, { Schema, Types } from "mongoose";
-import type { userBankDetailsSchema } from "../types/schemaTypes.js";
+import type { userBankDetailsSchemaTypes } from "../types/schemaTypes.js";
 
-const userBankDetailsSchema = new Schema<userBankDetailsSchema>({
+const userBankDetailsSchema = new Schema<userBankDetailsSchemaTypes>({
     user_id: {
         type: Types.ObjectId,
         ref: "user_details",

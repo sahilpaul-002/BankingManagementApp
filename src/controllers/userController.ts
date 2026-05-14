@@ -124,6 +124,48 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
 
-export const check = async (req: any, res: any) => {
-    return res.status(200).json({ status: "SUCCESS", message: "User login successfull" });
+export const onboarding = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = req.query
+        const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
+
+        if (userLoginServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "UserLogin is facing isssue", 400);
+        }
+
+        if (userLoginServiceResponse?.message === "User login successful, verification code sent to email") {
+            return res.success("Sign in successfull and verification code sent to the email", userLoginServiceResponse?.data, 200)
+        }
+        else if (userLoginServiceResponse?.message === "User login successful") {
+            return res.success("Sign in successfull.", userLoginServiceResponse?.data, 200)
+        }
+        else {
+            return res.success("User login successfull, but failed to send verification code", userLoginServiceResponse?.data, 200)
+        }
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "UserOnbordingController",
+            url: req.path,
+            method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("UserOnbordingController is facing issue.", error)
+    }
 }

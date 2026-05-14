@@ -23,6 +23,9 @@ import logger from "../utils/logger.js";
 import { generateVerificationCodeService } from "./generateVerificationCodeService.js";
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import { sendVerificationEmailService } from "./twoFaService.js";
+import { userAddressDetailsModel as user_address_details } from "../models/user_addresses.js";
+import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
+import { userOnboardingDetailsValidationSchema, type userOnboardingDetailsValidationSchema } from "../validations/userOnboardingDetailsValidation.js";
 
 export const userSignUpService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
     try {
@@ -385,7 +388,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             throw new ServiceUnavailableError("Failed to set response refresh-token cookie");
         }
 
-        
+
         if (userDetails.is_email_verified === "Y") {
             return { status: "SUCCESS", message: "User login successful", data: updatedUserDetails }
         }
@@ -420,4 +423,147 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
         throw new ServiceUnavailableError("UserLoginService is facing issue.", error)
     }
+}
+
+export const userOnboardingService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
+    try {
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid body data");
+        }
+        // if (!aesDecryptedQueryData) {
+        //     throw new BadRequestError("Invalid query data");
+        // }
+
+        if (!req.session || !req.session?.initiated || !req.session?.lastActivity || !req.session?.sessiondata || !req.session?.meta) {
+            throw new UnauthenticatedError("Unauthenticated session detected")
+            // const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, res, aesDecryptedQueryData);
+
+            // if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
+            //     throw new ServiceError("getDnsConfigService facing isssue");
+            // }
+        }
+
+        // Check if collection exist in MongoDB
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist in MongoDB");
+        }
+
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof userOnboardingDetailsValidationSchema>> = userOnboardingDetailsValidationSchema.safeParse(aesDecryptedBodyData);
+        if (!validationResult.success) {
+            // return res.status(400).json({
+            //     status: "SERVICE_ERROR",
+            //     message: "Invalid request body",
+            //     // errors: validationResult.error.issues.map(issue => issue.message)
+            //     // errors: validationResult.error.issues.map(issue => ({
+            //     //     [issue.path.join(".")]: issue.message
+            //     // }))
+            //     errors: z.flattenError(validationResult.error)
+            // });
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
+
+        // Get user from DB
+        // const email = req.session?.userEmail as string;
+        // const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ email: email });
+        const userId: unknown = req.session?.userId
+
+        // =========================================
+        // ADDRESS DETAILS
+        // =========================================
+
+        const addressDocument = {
+            user_id: userId,
+
+            address_line_1:
+                aesDecryptedBodyData.address_line_1,
+
+            address_line_2:
+                aesDecryptedBodyData.address_line_2,
+
+            city: aesDecryptedBodyData.city,
+
+            state: aesDecryptedBodyData.state,
+
+            country: aesDecryptedBodyData.country,
+
+            postal_code:
+                aesDecryptedBodyData.postal_code,
+        };
+
+        // =========================================
+        // BANK DETAILS
+        // =========================================
+
+        const bankDocument = {
+            user_id: userId,
+
+            bank_name:
+                aesDecryptedBodyData.bank_name,
+
+            account_holder_name:
+                aesDecryptedBodyData.account_holder_name,
+
+            account_number:
+                aesDecryptedBodyData.account_number,
+
+            ifsc_code:
+                aesDecryptedBodyData.ifsc_code,
+        };
+
+
+        // =========================================
+        // INSERT DOCUMENTS
+        // =========================================
+        const insertedAddressDocument =
+        await user_address_details.create(
+            addressDocument
+        );
+
+    const insertedBankDocument =
+        await user_bank_details.create(
+            bankDocument
+        );
+
+    return {
+        status: "SUCCESS",
+        message:
+            "User address and bank details added successfully",
+        data: {
+            address_details:
+                insertedAddressDocument,
+
+            bank_details:
+                insertedBankDocument,
+        },
+    };
+
+    // console.log("Document inserted: ", insertedDocument);
+    return { status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument }
+}
+    catch (err) {
+    const error = err as any;
+    // const url = req?.path || "UNKNOWN_URL";
+    const errorStatus = error?.status || "UnknownErrorStatus";
+
+    logger.error(error, {
+        serviceName: "UserOnboardingService",
+        // url: url,
+        // method: req.method
+    });
+
+    if (error instanceof AppErrorClass) {
+        if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+            throw error
+        }
+        else {
+            throw new ServiceError(
+                `[${errorStatus}] ${error.message}`,
+                error?.error ? error : error
+            );
+        }
+    }
+    throw new ServiceUnavailableError("UserOnboardingService is facing issue.", error)
+}
 }
