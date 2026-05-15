@@ -95,7 +95,15 @@ export const userBankDetailsValidationSchema = z.object({
         .trim()
         .regex(/^\d{8,20}$/, "Account number must be between 8 to 20 digits"),
 
-    ifsc_code: z
+    swift_code: z
+        .string("IFSC code is required and must be a string")
+        .trim()
+        .regex(
+            /^[A-Z]{4}0[A-Z0-9]{6}$/,
+            "Invalid IFSC code format"
+        ),
+
+    iban_code: z
         .string("IFSC code is required and must be a string")
         .trim()
         .regex(
@@ -108,21 +116,6 @@ export const userBankDetailsValidationSchema = z.object({
         .trim()
         .min(2, "Bank name must be at least 2 characters")
         .max(100, "Bank name cannot exceed 100 characters"),
-
-    branch_name: z
-        .string("Branch name must be a string")
-        .trim()
-        .min(2, "Branch name must be at least 2 characters")
-        .max(100, "Branch name cannot exceed 100 characters")
-        .nullable()
-        .optional(),
-
-    account_type: z
-        .enum(
-            ["SAVINGS", "CURRENT"],
-            "Account type must be SAVINGS or CURRENT"
-        )
-        .optional(),
 
     is_verified: z
         .boolean("IsVerified must be a boolean")

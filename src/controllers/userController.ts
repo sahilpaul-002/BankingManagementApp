@@ -1,7 +1,7 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { userLoginService, userSignUpService } from "../services/userServices.js";
+import { userLoginService, userOnboardingService, userSignUpService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 
@@ -88,10 +88,10 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         }
 
         if (userLoginServiceResponse?.message === "User login successful, verification code sent to email") {
-            return res.success("Sign in successfull and verification code sent to the email", userLoginServiceResponse?.data, 200)
+            return res.success("User sign in successfull and verification code sent to the email", userLoginServiceResponse?.data, 200)
         }
         else if (userLoginServiceResponse?.message === "User login successful") {
-            return res.success("Sign in successfull.", userLoginServiceResponse?.data, 200)
+            return res.success("User sign in successfull.", userLoginServiceResponse?.data, 200)
         }
         else {
             return res.success("User login successfull, but failed to send verification code", userLoginServiceResponse?.data, 200)
@@ -127,22 +127,18 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
 export const onboarding = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body
-        const aesDecryptedQueryData = req.query
-        const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
+        
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+        const userOnboardingServiceResponse = await userOnboardingService(requestSession, res, aesDecryptedBodyData);
 
-        if (userLoginServiceResponse?.status !== "SUCCESS") {
+        if (userOnboardingServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "UserLogin is facing isssue", 400);
         }
 
-        if (userLoginServiceResponse?.message === "User login successful, verification code sent to email") {
-            return res.success("Sign in successfull and verification code sent to the email", userLoginServiceResponse?.data, 200)
-        }
-        else if (userLoginServiceResponse?.message === "User login successful") {
-            return res.success("Sign in successfull.", userLoginServiceResponse?.data, 200)
-        }
-        else {
-            return res.success("User login successfull, but failed to send verification code", userLoginServiceResponse?.data, 200)
-        }
+        return res.success("User onboarded successfull.", userOnboardingServiceResponse?.data, 200)
     }
     catch (err) {
         const error = err as any;

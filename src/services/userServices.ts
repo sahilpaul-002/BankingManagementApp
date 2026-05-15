@@ -4,7 +4,7 @@ import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import userLoginValidationSchema from "../validations/userLoginValidation.js";
-import type { userDetailsSchemaTypes } from "../types/schemaTypes.js";
+import type { userAddressDetailsSchemaTypes, userBankDetailsSchemaTypes, userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import destroySession from "../utils/destroySession.js";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
@@ -23,9 +23,11 @@ import logger from "../utils/logger.js";
 import { generateVerificationCodeService } from "./generateVerificationCodeService.js";
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import { sendVerificationEmailService } from "./twoFaService.js";
-import { userAddressDetailsModel as user_address_details } from "../models/user_addresses.js";
+import { userAddressDetailsModel as user_address_details } from "../models/user_addresses_details.js";
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
-import { userOnboardingDetailsValidationSchema, type userOnboardingDetailsValidationSchema } from "../validations/userOnboardingDetailsValidation.js";
+import { userOnboardingDetailsValidationSchema } from "../validations/userOnboardingDetailsValidation.js";
+import type { Schema } from "mongoose";
+import type { Types } from "mongoose";
 
 export const userSignUpService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
     try {
@@ -425,22 +427,10 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
     }
 }
 
-export const userOnboardingService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
+export const userOnboardingService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid body data");
-        }
-        // if (!aesDecryptedQueryData) {
-        //     throw new BadRequestError("Invalid query data");
-        // }
-
-        if (!req.session || !req.session?.initiated || !req.session?.lastActivity || !req.session?.sessiondata || !req.session?.meta) {
-            throw new UnauthenticatedError("Unauthenticated session detected")
-            // const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, res, aesDecryptedQueryData);
-
-            // if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
-            //     throw new ServiceError("getDnsConfigService facing isssue");
-            // }
         }
 
         // Check if collection exist in MongoDB
@@ -452,64 +442,53 @@ export const userOnboardingService = async (req: Request, res: Response, aesDecr
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof userOnboardingDetailsValidationSchema>> = userOnboardingDetailsValidationSchema.safeParse(aesDecryptedBodyData);
         if (!validationResult.success) {
-            // return res.status(400).json({
-            //     status: "SERVICE_ERROR",
-            //     message: "Invalid request body",
-            //     // errors: validationResult.error.issues.map(issue => issue.message)
-            //     // errors: validationResult.error.issues.map(issue => ({
-            //     //     [issue.path.join(".")]: issue.message
-            //     // }))
-            //     errors: z.flattenError(validationResult.error)
-            // });
             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
+
+        // Validated data
+        const validatedData = validationResult.data;
 
         // Get user from DB
         // const email = req.session?.userEmail as string;
         // const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ email: email });
-        const userId: unknown = req.session?.userId
+        const userId: unknown = requestSession?.userId
 
         // =========================================
         // ADDRESS DETAILS
         // =========================================
-
         const addressDocument = {
-            user_id: userId,
+            user_id: userId as Types.ObjectId,
+            billing_address: {
+                line1: validatedData.address_details.billing_address.line1,
+                line2: validatedData.address_details.billing_address.line2 ?? null,
+                city: validatedData.address_details.billing_address.city,
+                state: validatedData.address_details.billing_address.state,
+                postal_code: validatedData.address_details.billing_address.postal_code,
+                country: validatedData.address_details.billing_address.country,
+                type: "Billing"
+            },
 
-            address_line_1:
-                aesDecryptedBodyData.address_line_1,
-
-            address_line_2:
-                aesDecryptedBodyData.address_line_2,
-
-            city: aesDecryptedBodyData.city,
-
-            state: aesDecryptedBodyData.state,
-
-            country: aesDecryptedBodyData.country,
-
-            postal_code:
-                aesDecryptedBodyData.postal_code,
+            delivery_address: {
+                line1: validatedData.address_details.delivery_address.line1,
+                line2: validatedData.address_details.delivery_address.line2 ?? null,
+                city: validatedData.address_details.delivery_address.city,
+                state: validatedData.address_details.delivery_address.state,
+                postal_code: validatedData.address_details.delivery_address.postal_code,
+                country: validatedData.address_details.delivery_address.country,
+                type: "Delivery"
+            }
         };
 
         // =========================================
         // BANK DETAILS
         // =========================================
-
         const bankDocument = {
-            user_id: userId,
-
-            bank_name:
-                aesDecryptedBodyData.bank_name,
-
-            account_holder_name:
-                aesDecryptedBodyData.account_holder_name,
-
-            account_number:
-                aesDecryptedBodyData.account_number,
-
-            ifsc_code:
-                aesDecryptedBodyData.ifsc_code,
+            user_id: userId as Types.ObjectId,
+            bank_name: validatedData.bank_details.bank_name,
+            account_holder_name: validatedData.bank_details.account_holder_name,
+            account_number: validatedData.bank_details.account_number,
+            swift_code: validatedData.bank_details.swift_code,
+            iban_code: validatedData.bank_details.iban_code,
         };
 
 
@@ -517,53 +496,50 @@ export const userOnboardingService = async (req: Request, res: Response, aesDecr
         // INSERT DOCUMENTS
         // =========================================
         const insertedAddressDocument =
-        await user_address_details.create(
-            addressDocument
-        );
-
-    const insertedBankDocument =
-        await user_bank_details.create(
-            bankDocument
-        );
-
-    return {
-        status: "SUCCESS",
-        message:
-            "User address and bank details added successfully",
-        data: {
-            address_details:
-                insertedAddressDocument,
-
-            bank_details:
-                insertedBankDocument,
-        },
-    };
-
-    // console.log("Document inserted: ", insertedDocument);
-    return { status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument }
-}
-    catch (err) {
-    const error = err as any;
-    // const url = req?.path || "UNKNOWN_URL";
-    const errorStatus = error?.status || "UnknownErrorStatus";
-
-    logger.error(error, {
-        serviceName: "UserOnboardingService",
-        // url: url,
-        // method: req.method
-    });
-
-    if (error instanceof AppErrorClass) {
-        if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-            throw error
-        }
-        else {
-            throw new ServiceError(
-                `[${errorStatus}] ${error.message}`,
-                error?.error ? error : error
+            await user_address_details.create(
+                addressDocument
             );
-        }
+
+        const insertedBankDocument =
+            await user_bank_details.create(
+                bankDocument
+            );
+
+        return {
+            status: "SUCCESS",
+            message:
+                "User address and bank details added successfully",
+            data: {
+                address_details:
+                    insertedAddressDocument,
+
+                bank_details:
+                    insertedBankDocument,
+            },
+        };
     }
-    throw new ServiceUnavailableError("UserOnboardingService is facing issue.", error)
-}
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "UserOnboardingService",
+            // url: url,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("UserOnboardingService is facing issue.", error)
+    }
 }

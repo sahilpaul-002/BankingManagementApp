@@ -78,10 +78,9 @@ export interface userBankDetailsSchemaTypes extends Document{
     user_id: Types.ObjectId;
     account_holder_name: string;
     account_number: string;
-    ifsc_code: string;
+    swift_code: string;
+    iban_code: string;
     bank_name: string;
-    branch_name?: string | null;
-    account_type?: "SAVINGS" | "CURRENT";
     is_verified?: boolean;
 }
 
@@ -102,9 +101,9 @@ export interface deliveryAddressTypes {
     state: string;
     postal_code: string;
     country: string;
-    type: "Billing";
+    type: "Delivery";
 }
-export interface userAddressModelSchemaTypes extends Document {
+export interface userAddressDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     billing_address: billingAddressTypes;
     delivery_address: deliveryAddressTypes;

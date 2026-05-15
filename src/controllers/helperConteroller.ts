@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import errorHandler from "../utils/errorHandler.js";
 import { userDetailsModel } from "../models/user_details.js";
-import { userAddressModel } from "../models/user_addresses.js";
+import { userAddressDetailsModel } from "../models/user_addresses_details.js";
 import { userBankDetailsModel } from "../models/user_bank_details.js";
 import { portalConfigurationsModel } from "../models/portal_configurations.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
@@ -173,7 +173,7 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
         const modelsMap: Record<string, any> = {
             portal_configurations: portalConfigurationsModel,
             user_details: userDetailsModel,
-            user_addresses: userAddressModel,
+            user_address_details: userAddressDetailsModel,
             user_bank_details: userBankDetailsModel
         };
         // Get Model

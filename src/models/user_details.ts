@@ -1,6 +1,6 @@
 import mongoose, { Schema, Types } from "mongoose";
 import { userBankDetailsModel as user_bank_details } from "./user_bank_details.js";
-import { userAddressModel as user_addresses } from "./user_addresses.js";
+import { userAddressDetailsModel as user_addresses } from "./user_addresses_details.js";
 import { type userDetailsSchemaTypes } from "../types/schemaTypes.js";
 
 const userDetailsSchema = new Schema<userDetailsSchemaTypes>({

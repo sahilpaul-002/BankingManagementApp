@@ -5,6 +5,7 @@ const userBankDetailsSchema = new Schema<userBankDetailsSchemaTypes>({
     user_id: {
         type: Types.ObjectId,
         ref: "user_details",
+        unique: true,
         required: true,
         index: true
     },
@@ -15,25 +16,20 @@ const userBankDetailsSchema = new Schema<userBankDetailsSchemaTypes>({
     account_number: {
         type: String,
         required: true,
-        unique: true
-    },
-    ifsc_code: {
-        type: String,
-        required: true,
+        unique: true,
         index: true
+    },
+    swift_code: {
+        type: String,
+        required: true
+    },
+    iban_code: {
+        type: String,
+        required: true
     },
     bank_name: {
         type: String,
         required: true
-    },
-    branch_name: {
-        type: String,
-        default: null
-    },
-    account_type: {
-        type: String,
-        enum: ["SAVINGS", "CURRENT"],
-        default: "SAVINGS"
     },
     is_verified: {
         type: Boolean,

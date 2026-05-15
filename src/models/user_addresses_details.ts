@@ -1,5 +1,5 @@
 import mongoose, { Schema, Types } from "mongoose";
-import type { userAddressModelSchemaTypes } from "../types/schemaTypes.js";
+import type { userAddressDetailsSchemaTypes } from "../types/schemaTypes.js";
 
 // BILLING ADDRESS SCHEMA
 const billingAddressSchema = new Schema({
@@ -68,10 +68,11 @@ const deliveryAddressSchema = new Schema({
 }, { _id: false });
 
 // USER ADDRESS SCHEMA
-const userAddressDetailsSchema = new Schema<userAddressModelSchemaTypes>({
+const userAddressDetailsSchema = new Schema<userAddressDetailsSchemaTypes>({
     user_id: {
         type: Types.ObjectId,
         ref: "user_details",
+        unique: true,
         required: true,
         index: true
     },
