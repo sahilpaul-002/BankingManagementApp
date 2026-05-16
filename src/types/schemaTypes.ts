@@ -34,7 +34,7 @@ export interface portalConfigurationSchemaTypes extends Document {
 }
 
 // Type for User Details Model Schema
-export interface userDetailsSchemaTypes extends Document{
+export interface userDetailsSchemaTypes extends Document {
     full_name: string;
     agent_code: string;
     subagent_code: string;
@@ -74,7 +74,7 @@ export interface userMetaDetailsSchemaTypes extends Document {
 }
 
 // Type for User Bank Details Model Schema
-export interface userBankDetailsSchemaTypes extends Document{
+export interface userBankDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     account_holder_name: string;
     account_number: string;
@@ -107,4 +107,22 @@ export interface userAddressDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     billing_address: billingAddressTypes;
     delivery_address: deliveryAddressTypes;
+}
+
+export interface userKycDetailsSchemaTypes extends Document {
+    user_id: Types.ObjectId;
+    kyc_status: "PENDING" | "IN-PROGRESS" | "COMPLETED";
+    poi_number: string;
+    poa_number: string;
+    poi_document: string;
+    poa_document: string;
+}
+
+export interface userWalletDetailsSchemaTypes extends Document {
+    user_id: Types.ObjectId;
+    wallet_id: string;
+    wallet_status: "ACTIVE" | "INACTIVE";
+    account_balance: number;
+    wallet_type: "FIAT" | "CRYPTO";
+    wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
 }

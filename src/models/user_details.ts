@@ -97,7 +97,7 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     status: {
         type: String,
         enum: ["DISABLED", "PRE-VERIFIED", "VERIFIED", "ACTIVE"],
-        default: "DISABLED"
+        default: "PRE-VERIFIED"
     },
     is_active: {
         type: String,
