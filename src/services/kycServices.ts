@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import type { successResponseJson } from "../types/responseJson.js"
+import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import logger from "../utils/logger.js";
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
@@ -7,7 +7,18 @@ import { userKycDetailsModel as user_kyc_details } from "../models/user_kyc_deta
 import type { Schema } from "mongoose";
 import checkStringBody from "../utils/checkStringBody.js";
 import uploadOnCloudinary from "../configs/claudinary.js";
-import type { Types } from "mongoose";
+import { Types } from "mongoose";
+import jwt, { type JwtPayload } from "jsonwebtoken";
+import dotenv from "dotenv"
+import generateEmailTemplate from "../utils/generateEmailTemplate.js";
+import { gmailSendService } from "./gmailSendService.js";
+import { userDetailsModel as user_details } from "../models/user_details.js";
+import type { ParsedQs } from "qs";
+
+dotenv.config();
+
+const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
+const receiverEmail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
 
 // GET KYC SERVICE
 export const getKycService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
@@ -61,7 +72,7 @@ export const getKycService = async (requestSession: Request["session"], res: Res
     }
 }
 
-// GET KYC SERVICE
+// UPLOAD KYC DETAILS SERVICE
 interface kycMulterFiles {
     poi_document?: Express.Multer.File[];
     poa_document?: Express.Multer.File[];
@@ -153,7 +164,7 @@ export const uploadKycService = async (req: Request, res: Response, aesDecrypted
             poa_document: poaUploadResponse.secure_url,
         });
 
-        return { status: "SUCCESS", data: newKycDocumentResponse, message: "User kyc details fetched" }
+        return { status: "SUCCESS", data: newKycDocumentResponse, message: "User kyc details uploaded" }
     }
     catch (err) {
         const error = err as any;
@@ -178,5 +189,228 @@ export const uploadKycService = async (req: Request, res: Response, aesDecrypted
             }
         }
         throw new ServiceUnavailableError("UploadKycService is unavailbale as facing unknown issue.", error)
+    }
+}
+
+// SEND KYC VERIFICATION MAIL SERVICE
+export const sendKycVerificationMailService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid request body data");
+        }
+
+        // Get user id from session
+        const userId: unknown = requestSession?.userId
+
+        const jwtSecretKey = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
+        // Create Kyv Verification Approve Auth Token
+        const approveToken = jwt.sign(
+            {
+                userId,
+                action: "APPROVE",
+            },
+            jwtSecretKey,
+            {
+                expiresIn: "2d",
+            }
+        );
+        const rejectToken = jwt.sign(
+            {
+                userId,
+                action: "REJECT",
+            },
+            jwtSecretKey,
+            {
+                expiresIn: "2d",
+            }
+        );
+
+        // Backend webhook URLs
+        const approveUrl = `${requestSession?.sessiondata?.baseUrl}/api/kyc/kycVerificationWebhook/${approveToken}`;
+        const rejectUrl = `${requestSession?.sessiondata?.baseUrl}/api/kyc/kycVerificationWebhook/${rejectToken}`;
+
+        // Get user details
+        const userDetailsDoc = await user_details.findOne({
+            _id: userId as Schema.Types.ObjectId
+        })
+        if (!userDetailsDoc) {
+            throw new NotFoundError("User details not found");
+        }
+        // Get user kyc details
+        const userKycDetailsDoc = await user_kyc_details.findOne({
+            user_id: userId as Schema.Types.ObjectId
+        });
+        if (!userKycDetailsDoc) {
+            throw new NotFoundError("User kyc details not found")
+        }
+
+        // Generate email template
+        const userName = "BMA Admin"
+        const dashboardName = requestSession.sessiondata?.dashboardName || "BMA"
+        const poiDocumentUrl = userKycDetailsDoc?.poi_document
+        const poaDocumentUrl = userKycDetailsDoc?.poa_document
+        const emailTemplate = generateEmailTemplate(
+            "KYC_VERIFICATION",
+            {
+                userId: userId as string,
+                userName: userName,
+                poiDocumentUrl,
+                poaDocumentUrl,
+                dashboardName: dashboardName,
+                approveUrl,
+                rejectUrl
+            }
+        );
+
+        const toEmail: string = receiverEmail
+        const sendEmail: string = fromEmail
+        const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
+        // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+        const gmailMailServiceResponse = await gmailSendService(mainConfig)
+
+        if (gmailMailServiceResponse?.status !== "SUCCESS") {
+            throw new ServiceError("GmailSendService is facing error")
+        }
+
+        return { status: "SUCCESS", data: {}, message: "Kyc verificaiton email sent" }
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "SendKycVerificationMailService",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("SendKycVerificationMailService is unavailbale as facing unknown issue.", error)
+    }
+}
+
+// KYC VERIFICATION WEBHOOK SERVICE
+interface kycVerificationJwtPayloadType extends JwtPayload {
+    userId: string;
+    action: "APPROVE" | "REJECT";
+}
+
+export const kycVerificationWebhookService = async (requestSession: Request["session"], res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid request query params data");
+        }
+
+        // Verify JWT kyc verification auth token
+        const token = aesDecryptedQueryData.token;
+        if (!token || typeof token !== "string") {
+            throw new BadRequestError("Invalid or incomplete token in kyc verification webhook");
+        }
+
+        const jwtSecret = process.env.JWT_SECRET as string;
+        const decoded = jwt.verify(token, jwtSecret) as {
+            userId: string;
+            action: "APPROVE" | "REJECT";
+        };
+
+        let updatedStatus
+
+        if (decoded.action === "APPROVE") {
+            updatedStatus = "COMPLETED";
+        }
+
+        if (decoded.action === "REJECT") {
+            updatedStatus = "IN-PROGRESS";
+
+            // Generate email template
+            const userName = requestSession?.userName || "User"
+            const dashboardName = requestSession.sessiondata?.dashboardName || "BMA"
+            const emailTemplate = generateEmailTemplate(
+                "KYC_REJECTED",
+                {
+                    userName: userName,
+                    dashboardName: dashboardName,
+                }
+            );
+
+            const toEmail: string = receiverEmail
+            const sendEmail: string = fromEmail
+            const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
+            // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+            const gmailMailServiceResponse = await gmailSendService(mainConfig)
+
+            if (gmailMailServiceResponse?.status !== "SUCCESS") {
+                throw new ServiceError("GmailSendService is facing error")
+            }
+
+            return { status: "SERVICE_ERROR", message: "Kyc verificaiton failed - kyc rejected" }
+        }
+
+        // Update DB
+        const userDetailsDoc = await user_details.findOneAndUpdate(
+            {
+                _id: decoded.userId,
+            },
+            {
+                kyc_status: updatedStatus,
+            },
+            {
+                new: true,
+            }
+        );
+        if (!userDetailsDoc) {
+            throw new ServiceError("Failed to update the user details for kyc status")
+        }
+        const userKycDetailsDoc = await user_kyc_details.findOneAndUpdate(
+            {
+                _id: decoded.userId,
+            },
+            {
+                kyc_status: updatedStatus,
+            },
+            {
+                new: true,
+            }
+        );
+        if (!userKycDetailsDoc) {
+            throw new ServiceError("Failed to update the user details for kyc status")
+        }
+
+        return { status: "SUCCESS", data: {}, message: "Kyc verification completed and status updated" }
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetKycVerificationWebhookService",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("GetKycVerificationWebhookService is unavailbale as facing unknown issue.", error)
     }
 }

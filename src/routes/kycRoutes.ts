@@ -1,11 +1,11 @@
 import express from "express"
 import type { Router } from "express";
-import { getKyc, uploadKyc } from "../controllers/kycController.js";
+import { getKyc, getKycVerificationWebhook, sendKycVerificationMail, uploadKyc } from "../controllers/kycController.js";
 import upload from "../middlewares/multer.js";
 
 const router: Router = express.Router()
 
-router.get("/getKyc", getKyc)
+router.get("/getKyc", getKyc);
 router.post("/uploadKyc",
     upload.fields([
         {
@@ -18,6 +18,8 @@ router.post("/uploadKyc",
         },
     ]),
     uploadKyc
-)
+);
+router.post("/sendKycVerificationMail", sendKycVerificationMail);
+router.get("/api/kyc/kycVerificationWebhook/:token", getKycVerificationWebhook);
 
 export default router
