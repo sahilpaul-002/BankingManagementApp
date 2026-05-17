@@ -63,6 +63,7 @@ export interface userDetailsSchemaTypes extends Document {
     last_login_at?: Date;
 }
 
+// Type for User Meta Details Model Schema
 export interface userMetaDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId | string;
     device_id?: string | null;
@@ -84,7 +85,7 @@ export interface userBankDetailsSchemaTypes extends Document {
     is_verified?: boolean;
 }
 
-// TYPE for USER ADDRESS MODEL SCHEMA
+// Type for User Address Details Types
 export interface billingAddressTypes {
     line1: string;
     line2?: string | null;
@@ -109,6 +110,7 @@ export interface userAddressDetailsSchemaTypes extends Document {
     delivery_address: deliveryAddressTypes;
 }
 
+// Types for User Kyc Details Model Schema
 export interface userKycDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     kyc_status: "PENDING" | "IN-PROGRESS" | "COMPLETED";
@@ -118,6 +120,7 @@ export interface userKycDetailsSchemaTypes extends Document {
     poa_document: string;
 }
 
+// Types for User Wallet Details Model Schema
 export interface userWalletDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     wallet_id: string;
@@ -125,4 +128,14 @@ export interface userWalletDetailsSchemaTypes extends Document {
     account_balance: number;
     wallet_type: "FIAT" | "CRYPTO";
     wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
+}
+
+// Type for Beneficiaries Bank Details Model Schema
+export interface beneficiariesBankDetailsSchemaTypes extends Document {
+    account_number: string;
+    account_holder_name: string;
+    swift_code: string;
+    iban_code: string;
+    bank_name: string;
+    is_verified?: boolean;
 }

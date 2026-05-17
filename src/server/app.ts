@@ -15,6 +15,7 @@ import portalHeaderCheck from "../middlewares/portalHeaderCheck.js";
 import sessionExpiration from "../middlewares/sessionExpiration.js";
 import checkTimeout from "../middlewares/checkTimeout.js";
 import morgan from "morgan";
+import multer from "multer";
 import logger from "../utils/logger.js";
 import headerTypeValidation from "../middlewares/headerTypeValidation.js";
 import sessionValidation from "../middlewares/sessionValidation.js";
@@ -33,7 +34,8 @@ import jwtAuthTokenValidation from "../utils/jwtAuthTokenValidation.js";
 import helperRoutes from "../routes/helperRoutes.js";
 import configRoutes from "../routes/configRoutes.js";
 import userRoutes from "../routes/userRoutes.js";
-import twoFaROutes from "../routes/twoFaRoutes.js";
+import twoFaRoutes from "../routes/twoFaRoutes.js";
+import walletRoutes from "../routes/walletRoutes.js"
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -145,7 +147,8 @@ app.use(globalResponseHandler);
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
 app.use("/api/v1/user", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
-app.use("/api/v1/twoFa", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaROutes);
+app.use("/api/v1/twoFa", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaRoutes);
+app.use("/api/v1/wallet", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\
