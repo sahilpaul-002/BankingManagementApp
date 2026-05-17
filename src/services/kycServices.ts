@@ -6,6 +6,8 @@ import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js
 import { userKycDetailsModel as user_kyc_details } from "../models/user_kyc_details.js";
 import type { Schema } from "mongoose";
 import checkStringBody from "../utils/checkStringBody.js";
+import uploadOnCloudinary from "../configs/claudinary.js";
+import type { Types } from "mongoose";
 
 // GET KYC SERVICE
 export const getKycService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
@@ -14,17 +16,19 @@ export const getKycService = async (requestSession: Request["session"], res: Res
             throw new BadRequestError("Invalid request body data");
         }
 
+        // Check collection esistance
         const isCollectionPresent1 = await checkMongoDbCollectionExist("user_kyc_details");
         if (isCollectionPresent1.status !== "SUCCESS") {
             throw new NotFoundError("User_kyc_details collection does not exist in MongoDB");
         }
 
+        // Get user id from session
         const userId: unknown = requestSession?.userId
 
+        // Get user kyc details
         const userKycDetailsDoc = await user_kyc_details.findOne({
             user_id: userId as Schema.Types.ObjectId
         });
-
         if (!userKycDetailsDoc) {
             throw new NotFoundError("User kyc details not found")
         }
@@ -98,22 +102,58 @@ export const uploadKycService = async (req: Request, res: Response, aesDecrypted
         const poiDocumentFile = files.poi_document[0];
         const poaDocumentFile = files.poa_document[0];
 
+        // Check collection existance
         const isCollectionPresent1 = await checkMongoDbCollectionExist("user_kyc_details");
         if (isCollectionPresent1.status !== "SUCCESS") {
             throw new NotFoundError("User_kyc_details collection does not exist in MongoDB");
         }
 
+        // Get user id from session
         const userId: unknown = req.session?.userId
 
-        const userKycDetailsDoc = await user_kyc_details.findOne({
-            user_id: userId as Schema.Types.ObjectId
+        // Check Existing KYC
+        const existingKycDoc = await user_kyc_details.findOne({
+            user_id: userId as Schema.Types.ObjectId,
         });
-
-        if (!userKycDetailsDoc) {
-            throw new NotFoundError("User kyc details not found")
+        if (existingKycDoc) {
+            throw new ServiceError("KYC details already exist for this user");
         }
 
-        return { status: "SUCCESS", data: userKycDetailsDoc, message: "User kyc details fetched" }
+        // Upload Documents To Cloudinary
+        const poiUploadResponse = await uploadOnCloudinary(
+            poiDocumentFile,
+            req.session?.sessiondata?.businessId as string,
+            req.session?.sessiondata?.clientId as string,
+            req.session?.sessiondata?.agentCode as string,
+            req.session?.sessiondata?.subAgentCode as string,
+            userId as string
+        );
+        if (poiUploadResponse?.status !== "SUCCESS") {
+            throw new ServiceError("Failed to upload POI file in cloud service")
+        }
+        const poaUploadResponse = await uploadOnCloudinary(
+            poaDocumentFile,
+            req.session?.sessiondata?.businessId as string,
+            req.session?.sessiondata?.clientId as string,
+            req.session?.sessiondata?.agentCode as string,
+            req.session?.sessiondata?.subAgentCode as string,
+            userId as string
+        );
+        if (poiUploadResponse?.status !== "SUCCESS") {
+            throw new ServiceError("Failed to upload POA file in cloud service")
+        }
+
+        // Create KYC Document
+        const newKycDocumentResponse = await user_kyc_details.create({
+            user_id: userId as Types.ObjectId,
+            kyc_status: "IN-PROGRESS",
+            poi_number: poiNumber as string,
+            poa_number: poaNumber as string,
+            poi_document: poiUploadResponse.secure_url,
+            poa_document: poaUploadResponse.secure_url,
+        });
+
+        return { status: "SUCCESS", data: newKycDocumentResponse, message: "User kyc details fetched" }
     }
     catch (err) {
         const error = err as any;

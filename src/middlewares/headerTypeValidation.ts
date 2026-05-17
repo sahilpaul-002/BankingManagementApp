@@ -102,7 +102,14 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
 
     try {
         // Validate Content-Type header for POST, PUT, PATCH requests
-        if (["POST", "PUT", "PATCH"].includes(req.method)) {
+
+        if ((req.path === "/uploadKyc" || req.path.startsWith("uploadKyc" + "/"))) {
+            const contentType: string | undefined = req.headers["content-type"];
+            if (!contentType || !contentType.includes("multipart/form-data")) {
+                throw new InvalidHeaderError("'content-type' header must be application/json")
+            }
+        }
+        else if (["POST", "PUT", "PATCH"].includes(req.method)) {
             const contentType: string | undefined = req.headers["content-type"];
             if (!contentType || !contentType.includes("application/json")) {
                 throw new InvalidHeaderError("'content-type' header must be application/json")
