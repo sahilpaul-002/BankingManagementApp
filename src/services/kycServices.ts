@@ -126,45 +126,107 @@ export const uploadKycService = async (req: Request, res: Response, aesDecrypted
         const existingKycDoc = await user_kyc_details.findOne({
             user_id: userId as Schema.Types.ObjectId,
         });
-        if (existingKycDoc) {
+
+
+        if (!existingKycDoc) {
+            // Upload Documents To Cloudinary
+            const poiUploadResponse = await uploadOnCloudinary(
+                poiDocumentFile,
+                req.session?.sessiondata?.businessId as string,
+                req.session?.sessiondata?.clientId as string,
+                req.session?.sessiondata?.agentCode as string,
+                req.session?.sessiondata?.subAgentCode as string,
+                userId as string
+            );
+            if (poiUploadResponse?.status !== "SUCCESS") {
+                throw new ServiceError("Failed to upload POI file in cloud service")
+            }
+            const poaUploadResponse = await uploadOnCloudinary(
+                poaDocumentFile,
+                req.session?.sessiondata?.businessId as string,
+                req.session?.sessiondata?.clientId as string,
+                req.session?.sessiondata?.agentCode as string,
+                req.session?.sessiondata?.subAgentCode as string,
+                userId as string
+            );
+            if (poiUploadResponse?.status !== "SUCCESS") {
+                throw new ServiceError("Failed to upload POA file in cloud service")
+            }
+
+            // Create KYC Document
+            const newKycDoc = await user_kyc_details.create({
+                user_id: userId as Types.ObjectId,
+                kyc_status: "IN-PROGRESS",
+                poi_number: poiNumber as string,
+                poa_number: poaNumber as string,
+                poi_document: poiUploadResponse.secure_url,
+                poa_document: poaUploadResponse.secure_url,
+                kyc_request_id: crypto.randomUUID()
+            });
+
+            if (!newKycDoc) {
+                throw new ServiceError(
+                    "Failed to add KYC details"
+                );
+            }
+
+            return { status: "SUCCESS", data: newKycDoc, message: "User kyc details uploaded" }
+        }
+        else if (existingKycDoc?.kyc_status === "RFI") {
+            // Upload Documents To Cloudinary
+            const poiUploadResponse = await uploadOnCloudinary(
+                poiDocumentFile,
+                req.session?.sessiondata?.businessId as string,
+                req.session?.sessiondata?.clientId as string,
+                req.session?.sessiondata?.agentCode as string,
+                req.session?.sessiondata?.subAgentCode as string,
+                userId as string
+            );
+            if (poiUploadResponse?.status !== "SUCCESS") {
+                throw new ServiceError("Failed to upload POI file in cloud service")
+            }
+            const poaUploadResponse = await uploadOnCloudinary(
+                poaDocumentFile,
+                req.session?.sessiondata?.businessId as string,
+                req.session?.sessiondata?.clientId as string,
+                req.session?.sessiondata?.agentCode as string,
+                req.session?.sessiondata?.subAgentCode as string,
+                userId as string
+            );
+            if (poiUploadResponse?.status !== "SUCCESS") {
+                throw new ServiceError("Failed to upload POA file in cloud service")
+            }
+
+            // Create KYC Document
+            const updatedKycDoc = await user_kyc_details.findOneAndUpdate(
+                {
+                    user_id: userId as Types.ObjectId
+                },
+                {
+                    kyc_status: "IN-PROGRESS",
+                    poi_number: poiNumber as string,
+                    poa_number: poaNumber as string,
+                    poi_document: poiUploadResponse.secure_url,
+                    poa_document: poaUploadResponse.secure_url,
+                    kyc_request_id: crypto.randomUUID()
+                },
+                {
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+            if (!updatedKycDoc) {
+                throw new ServiceError(
+                    "Failed to update RFI KYC details"
+                );
+            }
+
+            return { status: "SUCCESS", data: updatedKycDoc, message: "User kyc details uploaded" }
+        }
+        else {
             throw new ServiceError("KYC details already exist for this user");
         }
-
-        // Upload Documents To Cloudinary
-        const poiUploadResponse = await uploadOnCloudinary(
-            poiDocumentFile,
-            req.session?.sessiondata?.businessId as string,
-            req.session?.sessiondata?.clientId as string,
-            req.session?.sessiondata?.agentCode as string,
-            req.session?.sessiondata?.subAgentCode as string,
-            userId as string
-        );
-        if (poiUploadResponse?.status !== "SUCCESS") {
-            throw new ServiceError("Failed to upload POI file in cloud service")
-        }
-        const poaUploadResponse = await uploadOnCloudinary(
-            poaDocumentFile,
-            req.session?.sessiondata?.businessId as string,
-            req.session?.sessiondata?.clientId as string,
-            req.session?.sessiondata?.agentCode as string,
-            req.session?.sessiondata?.subAgentCode as string,
-            userId as string
-        );
-        if (poiUploadResponse?.status !== "SUCCESS") {
-            throw new ServiceError("Failed to upload POA file in cloud service")
-        }
-
-        // Create KYC Document
-        const newKycDocumentResponse = await user_kyc_details.create({
-            user_id: userId as Types.ObjectId,
-            kyc_status: "IN-PROGRESS",
-            poi_number: poiNumber as string,
-            poa_number: poaNumber as string,
-            poi_document: poiUploadResponse.secure_url,
-            poa_document: poaUploadResponse.secure_url,
-        });
-
-        return { status: "SUCCESS", data: newKycDocumentResponse, message: "User kyc details uploaded" }
     }
     catch (err) {
         const error = err as any;
@@ -217,37 +279,6 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
 
-        const jwtSecretKey = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
-        // Create Kyv Verification Approve Auth Token
-        const approveToken = jwt.sign(
-            {
-                userId,
-                userName,
-                dashboardName,
-                action: "APPROVE",
-            },
-            jwtSecretKey,
-            {
-                expiresIn: "2d",
-            }
-        );
-        const rejectToken = jwt.sign(
-            {
-                userId,
-                userName,
-                dashboardName,
-                action: "REJECT",
-            },
-            jwtSecretKey,
-            {
-                expiresIn: "2d",
-            }
-        );
-
-        // Backend webhook URLs
-        const approveUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/kyc/kycVerificationWebhook?token=${encodeURIComponent(approveToken)}`;
-        const rejectUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/kyc/kycVerificationWebhook?token=${encodeURIComponent(rejectToken)}`;
-
         // Get user details
         const userDetailsDoc = await user_details.findOne({
             _id: userId as Schema.Types.ObjectId
@@ -262,6 +293,39 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         if (!userKycDetailsDoc) {
             throw new NotFoundError("User kyc details not found")
         }
+
+        const jwtSecretKey = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
+        // Create Kyv Verification Approve Auth Token
+        const approveToken = jwt.sign(
+            {
+                userId,
+                userName,
+                dashboardName,
+                action: "APPROVE",
+                kycRequestId: userKycDetailsDoc?.kyc_request_id
+            },
+            jwtSecretKey,
+            {
+                expiresIn: "2d",
+            }
+        );
+        const rejectToken = jwt.sign(
+            {
+                userId,
+                userName,
+                dashboardName,
+                action: "REJECT",
+                kycRequestId: userKycDetailsDoc?.kyc_request_id
+            },
+            jwtSecretKey,
+            {
+                expiresIn: "2d",
+            }
+        );
+
+        // Backend webhook URLs
+        const approveUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/kyc/kycVerificationWebhook?token=${encodeURIComponent(approveToken)}`;
+        const rejectUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/kyc/kycVerificationWebhook?token=${encodeURIComponent(rejectToken)}`;
 
         // Generate email template
         const poiDocumentUrl = userKycDetailsDoc?.poi_document
@@ -323,6 +387,7 @@ interface kycVerificationJwtPayloadType extends JwtPayload {
     userName: string;
     dashboardName: string;
     action: "APPROVE" | "REJECT";
+    kycRequestId: string;
 }
 
 export const kycVerificationWebhookService = async (res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson | void> => {
@@ -339,6 +404,13 @@ export const kycVerificationWebhookService = async (res: Response, aesDecryptedQ
 
         const jwtSecret = process.env.JWT_SECRET_KEY as string;
         const decoded = jwt.verify(token, jwtSecret) as kycVerificationJwtPayloadType
+
+        // Verify token
+        const currentKycDoc = await user_kyc_details.findOne({ user_id: decoded.userId });
+        if (currentKycDoc?.kyc_request_id !== decoded?.kycRequestId) {
+            // throw new ServiceError("Expired kyc verification link.")
+            return {status: "SERVICE_ERROR", message: "Exipred verification link or RFI requested"}
+        }
 
         let updatedStatus
 

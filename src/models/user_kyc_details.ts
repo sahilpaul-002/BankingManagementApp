@@ -40,6 +40,11 @@ const userKycDetailsSchema = new Schema<userKycDetailsSchemaTypes>(
             type: String,
             required: true,
         },
+
+        kyc_request_id: {
+            type: String,
+            required: true,
+        },
     },
     { timestamps: true }
 );

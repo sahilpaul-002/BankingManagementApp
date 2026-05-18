@@ -113,11 +113,12 @@ export interface userAddressDetailsSchemaTypes extends Document {
 // Types for User Kyc Details Model Schema
 export interface userKycDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
-    kyc_status: "PENDING" | "IN-PROGRESS" | "COMPLETED";
+    kyc_status: "PENDING" | "IN-PROGRESS" | "RFI" | "COMPLETED";
     poi_number: string;
     poa_number: string;
     poi_document: string;
     poa_document: string;
+    kyc_request_id: string;
 }
 
 // Types for User Wallet Details Model Schema

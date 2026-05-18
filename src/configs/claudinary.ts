@@ -59,6 +59,7 @@ const uploadOnCloudinary = async (file: Express.Multer.File, businessId: string,
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
                         folder: `BMA/${businessId}/${clientId}/${agentCode}/${subAgentCode}/${userId}`,
+                        public_id: `${userId}_${file?.fieldname}`,
                         overwrite: true,
                         timeout: 60000,
                     },

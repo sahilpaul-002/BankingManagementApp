@@ -133,7 +133,29 @@ export const getKycVerificationWebhook = async (req: Request, res: Response): Pr
 
         const sendKycVerificationMailServiceResponse = await kycVerificationWebhookService(res, aesDecryptedQueryData)
         if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "Failed to sent user kyc verification mail", 400);
+            if (sendKycVerificationMailServiceResponse?.message === "Exipred verification link or RFI requested") {
+                return res.status(200).send(`
+            <html>
+                <body style="
+                    font-family: Arial;
+                    text-align: center;
+                    padding-top: 100px;
+                ">
+                    <h2>KYC Verification Expired</h2>
+                    <p>
+                        This kyc virification link has been expired or RFI is requested.
+                    </p>
+                    <p>
+                        You can now close this tab.
+                    </p>
+                </body>
+            </html>
+        `
+                );
+            }
+            else {
+                throw new ServiceError("Failed to sent kyc verification mail webhook")
+            }
         }
 
         // res.success will not work
@@ -178,7 +200,6 @@ export const getKycVerificationWebhook = async (req: Request, res: Response): Pr
         `
             );
         }
-
     }
     catch (err) {
         const error = err as any;
