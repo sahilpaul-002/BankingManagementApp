@@ -98,7 +98,7 @@ export const sendKycVerificationMail = async (req: Request, res: Response): Prom
         if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to sent user kyc verification mail", 400);
         }
-        return res.success("User kyc verificaiton sent successfully", {}, 200)
+        return res.success("User kyc verificaiton mail sent successfully", {}, 200)
     }
     catch (err) {
         const error = err as any;
@@ -131,16 +131,54 @@ export const getKycVerificationWebhook = async (req: Request, res: Response): Pr
     try {
         const aesDecryptedQueryData = req.query;
 
-        const requestSession: Request["session"] | undefined = getRequestSession();
-        if (!requestSession) {
-            throw new UnauthenticatedError("Unauthenticated session");
-        }
-
-        const sendKycVerificationMailServiceResponse = await kycVerificationWebhookService(requestSession, res, aesDecryptedQueryData)
+        const sendKycVerificationMailServiceResponse = await kycVerificationWebhookService(res, aesDecryptedQueryData)
         if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to sent user kyc verification mail", 400);
         }
-        return res.success("User kyc verificaiton sent successfully", {}, 200)
+
+        // res.success will not work
+        // return res.success("User kyc verificaiton sent successfully", {}, 200)
+        if (sendKycVerificationMailServiceResponse?.data === "Kyc verification accepted") {
+            return res.status(200).send(`
+            <html>
+                <body style="
+                    font-family: Arial;
+                    text-align: center;
+                    padding-top: 100px;
+                ">
+                    <h2>KYC Approved Successfully</h2>
+                    <p>
+                        The verification request has been processed.
+                    </p>
+                    <p>
+                        You can now close this tab.
+                    </p>
+                </body>
+            </html>
+        `
+            );
+        }
+        else if (sendKycVerificationMailServiceResponse?.data === "Kyc verification rejected") {
+            return res.status(200).send(`
+            <html>
+                <body style="
+                    font-family: Arial;
+                    text-align: center;
+                    padding-top: 100px;
+                ">
+                    <h2>KYC Rejected Successfully</h2>
+                    <p>
+                        The verification request has been processed.
+                    </p>
+                    <p>
+                        You can now close this tab.
+                    </p>
+                </body>
+            </html>
+        `
+            );
+        }
+
     }
     catch (err) {
         const error = err as any;

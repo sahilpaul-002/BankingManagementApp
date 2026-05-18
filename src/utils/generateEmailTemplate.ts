@@ -1,580 +1,11 @@
-// // src/services/emailTemplate.ts
-
-// type emailTemplateType =
-//     | "EMAIL_VERIFICATION_CODE"
-//     | "FORGET_PASSWORD_CODE"
-//     | "TWO_FACTOR_AUTH_CODE"
-//     | "KYC_VERIFICATION"
-//     | "KYC_REJECTED"
-
-// interface verificationCodePayloadType {
-//     verificationCode: string
-//     userName?: string
-//     dashboardName?: string
-// }
-
-// interface kycVerificationCodePayloadType {
-//     userId: string
-//     userName: string
-//     poiDocumentUrl: string
-//     poaDocumentUrl: string
-//     dashboardName?: string
-//     approveUrl: string
-//     rejectUrl: string
-// }
-
-// interface kycVerificationRejectedPayloadType {
-//     userName?: string
-//     dashboardName?: string
-// }
-
-// interface templateResponseType {
-//     subject: string
-//     html: string
-// }
-
-// const generateEmailTemplate = (
-//     templateType: emailTemplateType,
-//     payload: verificationCodePayloadType | kycVerificationCodePayloadType |kycVerificationRejectedPayloadType
-// ): templateResponseType => {
-//     const dashboardTitle = payload?.dashboardName || "BMA"
-
-//     if (templateType !== "KYC_VERIFICATION" && "verificationCode" in payload) {
-//         switch (templateType) {
-//             case "EMAIL_VERIFICATION_CODE":
-//                 return {
-//                     subject: "Verify Your Email Address",
-
-//                     html: `
-//                     <div style="
-//                         font-family: Arial, sans-serif;
-//                         background-color: #f4f4f4;
-//                         padding: 40px 20px;
-//                     ">
-//                         <div style="
-//                             max-width: 600px;
-//                             margin: auto;
-//                             background: #ffffff;
-//                             border-radius: 10px;
-//                             overflow: hidden;
-//                             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-//                         ">
-
-//                             <!-- Header -->
-//                             <div style="
-//                                 background: #111827;
-//                                 padding: 20px;
-//                                 text-align: center;
-//                             ">
-//                                 <h1 style="
-//                                     color: #ffffff;
-//                                     margin: 0;
-//                                     font-size: 24px;
-//                                 ">
-//                                     ${dashboardTitle} Email Verification
-//                                 </h1>
-//                             </div>
-
-//                             <!-- Body -->
-//                             <div style="padding: 40px 30px;">
-
-//                                 <h2 style="
-//                                     margin-top: 0;
-//                                     color: #111827;
-//                                 ">
-//                                     Email Verification
-//                                 </h2>
-
-//                                 <p style="
-//                                     font-size: 16px;
-//                                     color: #374151;
-//                                     line-height: 1.6;
-//                                 ">
-//                                     ${payload?.userName
-//                             ? `Hello ${payload.userName},`
-//                             : "Hello,"
-//                         }
-//                                 </p>
-
-//                                 <p style="
-//                                     font-size: 16px;
-//                                     color: #374151;
-//                                     line-height: 1.6;
-//                                 ">
-//                                     Thank you for signing up. Please use the verification code below to verify your email address.
-//                                 </p>
-
-//                                 <!-- Verification Code -->
-//                                 <div style="
-//                                     text-align: center;
-//                                     margin: 35px 0;
-//                                 ">
-//                                     <span style="
-//                                         display: inline-block;
-//                                         background: #111827;
-//                                         color: #ffffff;
-//                                         padding: 16px 32px;
-//                                         font-size: 32px;
-//                                         letter-spacing: 8px;
-//                                         border-radius: 8px;
-//                                         font-weight: bold;
-//                                     ">
-//                                         ${payload.verificationCode}
-//                                     </span>
-//                                 </div>
-
-//                                 <p style="
-//                                     font-size: 14px;
-//                                     color: #6b7280;
-//                                     line-height: 1.6;
-//                                 ">
-//                                     This verification code will expire shortly. 
-//                                     If you did not create this account, please ignore this email.
-//                                 </p>
-
-//                             </div>
-
-//                             <!-- Footer -->
-//                             <div style="
-//                                 background: #f9fafb;
-//                                 padding: 20px;
-//                                 text-align: center;
-//                                 font-size: 13px;
-//                                 color: #6b7280;
-//                             ">
-//                                 © ${new Date().getFullYear()} ${dashboardTitle}. All rights reserved.
-//                             </div>
-
-//                         </div>
-//                     </div>
-//                 `
-//                 }
-
-//             case "FORGET_PASSWORD_CODE":
-
-//                 return {
-//                     subject: "Reset Your Password",
-
-//                     html: `
-//             <div style="
-//                 font-family: Arial, sans-serif;
-//                 background-color: #f4f4f4;
-//                 padding: 40px 20px;
-//             ">
-//                 <div style="
-//                     max-width: 600px;
-//                     margin: auto;
-//                     background: #ffffff;
-//                     border-radius: 10px;
-//                     overflow: hidden;
-//                     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-//                 ">
-
-//                     <!-- Header -->
-//                     <div style="
-//                         background: #111827;
-//                         padding: 20px;
-//                         text-align: center;
-//                     ">
-//                         <h1 style="
-//                             color: #ffffff;
-//                             margin: 0;
-//                             font-size: 24px;
-//                         ">
-//                             ${dashboardTitle} Password Reset
-//                         </h1>
-//                     </div>
-
-//                     <!-- Body -->
-//                     <div style="padding: 40px 30px;">
-
-//                         <h2 style="
-//                             margin-top: 0;
-//                             color: #111827;
-//                         ">
-//                             Password Reset Request
-//                         </h2>
-
-//                         <p style="
-//                             font-size: 16px;
-//                             color: #374151;
-//                             line-height: 1.6;
-//                         ">
-//                             ${payload?.userName
-//                             ? `Hello ${payload.userName},`
-//                             : "Hello,"
-//                         }
-//                         </p>
-
-//                         <p style="
-//                             font-size: 16px;
-//                             color: #374151;
-//                             line-height: 1.6;
-//                         ">
-//                             We received a request to reset your password.
-//                             Use the verification code below to continue.
-//                         </p>
-
-//                         <!-- Reset Code -->
-//                         <div style="
-//                             text-align: center;
-//                             margin: 35px 0;
-//                         ">
-//                             <span style="
-//                                 display: inline-block;
-//                                 background: #111827;
-//                                 color: #ffffff;
-//                                 padding: 16px 32px;
-//                                 font-size: 32px;
-//                                 letter-spacing: 8px;
-//                                 border-radius: 8px;
-//                                 font-weight: bold;
-//                             ">
-//                                 ${payload.verificationCode}
-//                             </span>
-//                         </div>
-
-//                         <p style="
-//                             font-size: 14px;
-//                             color: #6b7280;
-//                             line-height: 1.6;
-//                         ">
-//                             This code will expire shortly.
-//                             If you did not request a password reset,
-//                             please ignore this email.
-//                         </p>
-
-//                     </div>
-
-//                     <!-- Footer -->
-//                     <div style="
-//                         background: #f9fafb;
-//                         padding: 20px;
-//                         text-align: center;
-//                         font-size: 13px;
-//                         color: #6b7280;
-//                     ">
-//                         © ${new Date().getFullYear()} ${dashboardTitle}. All rights reserved.
-//                     </div>
-
-//                 </div>
-//             </div>
-//         `
-//                 }
-
-//             case "TWO_FACTOR_AUTH_CODE":
-
-//                 return {
-//                     subject: "Your Two-Factor Authentication Code",
-
-//                     html: `
-//             <div style="
-//                 font-family: Arial, sans-serif;
-//                 background-color: #f4f4f4;
-//                 padding: 40px 20px;
-//             ">
-//                 <div style="
-//                     max-width: 600px;
-//                     margin: auto;
-//                     background: #ffffff;
-//                     border-radius: 10px;
-//                     overflow: hidden;
-//                     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-//                 ">
-
-//                     <!-- Header -->
-//                     <div style="
-//                         background: #111827;
-//                         padding: 20px;
-//                         text-align: center;
-//                     ">
-//                         <h1 style="
-//                             color: #ffffff;
-//                             margin: 0;
-//                             font-size: 24px;
-//                         ">
-//                             ${dashboardTitle} Two-Factor Authentication
-//                         </h1>
-//                     </div>
-
-//                     <!-- Body -->
-//                     <div style="padding: 40px 30px;">
-
-//                         <h2 style="
-//                             margin-top: 0;
-//                             color: #111827;
-//                         ">
-//                             Security Verification
-//                         </h2>
-
-//                         <p style="
-//                             font-size: 16px;
-//                             color: #374151;
-//                             line-height: 1.6;
-//                         ">
-//                             ${payload?.userName
-//                             ? `Hello ${payload.userName},`
-//                             : "Hello,"
-//                         }
-//                         </p>
-
-//                         <p style="
-//                             font-size: 16px;
-//                             color: #374151;
-//                             line-height: 1.6;
-//                         ">
-//                             We detected a login attempt that requires
-//                             two-factor authentication verification.
-//                             Use the code below to continue securely.
-//                         </p>
-
-//                         <!-- 2FA Code -->
-//                         <div style="
-//                             text-align: center;
-//                             margin: 35px 0;
-//                         ">
-//                             <span style="
-//                                 display: inline-block;
-//                                 background: #111827;
-//                                 color: #ffffff;
-//                                 padding: 16px 32px;
-//                                 font-size: 32px;
-//                                 letter-spacing: 8px;
-//                                 border-radius: 8px;
-//                                 font-weight: bold;
-//                             ">
-//                                 ${payload.verificationCode}
-//                             </span>
-//                         </div>
-
-//                         <p style="
-//                             font-size: 14px;
-//                             color: #6b7280;
-//                             line-height: 1.6;
-//                         ">
-//                             This authentication code will expire shortly.
-//                             Never share this code with anyone.
-//                         </p>
-
-//                         <p style="
-//                             font-size: 14px;
-//                             color: #ef4444;
-//                             line-height: 1.6;
-//                             font-weight: bold;
-//                         ">
-//                             If you did not attempt to sign in,
-//                             please secure your account immediately.
-//                         </p>
-
-//                     </div>
-
-//                     <!-- Footer -->
-//                     <div style="
-//                         background: #f9fafb;
-//                         padding: 20px;
-//                         text-align: center;
-//                         font-size: 13px;
-//                         color: #6b7280;
-//                     ">
-//                         © ${new Date().getFullYear()} ${dashboardTitle}. All rights reserved.
-//                     </div>
-
-//                 </div>
-//             </div>
-//         `
-//                 }
-
-//             default:
-//                 throw new Error("Invalid email template type")
-//         }
-//     }
-//     else {
-//         const kycPayload = payload as kycVerificationCodePayloadType
-
-//         return {
-//             subject: "KYC Verification Request",
-
-//             html: `
-//             <div style="
-//                 font-family: Arial, sans-serif;
-//                 background-color: #f4f4f4;
-//                 padding: 40px 20px;
-//             ">
-//                 <div style="
-//                     max-width: 700px;
-//                     margin: auto;
-//                     background: #ffffff;
-//                     border-radius: 10px;
-//                     overflow: hidden;
-//                     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-//                 ">
-
-//                     <!-- Header -->
-//                     <div style="
-//                         background: #111827;
-//                         padding: 20px;
-//                         text-align: center;
-//                     ">
-//                         <h1 style="
-//                             color: #ffffff;
-//                             margin: 0;
-//                             font-size: 24px;
-//                         ">
-//                             ${dashboardTitle} KYC Verification
-//                         </h1>
-//                     </div>
-
-//                     <!-- Body -->
-//                     <div style="padding: 40px 30px;">
-
-//                         <h2 style="
-//                             margin-top: 0;
-//                             color: #111827;
-//                         ">
-//                             KYC Verification Required
-//                         </h2>
-
-//                         <p style="
-//                             font-size: 16px;
-//                             color: #374151;
-//                             line-height: 1.6;
-//                         ">
-//                             ${kycPayload.userName
-//                     ? `Hello ${kycPayload.userName},`
-//                     : "Hello,"
-//                 }
-//                         </p>
-
-//                         <p style="
-//                             font-size: 16px;
-//                             color: #374151;
-//                             line-height: 1.8;
-//                         ">
-//                             The Proof of Identity (POI) and Proof of Address (POA)
-//                             documents have been submitted for the following user:
-//                         </p>
-
-//                         <!-- User Info -->
-//                         <div style="
-//                             background: #f9fafb;
-//                             border: 1px solid #e5e7eb;
-//                             border-radius: 8px;
-//                             padding: 20px;
-//                             margin: 20px 0;
-//                         ">
-//                             <p style="
-//                                 margin: 0;
-//                                 font-size: 16px;
-//                                 color: #111827;
-//                             ">
-//                                 <strong>User ID:</strong> ${kycPayload.userId}
-//                             </p>
-//                         </div>
-
-//                         <!-- Document Links -->
-//                         <div style="
-//                             margin: 30px 0;
-//                         ">
-//                             <h3 style="
-//                                 color: #111827;
-//                                 margin-bottom: 15px;
-//                             ">
-//                                 Submitted Documents
-//                             </h3>
-
-//                             <p style="
-//                                 font-size: 15px;
-//                                 color: #374151;
-//                                 margin-bottom: 10px;
-//                             ">
-//                                 <strong>POI Document:</strong>
-//                             </p>
-
-//                             <a
-//                                 href="${kycPayload.poiDocumentUrl}"
-//                                 target="_blank"
-//                                 style="
-//                                     display: inline-block;
-//                                     margin-bottom: 20px;
-//                                     color: #2563eb;
-//                                     text-decoration: none;
-//                                     word-break: break-all;
-//                                 "
-//                             >
-//                                 View POI Document
-//                             </a>
-
-//                             <p style="
-//                                 font-size: 15px;
-//                                 color: #374151;
-//                                 margin-bottom: 10px;
-//                             ">
-//                                 <strong>POA Document:</strong>
-//                             </p>
-
-//                             <a
-//                                 href="${kycPayload.poaDocumentUrl}"
-//                                 target="_blank"
-//                                 style="
-//                                     display: inline-block;
-//                                     color: #2563eb;
-//                                     text-decoration: none;
-//                                     word-break: break-all;
-//                                 "
-//                             >
-//                                 View POA Document
-//                             </a>
-//                         </div>
-
-//                         <p style="
-//                             font-size: 15px;
-//                             color: #374151;
-//                             line-height: 1.8;
-//                         ">
-//                             Please verify the KYC documents for the above user
-//                             within <strong>2 days</strong>.
-//                         </p>
-
-//                         <p style="
-//                             font-size: 14px;
-//                             color: #ef4444;
-//                             font-weight: bold;
-//                             line-height: 1.6;
-//                         ">
-//                             Timely verification is required to avoid delays
-//                             in account processing.
-//                         </p>
-
-//                     </div>
-
-//                     <!-- Footer -->
-//                     <div style="
-//                         background: #f9fafb;
-//                         padding: 20px;
-//                         text-align: center;
-//                         font-size: 13px;
-//                         color: #6b7280;
-//                     ">
-//                         © ${new Date().getFullYear()} ${dashboardTitle}. All rights reserved.
-//                     </div>
-
-//                 </div>
-//             </div>
-//         `
-//         }
-//     }
-// }
-
-// export default generateEmailTemplate;
-
-// src/services/emailTemplate.ts
-
 type emailTemplateType =
     | "EMAIL_VERIFICATION_CODE"
     | "FORGET_PASSWORD_CODE"
     | "TWO_FACTOR_AUTH_CODE"
     | "KYC_VERIFICATION"
-    | "KYC_REJECTED";
+    | "KYC_REJECTED"
+    | "KYC_ACCEPTED"
+    | "KYC_ACCEPTED_ADMIN"
 
 interface verificationCodePayloadType {
     verificationCode: string;
@@ -597,6 +28,17 @@ interface kycVerificationRejectedPayloadType {
     dashboardName?: string;
 }
 
+interface kycVerificationAcceptedPayloadType {
+    userName?: string;
+    dashboardName?: string;
+}
+
+interface kycVerificationAcceptedAdminPayloadType {
+    userId: string;
+    userName?: string;
+    dashboardName?: string;
+}
+
 interface templateResponseType {
     subject: string;
     html: string;
@@ -605,7 +47,8 @@ interface templateResponseType {
 type emailTemplatePayloadType =
     | verificationCodePayloadType
     | kycVerificationCodePayloadType
-    | kycVerificationRejectedPayloadType;
+    | kycVerificationRejectedPayloadType
+    | kycVerificationAcceptedPayloadType;
 
 const generateEmailTemplate = (
     templateType: emailTemplateType,
@@ -615,7 +58,10 @@ const generateEmailTemplate = (
     const dashboardTitle = payload.dashboardName || "BMA";
 
     switch (templateType) {
+
+        // =========================================================
         // EMAIL VERIFICATION
+        // =========================================================
         case "EMAIL_VERIFICATION_CODE": {
 
             const verificationPayload =
@@ -730,7 +176,6 @@ const generateEmailTemplate = (
         // =========================================================
         // FORGET PASSWORD
         // =========================================================
-
         case "FORGET_PASSWORD_CODE": {
 
             const verificationPayload =
@@ -766,7 +211,9 @@ const generateEmailTemplate = (
             };
         }
 
+        // =========================================================
         // TWO FACTOR AUTH
+        // =========================================================
         case "TWO_FACTOR_AUTH_CODE": {
 
             const verificationPayload =
@@ -802,7 +249,10 @@ const generateEmailTemplate = (
             };
         }
 
+
+        // =========================================================
         // KYC VERIFICATION
+        // =========================================================
         case "KYC_VERIFICATION": {
 
             const kycPayload =
@@ -866,14 +316,20 @@ const generateEmailTemplate = (
 
                             <p>
                                 <strong>POI Document:</strong>
-                                <a href="${kycPayload.poiDocumentUrl}">
+                                <a 
+                                    href="${kycPayload.poiDocumentUrl}"
+                                    target="_blank"
+                                >
                                     View POI Document
                                 </a>
                             </p>
 
                             <p>
                                 <strong>POA Document:</strong>
-                                <a href="${kycPayload.poaDocumentUrl}">
+                                <a 
+                                    href="${kycPayload.poaDocumentUrl}"
+                                    target="_blank"
+                                >
                                     View POA Document
                                 </a>
                             </p>
@@ -882,6 +338,47 @@ const generateEmailTemplate = (
                                 Please verify the KYC documents
                                 within 2 days.
                             </p>
+
+                            <!-- ACTION BUTTONS -->
+                            <div style="
+                                margin-top: 35px;
+                                text-align: center;
+                            ">
+
+                                <a
+                                    href="${kycPayload.approveUrl}"
+                                    target="_blank"
+                                    style="
+                                        display: inline-block;
+                                        padding: 14px 28px;
+                                        margin-right: 10px;
+                                        background-color: #16a34a;
+                                        color: #ffffff;
+                                        text-decoration: none;
+                                        border-radius: 6px;
+                                        font-weight: bold;
+                                    "
+                                >
+                                    Approve KYC
+                                </a>
+
+                                <a
+                                    href="${kycPayload.rejectUrl}"
+                                    target="_blank"
+                                    style="
+                                        display: inline-block;
+                                        padding: 14px 28px;
+                                        background-color: #dc2626;
+                                        color: #ffffff;
+                                        text-decoration: none;
+                                        border-radius: 6px;
+                                        font-weight: bold;
+                                    "
+                                >
+                                    Reject KYC
+                                </a>
+
+                            </div>
 
                         </div>
 
@@ -901,7 +398,10 @@ const generateEmailTemplate = (
             };
         }
 
+
+        // =========================================================
         // KYC REJECTED
+        // =========================================================
         case "KYC_REJECTED": {
 
             const rejectedPayload =
@@ -917,8 +417,7 @@ const generateEmailTemplate = (
                     <p>
                         ${rejectedPayload.userName
                         ? `Hello ${rejectedPayload.userName},`
-                        : "Hello,"
-                    }
+                        : "Hello,"}
                     </p>
 
                     <p>
@@ -926,12 +425,198 @@ const generateEmailTemplate = (
                     </p>
 
                     <p>
-                        Please re-upload valid documents and try again.
+                        Unfortunately, the submitted documents could not be verified.
+                    </p>
+
+                    <p>
+                        Please review your documents carefully and re-upload valid Proof of Identity (POI) and Proof of Address (POA) documents to continue the verification process.
+                    </p>
+
+                    <p>
+                        Ensure that:
+                    </p>
+
+                    <ul>
+                        <li>The documents are clear and readable.</li>
+                        <li>The information matches your registered account details.</li>
+                        <li>The documents are valid and not expired.</li>
+                    </ul>
+
+                    <p>
+                        If you have any questions or need assistance, please contact our support team.
+                    </p>
+
+                    <br />
+
+                    <p>
+                        Thank you for choosing ${dashboardTitle}.
+                    </p>
+
+                    <p>
+                        Regards,<br />
+                        ${dashboardTitle} Team
                     </p>
                 </div>
                 `
             };
         }
+
+        // =========================================================
+        // KYC ACCEPTED
+        // =========================================================
+        case "KYC_ACCEPTED": {
+
+            const acceptedPayload =
+                payload as kycVerificationAcceptedPayloadType;
+
+            return {
+                subject: "KYC Verification Accepted",
+
+                html: `
+                <div>
+                    <h2>KYC Verification Accepted</h2>
+
+                    <p>
+                        ${acceptedPayload.userName
+                        ? `Hello ${acceptedPayload.userName},`
+                        : "Hello,"
+                    }
+                    </p>
+
+                    <p>
+                        Your KYC verification request has been successfully approved.
+                    </p>
+
+                    <p>
+                        Your account is now fully verified and you can access all platform features and services.
+                    </p>
+
+                    <p>
+                        Please sign in to your account to continue.
+                    </p>
+
+                    <p>
+                        If you have any questions or need assistance, please contact our support team.
+                    </p>
+
+                    <br />
+
+                    <p>
+                        Thank you for choosing ${dashboardTitle}.
+                    </p>
+
+                    <p>
+                        Regards,<br />
+                        ${dashboardTitle} Team
+                    </p>
+                </div>
+                `
+            };
+
+        }
+
+
+        // =========================================================
+        // KYC ACCEPTED ADMIN
+        // =========================================================
+        case "KYC_ACCEPTED_ADMIN": {
+
+            const acceptedPayload =
+                payload as kycVerificationAcceptedAdminPayloadType;
+
+            return {
+                subject: "User KYC Verification Approved",
+
+                html: `
+                <div style="
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    padding: 40px 20px;
+                ">
+                    <div style="
+                        max-width: 650px;
+                        margin: auto;
+                        background: #ffffff;
+                        border-radius: 10px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    ">
+
+                        <div style="
+                            background: #111827;
+                            padding: 20px;
+                            text-align: center;
+                        ">
+                            <h1 style="
+                                color: #ffffff;
+                                margin: 0;
+                                font-size: 24px;
+                            ">
+                                ${dashboardTitle} Admin Notification
+                            </h1>
+                        </div>
+
+                        <div style="padding: 35px 30px;">
+
+                            <h2 style="
+                                margin-top: 0;
+                                color: #111827;
+                            ">
+                                KYC Verification Approved
+                            </h2>
+
+                            <p>
+                                ${acceptedPayload.userName
+                        ? `Hello ${acceptedPayload.userName},`
+                        : "Hello Admin,"
+                    }
+                            </p>
+
+                            <p>
+                                The KYC verification request for the following user
+                                has been successfully approved.
+                            </p>
+
+                            <p>
+                                <strong>User ID:</strong>
+                                ${acceptedPayload.userId}
+                            </p>
+
+                            <p>
+                                <strong>Dashboard Name:</strong>
+                                ${acceptedPayload.dashboardName}
+                            </p>
+
+                            <p>
+                                The user account is now verified and has access
+                                to all permitted platform services and features.
+                            </p>
+
+                            <br />
+
+                            <p>
+                                Regards,<br />
+                                ${dashboardTitle} System
+                            </p>
+
+                        </div>
+
+                        <div style="
+                            background: #f9fafb;
+                            padding: 18px;
+                            text-align: center;
+                            font-size: 13px;
+                            color: #6b7280;
+                        ">
+                            © ${new Date().getFullYear()} ${dashboardTitle}. All rights reserved.
+                        </div>
+
+                    </div>
+                </div>
+                `
+            };
+        }
+
 
         default:
             throw new Error("Invalid email template type");

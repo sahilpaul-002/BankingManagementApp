@@ -72,7 +72,7 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     },
     kyc_status: {
         type: String,
-        enum: ["PENDING", "IN-PROGRESS", "COMPLETED"],
+        enum: ["PENDING", "IN-PROGRESS", "RFI", "COMPLETED"],
         default: "PENDING",
     },
     is_admin: {

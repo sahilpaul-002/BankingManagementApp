@@ -18,7 +18,7 @@ import type { ParsedQs } from "qs";
 dotenv.config();
 
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
-const receiverEmail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
+const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
 
 // GET KYC SERVICE
 export const getKycService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
@@ -199,14 +199,31 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
             throw new BadRequestError("Invalid request body data");
         }
 
-        // Get user id from session
+        // Get user data from session
+        const userEmail = requestSession?.userEmail
+        if (!userEmail) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
         const userId: unknown = requestSession?.userId
+        if (!userId) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
+        const userName = requestSession?.userName || "User"
+        if (!userName) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
+        const dashboardName = requestSession?.sessiondata?.dashboardName || "BMA"
+        if (!dashboardName) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
 
         const jwtSecretKey = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
         // Create Kyv Verification Approve Auth Token
         const approveToken = jwt.sign(
             {
                 userId,
+                userName,
+                dashboardName,
                 action: "APPROVE",
             },
             jwtSecretKey,
@@ -217,6 +234,8 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         const rejectToken = jwt.sign(
             {
                 userId,
+                userName,
+                dashboardName,
                 action: "REJECT",
             },
             jwtSecretKey,
@@ -226,8 +245,8 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         );
 
         // Backend webhook URLs
-        const approveUrl = `${requestSession?.sessiondata?.baseUrl}/api/kyc/kycVerificationWebhook/${approveToken}`;
-        const rejectUrl = `${requestSession?.sessiondata?.baseUrl}/api/kyc/kycVerificationWebhook/${rejectToken}`;
+        const approveUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/kyc/kycVerificationWebhook?token=${encodeURIComponent(approveToken)}`;
+        const rejectUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/kyc/kycVerificationWebhook?token=${encodeURIComponent(rejectToken)}`;
 
         // Get user details
         const userDetailsDoc = await user_details.findOne({
@@ -245,8 +264,6 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         }
 
         // Generate email template
-        const userName = "BMA Admin"
-        const dashboardName = requestSession.sessiondata?.dashboardName || "BMA"
         const poiDocumentUrl = userKycDetailsDoc?.poi_document
         const poaDocumentUrl = userKycDetailsDoc?.poa_document
         const emailTemplate = generateEmailTemplate(
@@ -262,7 +279,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
             }
         );
 
-        const toEmail: string = receiverEmail
+        const toEmail: string = bmaNotificationMail
         const sendEmail: string = fromEmail
         const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
         // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
@@ -303,10 +320,12 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
 // KYC VERIFICATION WEBHOOK SERVICE
 interface kycVerificationJwtPayloadType extends JwtPayload {
     userId: string;
+    userName: string;
+    dashboardName: string;
     action: "APPROVE" | "REJECT";
 }
 
-export const kycVerificationWebhookService = async (requestSession: Request["session"], res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson> => {
+export const kycVerificationWebhookService = async (res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson | void> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid request query params data");
@@ -318,35 +337,137 @@ export const kycVerificationWebhookService = async (requestSession: Request["ses
             throw new BadRequestError("Invalid or incomplete token in kyc verification webhook");
         }
 
-        const jwtSecret = process.env.JWT_SECRET as string;
-        const decoded = jwt.verify(token, jwtSecret) as {
-            userId: string;
-            action: "APPROVE" | "REJECT";
-        };
+        const jwtSecret = process.env.JWT_SECRET_KEY as string;
+        const decoded = jwt.verify(token, jwtSecret) as kycVerificationJwtPayloadType
 
         let updatedStatus
 
         if (decoded.action === "APPROVE") {
             updatedStatus = "COMPLETED";
-        }
 
-        if (decoded.action === "REJECT") {
-            updatedStatus = "IN-PROGRESS";
-
-            // Generate email template
-            const userName = requestSession?.userName || "User"
-            const dashboardName = requestSession.sessiondata?.dashboardName || "BMA"
-            const emailTemplate = generateEmailTemplate(
-                "KYC_REJECTED",
+            // Update Kyc Status in DB
+            const userDetailsDoc = await user_details.findOneAndUpdate(
                 {
-                    userName: userName,
-                    dashboardName: dashboardName,
+                    _id: decoded.userId,
+                },
+                {
+                    kyc_status: updatedStatus,
+                },
+                {
+                    new: true,
+                }
+            );
+            if (!userDetailsDoc) {
+                throw new ServiceError("Failed to update the user details for kyc status")
+            }
+            const userKycDetailsDoc = await user_kyc_details.findOneAndUpdate(
+                {
+                    user_id: decoded.userId,
+                },
+                {
+                    kyc_status: updatedStatus,
+                },
+                {
+                    new: true,
+                }
+            );
+            if (!userKycDetailsDoc) {
+                throw new ServiceError("Failed to update the user details for kyc status")
+            }
+
+            // =======================
+            // Success mail to kyc user
+            // =======================
+            // Generate email template
+            const emailTemplate = generateEmailTemplate(
+                "KYC_ACCEPTED",
+                {
+                    userName: decoded?.userName,
+                    dashboardName: decoded?.dashboardName,
                 }
             );
 
-            const toEmail: string = receiverEmail
+            const toEmail: string = userDetailsDoc?.email;
             const sendEmail: string = fromEmail
-            const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
+            const mainConfig = { toEmail, sendEmail, dashboardName: decoded?.dashboardName, emailTemplate }
+            // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+            const gmailMailServiceResponse1 = await gmailSendService(mainConfig)
+
+            if (gmailMailServiceResponse1?.status !== "SUCCESS") {
+                throw new ServiceError("GmailSendService is facing error")
+            }
+
+
+            // =======================
+            // Success mail to BMA admin
+            // =======================
+            // Generate email template
+            const adminUserName = "User"
+            const emailTemplateAdmin = generateEmailTemplate(
+                "KYC_ACCEPTED_ADMIN",
+                {
+                    userId: decoded?.userId,
+                    userName: adminUserName,
+                    dashboardName: decoded?.dashboardName,
+                }
+            );
+
+            const toAdminEmail: string = bmaNotificationMail;
+            const mainConfigAdmin = { toEmail: toAdminEmail, sendEmail, dashboardName: "BMA_Admin", emailTemplate: emailTemplateAdmin }
+            // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+            const gmailMailServiceResponse2 = await gmailSendService(mainConfigAdmin)
+
+            if (gmailMailServiceResponse2?.status !== "SUCCESS") {
+                throw new ServiceError("GmailSendService is facing error")
+            }
+
+            return { status: "SUCCESS", data: "Kyc verification accepted", message: "Kyc verification email webhook send succesfully" }
+        }
+        else if (decoded.action === "REJECT") {
+            updatedStatus = "RFI";
+
+            // Update Kyc Status in DB
+            const userDetailsDoc = await user_details.findOneAndUpdate(
+                {
+                    _id: decoded.userId,
+                },
+                {
+                    kyc_status: updatedStatus,
+                },
+                {
+                    new: true,
+                }
+            );
+            if (!userDetailsDoc) {
+                throw new ServiceError("Failed to update the user details for kyc status")
+            }
+            const userKycDetailsDoc = await user_kyc_details.findOneAndUpdate(
+                {
+                    user_id: decoded.userId,
+                },
+                {
+                    kyc_status: updatedStatus,
+                },
+                {
+                    new: true,
+                }
+            );
+            if (!userKycDetailsDoc) {
+                throw new ServiceError("Failed to update the user details for kyc status")
+            }
+
+            // Generate email template
+            const emailTemplate = generateEmailTemplate(
+                "KYC_REJECTED",
+                {
+                    userName: decoded?.userName,
+                    dashboardName: decoded?.dashboardName,
+                }
+            );
+
+            const toEmail: string = userDetailsDoc?.email;
+            const sendEmail: string = fromEmail
+            const mainConfig = { toEmail, sendEmail, dashboardName: decoded?.dashboardName, emailTemplate }
             // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
             const gmailMailServiceResponse = await gmailSendService(mainConfig)
 
@@ -354,40 +475,8 @@ export const kycVerificationWebhookService = async (requestSession: Request["ses
                 throw new ServiceError("GmailSendService is facing error")
             }
 
-            return { status: "SERVICE_ERROR", message: "Kyc verificaiton failed - kyc rejected" }
+            return { status: "SUCCESS", data: "Kyc verification rejected", message: "Kyc verification email webhook send succesfully" }
         }
-
-        // Update DB
-        const userDetailsDoc = await user_details.findOneAndUpdate(
-            {
-                _id: decoded.userId,
-            },
-            {
-                kyc_status: updatedStatus,
-            },
-            {
-                new: true,
-            }
-        );
-        if (!userDetailsDoc) {
-            throw new ServiceError("Failed to update the user details for kyc status")
-        }
-        const userKycDetailsDoc = await user_kyc_details.findOneAndUpdate(
-            {
-                _id: decoded.userId,
-            },
-            {
-                kyc_status: updatedStatus,
-            },
-            {
-                new: true,
-            }
-        );
-        if (!userKycDetailsDoc) {
-            throw new ServiceError("Failed to update the user details for kyc status")
-        }
-
-        return { status: "SUCCESS", data: {}, message: "Kyc verification completed and status updated" }
     }
     catch (err) {
         const error = err as any;

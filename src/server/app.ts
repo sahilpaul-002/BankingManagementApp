@@ -37,6 +37,7 @@ import userRoutes from "../routes/userRoutes.js";
 import twoFaRoutes from "../routes/twoFaRoutes.js";
 import kycRoutes from "../routes/kycRoutes.js";
 import walletRoutes from "../routes/walletRoutes.js"
+import publicRoutes from "../routes/publicRoutes.js"
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -99,6 +100,10 @@ app.use(
 const redisClient: RedisClientType = await redisConfig();
 app.locals.redisClient = redisClient;
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
+
+// ---------------------------------------- Public Routes ---------------------------------------- \\
+app.use("/api/v1/public", publicRoutes);
+// ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 
 // ---------------------------------------- Custom Middlewares ---------------------------------------- \\
 // Dynamic Session Middleware

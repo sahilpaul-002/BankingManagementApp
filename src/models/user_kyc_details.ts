@@ -13,7 +13,7 @@ const userKycDetailsSchema = new Schema<userKycDetailsSchemaTypes>(
 
         kyc_status: {
             type: String,
-            enum: ["PENDING", "IN-PROGRESS", "COMPLETED"],
+            enum: ["PENDING", "IN-PROGRESS", "RFI", "COMPLETED"],
             default: "PENDING",
         },
 
