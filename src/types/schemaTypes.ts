@@ -83,6 +83,7 @@ export interface userBankDetailsSchemaTypes extends Document {
     iban_code: string;
     bank_name: string;
     is_verified?: boolean;
+    user_bank_request_id: string;
 }
 
 // Type for User Address Details Types

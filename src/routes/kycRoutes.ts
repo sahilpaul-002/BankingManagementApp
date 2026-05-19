@@ -20,6 +20,5 @@ router.post("/uploadKyc",
     uploadKyc
 );
 router.post("/sendKycVerificationMail", sendKycVerificationMail);
-// router.get("/kycVerificationWebhook/:token", getKycVerificationWebhook);
 
 export default router

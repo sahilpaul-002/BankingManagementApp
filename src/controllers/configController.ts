@@ -7,7 +7,7 @@ import type { decryptionFailedJson, decryptionSuccessJson } from '../types/decry
 import { getAesEncryptionKeyService, getDnsConfigService, getHeaderPublicKeyService, getMobileCountryCodesService, getRsaPublicKeyService } from '../services/configServices.js';
 import logger from '../utils/logger.js';
 
-// FUNCTION TO GET THE DNS CONFIGURATION DATA
+// ------------------------------------- FUNCTION TO GET THE DNS CONFIGURATION DATA ------------------------------------- \\
 export const getDnsConfig = async (req: Request, res: Response<successResponseJson | failedResponseJson>): Promise<Response<successResponseJson> | void> => {
     let aesDecryptedQueryData: any = null;
     let ivHex: string | undefined
@@ -160,8 +160,9 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
         throw new ServiceUnavailableError("GetDnsConfigController service is facing unknown issue.", error);
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO GET THE SYMMETRIC ENCRYPTION KEY
+// ------------------------------------- FUNCTION TO GET THE SYMMETRIC ENCRYPTION KEY ------------------------------------- \\
 export const getEncryptionKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
         // Get the encryption key
@@ -196,8 +197,9 @@ export const getEncryptionKey = (req: Request, res: Response): Response<successR
         throw new ServiceUnavailableError("GetEncryptionKeyController service is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO GET THE ASYMMETRIC ENCRPTION PUBLIC KEY
+// --------------------------------- FUNCTION TO GET THE ASYMMETRIC ENCRPTION PUBLIC KEY --------------------------------- \\
 export const getPublicKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
         // Get public encryption key
@@ -233,8 +235,9 @@ export const getPublicKey = (req: Request, res: Response): Response<successRespo
         throw new ServiceUnavailableError("GetPublicKeyController service is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO GET THE MOBILE COUNTRY CODES
+// ------------------------------------- FUNCTION TO GET THE MOBILE COUNTRY CODES ------------------------------------- \\
 export const getMobileCountryCodes = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
         const mobileCountryCodesServiceResponse = getMobileCountryCodesService(req);
@@ -269,8 +272,9 @@ export const getMobileCountryCodes = (req: Request, res: Response): Response<suc
         throw new ServiceUnavailableError("GetMobileCountryCodesController service is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO GET THE HEADER ASYMMETRIC ENCRPTION PUBLIC KEY
+// ----------------------------- FUNCTION TO GET THE HEADER ASYMMETRIC ENCRPTION PUBLIC KEY ----------------------------- \\
 export const getHeaderPublicKey = (req: Request, res: Response): Response<successResponseJson | failedResponseJson> | void => {
     try {
         // Get public encryption key
@@ -305,3 +309,4 @@ export const getHeaderPublicKey = (req: Request, res: Response): Response<succes
         throw new ServiceUnavailableError("GetHeaderPublicKeyCController service is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

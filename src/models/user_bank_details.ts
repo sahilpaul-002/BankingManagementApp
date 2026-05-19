@@ -34,10 +34,14 @@ const userBankDetailsSchema = new Schema<userBankDetailsSchemaTypes>({
     is_verified: {
         type: Boolean,
         default: false
+    },
+    user_bank_request_id: {
+        type: String,
+        required: true,
     }
 }, { timestamps: true }
 );
 
-const userBankDetailsModel = mongoose.model( "UserBankDetails", userBankDetailsSchema, "user_bank_details" );
+const userBankDetailsModel = mongoose.model("UserBankDetails", userBankDetailsSchema, "user_bank_details");
 
-export { userBankDetailsModel};
+export { userBankDetailsModel };

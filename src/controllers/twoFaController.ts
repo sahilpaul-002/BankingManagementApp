@@ -5,7 +5,7 @@ import { send2FaCodeService, sendResetPasswordCodeService, verify2FaCodeService,
 import { getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 
-// FUNCTION TO VERIFY EMAIL
+// ------------------------------------- FUNCTION TO VERIFY EMAIL ------------------------------------- \\
 export const verifyEmail = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body;
@@ -46,8 +46,9 @@ export const verifyEmail = async (req: Request, res: Response): Promise<Response
         throw new ServiceUnavailableError("VerifyEmailController is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO SEND EMAIL
+// ------------------------------------- FUNCTION TO SEND EMAIL ------------------------------------- \\
 export const send2FaVerificationCode = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body;
@@ -94,8 +95,9 @@ export const send2FaVerificationCode = async (req: Request, res: Response): Prom
         throw new ServiceUnavailableError("Send2FaVerificationCodeController is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO VERIFY TWO FACTOR AUTH
+// ------------------------------------- FUNCTION TO VERIFY TWO FACTOR AUTH ------------------------------------- \\
 export const verify2FaCode = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body;
@@ -136,8 +138,9 @@ export const verify2FaCode = async (req: Request, res: Response): Promise<Respon
         throw new ServiceUnavailableError("Verify2FaCodeController is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO SEND RESET PASSWORD VERIFICATION CODE
+// ------------------------------------- FUNCTION TO SEND RESET PASSWORD VERIFICATION CODE ------------------------------------- \\
 export const sendResetPasswordVerificationCode = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body;
@@ -179,8 +182,9 @@ export const sendResetPasswordVerificationCode = async (req: Request, res: Respo
         throw new ServiceUnavailableError("SendResetPasswordVerificationCodeController is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO VERIFY RESET PASSWORD CODE
+// ------------------------------------- FUNCTION TO VERIFY RESET PASSWORD CODE ------------------------------------- \\
 export const verifyResetPasswordCode = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body;
@@ -221,3 +225,4 @@ export const verifyResetPasswordCode = async (req: Request, res: Response): Prom
         throw new ServiceUnavailableError("VerifyResetPasswordCodeController is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

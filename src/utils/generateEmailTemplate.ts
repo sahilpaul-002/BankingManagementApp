@@ -6,6 +6,10 @@ type emailTemplateType =
     | "KYC_REJECTED"
     | "KYC_ACCEPTED"
     | "KYC_ACCEPTED_ADMIN"
+    | "USER_BANK_VERIFICATION"
+    | "BANK_VERIFICATION_REJECTED"
+    | "BANK_VERIFICATION_ACCEPTED"
+    | "BANK_VERIFICATION_ACCEPTED_ADMIN"
 
 interface verificationCodePayloadType {
     verificationCode: string;
@@ -39,6 +43,33 @@ interface kycVerificationAcceptedAdminPayloadType {
     dashboardName?: string;
 }
 
+interface userBankVerificationCodePayloadType {
+    userId: string,
+    userName: string,
+    accountHolderName: string,
+    accountNumber: string,
+    bankName: string,
+    dashboardName: string,
+    approveUrl: string,
+    rejectUrl: string
+}
+
+interface userBankAccountVerificationRejectedPayloadType {
+    userName?: string;
+    dashboardName?: string;
+}
+
+interface userBankAccountVerificationAcceptedPayloadType {
+    userName?: string;
+    dashboardName?: string;
+}
+
+interface userBankAccountVerificationAcceptedAdminPayloadType {
+    userId: string;
+    userName?: string;
+    dashboardName?: string;
+}
+
 interface templateResponseType {
     subject: string;
     html: string;
@@ -48,7 +79,11 @@ type emailTemplatePayloadType =
     | verificationCodePayloadType
     | kycVerificationCodePayloadType
     | kycVerificationRejectedPayloadType
-    | kycVerificationAcceptedPayloadType;
+    | kycVerificationAcceptedPayloadType
+    | userBankVerificationCodePayloadType
+    | userBankAccountVerificationRejectedPayloadType
+    | userBankAccountVerificationAcceptedPayloadType
+    | userBankAccountVerificationAcceptedAdminPayloadType
 
 const generateEmailTemplate = (
     templateType: emailTemplateType,
@@ -616,6 +651,362 @@ const generateEmailTemplate = (
                 `
             };
         }
+
+
+        // =========================================================
+        // BANK VERIFICATION
+        // =========================================================
+        case "USER_BANK_VERIFICATION": {
+
+            const bankPayload =
+                payload as userBankVerificationCodePayloadType;
+
+            return {
+                subject: "Bank Account Verification Request",
+
+                html: `
+                <div style="
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    padding: 40px 20px;
+                ">
+                    <div style="
+                        max-width: 700px;
+                        margin: auto;
+                        background: #ffffff;
+                        border-radius: 10px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    ">
+
+                        <div style="
+                            background: #111827;
+                            padding: 20px;
+                            text-align: center;
+                        ">
+                            <h1 style="
+                                color: #ffffff;
+                                margin: 0;
+                                font-size: 24px;
+                            ">
+                                ${dashboardTitle} Bank Verification
+                            </h1>
+                        </div>
+
+                        <div style="padding: 40px 30px;">
+
+                            <h2 style="
+                                margin-top: 0;
+                                color: #111827;
+                            ">
+                                Bank Account Verification Required
+                            </h2>
+
+                            <p>
+                                Hello ${bankPayload.userName},
+                            </p>
+
+                            <p>
+                                A bank account has been submitted
+                                for verification.
+                            </p>
+
+                            <p>
+                                <strong>User ID:</strong>
+                                ${bankPayload.userId}
+                            </p>
+
+                            <p>
+                                <strong>Account Holder Name:</strong>
+                                ${bankPayload.accountHolderName}
+                            </p>
+
+                            <p>
+                                <strong>Account Number:</strong>
+                                ${bankPayload.accountNumber}
+                            </p>
+
+                            <p>
+                                <strong>Bank Name:</strong>
+                                ${bankPayload.bankName}
+                            </p>
+
+                            <p>
+                                Please verify the bank account
+                                details within 2 days.
+                            </p>
+
+                            <!-- ACTION BUTTONS -->
+                            <div style="
+                                margin-top: 35px;
+                                text-align: center;
+                            ">
+
+                                <a
+                                    href="${bankPayload.approveUrl}"
+                                    target="_blank"
+                                    style="
+                                        display: inline-block;
+                                        padding: 14px 28px;
+                                        margin-right: 10px;
+                                        background-color: #16a34a;
+                                        color: #ffffff;
+                                        text-decoration: none;
+                                        border-radius: 6px;
+                                        font-weight: bold;
+                                    "
+                                >
+                                    Approve Bank
+                                </a>
+
+                                <a
+                                    href="${bankPayload.rejectUrl}"
+                                    target="_blank"
+                                    style="
+                                        display: inline-block;
+                                        padding: 14px 28px;
+                                        background-color: #dc2626;
+                                        color: #ffffff;
+                                        text-decoration: none;
+                                        border-radius: 6px;
+                                        font-weight: bold;
+                                    "
+                                >
+                                    Reject Bank
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                        <div style="
+                            background: #f9fafb;
+                            padding: 20px;
+                            text-align: center;
+                            font-size: 13px;
+                            color: #6b7280;
+                        ">
+                            © ${new Date().getFullYear()} ${dashboardTitle}. All rights reserved.
+                        </div>
+
+                    </div>
+                </div>
+                `
+            };
+        }
+
+        // =========================================================
+        // USER BANK ACCOUNT REJECTED
+        // =========================================================
+        case "BANK_VERIFICATION_REJECTED": {
+
+            const rejectedPayload =
+                payload as userBankAccountVerificationRejectedPayloadType;
+
+            return {
+                subject: "Bank Account Verification Rejected",
+
+                html: `
+                <div>
+                    <h2>Bank Account Verification Rejected</h2>
+
+                    <p>
+                        ${rejectedPayload.userName
+                        ? `Hello ${rejectedPayload.userName},`
+                        : "Hello,"}
+                    </p>
+
+                    <p>
+                        Your bank account verification request has been rejected.
+                    </p>
+
+                    <p>
+                        Unfortunately, the submitted bank account details could not be verified.
+                    </p>
+
+                    <p>
+                        Please review your bank account details you have provided.
+                    </p>
+
+                    <p>
+                        Ensure that the given bank account is active and registerd under your name.
+                    </p>
+
+                    <p>
+                        If you have any questions or need assistance, please contact our support team.
+                    </p>
+
+                    <br />
+
+                    <p>
+                        Thank you for choosing ${dashboardTitle}.
+                    </p>
+
+                    <p>
+                        Regards,<br />
+                        ${dashboardTitle} Team
+                    </p>
+                </div>
+                `
+            };
+        }
+
+        // =========================================================
+        // KYC ACCEPTED
+        // =========================================================
+        case "BANK_VERIFICATION_ACCEPTED": {
+
+            const acceptedPayload =
+                payload as userBankAccountVerificationAcceptedPayloadType;
+
+            return {
+                subject: "Bank Account Verification Accepted",
+
+                html: `
+                <div>
+                    <h2>Bank Account Verification Accepted</h2>
+
+                    <p>
+                        ${acceptedPayload.userName
+                        ? `Hello ${acceptedPayload.userName},`
+                        : "Hello,"
+                    }
+                    </p>
+
+                    <p>
+                        Your bank account verification request has been successfully approved.
+                    </p>
+
+                    <p>
+                        Your bank account is now fully verified and you can access all platform features and services.
+                    </p>
+
+                    <p>
+                        Please sign in to your account to continue.
+                    </p>
+
+                    <p>
+                        If you have any questions or need assistance, please contact our support team.
+                    </p>
+
+                    <br />
+
+                    <p>
+                        Thank you for choosing ${dashboardTitle}.
+                    </p>
+
+                    <p>
+                        Regards,<br />
+                        ${dashboardTitle} Team
+                    </p>
+                </div>
+                `
+            };
+
+        }
+
+
+        // =========================================================
+        // USER BANK ACCOUNT ACCEPTED ADMIN
+        // =========================================================
+        case "BANK_VERIFICATION_ACCEPTED_ADMIN": {
+
+            const acceptedPayload =
+                payload as userBankAccountVerificationAcceptedAdminPayloadType;
+
+            return {
+                subject: "User Bank Account Verification Approved",
+
+                html: `
+                <div style="
+                    font-family: Arial, sans-serif;
+                    background-color: #f4f4f4;
+                    padding: 40px 20px;
+                ">
+                    <div style="
+                        max-width: 650px;
+                        margin: auto;
+                        background: #ffffff;
+                        border-radius: 10px;
+                        overflow: hidden;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                    ">
+
+                        <div style="
+                            background: #111827;
+                            padding: 20px;
+                            text-align: center;
+                        ">
+                            <h1 style="
+                                color: #ffffff;
+                                margin: 0;
+                                font-size: 24px;
+                            ">
+                                ${dashboardTitle} Admin Notification
+                            </h1>
+                        </div>
+
+                        <div style="padding: 35px 30px;">
+
+                            <h2 style="
+                                margin-top: 0;
+                                color: #111827;
+                            ">
+                                User Bank Account Verification Approved
+                            </h2>
+
+                            <p>
+                                ${acceptedPayload.userName
+                        ? `Hello ${acceptedPayload.userName},`
+                        : "Hello Admin,"
+                    }
+                            </p>
+
+                            <p>
+                                The bank account verification request for the following user
+                                has been successfully approved.
+                            </p>
+
+                            <p>
+                                <strong>User ID:</strong>
+                                ${acceptedPayload.userId}
+                            </p>
+
+                            <p>
+                                <strong>Dashboard Name:</strong>
+                                ${acceptedPayload.dashboardName}
+                            </p>
+
+                            <p>
+                                The user bank account is now verified and has access
+                                to all permitted platform services and features.
+                            </p>
+
+                            <br />
+
+                            <p>
+                                Regards,<br />
+                                ${dashboardTitle} System
+                            </p>
+
+                        </div>
+
+                        <div style="
+                            background: #f9fafb;
+                            padding: 18px;
+                            text-align: center;
+                            font-size: 13px;
+                            color: #6b7280;
+                        ">
+                            © ${new Date().getFullYear()} ${dashboardTitle}. All rights reserved.
+                        </div>
+
+                    </div>
+                </div>
+                `
+            };
+        }
+
 
 
         default:

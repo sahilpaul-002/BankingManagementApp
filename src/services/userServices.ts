@@ -11,7 +11,7 @@ import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
 import normalizeIp from "../utils/normalizeIp.js";
 import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_details.js";
 import type { sessionDataTypes, sessionItemsTypes } from "../types/sessionTypes.js";
-import type { successResponseJson } from "../types/responseJson.js";
+import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
 import generateJwtToken from "../utils/generateJwtToken.js";
 import setResponseCookie from "../utils/setResponseCookie.js";
@@ -28,7 +28,16 @@ import { userBankDetailsModel as user_bank_details } from "../models/user_bank_d
 import { userOnboardingDetailsValidationSchema } from "../validations/userOnboardingDetailsValidation.js";
 import type { Schema } from "mongoose";
 import type { Types } from "mongoose";
+import jwt, { type JwtPayload } from "jsonwebtoken";
+import dotenv from "dotenv"
+import { gmailSendService } from "./gmailSendService.js";
 
+dotenv.config();
+
+const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
+const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
+
+// ------------------------------------- USER SIGN UP SERVICE -------------------------------------  \\
 export const userSignUpService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
@@ -150,7 +159,9 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         throw new ServiceUnavailableError("UserSignUpService is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
+// ------------------------------------- USER LOG IN SERVICE -------------------------------------  \\
 export const userLoginService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
@@ -426,7 +437,9 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         throw new ServiceUnavailableError("UserLoginService is facing issue.", error)
     }
 }
+// -------------------------------------  XXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
 
+// ------------------------------------- USER ONBOARDING SERVICE -------------------------------------  \\
 export const userOnboardingService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
@@ -489,34 +502,160 @@ export const userOnboardingService = async (requestSession: Request["session"], 
             account_number: validatedData.bank_details.account_number,
             swift_code: validatedData.bank_details.swift_code,
             iban_code: validatedData.bank_details.iban_code,
+            user_bank_request_id: crypto.randomUUID()
         };
 
+        // Check Existing User address details
+        const existingUserAddressDetailsDoc = await user_address_details.findOne({
+            user_id: userId as Schema.Types.ObjectId,
+        });
+        // Check Existing User bank details
+        const existingUserBankDetailsDoc = await user_bank_details.findOne({
+            user_id: userId as Schema.Types.ObjectId,
+        });
 
-        // =========================================
-        // INSERT DOCUMENTS
-        // =========================================
-        const insertedAddressDocument =
-            await user_address_details.create(
-                addressDocument
+        if (!existingUserAddressDetailsDoc && !existingUserBankDetailsDoc) {
+            // INSERT DOCUMENTS
+            const insertedAddressDocument =
+                await user_address_details.create(
+                    addressDocument
+                );
+            const insertedBankDocument =
+                await user_bank_details.create(
+                    bankDocument
+                );
+
+            return {
+                status: "SUCCESS",
+                message:
+                    "User address and bank details added successfully",
+                data: {
+                    address_details:
+                        insertedAddressDocument,
+
+                    bank_details:
+                        insertedBankDocument,
+                },
+            };
+        }
+        else if (!existingUserAddressDetailsDoc && existingUserBankDetailsDoc) {
+            // Insert user address details
+            const insertedAddressDocument =
+                await user_address_details.create(
+                    addressDocument
+                );
+
+            // Update user bank details
+            const { user_id, ...updatableBankFields } = bankDocument;
+            const updatedBankDocument = await user_bank_details.findOneAndUpdate(
+                {
+                    user_id: userId as Types.ObjectId
+                },
+                {
+                    ...updatableBankFields,
+                    is_verified: false
+                },
+                {
+                    new: true,
+                    runValidators: true
+                }
             );
 
-        const insertedBankDocument =
-            await user_bank_details.create(
-                bankDocument
+            return {
+                status: "SUCCESS",
+                message:
+                    "Address added and bank details updated successfully",
+                data: {
+                    address_details:
+                        insertedAddressDocument,
+
+                    bank_details:
+                        updatedBankDocument,
+                },
+            };
+        }
+        else if (!existingUserBankDetailsDoc && existingUserAddressDetailsDoc) {
+            // Insert user bank details
+            const insertedBankDocument =
+                await user_bank_details.create(
+                    bankDocument
+                );
+            // Update the user addresss details
+            const { user_id, ...updatableAddressFields } = addressDocument;
+            const updatedAddressDocument = await user_address_details.findOneAndUpdate(
+                {
+                    user_id: userId as Types.ObjectId
+                },
+                {
+                    ...updatableAddressFields,
+                },
+                {
+                    new: true,
+                    runValidators: true
+                }
             );
 
-        return {
-            status: "SUCCESS",
-            message:
-                "User address and bank details added successfully",
-            data: {
-                address_details:
-                    insertedAddressDocument,
+            return {
+                status: "SUCCESS",
+                message:
+                    "Bank details added and address updated successfully",
+                data: {
+                    address_details:
+                        updatedAddressDocument,
 
-                bank_details:
-                    insertedBankDocument,
-            },
-        };
+                    bank_details:
+                        insertedBankDocument,
+                },
+            };
+        }
+        else if (existingUserAddressDetailsDoc && existingUserBankDetailsDoc && !existingUserBankDetailsDoc?.is_verified) {
+            // Update the user address details & bank detais
+            const { user_id: addressUserId, ...updatableAddressFields } = addressDocument;
+            const updatedAddressDocument = await user_address_details.findOneAndUpdate(
+                {
+                    user_id: userId as Types.ObjectId
+                },
+                {
+                    ...updatableAddressFields,
+                },
+                {
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+            // Update user bank details
+            const { user_id: bankUserId, ...updatableBankFields } = bankDocument;
+            const updatedBankDocument = await user_bank_details.findOneAndUpdate(
+                {
+                    user_id: userId as Types.ObjectId
+                },
+                {
+                    ...updatableBankFields,
+                    is_verified: false
+                },
+                {
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+            return {
+                status: "SUCCESS",
+                message:
+                    "Bank details and address details updated successfully",
+                data: {
+                    address_details:
+                        updatedAddressDocument,
+
+                    bank_details:
+                        updatedBankDocument,
+                },
+            };
+        }
+        else {
+            throw new ServiceError("Address and bank details already exist for this user");
+        }
     }
     catch (err) {
         const error = err as any;
@@ -543,3 +682,321 @@ export const userOnboardingService = async (requestSession: Request["session"], 
         throw new ServiceUnavailableError("UserOnboardingService is facing issue.", error)
     }
 }
+// -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
+
+// ------------------------------------- SEND BANK VERIFICATION MAIL SERVICE ------------------------------------- \\
+export const sendBankVerificationMailService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid request body data");
+        }
+
+        // Get user data from session
+        const userEmail = requestSession?.userEmail
+        if (!userEmail) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
+        const userId: unknown = requestSession?.userId
+        if (!userId) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
+        const userName = requestSession?.userName || "User"
+        if (!userName) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
+        const dashboardName = requestSession?.sessiondata?.dashboardName || "BMA"
+        if (!dashboardName) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
+
+        // Get user details
+        const userDetailsDoc = await user_details.findOne({
+            _id: userId as Schema.Types.ObjectId
+        })
+        if (!userDetailsDoc) {
+            throw new NotFoundError("User details not found");
+        }
+        // Get user kyc details
+        const userBankDetailsDoc = await user_bank_details.findOne({
+            user_id: userId as Schema.Types.ObjectId
+        });
+        if (!userBankDetailsDoc) {
+            throw new NotFoundError("User bank details not found")
+        }
+
+        const jwtSecretKey = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
+        // Create Kyv Verification Approve Auth Token
+        const approveToken = jwt.sign(
+            {
+                userId,
+                userName,
+                dashboardName,
+                action: "APPROVE",
+                userBankRequestId: userBankDetailsDoc?.user_bank_request_id
+            },
+            jwtSecretKey,
+            {
+                expiresIn: "2d",
+            }
+        );
+        const rejectToken = jwt.sign(
+            {
+                userId,
+                userName,
+                dashboardName,
+                action: "REJECT",
+                userBankRequestId: userBankDetailsDoc?.user_bank_request_id
+            },
+            jwtSecretKey,
+            {
+                expiresIn: "2d",
+            }
+        );
+
+        // Backend webhook URLs
+        const approveUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/user/bankVerificationWebhook?token=${encodeURIComponent(approveToken)}`;
+        const rejectUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/user/bankVerificationWebhook?token=${encodeURIComponent(rejectToken)}`;
+
+        // Generate email template
+        const emailTemplate = generateEmailTemplate(
+            "USER_BANK_VERIFICATION",
+            {
+                userId: userId as string,
+                userName: userName,
+                accountHolderName: userBankDetailsDoc?.account_holder_name,
+                accountNumber: userBankDetailsDoc?.account_number,
+                bankName: userBankDetailsDoc?.bank_name,
+                dashboardName: dashboardName,
+                approveUrl,
+                rejectUrl
+            }
+        );
+
+        const toEmail: string = bmaNotificationMail
+        const sendEmail: string = fromEmail
+        const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
+        // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+        const gmailMailServiceResponse = await gmailSendService(mainConfig)
+
+        if (gmailMailServiceResponse?.status !== "SUCCESS") {
+            throw new ServiceError("GmailSendService is facing error")
+        }
+
+        return { status: "SUCCESS", data: {}, message: "User bank account verificaiton email sent" }
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "SendBankVerificationMailService",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("SendBankVerificationMailService is unavailbale as facing unknown issue.", error)
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+// ------------------------------------- USER BANK VERIFICATION WEBHOOK SERVICE ------------------------------------- \\
+interface userBankVerificationJwtPayloadType extends JwtPayload {
+    userId: string;
+    userName: string;
+    dashboardName: string;
+    action: "APPROVE" | "REJECT";
+    userBankRequestId: string;
+}
+
+export const userBankVerificationWebhookService = async (res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson | void> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid request query params data");
+        }
+
+        // Verify JWT kyc verification auth token
+        const token = aesDecryptedQueryData.token;
+        if (!token || typeof token !== "string") {
+            throw new BadRequestError("Invalid or incomplete token in user bank account verification webhook");
+        }
+
+        const jwtSecret = process.env.JWT_SECRET_KEY as string;
+        const decoded = jwt.verify(token, jwtSecret) as userBankVerificationJwtPayloadType
+        const userId: unknown = decoded.userId;
+
+        // Verify token
+        const currentUserBankDetailsDoc = await user_bank_details.findOne({ user_id: decoded.userId });
+        if (currentUserBankDetailsDoc?.user_bank_request_id !== decoded?.userBankRequestId) {
+            // throw new ServiceError("Expired kyc verification link.")
+            return { status: "SERVICE_ERROR", message: "Exipred verification link" }
+        }
+
+        // Update the user bank request id
+        const updatedUserBankDetailsDoc = await user_bank_details.findOneAndUpdate(
+            {
+                user_id: userId as Types.ObjectId
+            },
+            {
+                user_bank_request_id: crypto.randomUUID()
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        );
+        if (!updatedUserBankDetailsDoc) {
+            throw new ServiceError(
+                "Failed to update user bank details request_id"
+            );
+        }
+
+        // Get user details
+        const userDetailsDoc = await user_details.findOne({
+            _id: userId as Schema.Types.ObjectId
+        })
+        if (!userDetailsDoc) {
+            throw new NotFoundError("User details not found");
+        }
+
+        if (decoded.action === "APPROVE") {
+            // Update User Bank Account Status in DB
+            const userBankDetailsDoc = await user_bank_details.findOneAndUpdate(
+                {
+                    user_id: decoded.userId,
+                },
+                {
+                    is_verified: true,
+                },
+                {
+                    new: true,
+                }
+            );
+            if (!userBankDetailsDoc) {
+                throw new ServiceError("Failed to update the user details for bank account status")
+            }
+
+            // =======================
+            // Success mail to user
+            // =======================
+            // Generate email template
+            const emailTemplate = generateEmailTemplate(
+                "BANK_VERIFICATION_ACCEPTED",
+                {
+                    userName: decoded?.userName,
+                    dashboardName: decoded?.dashboardName,
+                }
+            );
+
+            const toEmail: string = userDetailsDoc?.email;
+            const sendEmail: string = fromEmail
+            const mainConfig = { toEmail, sendEmail, dashboardName: decoded?.dashboardName, emailTemplate }
+            // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+            const gmailMailServiceResponse1 = await gmailSendService(mainConfig)
+
+            if (gmailMailServiceResponse1?.status !== "SUCCESS") {
+                throw new ServiceError("GmailSendService is facing error")
+            }
+
+
+            // =======================
+            // Success mail to BMA admin
+            // =======================
+            // Generate email template
+            const adminUserName = "User"
+            const emailTemplateAdmin = generateEmailTemplate(
+                "BANK_VERIFICATION_ACCEPTED_ADMIN",
+                {
+                    userId: decoded?.userId,
+                    userName: adminUserName,
+                    dashboardName: decoded?.dashboardName,
+                }
+            );
+
+            const toAdminEmail: string = bmaNotificationMail;
+            const mainConfigAdmin = { toEmail: toAdminEmail, sendEmail, dashboardName: "BMA_Admin", emailTemplate: emailTemplateAdmin }
+            // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+            const gmailMailServiceResponse2 = await gmailSendService(mainConfigAdmin)
+
+            if (gmailMailServiceResponse2?.status !== "SUCCESS") {
+                throw new ServiceError("GmailSendService is facing error")
+            }
+
+            return { status: "SUCCESS", data: "User bank account verification accepted", message: "User bank account verification email webhook sent succesfully" }
+        }
+        else if (decoded.action === "REJECT") {
+            // Update User Bank Account Status in DB
+            const userBankDetailsDoc = await user_bank_details.findOneAndUpdate(
+                {
+                    user_id: decoded.userId,
+                },
+                {
+                    is_verified: false,
+                },
+                {
+                    new: true,
+                }
+            );
+            if (!userBankDetailsDoc) {
+                throw new ServiceError("Failed to update the user details for bank account status")
+            }
+
+            // Generate email template
+            const emailTemplate = generateEmailTemplate(
+                "BANK_VERIFICATION_REJECTED",
+                {
+                    userName: decoded?.userName,
+                    dashboardName: decoded?.dashboardName,
+                }
+            );
+
+            const toEmail: string = userDetailsDoc?.email;
+            const sendEmail: string = fromEmail
+            const mainConfig = { toEmail, sendEmail, dashboardName: decoded?.dashboardName, emailTemplate }
+            // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+            const gmailMailServiceResponse = await gmailSendService(mainConfig)
+
+            if (gmailMailServiceResponse?.status !== "SUCCESS") {
+                throw new ServiceError("GmailSendService is facing error")
+            }
+
+            return { status: "SUCCESS", data: "User bank account verification rejected", message: "User bank account verification email webhook send succesfully" }
+        }
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetUserBankVerificationWebhookService",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("GetUserBankVerificationWebhookService is unavailbale as facing unknown issue.", error)
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

@@ -119,7 +119,13 @@ export const userBankDetailsValidationSchema = z.object({
 
     is_verified: z
         .boolean("IsVerified must be a boolean")
-        .optional()
+        .optional(),
+
+    // user_bank_request_id: z
+    //     .string("User bank request id is required and must be a string")
+    //     .trim()
+    //     .min(1, "User bank request id is required")
+    //     .max(50, "Bank name cannot exceed 100 characters"),
 
 }).strict();
 

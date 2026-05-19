@@ -20,7 +20,7 @@ dotenv.config();
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
 
-// GET KYC SERVICE
+// ------------------------------------- GET KYC SERVICE ------------------------------------- \\
 export const getKycService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -71,8 +71,9 @@ export const getKycService = async (requestSession: Request["session"], res: Res
         throw new ServiceUnavailableError("GetKycService is unavailbale as facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// UPLOAD KYC DETAILS SERVICE
+// ------------------------------------- UPLOAD KYC DETAILS SERVICE ------------------------------------- \\
 interface kycMulterFiles {
     poi_document?: Express.Multer.File[];
     poa_document?: Express.Multer.File[];
@@ -253,8 +254,9 @@ export const uploadKycService = async (req: Request, res: Response, aesDecrypted
         throw new ServiceUnavailableError("UploadKycService is unavailbale as facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// SEND KYC VERIFICATION MAIL SERVICE
+// ------------------------------------- SEND KYC VERIFICATION MAIL SERVICE ------------------------------------- \\
 export const sendKycVerificationMailService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -380,8 +382,9 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         throw new ServiceUnavailableError("SendKycVerificationMailService is unavailbale as facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// KYC VERIFICATION WEBHOOK SERVICE
+// ------------------------------------- KYC VERIFICATION WEBHOOK SERVICE ------------------------------------- \\
 interface kycVerificationJwtPayloadType extends JwtPayload {
     userId: string;
     userName: string;
@@ -575,3 +578,4 @@ export const kycVerificationWebhookService = async (res: Response, aesDecryptedQ
         throw new ServiceUnavailableError("GetKycVerificationWebhookService is unavailbale as facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

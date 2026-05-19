@@ -5,7 +5,7 @@ import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, Servi
 import logger from "../utils/logger.js";
 import { getKycService, kycVerificationWebhookService, sendKycVerificationMailService, uploadKycService } from "../services/kycServices.js";
 
-// FUNCTION TO GET KYC
+// ------------------------------------- FUNCTION TO GET KYC ------------------------------------- \\
 export const getKyc = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body;
@@ -46,8 +46,9 @@ export const getKyc = async (req: Request, res: Response): Promise<Response<succ
         throw new ServiceUnavailableError("GetKycController is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO GET KYC
+// ------------------------------------- FUNCTION TO GET KYC ------------------------------------- \\
 export const uploadKyc = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body;
@@ -83,8 +84,9 @@ export const uploadKyc = async (req: Request, res: Response): Promise<Response<s
         throw new ServiceUnavailableError("UploadKycController is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO SENT KYC VERIFICATION MAIL
+// ------------------------------------- FUNCTION TO SENT KYC VERIFICATION MAIL ------------------------------------- \\
 export const sendKycVerificationMail = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body;
@@ -125,8 +127,9 @@ export const sendKycVerificationMail = async (req: Request, res: Response): Prom
         throw new ServiceUnavailableError("SendKycVerificationMailController is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// FUNCTION TO GET KYC VERIFICATION WEBHOOK
+// ------------------------------------- FUNCTION TO GET KYC VERIFICATION WEBHOOK ------------------------------------- \\
 export const getKycVerificationWebhook = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedQueryData = req.query;
@@ -226,3 +229,4 @@ export const getKycVerificationWebhook = async (req: Request, res: Response): Pr
         throw new ServiceUnavailableError("GetKycVerificationWebhookController is facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
