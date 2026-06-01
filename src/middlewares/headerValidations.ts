@@ -2,15 +2,16 @@ import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
 import cookieParser from "cookie-parser";
-import { AppErrorClass, ForbiddenError, InternalSeverError, InvalidHeaderError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InternalSeverError, InvalidHeaderError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import type { userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import destroySession from "../utils/destroySession.js";
+import logger from "../utils/logger.js";
 
 const headerValidations = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
         // Skip portal header check for selcted pathes
-        const excludedPaths: string[] = ["/signUp", "/login"];
+        const excludedPaths: string[] = ["/signUp", "/login", "/sendResetPasswordCode", "/verifyResetPasswordCode"];
         if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
@@ -54,94 +55,94 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
         }
         // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
 
+        // Validate Agent Code header
+        const agentCode: string = req.headers["agent-code"] as string;
+        if (agentCode !== req.session?.sessiondata?.agentCode) {
+            throw new UnauthorizedError("INVALID 'agent-code'")
+        }
+
+        // Validate Subagent Code header
+        const subAgentCode: string = req.headers["subagent-code"] as string;
+        if (subAgentCode !== req.session?.sessiondata?.subAgentCode) {
+            throw new UnauthorizedError("INVALID 'subagent-code'")
+        }
+
+        // Validate Program Id header
+        const programId: string = req.headers["program-id"] as string;
+        if (programId !== req.session?.sessiondata?.programId) {
+            throw new UnauthorizedError("INVALID 'program-id'")
+        }
+
+        // Validate Business Id header
+        const businessId: string = req.headers["business-id"] as string;
+        if (businessId !== req.session?.sessiondata?.businessId) {
+            throw new UnauthorizedError("INVALID 'business-id'")
+        }
+
+        // Validate Client Id header
+        const clientId: string = req.headers["client-id"] as string;
+        if (clientId !== req.session?.sessiondata?.clientId) {
+            throw new UnauthorizedError("INVALID 'client-id'")
+        }
+
         // Skip user existance check for selcted pathes
-        const excludedPaths2: string[] = ["/signUp"];
-        if (excludedPaths2.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+        const excludedPaths3: string[] = ["/login"];
+        if (excludedPaths3.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
-        else {
-            // Validate Agent Code header
-            const agentCode: string = req.headers["agent-code"] as string;
-            if (agentCode !== req.session?.sessiondata?.agentCode) {
-                throw new UnauthorizedError("INVALID 'agent-code'")
-            }
+        // Check user details
+        let userDetails: userDetailsSchemaTypes | null
+        // Get user from DB
+        const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
+            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findById(req.session.userId);
+            return userExistResponse;
+        }
+        userDetails = await checkUserExistInDB(req);
 
-            // Validate Subagent Code header
-            const subAgentCode: string = req.headers["subagent-code"] as string;
-            if (subAgentCode !== req.session?.sessiondata?.subAgentCode) {
-                throw new UnauthorizedError("INVALID 'subagent-code'")
-            }
-
-            // Validate Program Id header
-            const programId: string = req.headers["program-id"] as string;
-            if (programId !== req.session?.sessiondata?.programId) {
-                throw new UnauthorizedError("INVALID 'program-id'")
-            }
-
-            // Validate Business Id header
-            const businessId: string = req.headers["business-id"] as string;
-            if (businessId !== req.session?.sessiondata?.businessId) {
-                throw new UnauthorizedError("INVALID 'business-id'")
-            }
-
-            // Validate Client Id header
-            const clientId: string = req.headers["client-id"] as string;
-            if (clientId !== req.session?.sessiondata?.clientId) {
-                throw new UnauthorizedError("INVALID 'client-id'")
-            }
-
-            // Skip user existance check for selcted pathes
-            const excludedPaths3: string[] = ["/login"];
-            if (excludedPaths3.some(path => req.path === path || req.path.startsWith(path + "/"))) {
-                return next();
-            }
-            // Check user details
-            let userDetails: userDetailsSchemaTypes | null
+        // Check user exist in DB
+        if (!userDetails) {
             try {
-                // Get user from DB
-                const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
-                    const userExistResponse: userDetailsSchemaTypes | null = await user_details.findById(req.session.userId);
-                    return userExistResponse;
-                }
-                userDetails = await checkUserExistInDB(req);
+                const destroySessionResponse = await destroySession(req.session, res);
 
-                // Check user exist in DB
-                if (!userDetails) {
-                    try {
-                        const destroySessionResponse = await destroySession(req.session, res);
-
-                        if (destroySessionResponse?.status !== "SUCCESS") {
-                            if ((destroySessionResponse as failedResponseJson)?.error) {
-                                throw new InternalSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
-                            }
-                            else {
-                                throw new InternalSeverError("FAILED TO DESTROY SESSION")
-                            }
-                        }
-                        throw new ForbiddenError("User does not exists");
+                if (destroySessionResponse?.status !== "SUCCESS") {
+                    if ((destroySessionResponse as failedResponseJson)?.error) {
+                        throw new InternalSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
                     }
-                    catch (error) {
-                        throw new InternalSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
+                    else {
+                        throw new InternalSeverError("FAILED TO DESTROY SESSION")
                     }
                 }
+                throw new ForbiddenError("User does not exists");
+            }
+            catch (error) {
+                throw new InternalSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
+            }
+        }
 
-                // Check agent-code and subagent-code
-                if (!userDetails?.agent_code || userDetails?.agent_code !== agentCode || !userDetails?.subagent_code || userDetails?.subagent_code !== subAgentCode) {
-                    throw new UnauthorizedError("Unauthorized access");
-                }
-            }
-            catch {
-                throw new InternalSeverError("Session user validation using databse is facing issue");
-            }
+        // Check agent-code and subagent-code
+        if (!userDetails?.agent_code || userDetails?.agent_code !== agentCode || !userDetails?.subagent_code || userDetails?.subagent_code !== subAgentCode) {
+            throw new UnauthorizedError("Unauthorized access");
         }
 
         next();
     }
-    catch (error) {
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "HeaderValidation",
+            // url: req.path,
+            // method: req.method
+        });
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            throw error
         }
-        throw new Error("Header validation is facing issue.")
+        throw new ServiceError(
+            `HeaderValidation facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 

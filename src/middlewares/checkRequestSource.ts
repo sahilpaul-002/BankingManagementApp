@@ -12,25 +12,25 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
 
     // ------------------------ Logic to check request headers ------------------------ \\
     try {
-        if (ENVIRONMENT?.toUpperCase() === "PRODUCTION") {
-            const ua: string = req.headers['user-agent'] || '';
-            const chUA: string | string[] = req.headers['sec-ch-ua'] || '';
+        if (ENVIRONMENT.toUpperCase() === "PRODUCTION") {
 
-            const isValidUA: boolean = ["Mozilla", "AppleWebKit", "Chrome", "Safari", "Edg"]
-                .some((val: string) => ua.includes(val));
+            const ua: string = req.headers["user-agent"] || "";
 
-            const isValidClientHint: boolean = ["Chromium", "Google Chrome", "Microsoft Edge", "Not-A.Brand"]
-                .some((val: string) => chUA.includes(val));
+            const isBrowserUA =
+                ua.includes("Mozilla") &&
+                (
+                    ua.includes("Chrome") ||
+                    ua.includes("Safari") ||
+                    ua.includes("Firefox") ||
+                    ua.includes("Edg") ||
+                    ua.includes("OPR") ||
+                    ua.includes("Brave")
+                );
 
-            const hasSecFetch: boolean = !!req.headers['sec-fetch-site'];
-
-            const isLikelyBrowser: boolean =
-                isValidUA &&
-                hasSecFetch &&
-                isValidClientHint;
-
-            if (!isLikelyBrowser) {
-                throw new ForbiddenError("User is not allowed to access the application")
+            if (!isBrowserUA) {
+                throw new ForbiddenError(
+                    "User is not allowed to access the application"
+                );
             }
         }
     }
@@ -44,19 +44,13 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
             // url: req.path,
             // method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("Request source header validation is facing unknown issue.", error)
+        throw new ServiceError(
+            `Request source header validation facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
     // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
@@ -117,19 +111,13 @@ const checkRequestSource = (req: Request, res: Response, next: NextFunction): Re
                 // url: req.path,
                 // method: req.method
             });
-
             if (error instanceof AppErrorClass) {
-                if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                    throw error
-                }
-                else {
-                    throw new ServiceError(
-                        `[${errorStatus}] ${error.message}`,
-                        error?.error ? error.error : error
-                    );
-                }
+                throw error
             }
-            throw new ServiceUnavailableError("Request source domain validation is facing unknown issue.", error)
+            throw new ServiceError(
+                `Request source domain validation facing issue: [${errorStatus}] ${error.message}`,
+                error?.error ? error.error : error
+            );
         }
     }
 

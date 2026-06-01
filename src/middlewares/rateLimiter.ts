@@ -1,5 +1,7 @@
 import rateLimit from "express-rate-limit";
 
+const ENVIRONMENT: string = process.env.NODE_ENV || "PRODUCTION";
+
 const rateLimiter = (): any => {
     // Allowed ip list
     const allowedIPs: string[] = [
@@ -68,7 +70,13 @@ const rateLimiter = (): any => {
         standardHeaders: 'draft-8', // draft-6: `RateLimit-*` headers; draft-7 & draft-8: combined `RateLimit` header
         legacyHeaders: true, // Disable the `X-RateLimit-*` headers.
         message: { status: "BAD_REQUEST", message: "Too many requests, please try again later." },
-        skip: (req, res) => req.ip ? isIpAllowed(req.ip) : false,
+        skip: (req, res) => {
+            if (ENVIRONMENT?.toUpperCase() !== "PRODUCTION") {
+                return true;
+            }
+
+            return req.ip ? isIpAllowed(req.ip) : false;
+        },
     })
 }
 // RATE LIMITING STATUS CODE 429

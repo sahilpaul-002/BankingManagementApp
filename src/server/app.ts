@@ -102,6 +102,17 @@ app.locals.redisClient = redisClient;
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ---------------------------------------- Public Routes ---------------------------------------- \\
+app.use((req, res, next) => {
+    const skipRoutes = [
+        '/favicon.ico',
+    ]
+
+    if (skipRoutes.includes(req.path)) {
+        return res.status(204).end()
+    }
+
+    next()
+})
 app.use("/api/v1/public", publicRoutes);
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 
@@ -128,7 +139,7 @@ app.use(rateLimiter());
 
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 app.use((req, res, next) => {
-    console.log("URL:", req.originalUrl);
+    console.log("Path:", req.path)
     console.log("Method:", req.method);
     console.log("Query:", req.query);
     console.log("Body:", req.body);

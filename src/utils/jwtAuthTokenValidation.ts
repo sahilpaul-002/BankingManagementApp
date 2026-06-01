@@ -4,7 +4,8 @@ import type { failedResponseJson, successResponseJson } from "../types/responseJ
 import verifyJwtAuth from "../utils/verifyJwtAuth.js"
 import extractJwtTokenValue from "./extractJwtTokenValue.js"
 import setResponseCookie from "./setResponseCookie.js"
-import { AppErrorClass, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "./AppErrorClass.js"
+import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "./AppErrorClass.js"
+import logger from "./logger.js"
 
 interface jwtAuthDataType extends JwtPayload {
   accessToken: string
@@ -74,11 +75,23 @@ const jwtAuthTokenValidation = async (
 
     next()
   }
-  catch (error) {
+  catch (err) {
+    const error = err as any;
+    const url = req.path || "UNKNOWN_URL";
+    const errorStatus = error?.status || "UnknownErrorStatus";
+
+    logger.error(error, {
+      serviceName: "JwtAuthValidation",
+      // url: req.path,
+      // method: req.method
+    });
     if (error instanceof AppErrorClass) {
-      throw error; // ✅ preserve original error
+      throw error
     }
-    throw new Error("JWT auth validation is facing issue.")
+    throw new ServiceError(
+      `JwtAuthValidation facing issue: [${errorStatus}] ${error.message}`,
+      error?.error ? error.error : error
+    );
   }
 }
 

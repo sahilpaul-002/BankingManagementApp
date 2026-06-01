@@ -5,8 +5,15 @@ import { request } from "node:http";
 import { AppErrorClass, InvalidHeaderError, ServiceError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
 import { headerAsymmetricDecryptionMsg } from "../utils/asymmetricHeaderEncryptionDecryption.js";
 import type { decryptionFailedJson, decryptionSuccessJson } from "../types/decryptionRespoonseTypes.js";
+import logger from "../utils/logger.js";
 
 const headerTypeValidation = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
+    // Skip portal header check for selcted pathes
+    const excludedPaths: string[] = ["/signUp", "/sendResetPasswordCode", "/verifyResetPasswrodCode"];
+    if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+        return next();
+    }
+
     // Get request header "from_portal" to check the sorce the api call
     const fromPortal: string = (req?.headers["from-portal"] ?? "false") as string;
     // Check if the api call is not from portal
@@ -16,15 +23,23 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
         }
 
         // -------------------------------------- Decrypt Header Items -------------------------------------- \\
-        const encryptedHeaderKeys = [
-            'x-api-key',
-            'agent-code',
-            'subagent-code',
-            'program-id',
-            'business-id',
-            'client-id',
-            'authorization'
-        ];
+        let encryptedHeaderKeys: string[];
+        if (req.path === "/login" || req.path.startsWith("/login/")) {
+            encryptedHeaderKeys = [
+                "x-device-id"
+            ];
+        } else {
+            encryptedHeaderKeys = [
+                'x-api-key',
+                'agent-code',
+                'subagent-code',
+                'program-id',
+                'business-id',
+                'client-id',
+                "x-device-id",
+                'authorization'
+            ];
+        }
 
         try {
 
@@ -87,14 +102,22 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
                 }
             }
 
-        } catch (error) {
+        } catch (err) {
+            const error = err as any;
+            const url = req.path || "UNKNOWN_URL";
+            const errorStatus = error?.status || "UnknownErrorStatus";
 
+            logger.error(error, {
+                serviceName: "AsymmetricHeaderDecryption",
+                // url: req.path,
+                // method: req.method
+            });
             if (error instanceof AppErrorClass) {
-                throw error;
+                throw error
             }
-
-            throw new ServiceUnavailableError(
-                "Asymmetric header decryption service is not working."
+            throw new ServiceError(
+                `AsymmetricHeaderDecryption facing issue: [${errorStatus}] ${error.message}`,
+                error?.error ? error.error : error
             );
         }
         // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
@@ -122,29 +145,30 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
             throw new InvalidHeaderError("'from-portal' MISSING OR NOT STRING")
         }
 
+        // Validate the device-id type header
+        const devideId: string | null = checkStringHeader(req.headers, "x-device-id");
+        if (!devideId) {
+            throw new InvalidHeaderError("'device-id' MISSING OR NOT STRING")
+        }
+
         // Validate X-API-Key header
         const xApiKey: string | null = checkStringHeader(req.headers, "x-api-key");
         if (!xApiKey) {
             throw new InvalidHeaderError("'x-api-key' MISSING OR NOT STRING")
         }
 
-        // Validate Authorization header
-        const authorizationHeader: string | null = checkStringHeader(req.headers, "authorization");
-        if (!authorizationHeader) {
-            throw new InvalidHeaderError("'authorization' MISSING OR NOT STRING")
-        }
-
         // Skip user existance check for selcted pathes
-        const excludedPaths: string[] = ["/signUp"];
+        const excludedPaths: string[] = ["/login"];
         if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
         else {
-            // Validate the device-id type header
-            const devideId: string | null = checkStringHeader(req.headers, "x-device-id");
-            if (!devideId) {
-                throw new InvalidHeaderError("'device-id' MISSING OR NOT STRING")
+            // Validate Authorization header
+            const authorizationHeader: string | null = checkStringHeader(req.headers, "authorization");
+            if (!authorizationHeader) {
+                throw new InvalidHeaderError("'authorization' MISSING OR NOT STRING")
             }
+
             // Validate Agent Code header
             const agentCode: string | null = checkStringHeader(req.headers, "agent-code")
             if (!agentCode) {
@@ -178,11 +202,23 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
 
         next();
     }
-    catch (error) {
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "HeaderTypeValidation",
+            // url: req.path,
+            // method: req.method
+        });
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            throw error
         }
-        throw new Error("Header type validation is facing issue.")
+        throw new ServiceError(
+            `HeaderTypeValidation facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 

@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { getRedisClient } from '../configs/redisConfig.js';
 import type { failedResponseJson } from '../types/responseJson.js';
 import { AppErrorClass, InvalidHeaderError, ServiceError, UnauthorizedError } from '../utils/AppErrorClass.js';
+import logger from '../utils/logger.js';
 
 const validateUniqueRequests = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
@@ -31,11 +32,23 @@ const validateUniqueRequests = async (req: Request, res: Response, next: NextFun
 
         next();
     }
-    catch (error) {
+    catch (err: any) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "ApiRequestIdValidation",
+            // url: req.path,
+            // method: req.method
+        });
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            throw error
         }
-        throw new Error("Api unique request id validation is facing issue.")
+        throw new ServiceError(
+            `ApiRequestIdValidation facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 };
 

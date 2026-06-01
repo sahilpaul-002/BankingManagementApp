@@ -24,7 +24,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
         }
 
         // Skip portal header check for selcted pathes
-        const excludedPaths: string[] = ["/signUp", "/login"];
+        const excludedPaths: string[] = ["/signUp", "/login", "/sendResetPasswordCode", "/verifyResetPasswordCode"];
         if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
@@ -40,111 +40,80 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             }
 
             let userDetails: userDetailsSchemaTypes | null
-            try {
-                // Get user from DB
-                const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
-                    const userExistResponse: userDetailsSchemaTypes | null = await user_details.findById(req.session.userId);
-                    return userExistResponse;
-                }
-                userDetails = await checkUserExistInDB(req);
+            // Get user from DB
+            const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
+                const userExistResponse: userDetailsSchemaTypes | null = await user_details.findById(req.session.userId);
+                return userExistResponse;
+            }
+            userDetails = await checkUserExistInDB(req);
 
-                // Check user exist in DB
-                if (!userDetails) {
-                    try {
-                        const destroySessionResponse = await destroySession(req.session, res);
+            // Check user exist in DB
+            if (!userDetails) {
+                try {
+                    const destroySessionResponse = await destroySession(req.session, res);
 
-                        if (destroySessionResponse?.status !== "SUCCESS") {
-                            if ((destroySessionResponse as failedResponseJson)?.error) {
-                                throw new InternalSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
-                            }
-                            else {
-                                throw new InternalSeverError("FAILED TO DESTROY SESSION")
-                            }
+                    if (destroySessionResponse?.status !== "SUCCESS") {
+                        if ((destroySessionResponse as failedResponseJson)?.error) {
+                            throw new InternalSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
                         }
-                        throw new ForbiddenError("User does not exists");
+                        else {
+                            throw new InternalSeverError("FAILED TO DESTROY SESSION")
+                        }
                     }
-                    catch (error) {
-                        throw new InternalSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
-                    }
+                    throw new ForbiddenError("User does not exists");
                 }
-
-                // Check user activated
-                if (!userDetails?.is_active) {
-                    const destroySessionResponse = await destroySession(req.session, res);
-                    throw new UnauthorizedError("User is not activated");
+                catch (error) {
+                    throw new InternalSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
                 }
             }
-            catch {
-                throw new InternalSeverError("Session user validation using databse is facing issue");
+
+            // Check user activated
+            if (!userDetails?.is_active) {
+                const destroySessionResponse = await destroySession(req.session, res);
+                throw new UnauthorizedError("User is not activated");
             }
 
-            try {
-                // Check user meta details
-                // Get the client IP address
-                const getClientIP = (req: Request): string => {
-                    let ip =
-                        (typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"].split(",")[0]?.trim() : undefined) ||
-                        req.socket?.remoteAddress ||
-                        req.connection?.remoteAddress ||
-                        req.ip
+            // Check user meta details
+            // Get the client IP address
+            const getClientIP = (req: Request): string => {
+                let ip =
+                    (typeof req.headers["x-forwarded-for"] === "string" ? req.headers["x-forwarded-for"].split(",")[0]?.trim() : undefined) ||
+                    req.socket?.remoteAddress ||
+                    req.connection?.remoteAddress ||
+                    req.ip
 
-                    return normalizeIp(ip) as string;
-                };
-                const clientIp = getClientIP(req)
+                return normalizeIp(ip) as string;
+            };
+            const clientIp = getClientIP(req)
 
-                // Get the device id from header
-                const deviceId = req.headers['x-device-id'];
+            // Get the device id from header
+            const deviceId = req.headers['x-device-id'];
 
-                // Check client-ip and device-id in session meata
-                if (!req.session?.meta?.clientIp || !req.session?.meta?.deviceId || req.session.meta.clientIp !== clientIp || req.session.meta.deviceId !== deviceId) {
-                    const destroySessionResponse = await destroySession(req.session, res);
-                    throw new UnauthorizedError("User is not authorized - Invalid user meta details");
-                }
-
-                // Function to validate client IP and device ID
-                async function validateUserMetaDetails(
-                    userId: string,
-                    clientIp: string,
-                    deviceId: string
-                ): Promise<boolean> {
-                    const userMetaDetails = await user_meta_details.findOne({
-                        user_id: userId,
-                        device_id: deviceId,
-                        ip_address: clientIp,
-                    }).lean();
-
-                    return userMetaDetails !== null;
-                }
-                const isValidMeta = await validateUserMetaDetails(userDetails._id.toString(), clientIp, deviceId as string);
-
-                if (!isValidMeta) {
-                    const destroySessionResponse = await destroySession(req.session, res);
-                    throw new UnauthorizedError("User is not authorized - Invalid user meta details");
-                }
+            // Check client-ip and device-id in session meata
+            if (!req.session?.meta?.clientIp || !req.session?.meta?.deviceId || req.session.meta.clientIp !== clientIp || req.session.meta.deviceId !== deviceId) {
+                const destroySessionResponse = await destroySession(req.session, res);
+                throw new UnauthorizedError("User is not authorized - Invalid user meta details");
             }
-            catch (err) {
-                const error = err as any;
-                const url = req.path || "UNKNOWN_URL";
-                const errorStatus = error?.status || "UnknownErrorStatus";
 
-                logger.error(error, {
-                    serviceName: "GetDnsConfigRequestPayloadDecryption",
-                    // url: req.path,
-                    // method: req.method
-                });
+            // Function to validate client IP and device ID
+            async function validateUserMetaDetails(
+                userId: string,
+                clientIp: string,
+                deviceId: string
+            ): Promise<boolean> {
+                const userMetaDetails = await user_meta_details.findOne({
+                    user_id: userId,
+                    device_id: deviceId,
+                    ip_address: clientIp,
+                }).lean();
 
-                if (error instanceof AppErrorClass) {
-                    if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                        throw error
-                    }
-                    else {
-                        throw new ServiceError(
-                            `[${errorStatus}] ${error.message}`,
-                            error
-                        );
-                    }
-                }
-                throw new ServiceUnavailableError("ClientIPDeviceIdValidation service is facing unknown issue.", err);
+                return userMetaDetails !== null;
+            }
+            const isValidMeta = await validateUserMetaDetails(userDetails._id.toString(), clientIp, deviceId as string);
+
+            if (!isValidMeta) {
+                const destroySessionResponse = await destroySession(req.session, res);
+                throw new UnauthorizedError("User is not authorized - Invalid user meta details");
             }
 
             // // Check user status
@@ -162,11 +131,23 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
         return next();
     }
-    catch (error) {
+    catch (err) {
+        const error = err as any;
+        const url = req.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "SessionValidation",
+            // url: req.path,
+            // method: req.method
+        });
         if (error instanceof AppErrorClass) {
-            throw error; // ✅ preserve original error
+            throw error
         }
-        throw new Error("Session validation is facing issue.")
+        throw new ServiceError(
+            `SessionValidation facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 

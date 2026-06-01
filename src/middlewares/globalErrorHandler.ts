@@ -16,7 +16,7 @@ const globalErrorHandler = (
 
     logger.error(err, {
     serviceName: errorStatus,
-    url: req.path,
+    path: req.path,
     method: req.method
 });
 

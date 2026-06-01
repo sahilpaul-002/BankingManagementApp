@@ -20,7 +20,19 @@ import logger from "../utils/logger.js";
 
 dotenv.config();
 
-// GET DNS CONFIG SERVICE
+// --------------------------------------- GET DNS CONFIG SERVICE --------------------------------------- \\
+export const resolveDomain = (origin?: string): string => {
+    if (!origin) {
+        return "";
+    }
+
+    if (origin.includes("localhost")) {
+        // return "console.qa.zoqq.com";
+        return "business.banking-management.com";
+    }
+
+    return origin.split("//")[1] || "";
+};
 export const getDnsConfigService = async (req: Request, res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
@@ -37,15 +49,18 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
         }
 
         // Validate domain name in request body
-        const domainName: string | null = checkStringQueryParams(aesDecryptedQueryData, "domainName");
+        const frontendDomain: string | null = checkStringQueryParams(aesDecryptedQueryData, "domainName");
 
-        if (!domainName) {
+        if (!frontendDomain) {
             throw new AppErrorClass(
                 406,
                 "INVALID_REQUEST_QUERY_PARAMETER",
                 "'domainName' MISSING OR NOT STRING"
             );
         }
+
+        // Get resoved domain
+        const domainName = resolveDomain(frontendDomain);
 
         // Validate X-API-Key header
         // const xApiKey: string | null = checkStringHeader(req.headers, "dns-x-api-key");
