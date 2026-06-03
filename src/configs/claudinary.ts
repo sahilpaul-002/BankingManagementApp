@@ -97,19 +97,13 @@ const uploadOnCloudinary = async (file: Express.Multer.File, businessId: string,
             // url: req.path,
             // method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("UploadOnClaudinaryConfigService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError(
+            `UploadOnClaudinaryConfigService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 

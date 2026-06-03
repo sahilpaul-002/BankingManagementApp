@@ -52,25 +52,19 @@ export const gmailSendService = async (mailConfig: mainConfigType) => {
     catch (err) {
         const error = err as any;
         // const url = req?.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
             serviceName: "GmailSendService",
             // url: req.path,
             // method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GmailSendService is facing unknown error", error);
+        throw new ServiceError(
+            `GmailSendService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }

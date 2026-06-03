@@ -28,22 +28,17 @@ export const getKyc = async (req: Request, res: Response): Promise<Response<succ
 
         logger.error(error, {
             serviceName: "GetKycController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetKycController is facing unknown issue.", error)
+        throw new ServiceError(
+            `GetKycController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -66,22 +61,17 @@ export const uploadKyc = async (req: Request, res: Response): Promise<Response<s
 
         logger.error(error, {
             serviceName: "UploadKycController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("UploadKycController is facing unknown issue.", error)
+        throw new ServiceError(
+            `UploadKycController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -109,22 +99,17 @@ export const sendKycVerificationMail = async (req: Request, res: Response): Prom
 
         logger.error(error, {
             serviceName: "SendKycVerificationMailController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("SendKycVerificationMailController is facing unknown issue.", error)
+        throw new ServiceError(
+            `SendKycVerificationMailController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -211,22 +196,17 @@ export const getKycVerificationWebhook = async (req: Request, res: Response): Pr
 
         logger.error(error, {
             serviceName: "GetKycVerificationWebhookController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetKycVerificationWebhookController is facing unknown issue.", error)
+        throw new ServiceError(
+            `GetKycVerificationWebhookController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

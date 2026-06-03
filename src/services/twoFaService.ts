@@ -17,6 +17,9 @@ import { generateVerificationCodeService } from "./generateVerificationCodeServi
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import speakeasy, { type TotpVerifyOptions } from "speakeasy";
 import QRCode from "qrcode";
+import userEmailValidationSchema from "../validations/userEmailValidation.js";
+import type { SafeParseResult } from "../types/zodTypes.js";
+import z from "zod";
 
 dotenv.config();
 
@@ -537,9 +540,10 @@ export const sendResetPasswordCodeService = async (requestSession: Request["sess
             throw new InvalidRequestBodyError("Email not present in the request body");
         }
 
-        // Check user mail with session mail
-        if (userEmail !== requestSession?.userEmail) {
-            throw new UnauthorizedError("Unauthorized access detected");
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof userEmailValidationSchema>> = userEmailValidationSchema.safeParse(userEmail);
+        if (!validationResult.success) {
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
 
         // Check if collection exist in MongoDB
@@ -552,7 +556,15 @@ export const sendResetPasswordCodeService = async (requestSession: Request["sess
             throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
         }
 
-        const userId: unknown = requestSession?.userId;
+        // Get the user details
+        const userDetails = await user_details.findOne({
+            email: userEmail?.trim()
+        });
+        if (!userDetails) {
+            throw new NotFoundError("User with the provided email does not exist");
+        }
+
+        const userId: unknown = userDetails._id;
         // Generate verificaiton code and its expiry time
         const verificationData = await generateVerificationCodeService();
         // HashVerification code
@@ -633,15 +645,16 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
             throw new InvalidRequestBodyError("Email not present in the request body");
         }
 
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof userEmailValidationSchema>> = userEmailValidationSchema.safeParse(userEmail);
+        if (!validationResult.success) {
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
+
         // Check verificationCode present in request body
         const verificationCode: string | null = checkStringBody(aesDecryptedBodyData, "code")
         if (!verificationCode) {
             throw new InvalidRequestBodyError("Email not present in the request body");
-        }
-
-        // Check user mail with session mail
-        if (userEmail !== requestSession?.userEmail) {
-            throw new UnauthorizedError("Unauthorized access detected");
         }
 
         // Check if collection exist in MongoDB
@@ -654,7 +667,15 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
             throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
         }
 
-        const userId: unknown = requestSession?.userId;
+        // Get the user details
+        const userDetails = await user_details.findOne({
+            email: userEmail?.trim()
+        });
+        if (!userDetails) {
+            throw new NotFoundError("User with the provided email does not exist");
+        }
+
+        const userId: unknown = userDetails._id;
         // Get verification code and expiry from the user meta details data base
         const twoFaVerificationDataDoc = await user_meta_details.findOne(
             { user_id: userId as Schema.Types.ObjectId }

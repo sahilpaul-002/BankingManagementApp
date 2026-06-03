@@ -146,17 +146,12 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("UserSignUpService is facing unknown issue.", error)
+        throw new ServiceError(
+            `UserSignUpService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -424,17 +419,12 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("UserLoginService is facing issue.", error)
+        throw new ServiceError(
+            `UserLoginService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // -------------------------------------  XXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
@@ -669,17 +659,12 @@ export const userOnboardingService = async (requestSession: Request["session"], 
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("UserOnboardingService is facing issue.", error)
+        throw new ServiceError(
+            `UserOnboardingService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
@@ -796,17 +781,12 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("SendBankVerificationMailService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError(
+            `SendBankVerificationMailService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

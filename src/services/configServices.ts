@@ -145,27 +145,21 @@ export const getDnsConfigService = async (req: Request, res: Response, aesDecryp
     }
     catch (err) {
         const error = err as any;
-        const url = req.path || "UNKNOWN_URL";
+        const url = req?.path || "UNKNOWN_URL";
         const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
             serviceName: "GetDnsConfigService",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetDnsConfigService is facing unknown issue.", error)
+        throw new ServiceError(
+            `GetDnsConfigService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 
@@ -182,27 +176,21 @@ export const getAesEncryptionKeyService = (req: Request): successResponseJson =>
     }
     catch (err) {
         const error = err as any;
-        const url = req.path || "UNKNOWN_URL";
+        const url = req?.path || "UNKNOWN_URL";
         const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
             serviceName: "GetEncryptionKeyService",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetEncryptionKeyService is facing unknown issue.", error)
+        throw new ServiceError(
+            `GetEncryptionKeyService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 
@@ -219,27 +207,21 @@ export const getRsaPublicKeyService = (req: Request): successResponseJson => {
     }
     catch (err) {
         const error = err as any;
-        const url = req.path || "UNKNOWN_URL";
+        const url = req?.path || "UNKNOWN_URL";
         const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
             serviceName: "GetRsaPublicKeyService",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetRsaPublicKeyService is facing unknown issue.", error)
+        throw new ServiceError(
+            `GetRsaPublicKeyService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 
@@ -259,22 +241,16 @@ export const getMobileCountryCodesService = (req: Request): successResponseJson 
 
         logger.error(error, {
             serviceName: "GetMobileCountryCodesService",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetMobileCountryCodesService is facing unknown issue.", error)
+        throw new ServiceError(
+            `GetMobileCountryCodesService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 
@@ -296,21 +272,15 @@ export const getHeaderPublicKeyService = (req: Request): successResponseJson => 
 
         logger.error(error, {
             serviceName: "GetHeaderPublicKeyService",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetHeaderPublicKeyService is facing unknown issue.", error)
+        throw new ServiceError(
+            `GetHeaderPublicKeyService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }

@@ -28,22 +28,17 @@ export const verifyEmail = async (req: Request, res: Response): Promise<Response
 
         logger.error(error, {
             serviceName: "VerifyEmailController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("VerifyEmailController is facing unknown issue.", error)
+        throw new ServiceError(
+            `VerifyEmailController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -77,22 +72,17 @@ export const send2FaVerificationCode = async (req: Request, res: Response): Prom
 
         logger.error(error, {
             serviceName: "Send2FaVerificationCodeController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("Send2FaVerificationCodeController is facing unknown issue.", error)
+        throw new ServiceError(
+            `Send2FaVerificationCodeController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -120,22 +110,17 @@ export const verify2FaCode = async (req: Request, res: Response): Promise<Respon
 
         logger.error(error, {
             serviceName: "Verify2FaCodeController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("Verify2FaCodeController is facing unknown issue.", error)
+        throw new ServiceError(
+            `Verify2FaCodeController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -145,12 +130,7 @@ export const sendResetPasswordVerificationCode = async (req: Request, res: Respo
     try {
         const aesDecryptedBodyData = req.body;
 
-        const requestSession: Request["session"] | undefined = getRequestSession();
-        if (!requestSession) {
-            throw new UnauthenticatedError("Unauthenticated session");
-        }
-
-        const send2FaCodeServiceResponse = await sendResetPasswordCodeService(requestSession, res, aesDecryptedBodyData)
+        const send2FaCodeServiceResponse = await sendResetPasswordCodeService(req.session, res, aesDecryptedBodyData)
         if (send2FaCodeServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to send reset password verification code in email", 400);
         }
@@ -164,22 +144,17 @@ export const sendResetPasswordVerificationCode = async (req: Request, res: Respo
 
         logger.error(error, {
             serviceName: "SendResetPasswordVerificationCodeController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("SendResetPasswordVerificationCodeController is facing unknown issue.", error)
+        throw new ServiceError(
+            `SendResetPasswordVerificationCodeController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -189,12 +164,7 @@ export const verifyResetPasswordCode = async (req: Request, res: Response): Prom
     try {
         const aesDecryptedBodyData = req.body;
 
-        const requestSession: Request["session"] | undefined = getRequestSession();
-        if (!requestSession) {
-            throw new UnauthenticatedError("Unauthenticated session");
-        }
-
-        const verifyEmailServiceResponse = await verify2FaCodeService(requestSession, res, aesDecryptedBodyData)
+        const verifyEmailServiceResponse = await verify2FaCodeService(req.session, res, aesDecryptedBodyData)
         if (verifyEmailServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Reset password code verification failed", 400);
         }
@@ -207,22 +177,17 @@ export const verifyResetPasswordCode = async (req: Request, res: Response): Prom
 
         logger.error(error, {
             serviceName: "VerifyResetPasswordCodeController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("VerifyResetPasswordCodeController is facing unknown issue.", error)
+        throw new ServiceError(
+            `VerifyResetPasswordCodeController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

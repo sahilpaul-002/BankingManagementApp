@@ -59,19 +59,13 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
             url: req.path,
             method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("UserSignUpController is facing unknown issue.", error)
+        throw new ServiceError(
+            `UserSignUpController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -107,19 +101,13 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             url: req.path,
             method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("UserLoginController is facing issue.", error)
+        throw new ServiceError(
+            `UserLoginController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -128,7 +116,7 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
 export const onboarding = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body
-        
+
         const requestSession: Request["session"] | undefined = getRequestSession();
         if (!requestSession) {
             throw new UnauthenticatedError("Unauthenticated session");
@@ -151,19 +139,13 @@ export const onboarding = async (req: Request, res: Response): Promise<Response<
             url: req.path,
             method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("UserOnbordingController is facing issue.", error)
+        throw new ServiceError(
+            `UserOnbordingController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -191,22 +173,16 @@ export const sendBankVerificationMail = async (req: Request, res: Response): Pro
 
         logger.error(error, {
             serviceName: "SendBankVerificationMailController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("SendBankVerificationMailController is facing unknown issue.", error)
+        throw new ServiceError(
+            `SendBankVerificationMailController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -293,22 +269,16 @@ export const getUserBankVerificationWebhook = async (req: Request, res: Response
 
         logger.error(error, {
             serviceName: "GetUserBankAccountVerificationWebhookController",
-            // url: req.path,
-            // method: req.method
+            url: req.path,
+            method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetUserBankAccountVerificationWebhookController is facing unknown issue.", error)
+        throw new ServiceError(
+            `GetUserBankAccountVerificationWebhookController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

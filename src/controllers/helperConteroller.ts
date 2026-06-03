@@ -17,29 +17,21 @@ export const healthCheck = (req: Request, res: Response): Response<successRespon
     }
     catch (err) {
         const error = err as any;
-        const url = req.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
-            serviceName: "InsertDocumentIntoCollection",
-            message: error.message,
-            stack: error.stack,
-            url: url,
+        logger.error(error, {
+            serviceName: "HealthCheckController",
+            url: req.path,
             method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("HealthCheck service is facing unknown issue", error);
+        throw new ServiceError(
+            `HealthCheckController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 
@@ -55,29 +47,21 @@ export const getSession = (req: Request, res: Response): Response<successRespons
     }
     catch (err) {
         const error = err as any;
-        const url = req.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
-            serviceName: "InsertDocumentIntoCollection",
-            message: error.message,
-            stack: error.stack,
-            url: url,
+        logger.error(error, {
+            serviceName: "GetSessionController",
+            url: req.path,
             method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetSession service is facing unknown issue", error);
+        throw new ServiceError(
+            `GetSessionController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 
@@ -107,29 +91,21 @@ export const destroySession = (req: Request, res: Response): Response<successRes
     }
     catch (err) {
         const error = err as any;
-        const url = req.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
-            serviceName: "InsertDocumentIntoCollection",
-            message: error.message,
-            stack: error.stack,
-            url: url,
+        logger.error(error, {
+            serviceName: "DestroySessionController",
+            url: req.path,
             method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("DestroySession service is facing unknown issue", error);
+        throw new ServiceError(
+            `DestroySessionController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }
 
@@ -195,28 +171,20 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
     }
     catch (err) {
         const error = err as any;
-        const url = req.path || "UNKNOWN_URL";
-        const errorClassName = error?.constructor?.name || "UnknownErrorClass";
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error({
-            serviceName: "InsertDocumentIntoCollection",
-            message: error.message,
-            stack: error.stack,
-            url: url,
+        logger.error(error, {
+            serviceName: "InsertDocumentIntoCollectionController",
+            url: req.path,
             method: req.method
         });
-
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorClassName}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("InsertDocumentIntoCollection service is facing unknown issue", error);
+        throw new ServiceError(
+            `InsertDocumentIntoCollectionController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
     }
 }

@@ -38,6 +38,7 @@ import twoFaRoutes from "../routes/twoFaRoutes.js";
 import kycRoutes from "../routes/kycRoutes.js";
 import walletRoutes from "../routes/walletRoutes.js"
 import publicRoutes from "../routes/publicRoutes.js"
+import { checkDatabaseConnection } from "../middlewares/databaseConnectionCheck.js";
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -123,7 +124,10 @@ app.use(dynamicSession())
 // Check session existance  middleware 
 app.use(sessionExistance);
 
-// Cehck Origin Header Exist Middleware
+// Check Database Connection
+app.use(checkDatabaseConnection);
+
+// Check Origin Header Exist Middleware
 app.use(asyncRequestHandler(checkOriginExist))
 
 // Check Portal Header Exist Middleware
@@ -163,10 +167,10 @@ app.use(globalResponseHandler);
 // ---------------------------------------- Routes ---------------------------------------- \\
 app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
 app.use("/api/v1/config", checkTimeout(5), configRoutes);
-app.use("/api/v1/user", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
-app.use("/api/v1/twoFa", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaRoutes);
-app.use("/api/v1/kyc", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), kycRoutes);
-app.use("/api/v1/wallet", sessionValidation, validateUniqueRequests, headerTypeValidation, headerValidations, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletRoutes);
+app.use("/api/v1/user", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
+app.use("/api/v1/twoFa", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaRoutes);
+app.use("/api/v1/kyc", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), kycRoutes);
+app.use("/api/v1/wallet", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\

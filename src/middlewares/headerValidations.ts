@@ -85,11 +85,6 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
             throw new UnauthorizedError("INVALID 'client-id'")
         }
 
-        // Skip user existance check for selcted pathes
-        const excludedPaths3: string[] = ["/login"];
-        if (excludedPaths3.some(path => req.path === path || req.path.startsWith(path + "/"))) {
-            return next();
-        }
         // Check user details
         let userDetails: userDetailsSchemaTypes | null
         // Get user from DB
