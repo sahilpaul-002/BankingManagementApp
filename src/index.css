@@ -45,6 +45,57 @@
   --color-text5: #ffffffd7;
   --color-text6: #ffffff;
 
+  /* Surface Colors */
+  --bg-app: #f4f6fa;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f8f9fc;
+  --bg-hover: #f0f3f9;
+
+  /* Navigation Colors */
+  --nav-bg: #0c1830;
+  --nav-bg-2: #0a1428;
+  --nav-active: #16264a;
+  --nav-text: #c8d2e6;
+  --nav-text-mute: #6b7a99;
+  --nav-text-strong: #ffffff;
+
+  /* Text Colors (Ink) */
+  --ink: #0c1830;
+  --ink-2: #2a3450;
+  --ink-soft: #4a5673;
+  --mute: #8a93a8;
+  --mute-2: #b4bbcc;
+
+  /* Line Colors */
+  --line: #e6e8ee;
+  --line-strong: #d2d6de;
+  --line-faint: #f0f1f5;
+
+  /* Brand Colors */
+  --gold: #d49a4d;
+  --gold-2: #e2b06b;
+  --gold-soft: #f5e6cc;
+
+  /* Status Colors */
+  --ok: #1f8a5b;
+  --ok-bg: #e6f3ec;
+  --warn: #c47a1a;
+  --warn-bg: #fbecd3;
+  --danger: #b03333;
+  --danger-bg: #fbe7e7;
+  --info: #2a6fdb;
+  --info-bg: #e8f0fd;
+
+  /* Typography */
+  --display: "EB Garamond", "Iowan Old Style", Georgia, serif;
+  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Sizing */
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
   --color-link1: #383acf;
   --color-link2: #2e30a3;
 

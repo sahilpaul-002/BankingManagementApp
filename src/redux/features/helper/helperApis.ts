@@ -56,29 +56,61 @@ export const helperApis = createApi({
                     "UNKNOWN_URL";
 
                 logError("ERROR", {
-                    message: "GetAesEncryptionKey query failed",
+                    message: "GetSession query failed",
                     error: response,
                     context: url,
                 });
 
+                const rtkQueryErrors = [
+                    "FETCH_ERROR",
+                    "PARSING_ERROR",
+                    "TIMEOUT_ERROR",
+                    "CUSTOM_ERROR"
+                ] as const;
+
+                // HTTP errors
                 if (typeof response.status === 'number') {
                     return {
                         status: response.status,
                         data: {
-                            status: (response.data as any)?.status ?? "INTERNAL_APPLICATION_ERROR",
-                            message: (response.data as any)?.message ?? "GetAesEncryptionKey faced external application service error",
-                            error: (response.data as any)?.error ?? null,
+                            status:
+                                (response.data as any)?.status ??
+                                "INTERNAL_APPLICATION_ERROR",
+
+                            message:
+                                (response.data as any)?.message ??
+                                "GetSession faced external application service error",
+
+                            error:
+                                (response.data as any)?.error ?? null,
                         }
                     };
                 }
 
-                // Handles FETCH_ERROR, PARSING_ERROR, etc.
+                // RTK internal errors
+                else if (
+                    typeof response.status === "string" &&
+                    rtkQueryErrors.includes(response.status as any)
+                ) {
+                    return {
+                        status: 500,
+                        data: {
+                            status: response.status,
+                            message:
+                                "GetSession faced internal RTK query error",
+                            error: response.error
+                        }
+                    };
+                }
+
+                // Unknown fallback
                 return {
                     status: 500,
                     data: {
                         status: "INTERNAL_APPLICATION_ERROR",
-                        message: "GetAesEncryptionKey faced internal application service error",
-                        error: response?.error
+                        message:
+                            "GetSession faced unknown internal application service error",
+                        error: response
                     }
                 };
             },

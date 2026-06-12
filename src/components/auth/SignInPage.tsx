@@ -40,6 +40,8 @@ export default function SignInPage() {
     reset: resetReactHookForm
   } = useForm<SigninFormData>({
     resolver: zodResolver(signInFormValidationSchema),
+    mode: 'onTouched',
+    reValidateMode: 'onChange',
   })
 
   const onSigninFormSubmit: SubmitHandler<SigninFormData> = async (formData) => {

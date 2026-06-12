@@ -78,6 +78,6 @@ export default utilitySlice;
 // Selector
 export const selectShowErrorBanner = (state: rootStateType) => state.utility.showErrorBanner
 export const selectShowInfoBanner = (state: rootStateType) => state.utility.showInfoBanner
-export const selectMessageBanner = (state: rootStateType) => state.utility.bannerMessage
+export const selectMessageBanner = (state: rootStateType): string | null => state.utility.bannerMessage
 export const selectShowDestroySession = (state: rootStateType) => state.utility.showDestroySession
 export const selectDestroySessionParams = (state: rootStateType) => state.utility.destroySessionParams

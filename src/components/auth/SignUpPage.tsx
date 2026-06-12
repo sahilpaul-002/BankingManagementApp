@@ -121,6 +121,8 @@ export default function SignUpPage() {
         reset
     } = useForm<SignupFormData>({
         resolver: zodResolver(signupFormValidationSchema),
+        mode: 'onTouched',
+        reValidateMode: 'onChange',
     })
 
     const onValid: SubmitHandler<SignupFormData> = async (formData) => {

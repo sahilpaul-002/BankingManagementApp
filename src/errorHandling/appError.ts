@@ -39,6 +39,7 @@ export class AppErrorClass extends Error {
         this.isOperational = true;
         this.service = service;
 
-        Object.setPrototypeOf(this, AppErrorClass.prototype);
+        // Object.setPrototypeOf(this, AppErrorClass.prototype);
+        Object.setPrototypeOf(this, new.target.prototype);
     }
 }

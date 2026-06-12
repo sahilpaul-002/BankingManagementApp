@@ -64,7 +64,7 @@ export async function aesEncryption<T extends object>(
             ciphertextHex,
             ivHex
         };
-    } catch (error) {
+    } catch (error: any) {
         if (error instanceof AppErrorClass) {
             throw error;
         }

@@ -1,5 +1,5 @@
 import { axiosBaseQuery, getAxiosInstance, setAxiosBaseURL } from '@/configs/axiosConfig'
-import { ApplicationServiceError} from '@/errorHandling/error'
+import { ApplicationServiceError, InternalApplicationError } from '@/errorHandling/error'
 import type { apiErrorType } from '@/errorHandling/handleErrors'
 import { setAppliationHeaders, setDnsConfigDetails, type applicationHeaderItemsType } from '@/redux/slice/config/configSlice'
 import { aesDecryption, type DecryptResult } from '@/utils/aesDecryption'
@@ -70,13 +70,17 @@ export const configApis = createApi({
 
                     const encryptedPayloads = { encryptedPayload1: rsaEncryptionResponse?.ciphertextBase64, encryptedPayload2: aesEncryptionResponse?.ciphertextHex }
                     // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
-
                     const result = await baseQuery({
                         url: `${CONFIG_URL}/getDnsConfig`,
                         method: "GET",
                         params: encryptedPayloads,
                     });
-
+                    
+                    if (result.error) {
+                        return {
+                            error: result.error,
+                        };
+                    }
                     // ---------------------------- Decrypt the respnose data using AES ---------------------------- \\
                     let decryptedData: dnsConfigResponseType;
 
@@ -141,7 +145,9 @@ export const configApis = createApi({
                             { value },
                             rsaHeaderEncryptionPublicKey
                         );
-
+                        if (response?.status !== "SUCCESS") {
+                            throw new ApplicationServiceError("RsaHeaderEncryption facing unknown error", "RsaHeaderEncryption")
+                        }
                         encryptedHeaders[typedKey] = response?.ciphertextBase64;
                     }
                     // console.log("Encrypted headers: ", encryptedHeaders)
@@ -215,24 +221,56 @@ export const configApis = createApi({
                     context: url,
                 });
 
+                const rtkQueryErrors = [
+                    "FETCH_ERROR",
+                    "PARSING_ERROR",
+                    "TIMEOUT_ERROR",
+                    "CUSTOM_ERROR"
+                ] as const;
+
+                // HTTP errors
                 if (typeof response.status === 'number') {
                     return {
                         status: response.status,
                         data: {
-                            status: (response.data as any)?.status ?? "INTERNAL_APPLICATION_ERROR",
-                            message: (response.data as any)?.message ?? "GetAesEncryptionKey faced external application service error",
-                            error: (response.data as any)?.error ?? null,
+                            status:
+                                (response.data as any)?.status ??
+                                "INTERNAL_APPLICATION_ERROR",
+
+                            message:
+                                (response.data as any)?.message ??
+                                "GetAesEncryptionKey faced external application service error",
+
+                            error:
+                                (response.data as any)?.error ?? null,
                         }
                     };
                 }
 
-                // Handles FETCH_ERROR, PARSING_ERROR, etc.
+                // RTK internal errors
+                else if (
+                    typeof response.status === "string" &&
+                    rtkQueryErrors.includes(response.status as any)
+                ) {
+                    return {
+                        status: 500,
+                        data: {
+                            status: response.status,
+                            message:
+                                "GetAesEncryptionKey faced internal RTK query error",
+                            error: response.error
+                        }
+                    };
+                }
+
+                // Unknown fallback
                 return {
                     status: 500,
                     data: {
                         status: "INTERNAL_APPLICATION_ERROR",
-                        message: "GetAesEncryptionKey faced internal application service error",
-                        error: response?.error
+                        message:
+                            "GetAesEncryptionKey faced unknown internal application service error",
+                        error: response
                     }
                 };
             },
@@ -283,29 +321,61 @@ export const configApis = createApi({
                     "UNKNOWN_URL";
 
                 logError("ERROR", {
-                    message: "GetRsaEncryptionPublicKey query failed",
+                    message: "GetRsaEncryptionKey query failed",
                     error: response,
                     context: url,
                 });
 
+                const rtkQueryErrors = [
+                    "FETCH_ERROR",
+                    "PARSING_ERROR",
+                    "TIMEOUT_ERROR",
+                    "CUSTOM_ERROR"
+                ] as const;
+
+                // HTTP errors
                 if (typeof response.status === 'number') {
                     return {
                         status: response.status,
                         data: {
-                            status: (response.data as any)?.status ?? "INTERNAL_APPLICATION_ERROR",
-                            message: (response.data as any)?.message ?? "GetRsaEncryptionPublicKey faced external application service error",
-                            error: (response.data as any)?.error ?? null,
+                            status:
+                                (response.data as any)?.status ??
+                                "INTERNAL_APPLICATION_ERROR",
+
+                            message:
+                                (response.data as any)?.message ??
+                                "GetRsaEncryptionKey faced external application service error",
+
+                            error:
+                                (response.data as any)?.error ?? null,
                         }
                     };
                 }
 
-                // Handles FETCH_ERROR, PARSING_ERROR, etc.
+                // RTK internal errors
+                else if (
+                    typeof response.status === "string" &&
+                    rtkQueryErrors.includes(response.status as any)
+                ) {
+                    return {
+                        status: 500,
+                        data: {
+                            status: response.status,
+                            message:
+                                "GetRsaEncryptionKey faced internal RTK query error",
+                            error: response.error
+                        }
+                    };
+                }
+
+                // Unknown fallback
                 return {
                     status: 500,
                     data: {
                         status: "INTERNAL_APPLICATION_ERROR",
-                        message: "GetRsaEncryptionPublicKey faced internal application service error",
-                        error: response?.error
+                        message:
+                            "GetRsaEncryptionKey faced unknown internal application service error",
+                        error: response
                     }
                 };
             },
@@ -362,24 +432,56 @@ export const configApis = createApi({
                     context: url,
                 });
 
+                const rtkQueryErrors = [
+                    "FETCH_ERROR",
+                    "PARSING_ERROR",
+                    "TIMEOUT_ERROR",
+                    "CUSTOM_ERROR"
+                ] as const;
+
+                // HTTP errors
                 if (typeof response.status === 'number') {
                     return {
                         status: response.status,
                         data: {
-                            status: (response.data as any)?.status ?? "INTERNAL_APPLICATION_ERROR",
-                            message: (response.data as any)?.message ?? "GetHeaderRsaEncryptionPublicKey faced external application service error",
-                            error: (response.data as any)?.error ?? null,
+                            status:
+                                (response.data as any)?.status ??
+                                "INTERNAL_APPLICATION_ERROR",
+
+                            message:
+                                (response.data as any)?.message ??
+                                "GetHeaderRsaEncryptionPublicKey faced external application service error",
+
+                            error:
+                                (response.data as any)?.error ?? null,
                         }
                     };
                 }
 
-                // Handles FETCH_ERROR, PARSING_ERROR, etc.
+                // RTK internal errors
+                else if (
+                    typeof response.status === "string" &&
+                    rtkQueryErrors.includes(response.status as any)
+                ) {
+                    return {
+                        status: 500,
+                        data: {
+                            status: response.status,
+                            message:
+                                "GetHeaderRsaEncryptionPublicKey faced internal RTK query error",
+                            error: response.error
+                        }
+                    };
+                }
+
+                // Unknown fallback
                 return {
                     status: 500,
                     data: {
                         status: "INTERNAL_APPLICATION_ERROR",
-                        message: "GetHeaderRsaEncryptionPublicKey faced internal application service error",
-                        error: response?.error
+                        message:
+                            "GetHeaderRsaEncryptionPublicKey faced unknown internal application service error",
+                        error: response
                     }
                 };
             },

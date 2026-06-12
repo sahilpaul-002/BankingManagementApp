@@ -22,8 +22,8 @@ export default function HourGlassLoader(props: HourGlassLoaderProps) {
     const colorSecondary = getComputedStyle(document.documentElement).getPropertyValue(secondaryColor ?? '--color-400').trim();
     
     return (
-        // <div className="hourGlassLoader-container w-full h-full bg-white/15 backdrop-blur-2xl flex justify-center items-center fixed top-0 left-0 z-100">
-        <div className={clsx("hourGlassLoader-container w-full h-full flex justify-center items-center", wrappperClassName)}>
+        <div className={clsx("hourGlassLoader-container w-fit h-fit flex justify-center items-center", wrappperClassName)}>/
+        {/* <div className="hourGlassLoader-container min-h-[120px] flex justify-center items-center"> */}
             <Hourglass
                 visible={visible ?? true}
                 height={height ?? 80}

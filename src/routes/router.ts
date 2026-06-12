@@ -33,7 +33,7 @@ import App from "../App";
 import AuthLayout from "../layouts/AuthLayout";
 import SignInPage from "../components/auth/SignInPage";
 import SignUpPage from "@/components/auth/SignUpPage";
-import ServiceUnavailable503 from "@/components/common/ServiceUnavailable503";
+import ServiceUnavailable503 from "@/pages/ServiceUnavailable503";
 
 const router = createBrowserRouter([
     {

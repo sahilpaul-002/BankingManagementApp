@@ -3,7 +3,7 @@ import { AppErrorClass } from '@/errorHandling/appError';
 import { ApplicationServiceError, InternalApplicationError } from '@/errorHandling/error';
 import { logError } from '@/errorHandling/errorLogger';
 import handleErrors from '@/errorHandling/handleErrors';
-import { getAesEncryptionKey, getRsaPublicKey } from '@/services/getEncryptionKeys';
+import { getAesEncryptionKey, getRsaHeaderPublicKey, getRsaPublicKey } from '@/services/getEncryptionKeys';
 import { aesDecryption } from '@/utils/aesDecryption';
 import { aesEncryption } from '@/utils/aesEncryption';
 import GetDeviceId from '@/utils/GetDeviceId';
@@ -33,9 +33,8 @@ const setupInterceptors = (instance: AxiosInstance) => {
             req.headers["portal"] = "business";
             req.headers["from-portal"] = "true";
             req.headers["request-id"] = crypto.randomUUID();
-
-            const deviceId = await GetDeviceId();
-            req.headers["x-device-id"] = deviceId;
+            // const deviceId = await GetDeviceId();
+            // req.headers["x-device-id"] = deviceId
 
             // SKIP ENCRYPTION FOR ENCRYPTION KEY APIs
             if (
@@ -47,6 +46,28 @@ const setupInterceptors = (instance: AxiosInstance) => {
                 return req;
             }
 
+            // Add encrypted device id
+            let headerPublicKey = sessionStorage.getItem("headerPublicKey");
+            if (!headerPublicKey || req.url?.includes("/login") || req.url?.includes("/signUp")) {
+                sessionStorage.removeItem("headerPublicKey");
+                headerPublicKey = await getRsaHeaderPublicKey()
+
+                if (!headerPublicKey) {
+                    throw new ApplicationServiceError("Request header encryption service cause error - Encryption keys missing");
+                }
+
+                sessionStorage.setItem('headerPublicKey', headerPublicKey);
+            }
+            const deviceId = await GetDeviceId();
+            const response = await rsaEncryption(
+                { value: deviceId },
+                headerPublicKey
+            );
+            if (response?.status !== "SUCCESS") {
+                throw new ApplicationServiceError("RsaHeaderEncryption facing unknown error", "RsaHeaderEncryption")
+            }
+            req.headers["x-device-id"] = response.ciphertextBase64;
+
             try {
                 // GET KEYS (SESSION FIRST)
                 let aesKey = sessionStorage.getItem('keyHex');
@@ -55,7 +76,7 @@ const setupInterceptors = (instance: AxiosInstance) => {
                 if (!aesKey || !rsaKey || req.url?.includes("/login") || req.url?.includes("/signUp")) {
                     sessionStorage.clear();
                     localStorage.clear();
-                    const [aesKey, rsaKey] = await Promise.all([
+                    [aesKey, rsaKey] = await Promise.all([
                         getAesEncryptionKey(),
                         getRsaPublicKey()
                     ]);

@@ -41,6 +41,57 @@
   border-radius: 100%;
 }
 
+@layer utilities {
+  @keyframes shrink {
+    from {
+      width: 100%;
+    }
+
+    to {
+      width: 0%;
+    }
+  }
+
+  .animate-shrink {
+    animation: shrink 6s linear forwards;
+  }
+
+  @keyframes pulse-line {
+
+    0%,
+    100% {
+      opacity: 0.3;
+      transform: scaleX(0.8);
+    }
+
+    50% {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
+
+  .animate-pulse-line {
+    animation: pulse-line 2s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 0.9;
+      transform: scale(1);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 1.5s ease-out forwards;
+  }
+}
+
 /* #root {
   max-width: 1280px;
   margin: 0 auto;

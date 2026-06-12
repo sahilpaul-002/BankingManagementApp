@@ -71,7 +71,7 @@ export async function rsaEncryption(message: Record<string, any>, publicKeyPem: 
             ciphertextBase64
         };
     }
-    catch (error) {
+    catch (error: any) {
         if (error instanceof AppErrorClass) {
             throw error;
         }

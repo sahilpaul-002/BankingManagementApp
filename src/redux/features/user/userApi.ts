@@ -80,14 +80,13 @@ export const userApis = createApi({
                 try {
                     const state = getState() as rootStateType
 
-                    // Get user api headers
-                    const headers = userApiHeaders(state)
-                    if (!headers || Object.keys(headers).length === 0) {
-                        throw new ApplicationServiceError("UserSignUp - Missing required dynamic api headers");
-                    }
-
                     // Check backend session
-                    const getSessionResult = await dispatch(helperApis.endpoints.getSession.initiate())
+                    const getSessionResult = await dispatch(
+                        helperApis.endpoints.getSession.initiate(undefined, {
+                            forceRefetch: true,
+                            subscribe: false,
+                        })
+                    )
                     const isSessionValid = (getSessionResult?.isSuccess && (getSessionResult?.data?.status?.toUpperCase() === "SUCCESS")) ? true : false
 
                     let dnsConfig = selectDnsConfigDetails(state)
@@ -110,6 +109,12 @@ export const userApis = createApi({
                         dnsConfig = result.data?.data as dnsConfigDataType
                     }
 
+                    // Get user api headers
+                    const headers = userApiHeaders(state)
+                    if (!headers || Object.keys(headers).length === 0) {
+                        throw new ApplicationServiceError("UserSignUp - Missing required dynamic api headers");
+                    }
+
                     const result = await baseQuery({
                         url: `${USER_URL}/signUp`,
                         method: 'POST',
@@ -121,12 +126,18 @@ export const userApis = createApi({
                         error?: unknown
                     }
 
+                    if (result.error) {
+                        return {
+                            error: result.error,
+                        };
+                    }
+
                     return {
                         data: result.data as apiResponseType<apiResponseDataType>,
                     }
                 }
-                catch (err) {
-                    const rtkError = rtkQueryCatchError(err, "GetDnsConfigQuery");
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, "USER-SIGNUP faced appilcation error ");
                     return rtkError;
                 }
             },
@@ -142,14 +153,13 @@ export const userApis = createApi({
                 try {
                     const state = getState() as rootStateType
 
-                    // Get user api headers
-                    const headers = userApiHeaders(state)
-                    if (!headers || Object.keys(headers).length === 0) {
-                        throw new ApplicationServiceError("UserSignIn - Missing required dynamic api headers");
-                    }
-
                     // Check backend session
-                    const getSessionResult = await dispatch(helperApis.endpoints.getSession.initiate())
+                    const getSessionResult = await dispatch(
+                        helperApis.endpoints.getSession.initiate(undefined, {
+                            forceRefetch: true,
+                            subscribe: false,
+                        })
+                    )
                     const isSessionValid = (getSessionResult?.isSuccess && (getSessionResult?.data?.status?.toUpperCase() === "SUCCESS")) ? true : false
 
                     let dnsConfig = selectDnsConfigDetails(state)
@@ -172,6 +182,12 @@ export const userApis = createApi({
                         dnsConfig = result.data?.data as dnsConfigDataType
                     }
 
+                    // Get user api headers
+                    const headers = userApiHeaders(state)
+                    if (!headers || Object.keys(headers).length === 0) {
+                        throw new ApplicationServiceError("UserSignIn - Missing required dynamic api headers");
+                    }
+
                     const result = await baseQuery({
                         url: `${USER_URL}/login`,
                         method: 'POST',
@@ -183,12 +199,22 @@ export const userApis = createApi({
                         error?: unknown
                     }
 
+                    if (result.error) {
+                        return {
+                            error: result.error,
+                        };
+                    }
+
+                    // Store user email in session storage
+                    sessionStorage.setItem('userEmail', payload.email);
+
                     return {
                         data: result.data as apiResponseType<apiResponseDataType>,
                     }
                 }
                 catch (error) {
-                    return mapToRtkError(error, "USER-SIGNIN faced appilcation error ");
+                    const rtkError = rtkQueryCatchError(error, "USER-SIGNIN faced appilcation error ");
+                    return rtkError;
                 }
             },
         }),

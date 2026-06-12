@@ -1,28 +1,81 @@
 import { useState, Activity, useEffect } from "react";
 import HourGlassLoader from "../components/common/loaders/HourGlassLoader";
 import AuthPage from "../pages/AuthPage";
-import { useGetDnsConfigQuery } from "@/redux/features/config/configApi";
+import { useGetDnsConfigQuery, useLazyGetDnsConfigQuery } from "@/redux/features/config/configApi";
 import { useNavigate } from "react-router";
+import { useSelector } from "react-redux";
+import { selectDnsConfigDetails } from "@/redux/slice/config/configSlice";
+import ApplicationLoader from "@/components/common/loaders/ApplicationLoader";
 
 
 export default function AuthLayout() {
   // Configure useNavigate
   const navigate = useNavigate();
 
-  // Dns Config Data
-  const { data, isLoading, isSuccess, error, isError } = useGetDnsConfigQuery({
-      domainName: 'business.banking-management.com',
-  })
-  useEffect(() => {
-      if (isSuccess) {
-          console.log(data);
-      }
-      else if (isError) {
-          console.error(error);
-          navigate("/serviceUnavailable");
+  // --------------------------------------- Get/Use DNS Data --------------------------------------- \\
+  // // Dns Config Data
+  // const domainName = window.location.hostname;
+  // const { data, isLoading, isSuccess, error, isError } = useGetDnsConfigQuery({
+  //   domainName: domainName
+  // })
+  // useEffect(() => {
+  //   if (isSuccess) {
+  //     console.log(data);
+  //   }
+  //   else if (isError) {
+  //     console.error(error);
+  //     navigate("/serviceUnavailable");
+  //   }
+  // }, [data, error])
 
-      }
-  }, [data, error])
+  // Get dns data from redux
+  const dnsData = useSelector(selectDnsConfigDetails)
+
+  // Dns Config Data
+  const domainName = window.location.hostname;
+  const [triggerDnsConfig, { isFetching, isLoading, isSuccess, isError, data }] = useLazyGetDnsConfigQuery();
+  useEffect(() => {
+    if (!dnsData && !isLoading && !isFetching) {
+      triggerDnsConfig({
+        domainName: domainName,
+      });
+    }
+  }, [dnsData, isLoading, isFetching, triggerDnsConfig]);
+
+  useEffect(() => {
+    if (!isLoading && !isFetching && isSuccess) {
+      console.log(data);
+    }
+
+    if (!isLoading && !isFetching && isError) {
+      navigate("/serviceUnavailable", { replace: true });
+    }
+  }, [isLoading, isFetching, data, isSuccess, isError, navigate])
+
+  // Update the document title
+  useEffect(() => {
+    if (data?.data?.dashboard_name) {
+      document.title = data?.data?.dashboard_name || "Banking Management"
+    }
+  }, [data?.data?.dashboard_name])
+
+  // // Update favicon
+  // useEffect(() => {
+  //   if (!data?.data?.favicon_url) return
+
+  //   let link =
+  //     document.querySelector("link[rel*='icon']") as HTMLLinkElement
+
+  //   if (!link) {
+  //     link = document.createElement('link')
+  //     link.rel = 'icon'
+  //     document.head.appendChild(link)
+  //   }
+
+  //   link.href = data?.data.favicon_url
+  // }, [data?.data?.favicon_url])
+  // ---------------------------------------- XXXXxxxxxxxxxxxxxxxxx ---------------------------------------- \\
+
   // -------------------------------------- Logic to display the loader -------------------------------------- \\
   // State to manage the display of page loader
   const [displayPageLoader, setDisplayPageLoader] = useState(true);
@@ -48,18 +101,19 @@ export default function AuthLayout() {
   return (
     <>
       {/* Display Page Loader */}
-      <Activity mode={displayPageLoader ? 'visible' : 'hidden'}>
-        <div className="hourGlassLoader-wrapper w-full h-screen">
-          <HourGlassLoader primaryColor={'--color-200'} secondaryColor={'--color-400'} wrappperClassName={"bg-white/15 backdrop-blur-2xl fixed top-0 left-0 z-100"}/>
+      {/* <Activity mode={displayPageLoader ? 'visible' : 'hidden'}> */}
+      <Activity mode={true ? 'visible' : 'hidden'}>
+        <div className="applicationPageLoader-wrapper w-full h-screen">
+          <ApplicationLoader />
         </div>
       </Activity>
 
       {/* Display Auth Layout */}
-      <Activity mode={!displayPageLoader ? 'visible' : 'hidden'}>
+      {/* <Activity mode={!displayPageLoader ? 'visible' : 'hidden'}>
         <div className="authLayout-container w-full min-h-screen">
           <AuthPage />
         </div>
-      </Activity>
+      </Activity> */}
     </>
   )
 }

@@ -103,3 +103,48 @@ export const getRsaPublicKey = async (): Promise<string | null> => {
         throw new InternalApplicationError(`${className}: GetRsaEncryptionKey service caused unknown error`, `AxiosApiResponseInterceptor`, error);
     }
 };
+
+export const getRsaHeaderPublicKey = async (): Promise<string | null> => {
+    try {
+        let headerEncryptionKey: string | null = getSessionItem("headerPublicKey");
+
+        if (!headerEncryptionKey) {
+            try {
+                // const result = await axios.get(`${baseURL}/getPublicKey`);
+                const result = await apiRequest({
+                    url: `${CONFIG_URL}/getHeaderPublicKey`,
+                    method: 'GET'
+                })
+                const key = result?.data?.data?.key;
+
+                if (key) {
+                    sessionStorage.setItem("headerPublicKey", key);
+                    headerEncryptionKey = key;
+                }
+
+            } catch (error) {
+                return Promise.reject(error);
+            }
+        }
+
+        return headerEncryptionKey;
+    }
+    catch (err) {
+        const error = err as any;
+        const url =
+            error?.config?.url ||
+            error?.url ||
+            "UNKNOWN_URL";
+
+        logError("ERROR", {
+            message: "Api axios instance response interceptor error",
+            error: err,
+            context: url,
+        });
+        const className = error?.constructor?.name || "UnknownErrorClass";
+        if (error instanceof AppErrorClass) {
+            return Promise.reject(error);
+        }
+        throw new InternalApplicationError(`${className}: GetRsaHeaderEncryptionKey service caused unknown error`, `AxiosApiResponseInterceptor`, error);
+    }
+};

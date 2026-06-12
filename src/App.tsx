@@ -15,7 +15,6 @@ function App() {
   const showDestroySession = useSelector(selectShowDestroySession);
   console.log("Show destroy session: ", showDestroySession)
   const destroySessionParams = useSelector(selectDestroySessionParams);
-  console.log("Destroy session params: ", destroySessionParams);
   const showErrorBanner = useSelector(selectShowErrorBanner);
   const showInfoBanner = useSelector(selectShowInfoBanner);
   const bannerMessage = useSelector(selectMessageBanner);
