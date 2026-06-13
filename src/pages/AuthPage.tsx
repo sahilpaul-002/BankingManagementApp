@@ -17,15 +17,9 @@ export default function AuthPage() {
     const dnsDetails: { dashboard_name?: string } = {}
 
     return (
-        <div className="authPage-container w-screen min-h-screen bg-gradient-to-br from-black via-zinc-800 to-zinc-700 relative">
-            {/* Checker Boxes Design */}
-            <div
-                className="checkBoxPageDesignocontainer w-full h-full pointer-events-none absolute inset-0 opacity-30 blur-[0.3px] bg-[linear-gradient(rgba(255,255,255,0.25)_1px,transparent_2px),linear-gradient(90deg,rgba(255,255,255,0.25)_1px,transparent_2px)] bg-[size:64px_64px]" />
-
-            {/* Radial Blur Circles */}
-            <div className="brandingComponent-radialBlur-circles w-[150px] h-[100px] bg-white blur-3xl absolute top-0 left-0"></div>
-            <div className="brandingComponent-radialBlur-circles w-[200px] h-[200px] bg-white blur-3xl absolute top-[20vh] left-[40vw]"></div>
-            <div className="brandingComponent-radialBlur-circles w-[150px] h-[100px] bg-gray-600 blur-3xl absolute bottom-0 left-0"></div>
+        <div className="authPage-container w-screen min-h-screen relative overflow-hidden text-white bg-[var(--nav-bg)]">
+            {/* Gold glow top-left */}
+            <div className="pointer-events-none absolute -bottom-40 -right-32 h-[40vw] w-[40vw] rounded-full bg-[var(--gold)] opacity-[0.07] blur-[160px] animate-[pulseGlow_8s_ease-in-out_infinite]" />
 
             {/* Header */}
             {/* <div className="authPage-header-container w-full h-[50px] bg-red-400 fixed top-0 left-0 z-[99]">
@@ -33,69 +27,49 @@ export default function AuthPage() {
             </div> */}
 
             {/* Main Content */}
-            <div className="authPage-mainContent w-full min-h-screen flex justify-center items-start">
-                <div className="authPage-mainContent-brnadingContainer-wrapper w-[50vw] min-h-screen hidden lg:flex">
-                    <BrandingComponent />
-                </div>
+            <div className="authPage-mainContent w-full min-h-screen">
+                <div className="authPage-brand-login-wrapper relative z-10 flex min-h-screen w-full flex-col xl:grid xl:grid-cols-[1.40fr_1fr]">
+                    {/* Left Branding */}
+                    <section className="authPage-mainContent-brnadingContainer-wrapper hidden xl:block">
+                        <div className="authPage-mainContent-brnadingContainer h-full overflow-hidden">
+                            <BrandingComponent />
+                        </div>
+                    </section>
 
-                <div className="authPage-mainContent-authPages-wrapper bg-[var(--color-800)] w-screen lg:w-[50vw] min-h-screen lg:rounded-l-4xl pt-4! z-10">
-                    {/* <Activity mode={!isSuccess ? "visible" : "hidden"}>
+                    {/* Right Login */}
+                    <section className="flex min-h-screen items-center justify-center px-6 py-10 xl:px-10">
+                        <div className="loginForm-container-wrapper relative w-fit h-fit rounded-xl border border-indigo-400/20 bg-[linear-gradient(180deg,#0f172a,#0b1120)] shadow-[0_0_0_1px_rgba(129,140,248,0.25),0_0_60px_rgba(99,102,241,0.30),0_0_120px_rgba(59,130,246,0.18),0_30px_100px_rgba(0,0,0,0.65)] transition-all duration-500 hover:shadow-[0_0_0_1px_rgba(129,140,248,0.35),0_0_80px_rgba(99,102,241,0.40),0_0_140px_rgba(59,130,246,0.22),0_35px_120px_rgba(0,0,0,0.7)]">
+                            <Activity mode={!dnsConfig ? "visible" : "hidden"}>
                                 <FormSkeleton />
                             </Activity>
-                            <Activity mode={isSuccess ? "visible" : "hidden"}>
+                            <Activity mode={dnsConfig ? "visible" : "hidden"}>
                                 <Outlet />
-                            </Activity> */}
-                    <Activity mode={!dnsConfig ? "visible" : "hidden"}>
-                        <FormSkeleton />
-                    </Activity>
-                    <Activity mode={dnsConfig ? "visible" : "hidden"}>
-                        <Outlet />
-                        {/* Footer */}
-                        <div className="authPage-footer-container w-full h-[60px] px-4! py-2! z-[99]">
-                            <div className="authPage-footer-texts w-full h-full flex flex-col justify-center lg:justify-between items-center gap-1">
-                                <div className="authPage-footer-termsConditon-privacyPolicy-texts w-fit h-fir flex justify-center items-center gap-2">
-                                    {/* Terms & Condition Text */}
-                                    <span className="authPage-footer-copyrightText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Terms & Condition</span>
+                                {/* Footer */}
+                                <div className="authPage-footer-container w-full h-[60px] px-4! py-2! z-[99]">
+                                    <div className="authPage-footer-texts w-full h-full flex flex-col justify-center lg:justify-between items-center gap-1">
+                                        <div className="authPage-footer-termsConditon-privacyPolicy-texts w-fit h-fir flex justify-center items-center gap-2">
+                                            {/* Terms & Condition Text */}
+                                            <span className="authPage-footer-copyrightText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Terms & Condition</span>
 
-                                    {/* Separator */}
-                                    <div className="authPage-footer-separator text-[var(--color-text3)]">|</div>
+                                            {/* Separator */}
+                                            <div className="authPage-footer-separator text-[var(--color-text3)]">|</div>
 
-                                    {/* Terms & Condition Text */}
-                                    <span className="authPage-footer-privacyPolicyText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Privacy Policy</span>
+                                            {/* Terms & Condition Text */}
+                                            <span className="authPage-footer-privacyPolicyText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Privacy Policy</span>
+                                        </div>
+
+                                        {/* Separator */}
+                                        <div className="authPage-footer-separator text-[var(--color-text3)] hidden">|</div>
+
+                                        {/* Copy Right Text */}
+                                        <span className="authPage-footer-copyrightText text-[var(--color-text2)] text-start text-[12px] font-normal tracking-tight">CopyRight © {currentYear} {dnsDetails?.dashboard_name || 'Banking Management App'} - All Right Reserved.</span>
+                                    </div>
                                 </div>
-
-                                {/* Separator */}
-                                <div className="authPage-footer-separator text-[var(--color-text3)] hidden">|</div>
-
-                                {/* Copy Right Text */}
-                                <span className="authPage-footer-copyrightText text-[var(--color-text2)] text-start text-[12px] font-normal tracking-tight">CopyRight © {currentYear} {dnsDetails?.dashboard_name || 'Banking Management App'} - All Right Reserved.</span>
-                            </div>
+                            </Activity>
                         </div>
-                    </Activity>
+                    </section>
                 </div>
             </div>
-
-            {/* Footer */}
-            {/* <div className="authPage-footer-container w-full h-[30px] px-4! fixed bottom-0 left-0 z-[99]">
-                <div className="authPage-footer-texts w-full h-full flex flex-col sm:flex-row justify-center lg:justify-between items-center gap-1">
-                    Copy Right Text
-                    <span className="authPage-footer-copyrightText text-[var(--color-text2)] lg:text-[var(--color-text5)] text-start text-[12px] font-normal tracking-tight">CopyRight © {currentYear} {dnsDetails?.dashboard_name || 'Banking Management App'} - All Right Reserved.</span>
-
-                    Separator
-                    <div className="authPage-footer-separator text-[var(--color-text3)] hidden sm:inline-block lg:hidden">|</div>
-
-                    <div className="authPage-footer-termsConditon-privacyPolicy-texts w-fit h-fir flex justify-center items-center gap-2">
-                        Terms & Condition Text
-                        <span className="authPage-footer-copyrightText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Terms & Condition</span>
-
-                        Separator
-                        <div className="authPage-footer-separator text-[var(--color-text3)]">|</div>
-
-                        Terms & Condition Text
-                        <span className="authPage-footer-privacyPolicyText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Privacy Policy</span>
-                    </div>
-                </div>
-            </div> */}
         </div>
 
     )

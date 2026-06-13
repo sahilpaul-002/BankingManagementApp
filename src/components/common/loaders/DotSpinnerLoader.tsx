@@ -6,11 +6,12 @@ interface DotLoaderProps {
     size?: number
     color?: string
     wrapperStyle?: CSSProperties
+    speed?: number
 }
 
 export default function DotSpinnerLoader(props: DotLoaderProps) {
     // Destructure props
-    const { visible, size, color, wrapperStyle } = props;
+    const { visible, size, color, wrapperStyle, speed } = props;
 
     // const loaderColor = getComputedStyle(document.documentElement).getPropertyValue(color ?? '#000000').trim();
     const loaderColor = color ?? "#000000";
@@ -22,6 +23,7 @@ export default function DotSpinnerLoader(props: DotLoaderProps) {
                 size={size ?? 80}
                 cssOverride={wrapperStyle ?? {}}
                 color={loaderColor}
+                speedMultiplier={speed ?? 1}
             />
         </div>
     )

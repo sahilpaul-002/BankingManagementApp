@@ -85,7 +85,7 @@ export default function AuthLayout() {
     // Start 3s timeout
     const timer = setTimeout(() => {
       setDisplayPageLoader(false)
-    }, 3000)
+    }, 5000)
 
     // If dnsDetails arrives early → stop loader immediately
     if (isSuccess && Object.keys(data || {}).length > 0) {
@@ -101,19 +101,18 @@ export default function AuthLayout() {
   return (
     <>
       {/* Display Page Loader */}
-      {/* <Activity mode={displayPageLoader ? 'visible' : 'hidden'}> */}
-      <Activity mode={true ? 'visible' : 'hidden'}>
+      <Activity mode={displayPageLoader ? 'visible' : 'hidden'}>
         <div className="applicationPageLoader-wrapper w-full h-screen">
           <ApplicationLoader />
         </div>
       </Activity>
 
       {/* Display Auth Layout */}
-      {/* <Activity mode={!displayPageLoader ? 'visible' : 'hidden'}>
+      <Activity mode={!displayPageLoader ? 'visible' : 'hidden'}>
         <div className="authLayout-container w-full min-h-screen">
           <AuthPage />
         </div>
-      </Activity> */}
+      </Activity>
     </>
   )
 }
