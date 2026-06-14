@@ -66,7 +66,11 @@ export default function SignUpPage() {
         email: z
             .string()
             .min(1, "Email is required")
-            .email("Invalid email"),
+            .email("Invalid email")
+            .regex(
+                /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                'Invalid email format'
+            ),
         password: z.string()
             .min(8, 'Password must be atleast of 8 characters')
             .regex(/[A-Z]/, 'Password must contain a uppercase character')
