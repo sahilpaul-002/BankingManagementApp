@@ -31,38 +31,40 @@ export default function AuthPage() {
                 <div className="authPage-brand-login-wrapper relative z-10 flex min-h-screen w-full flex-col xl:grid xl:grid-cols-[1.40fr_1fr]">
                     {/* Left Branding */}
                     <section className="authPage-mainContent-brnadingContainer-wrapper hidden xl:block">
-                        <div className="authPage-mainContent-brnadingContainer h-full overflow-hidden">
+                        <div className="authPage-mainContent-brnadingContainer h-full">
                             <BrandingComponent />
                         </div>
                     </section>
 
                     {/* Right Login */}
-                    <section className="flex min-h-screen items-center justify-center px-6 py-10 xl:px-10">
-                        <div className="loginForm-container-wrapper relative w-fit h-fit rounded-xl border border-indigo-400/20 bg-[linear-gradient(180deg,#0f172a,#0b1120)] shadow-[0_0_0_1px_rgba(129,140,248,0.25),0_0_60px_rgba(99,102,241,0.30),0_0_120px_rgba(59,130,246,0.18),0_30px_100px_rgba(0,0,0,0.65)] transition-all duration-500 hover:shadow-[0_0_0_1px_rgba(129,140,248,0.35),0_0_80px_rgba(99,102,241,0.40),0_0_140px_rgba(59,130,246,0.22),0_35px_120px_rgba(0,0,0,0.7)]">
+                    <section className="authPage-mainContent-loginContainer-wrapper flex h-screen items-center justify-center px-6! lg:px-20! py-12!">
+                        <div className="authForm-container-wrapper relative w-fit xl:w-full h-full rounded-xl border-2 border-[#C1A050]/50 bg-[linear-gradient(180deg,#0f172a,#0b1120)] ring-1 ring-[#C0C0C0]/20 shadow-[0_0_0_1px_rgba(193,160,80,0.25), 0_0_60px_rgba(192,192,192,0.18), 0_0_120px_rgba(193,160,80,0.20), 0_30px_100px_rgba(0,0,0,0.65)] transition-all duration-500 hover:shadow-[0_0_0_1px_rgba(203,171,88,0.35), 0_0_80px_rgba(192,192,192,0.22), 0_0_140px_rgba(187,152,71,0.24), 0_35px_120px_rgba(0,0,0,0.70)]" >
                             <Activity mode={!dnsConfig ? "visible" : "hidden"}>
                                 <FormSkeleton />
                             </Activity>
                             <Activity mode={dnsConfig ? "visible" : "hidden"}>
-                                <Outlet />
-                                {/* Footer */}
-                                <div className="authPage-footer-container w-full h-[60px] px-4! py-2! z-[99]">
-                                    <div className="authPage-footer-texts w-full h-full flex flex-col justify-center lg:justify-between items-center gap-1">
-                                        <div className="authPage-footer-termsConditon-privacyPolicy-texts w-fit h-fir flex justify-center items-center gap-2">
-                                            {/* Terms & Condition Text */}
-                                            <span className="authPage-footer-copyrightText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Terms & Condition</span>
+                                <div className="authForm-container w-full h-full flex flex-col justify-between items-center">
+                                    <Outlet />
+                                    {/* Footer */}
+                                    <div className="authPage-footer-container w-full h-[60px] px-4! py-2! z-[99]">
+                                        <div className="authPage-footer-texts w-full h-full flex flex-col justify-center lg:justify-between items-center gap-1">
+                                            <div className="authPage-footer-termsConditon-privacyPolicy-texts w-fit h-fir flex justify-center items-center gap-2">
+                                                {/* Terms & Condition Text */}
+                                                <span className="authPage-footer-copyrightText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Terms & Condition</span>
+
+                                                {/* Separator */}
+                                                <div className="authPage-footer-separator text-[var(--gold)]">|</div>
+
+                                                {/* Terms & Condition Text */}
+                                                <span className="authPage-footer-privacyPolicyText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Privacy Policy</span>
+                                            </div>
 
                                             {/* Separator */}
-                                            <div className="authPage-footer-separator text-[var(--color-text3)]">|</div>
+                                            <div className="authPage-footer-separator text-[var(--gold))] hidden">|</div>
 
-                                            {/* Terms & Condition Text */}
-                                            <span className="authPage-footer-privacyPolicyText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Privacy Policy</span>
+                                            {/* Copy Right Text */}
+                                            <span className="authPage-footer-copyrightText text-[var(--nav-text-strong)] text-center text-[12px] font-normal tracking-tight">CopyRight © {currentYear} {dnsDetails?.dashboard_name || 'Banking Management App'} - All Right Reserved.</span>
                                         </div>
-
-                                        {/* Separator */}
-                                        <div className="authPage-footer-separator text-[var(--color-text3)] hidden">|</div>
-
-                                        {/* Copy Right Text */}
-                                        <span className="authPage-footer-copyrightText text-[var(--color-text2)] text-start text-[12px] font-normal tracking-tight">CopyRight © {currentYear} {dnsDetails?.dashboard_name || 'Banking Management App'} - All Right Reserved.</span>
                                     </div>
                                 </div>
                             </Activity>

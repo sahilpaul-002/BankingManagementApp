@@ -1,27 +1,29 @@
 import clsx from 'clsx'
 import React, { Activity, forwardRef, type ButtonHTMLAttributes } from 'react'
 import BeatLoaderComponent from './loaders/BeatLoaderComponent'
+import { Button } from '../ui/button'
 
 interface ButtonPropsTypes extends ButtonHTMLAttributes<HTMLButtonElement> {
     id: string,
     label: string,
+    type?: "submit" | "reset" | "button" | undefined
     className?: string
     showButtonLoader?: boolean
+    variant: "link" | "default" | "navy" | "gold" | "outline" | "secondary" | "ghost" | "destructive" | null | undefined
 }
 
 const CustomButton = forwardRef<HTMLButtonElement, ButtonPropsTypes>((props, ref) => {
     // Destructure props
-    const { id, label, className, showButtonLoader, ...restAttributes } = props
+    const { id, label, type, className, showButtonLoader, variant, ...restAttributes } = props
 
     return (
-        <div className='customButtom-container w-full h-full flex justify-center itmes-center'>
-            <button
-                id={id}
-                ref={ref}
-                className={clsx(
-                    "customButton-container w-full h-full bg-[var(--color-100)] text-[var(--color-text6)] border hover:border-gray-600 rounded-xl hover:bg-[var(--color-100)]/80 hover:shadow-2xl text-[12px] sm:text-[14ps] lg:text-[16px] font-semibold tracking-tight cursor-pointer",
-                    className
-                )}
+        <button id={id} ref={ref} className='customButtom-container-wrapper w-full h-full flex justify-center itmes-center'>
+            <Button
+                variant={variant}
+                type={type}
+                size="lg"
+                className="customButton-container w-full h-full text-[var(--nav-text-strong)] text-sm font-semibold tracking-tight cursor-pointer"
+                disabled={showButtonLoader}
                 {...restAttributes}
             >
                 {showButtonLoader ? (
@@ -29,8 +31,8 @@ const CustomButton = forwardRef<HTMLButtonElement, ButtonPropsTypes>((props, ref
                 ) : (
                     label
                 )}
-            </button>
-        </div>
+            </Button>
+        </button>
     )
 })
 

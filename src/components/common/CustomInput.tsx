@@ -20,6 +20,11 @@ const CustomInput = forwardRef<HTMLInputElement, PasswordInputPropsTypes>((props
     // Destructure Props
     const { id, label, type, placeholder, error, hint, fieldLabelClassname, inputClassname, fieldDescriptionRequired, fieldDescriptionText, fieldDescriptionClassname, ...restAttributes } = props
 
+    // Get window pathname
+    const windowPathname = window.location.pathname
+    console.log(windowPathname)
+    const authPathnames = ["/", "signup"]
+
     return (
         <div className="input-container w-full h-fit">
             <Field>
@@ -31,7 +36,7 @@ const CustomInput = forwardRef<HTMLInputElement, PasswordInputPropsTypes>((props
                     </FieldDescription>
                 </Activity>
                 <Activity mode={error ? "visible" : "hidden"}>
-                    <p className="input-error">{error}</p>
+                    <p className={authPathnames.includes(windowPathname) ? "auth-input-error" : "input-error"}>{error}</p>
                 </Activity>
                 <Activity mode={(hint && !error) ? "visible" : "hidden"}>
                     <p className="input-hint">{hint}</p>

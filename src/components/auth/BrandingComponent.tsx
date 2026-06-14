@@ -1076,7 +1076,7 @@ function TransactionOrbitSystem() {
 // ─────────────────────────────────────────────
 export default function BrandingComponent() {
     return (
-        <div className="relative h-full w-full overflow-hidden bg-transparent text-white">
+        <div className="relative h-full w-full bg-transparent text-white">
 
             {/* ── Content layout ── */}
             <div className="relative z-10 grid h-full grid-rows-[auto_minmax(0,1fr)_auto] gap-4 py-10! px-8! lg:px-10!">

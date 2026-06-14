@@ -12,6 +12,12 @@
   font-weight: 400;
 }
 
+.auth-input-error {
+  font-size: 11px;
+  color: rgba(255, 69, 69, 1);
+  font-weight: 400;
+}
+
 /* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
   width: 4px;

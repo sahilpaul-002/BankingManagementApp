@@ -20,6 +20,7 @@ export default function SignInPage() {
   const signInFormValidationSchema = z.object({
     email: z
       .string()
+      .min(1, "Email required")
       .email("Invalid email"),
     password: z.string()
       .min(8, 'Password must be atleast of 8 characters')
@@ -61,21 +62,27 @@ export default function SignInPage() {
   // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
   return (
-    <div className="signinPage-wrapper w-full min-h-[calc(100vh-76px)] flex justify-center items- center px-0! lg:px-20! py-2!">
-      <div className="signinPage-container w-[80vw] md:w-[50vw] h-[80vh] lg:w-full lg:h-full flex flex-col justify-start items-center gap-4">
-        {/* Welcome Text */}
-        <span className="signinPage-text w-fit h-fit text-center text-[36px] sm:text-[6vw] md:text-[4vw] xl:text-[3.6vw] text-[var(--color-text1)] font-semibold tracking-tight">
-          Welcome
-        </span>
-
+    <div className="signinPage-wrapper w-full h-full flex justify-center items-center px-6! xl:px-20! py-2!">
+      <div className="signinPage-container w-full h-full flex flex-col justify-start items-center gap-4">
         {/* Logo */}
-        <div className="signinPage-logo bg-amber-300 w-[160px] h-[100px]"></div>
+        <div className="signinPage-logo bg-amber-300 w-[100px] h-[60px] xl:w-[120px] xl:h-[50px]"></div>
+
+        {/* Sign In Text */}
+        <div className="signinPage-text w-full h-fit flex flex-col items-center text-center gap-2">
+          <h2 className="font-display text-3xl font-bold tracking-tight text-[var(--nav-text-strong)]">
+            Sign in
+          </h2>
+          {/* <p className="text-sm text-[var(--nav-text)]"> */}
+          <p className="text-sm text-[var(--line-strong)]">
+            Welcome back. Access your crypto & fiat wallet.
+          </p>
+        </div>
 
         {/* Signin Form */}
         <form className='signinPage-signinForm-wrapper w-full h-fit' onSubmit={handleSubmit(onSigninFormSubmit)}>
           <div className="signinPage-signinForm-container w-full h-fit space-y-8!">
             {/* Email */}
-            <CustomInput id={"signinForm-input-email"} label={"Email"} type={"email"} placeholder={"Enter Email"} inputClassname={"px-4!"} autoFocus={true} autoComplete={"email"} error={errors?.email?.message} {...register("email")} />
+            <CustomInput id={"signinForm-input-email"} label={"Email"} type={"email"} placeholder={"Enter Email"} fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} autoFocus={true} autoComplete={"email"} error={errors?.email?.message} {...register("email")} />
 
             <div className="signinPage-signinForm-password-forgotPassword-container w-full h-fit flex flex-col justify-center items-end gap-1">
               {/* Password */}
@@ -90,7 +97,7 @@ export default function SignInPage() {
             {/* Button */}
             <div className="signinPage-signinForm-button-wrapper w-full h-fit flex justify-center items-center">
               <div className="signinPage-signinForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                <CustomButton id={"signPage-signinForm-button"} label={"Sign In"} showButtonLoader={isLoading} />
+                <CustomButton id={"signPage-signinForm-button"} label={"Sign In"} showButtonLoader={isLoading} variant={"navy"} />
               </div>
             </div>
 
