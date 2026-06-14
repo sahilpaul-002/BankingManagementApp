@@ -62,14 +62,14 @@ export default function SignInPage() {
   // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
   return (
-    <div className="signinPage-wrapper w-full h-full flex justify-center items-center px-6! xl:px-20! py-2!">
+    <div className="signinPage-wrapper w-full h-fit flex justify-center items-center px-6! xl:px-10! py-2!">
       <div className="signinPage-container w-full h-full flex flex-col justify-start items-center gap-4">
         {/* Logo */}
-        <div className="signinPage-logo bg-amber-300 w-[100px] h-[60px] xl:w-[120px] xl:h-[50px]"></div>
+        <div className="signinPage-logo bg-amber-100 w-[100px] h-[60px] xl:w-[120px] xl:h-[50px]"></div>
 
         {/* Sign In Text */}
         <div className="signinPage-text w-full h-fit flex flex-col items-center text-center gap-2">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-[var(--nav-text-strong)]">
+          <h2 className="signinText text-2xl font-bold tracking-normal text-[var(--gold)]">
             Sign in
           </h2>
           {/* <p className="text-sm text-[var(--nav-text)]"> */}
@@ -80,7 +80,7 @@ export default function SignInPage() {
 
         {/* Signin Form */}
         <form className='signinPage-signinForm-wrapper w-full h-fit' onSubmit={handleSubmit(onSigninFormSubmit)}>
-          <div className="signinPage-signinForm-container w-full h-fit space-y-8!">
+          <div className="signinPage-signinForm-container w-full h-fit space-y-2!">
             {/* Email */}
             <CustomInput id={"signinForm-input-email"} label={"Email"} type={"email"} placeholder={"Enter Email"} fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} autoFocus={true} autoComplete={"email"} error={errors?.email?.message} {...register("email")} />
 
@@ -90,12 +90,12 @@ export default function SignInPage() {
 
               {/* Forgot Password */}
               <div className="signinPage-signinForm-forgotPassword-container">
-                <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-tight hover:underline! cursor-pointer">Forgot Password ?</span>
+                <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! cursor-pointer">Forgot Password ?</span>
               </div>
             </div>
 
             {/* Button */}
-            <div className="signinPage-signinForm-button-wrapper w-full h-fit flex justify-center items-center">
+            <div className="signinPage-signinForm-button-wrapper w-full h-fit flex justify-center items-center mt-6!">
               <div className="signinPage-signinForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
                 <CustomButton id={"signPage-signinForm-button"} label={"Sign In"} showButtonLoader={isLoading} variant={"navy"} />
               </div>
@@ -104,8 +104,8 @@ export default function SignInPage() {
             {/* Create New Account */}
             <div className="signinPage-signinForm-createNewAccount-container w-full h-fit flex justify-center items-center">
               <div className="signinPage-signinForm-createNewAccount w-fit h-fit">
-                <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--color-text3)] tracking-tight inline-block">Create a new account -</span>
-                <span className="signinPage-singinForm-createAccount-text ms-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-tight hover:underline! inline-block cursor-pointer">
+                <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--color-text3)] tracking-normal inline-block">Create a new account -</span>
+                <span className="signinPage-singinForm-createAccount-text ms-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! inline-block cursor-pointer">
                   <Link to="/signup">Sign Up</Link>
                 </span>
               </div>

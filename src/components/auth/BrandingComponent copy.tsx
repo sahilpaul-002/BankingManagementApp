@@ -13,13 +13,13 @@ export default function BrandingComponent() {
                 <div className="brandComponent-mainBrandingContainer-brandingTexts w-full h-fit flex flex-col justify-center items-center gap-10">
                     {/* Brand Texts */}
                     <div className="brandComponent-mainBrandingContainer-brandingText-brnadName w-fit h-fit">
-                        <h1 className='w-fit h-fit text-[var(--color-text6)] text-[3vw] text-center xl:text-[3.6vw] font-semibold tracking-tight'>{dnsConfig?.dashboard_name || "Banking Management"}</h1>
+                        <h1 className='w-fit h-fit text-[var(--color-text6)] text-[3vw] text-center xl:text-[3.6vw] font-semibold tracking-normal'>{dnsConfig?.dashboard_name || "Banking Management"}</h1>
                     </div>
                     <div className="brandComponent-mainBrandingContainer-brandingText-brnadSlogans w-fit h-fit flex flex-col justify-center items-center gap-1">
-                        <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-tight'>
+                        <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-normal'>
                             {dnsConfig?.slogan_line_1 || "Stay on top of all company spending in real-time"}
                         </span>
-                        <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-tight'>
+                        <span className='w-fit h-fit text-[var(--color-text5)] text-[1.3vw] text-center xl:text-[1.5vw] font-semibold tracking-normal'>
                             {dnsConfig?.slogan_line_2 || "through our corporate innovative payment platform."}
                         </span>
                     </div>

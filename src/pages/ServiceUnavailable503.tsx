@@ -29,12 +29,15 @@ export default function ServiceUnavailable503() {
     // Dns Config Query
     const [fetchDnsConfigQueryTrigger] = useLazyGetDnsConfigQuery()
     // Function to manage tryAgain click action
+    const domainName = window.location.hostname;
     const onTryAgainClick = async (): Promise<void> => {
         try {
             setShowButtonLoader(true);
             const result = await fetchDnsConfigQueryTrigger({
-                domainName: 'business.banking-management.com'
+                // domainName: 'business.banking-management.com'
+                domainName: domainName 
             }).unwrap();
+            console.log(result)
 
             if (result?.status?.toUpperCase() !== "SUCCESS") {
                 toast.error("Still service unavailable. Please try again later!");
@@ -78,7 +81,7 @@ export default function ServiceUnavailable503() {
     // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
     return (
-        <div className="serviceUnavailable503-wrapper w-full min-h-screen flex justify-center items-center overflow-hidden relative bg-stone-50">
+        <div className="serviceUnavailable503-wrapper w-full h-screen bg-[var(--bg-app)] flex justify-center items-center overflow-hidden relative">
 
             {/* Grid Background */}
             <div
@@ -132,14 +135,15 @@ export default function ServiceUnavailable503() {
                 </div>
 
                 {/* Error Badge */}
-                <div className="serviceUnavailable503-badge inline-flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full mb-5!">
+                <div className="serviceUnavailable503-badge px-2! inline-flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-xs font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full mb-5!">
                     <span className="serviceUnavailable503-badgeDot w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse inline-block" />
                     Error 503
                 </div>
 
                 {/* Heading */}
                 <h1
-                    className="serviceUnavailable503-heading w-fit h-fit text-center text-[28px] sm:text-[5vw] md:text-[3.5vw] lg:text-[2.4vw] text-[var(--color-text1)] font-black tracking-tight leading-tight mb-3!"
+                    className="serviceUnavailable503-heading w-fit h-fit text-center text-4xl text-[var(--ink)] font-black tracking-normal leading-tight mb-3!"
+                    // className="serviceUnavailable503-heading w-fit h-fit text-center text-[28px] sm:text-[5vw] md:text-[3.5vw] lg:text-[2.4vw] text-[var(--color-text1)] font-black tracking-normal leading-tight mb-3!"
                     style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}
                 >
                     Service Unavailable
@@ -159,7 +163,7 @@ export default function ServiceUnavailable503() {
                     </div>
                     <div className="serviceUnavailable503-progressBar-track w-full h-1.5 bg-stone-200 rounded-full overflow-hidden">
                         <div
-                            className="serviceUnavailable503-progressBar-fill h-full bg-gradient-to-r from-emerald-400 to-green-500 rounded-full transition-all duration-700 ease-out"
+                            className="serviceUnavailable503-progressBar-fill h-full bg-gradient-to-r from-[var(--gold)] to-[var(--gold-2)] rounded-full transition-all duration-700 ease-out"
                             style={{ width: `${progress}%` }}
                         />
                     </div>
@@ -168,16 +172,16 @@ export default function ServiceUnavailable503() {
                 {/* Try Again Button */}
                 <div className="serviceUnavailable503-button-wrapper w-full h-fit flex justify-center items-center">
                     <div className="serviceUnavailablePage-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]" onClick={() => onTryAgainClick()}>
-                        <CustomButton id={"serviceUnavailablePage-button"} label={"Try Again"} showButtonLoader={showButtonLoader}/>
+                        <CustomButton id={"serviceUnavailablePage-button"} label={"Try Again"} showButtonLoader={showButtonLoader} variant={"navy"} />
                     </div>
                 </div>
 
                 {/* Contact Support */}
                 <div className="serviceUnavailable503-footer w-full h-fit flex justify-center items-center mt-6!">
-                    <span className="serviceUnavailable503-footer-text text-[12px] sm:text-[14px] text-[var(--color-text3)] tracking-tight inline-block me-1!">
+                    <span className="serviceUnavailable503-footer-text text-[12px] sm:text-[14px] text-[var(--color-text3)] tracking-normal inline-block me-1!">
                         Need immediate help? -
                     </span>
-                    <span className="serviceUnavailable503-footer-link ms-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-tight hover:underline! inline-block cursor-pointer">
+                    <span className="serviceUnavailable503-footer-link ms-1! text-[12px] sm:text-[14px] text-[var(--color-link2)] hover:text-[var(--color-link3)] font-semibold tracking-normal hover:underline! inline-block cursor-pointer">
                         Contact Support
                     </span>
                 </div>

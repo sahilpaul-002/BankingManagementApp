@@ -63,7 +63,7 @@ const CustomPasswordInput = forwardRef<HTMLInputElement, InputPropsTypes>((props
                     <FieldLabel htmlFor={`${id}`} className={fieldLabelClassname}>{label ?? "Field Label"}</FieldLabel>
                     {(password && passwordStrength && passwordStrength?.label) && (
                         <div className="customPasswordInput-label-passwordStrength w-fit h-fit">
-                            <span className="forgetPassword-newPassowrdInput-passwordStrength w-fit h-fit text-start text-sm font-medium tracking-tight flex justify-center items-center gap-2">
+                            <span className="forgetPassword-newPassowrdInput-passwordStrength w-fit h-fit text-start text-sm font-medium tracking-normal flex justify-center items-center gap-2">
                                 <span className="text-gray-700">{`Strength: `}</span>
                                 <span className={`${passwordStrength?.color}`}>{passwordStrength?.label}</span>
                             </span>
@@ -73,7 +73,7 @@ const CustomPasswordInput = forwardRef<HTMLInputElement, InputPropsTypes>((props
                 <div className="customPasswordInput-input-container relative">
                     <Input ref={ref} id={id} type={type} placeholder={placeholder ?? "Input Placeholder"} className={inputClassname} aria-invalid={error ? true : false} onChange={handlePasswordChange} onFocus={() => setPasswordFocused(true)} onBlur={() => setPasswordFocused(false)} {...rest} />
                     {passwordFocused && (
-                        <div className="forgetPassword-newPassowrdInput-validationRules w-full h-fit bg-white px-2 py-1 border border-gray-300 shadow-lg tracking-tight rounded-lg absolute top-16 sm:top-10 left-0 z-[9999]">
+                        <div className="forgetPassword-newPassowrdInput-validationRules w-full h-fit bg-white px-2 py-1 border border-gray-300 shadow-lg tracking-normal rounded-lg absolute top-16 sm:top-10 left-0 z-[9999]">
                             <PasswordValidationRules passwordValidationRules={passwordValidationRules} />
                         </div>
                     )}

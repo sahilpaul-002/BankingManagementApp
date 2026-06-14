@@ -21,7 +21,7 @@ export default function Card() {
 
                 {/* Card number */}
                 <div className="cardComponent-card-topRow-cardNumber z-10">
-                    <p className="text-white/80 tracking-tight text-lg font-mono font-light flex justify-start items-center gap-2">
+                    <p className="text-white/80 tracking-normal text-lg font-mono font-light flex justify-start items-center gap-2">
                         {/* 4291 &nbsp; 8374 &nbsp; 9182 &nbsp; 3746 */}
                         <span>••••</span>
                         <span>••••</span>

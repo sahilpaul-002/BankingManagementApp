@@ -46,7 +46,6 @@ function TransactionOrbitSystem() {
     const walletToLandmarkLeft = `
         M ${N.wallet.x} ${N.wallet.y}
         C 320 480, 140 520, ${N.bankLeft.x} ${N.bankLeft.y}
-        // C 320 480, 180 500, ${N.bankLeft.x} ${N.bankLeft.y}
     `;
 
     const landmarkToStatsTrendline = `
@@ -1083,13 +1082,13 @@ export default function BrandingComponent() {
 
                 {/* TOP: Heading */}
                 <div className="w-full animate-[rise_0.8s_cubic-bezier(0.22,1,0.36,1)_both] flex flex-col justify-center items-center">
-                    <h1 className="font-display text-2xl font-bold leading-tight tracking-tight lg:text-3xl xl:text-4xl text-[#C0C0C0]">
+                    <h1 className="text-2xl font-bold leading-tight tracking-normal lg:text-3xl xl:text-4xl text-[#C0C0C0]">
                         Future of{" "}
                         <span className="bg-[linear-gradient(135deg,#E5C76B,#C1A050,#BB9847)] bg-clip-text text-transparent">
                             crypto Payments
                         </span>
                     </h1>
-                    <p className="mt-3 text-sm leading-relaxed text-[#C0C0C0] lg:text-[14px] xl:text-[15px] font-semibold">
+                    <p className="mt-3 text-sm text-center leading-relaxed text-[#C0C0C0] lg:text-[14px] xl:text-[15px] font-semibold">
                         Institutional-grade digital finance for borderless crypto and fiat transactions.
                     </p>
                 </div>

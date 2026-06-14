@@ -65,6 +65,7 @@ export default function SignUpPage() {
                 "Full name can only contain letters, numbers, spaces, dots (.), apostrophes ('), and hyphens (-)"),
         email: z
             .string()
+            .min(1, "Email is required")
             .email("Invalid email"),
         password: z.string()
             .min(8, 'Password must be atleast of 8 characters')
@@ -160,32 +161,32 @@ export default function SignUpPage() {
     // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
     return (
-        <div className="signupPage-wrapper w-full min-h-[calc(100vh-76px)] flex justify-center items- center px-0! lg:px-20! py-2!">
-            <div className="signupPage-container w-[80vw] md:w-[50vw] min-h-[80vh] lg:w-full lg:h-full flex flex-col justify-start items-center gap-4">
+        <div className="signupPage-wrapper w-full h-fit flex justify-center items-center px-6! xl:px-10! py-4!">
+            <div className="signupPage-containerw-full h-fit flex flex-col justify-start items-center gap-4">
+                {/* Logo */}
+                <div className="signinPage-logo bg-amber-100 w-[100px] h-[60px] xl:w-[120px] xl:h-[50px]"></div>
+
                 {/* Welcome Text */}
-                <span className="signupPage-text w-fit h-fit text-[36px] sm:text-[6vw] md:text-[4vw] xl:text-[3.6vw] text-[var(--color-text1)] font-semibold tracking-tight">
+                <span className="signupPage-text text-2xl font-bold tracking-normal text-[var(--gold)]">
                     Create Account
                 </span>
-
-                {/* Logo */}
-                <div className="signupPage-logo bg-amber-300 w-[160px] h-[100px]"></div>
 
                 {/* Signin Link */}
                 <div className="signinPage-signinForm-createNewAccount-container w-full h-fit flex justify-center items-center">
                     <div className="signinPage-signinForm-createNewAccount w-fit h-fit">
-                        <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--color-text3)] tracking-tight inline-block">Already have an account -</span>
-                        <span className="signinPage-singinForm-createAccount-text ms-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-tight hover:underline! inline-block cursor-pointer">
+                        <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--color-text3)] tracking-normal inline-block">Already have an account -</span>
+                        <span className="signinPage-singinForm-createAccount-text ms-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! inline-block cursor-pointer">
                             <Link to="/">Sign In</Link>
                         </span>
                     </div>
                 </div>
 
                 {/* Signup Form */}
-                <form className="signupForm-signupForm-wrapper w-full h-full" noValidate onSubmit={onSignupFormSubmit}>
+                <form className="signupForm-signupForm-wrapper w-full h-fit" noValidate onSubmit={onSignupFormSubmit}>
                     <div className="signupPage-signupForm-container w-full h-full">
                         {/* Form step 1*/}
                         <Activity mode={formStep === 1 ? 'visible' : 'hidden'}>
-                            <div className="signupPage-signupForm1-container w-full h-fit space-y-6!">
+                            <div className="signupPage-signupForm1-container w-full h-fit space-y-2!">
                                 {/* Full Name */}
                                 <CustomInput id={"signupForm1-input-email"} label={"Full Name"} type={"text"} placeholder={"Enter full name"} inputClassname={"px-4!"} autoFocus={true} error={errors?.fullName?.message} {...register("fullName")} />
 
@@ -197,29 +198,6 @@ export default function SignUpPage() {
 
                                 {/* Confirm Password */}
                                 <CustomPasswordInput id={"signupForm1-input-confirmPassword"} label={"Confirm Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} {...register("confirmPassword")} />
-
-                                {/* Gender */}
-                                <Controller
-                                    name="gender"
-                                    control={control}
-                                    defaultValue=""
-                                    render={({ field }) => (
-                                        <>
-                                            <div className="signupForm2-genderSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
-                                                <span className="signupForm1-genderSelect-text text-sm font-semibold tracking-tight">Gender</span>
-                                                <CustomSelect
-                                                    id="signupForm1-input-select-gender"
-                                                    label="Select Gender"
-                                                    labels={["Male", "Female", "Other"]}
-                                                    className="w-full h-full"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    error={errors?.gender?.message}
-                                                />
-                                            </div>
-                                        </>
-                                    )}
-                                />
 
                                 {/* Button */}
                                 <div className="signupPage-signupForm1-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
@@ -233,57 +211,8 @@ export default function SignUpPage() {
                         {/* Form step 2 */}
                         <Activity mode={formStep === 2 ? 'visible' : 'hidden'}>
                             <div className="signupPage-signupForm2-container w-full h-fit space-y-6!">
-
-                                {/* Dial Code + Country Code */}
-                                <div className="signupPage-signupForm2-dialCode-countryCode-container w-full h-fit flex flex-col sm:flex-row justify-center items-center gap-2">
-                                    {/* Phone Dial Code */}
-                                    <Controller
-                                        name="dialCode"
-                                        control={control}
-                                        defaultValue=""
-                                        render={({ field }) => (
-                                            <>
-                                                <div className="signupForm2-dialCodeSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
-                                                    <span className="signupForm2-phoneDialCode-text text-sm font-semibold tracking-tight">Phone Dial Code</span>
-                                                    <CustomSelect
-                                                        id="signupForm1-input-select-phoneDialCode"
-                                                        label="Select Dial Code"
-                                                        labels={mobileDialCodes}
-                                                        className="w-full   h-full"
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        error={errors?.countryCode?.message}
-                                                    />
-                                                </div>
-                                            </>
-                                        )}
-                                    />
-
-                                    {/* Country Code */}
-                                    <Controller
-                                        name="countryCode"
-                                        control={control}
-                                        defaultValue=""
-                                        render={({ field }) => (
-                                            <>
-                                                <div className="signupForm2-countryCodeSelect-wrapper w-full h-fit flex flex-col justify-between items-start gap-2">
-                                                    <span className="signupForm2-countryCodeSelect-text text-sm font-semibold tracking-tight">Country Code</span>
-                                                    <CustomSelect
-                                                        id="signupForm1-input-select-countryCode"
-                                                        label="Select Country Code"
-                                                        labels={mobileCountryCodes}
-                                                        className="w-full h-full"
-                                                        value={field.value}
-                                                        onChange={field.onChange}
-                                                        error={errors?.countryCode?.message}
-                                                    />
-                                                </div>
-                                            </>
-                                        )}
-                                    />
-                                </div>
                                 {/* Phone Dial Code */}
-                                {/* <Controller
+                                <Controller
                                     name="dialCode"
                                     control={control}
                                     defaultValue=""
@@ -303,10 +232,10 @@ export default function SignUpPage() {
                                             </div>
                                         </>
                                     )}
-                                /> */}
+                                />
 
                                 {/* Country Code */}
-                                {/* <Controller
+                                <Controller
                                     name="countryCode"
                                     control={control}
                                     defaultValue=""
@@ -326,10 +255,56 @@ export default function SignUpPage() {
                                             </div>
                                         </>
                                     )}
-                                /> */}
+                                />
 
                                 {/* Phone Number */}
                                 <CustomInput id={"signupForm2-input-phoneNumber"} label={"Phone Number"} type={"text"} placeholder={"Enter phone number"} inputClassname={"px-4!"} hint={"* Enter number without country code"} error={errors?.phoneNumber?.message} {...register("phoneNumber")} />
+
+                                {/* Direction buttons */}
+                                <div className="directionButtons-container w-fit h-fit m-auto! flex justify-center items-center gap-2">
+                                    {/* Back Button */}
+                                    <div className="signupPage-signupForm2-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
+                                        <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--color-text1)] hover:text-[var(--color-text3)] cursor-pointer" onClick={() => { setFormStep(1) }}>
+                                            <CircleArrowLeft size={24} />
+                                        </div>
+                                    </div>
+
+                                    {/* Front Button */}
+                                    <div className="signupPage-signupForm1-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
+                                        <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--color-text1)] hover:text-[var(--color-text3)] cursor-pointer" onClick={() => { setFormStep(3) }}>
+                                            <CircleArrowRight size={24} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </Activity>
+
+                        {/* Form step 3 */}
+                        <Activity mode={formStep === 3 ? 'visible' : 'hidden'}>
+                            <div className="signupPage-signupForm2-container w-full h-fit space-y-6!">
+
+                                {/* Gender */}
+                                <Controller
+                                    name="gender"
+                                    control={control}
+                                    defaultValue=""
+                                    render={({ field }) => (
+                                        <>
+                                            <div className="signupForm2-genderSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
+                                                <span className="signupForm1-genderSelect-text text-sm font-semibold tracking-normal">Gender</span>
+                                                <CustomSelect
+                                                    id="signupForm1-input-select-gender"
+                                                    label="Select Gender"
+                                                    labels={["Male", "Female", "Other"]}
+                                                    className="w-full h-full"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={errors?.gender?.message}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                />
 
                                 {/* DOB */}
                                 <Controller
@@ -339,7 +314,7 @@ export default function SignUpPage() {
                                     render={({ field }) => (
                                         <>
                                             <div className="signupForm2-dateOfBirthSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
-                                                <span className="signupForm2-dateOfBirthSelect-text text-sm font-semibold tracking-tight">Date of Birth</span>
+                                                <span className="signupForm2-dateOfBirthSelect-text text-sm font-semibold tracking-normal">Date of Birth</span>
                                                 <CustomDatePicker
                                                     id="signupForm2-input-select-dateOfBirth"
                                                     label="Pick a date"
@@ -356,15 +331,15 @@ export default function SignUpPage() {
                                 />
 
                                 {/* Button */}
-                                <div className="signupPage-signupForm2-button-wrapper w-full h-fit flex justify-center items-center">
+                                <div className="signupPage-signupForm2-button-wrapper w-full h-fit flex justify-center items-center mt-5!">
                                     <div className="signupPage-signupForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                                        <CustomButton id={"signPage-signinForm-button"} label={"Sign Up"} />
+                                        <CustomButton id={"signPage-signinForm-button"} label={"Sign Up"} variant={"navy"} />
                                     </div>
                                 </div>
 
                                 {/* Back Button */}
                                 <div className="signupPage-signupForm2-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
-                                    <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--color-text1)] hover:text-[var(--color-text3)] cursor-pointer" onClick={() => { setFormStep(1) }}>
+                                    <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--color-text1)] hover:text-[var(--color-text3)] cursor-pointer" onClick={() => { setFormStep(2) }}>
                                         <CircleArrowLeft size={24} />
                                     </div>
                                 </div>

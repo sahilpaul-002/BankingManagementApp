@@ -13,21 +13,6 @@ export default function AuthLayout() {
   const navigate = useNavigate();
 
   // --------------------------------------- Get/Use DNS Data --------------------------------------- \\
-  // // Dns Config Data
-  // const domainName = window.location.hostname;
-  // const { data, isLoading, isSuccess, error, isError } = useGetDnsConfigQuery({
-  //   domainName: domainName
-  // })
-  // useEffect(() => {
-  //   if (isSuccess) {
-  //     console.log(data);
-  //   }
-  //   else if (isError) {
-  //     console.error(error);
-  //     navigate("/serviceUnavailable");
-  //   }
-  // }, [data, error])
-
   // Get dns data from redux
   const dnsData = useSelector(selectDnsConfigDetails)
 
@@ -74,7 +59,7 @@ export default function AuthLayout() {
 
   //   link.href = data?.data.favicon_url
   // }, [data?.data?.favicon_url])
-  // ---------------------------------------- XXXXxxxxxxxxxxxxxxxxx ---------------------------------------- \\
+  // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 
   // -------------------------------------- Logic to display the loader -------------------------------------- \\
   // State to manage the display of page loader
@@ -85,7 +70,7 @@ export default function AuthLayout() {
     // Start 3s timeout
     const timer = setTimeout(() => {
       setDisplayPageLoader(false)
-    }, 5000)
+    }, 3000)
 
     // If dnsDetails arrives early → stop loader immediately
     if (isSuccess && Object.keys(data || {}).length > 0) {

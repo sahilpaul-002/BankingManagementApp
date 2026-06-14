@@ -1,34 +1,51 @@
 import { type FC } from "react";
 
 const shimmerStyle = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
- 
   @keyframes shimmer {
-    0% { background-position: -600px 0; }
-    100% { background-position: 600px 0; }
+    0% {
+      background-position: -700px 0;
+    }
+
+    100% {
+      background-position: 700px 0;
+    }
   }
- 
+
   @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
- 
-  * { font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
- 
+
   .shimmer {
     background: linear-gradient(
       90deg,
-      #ebebeb 0%,
-      #f5f5f5 40%,
-      #ffffff 50%,
-      #f5f5f5 60%,
-      #ebebeb 100%
+      rgba(16, 24, 46, 0.88) 0%,
+      rgba(24, 36, 66, 0.95) 35%,
+      rgba(72, 88, 126, 0.32) 50%,
+      rgba(24, 36, 66, 0.95) 65%,
+      rgba(16, 24, 46, 0.88) 100%
     );
-    background-size: 600px 100%;
-    animation: shimmer 1.6s infinite linear;
-    border-radius: 8px;
+
+    background-size: 700px 100%;
+
+    border: 1px solid rgba(255,255,255,0.04);
+
+    box-shadow:
+      inset 0 0 10px rgba(255,255,255,0.02),
+      0 0 20px rgba(0,0,0,0.18);
+
+    animation: shimmer 2s linear infinite;
+
+    border-radius: 10px;
   }
- 
+
   .fade-up {
     opacity: 0;
     animation: fadeUp 0.5s ease forwards;
@@ -71,7 +88,7 @@ const FormSkeleton: FC = () => {
     <>
       <style>{shimmerStyle}</style>
 
-      <div className="min-h-screen flex items-center justify-center bg-white px-4">
+      <div className="w-full h-full flex items-center justify-center px-4">
         <div className="w-full max-w-md fade-up" style={{ animationDelay: "0.1s" }}>
           <div className="p-8!">
             {/* Title block */}

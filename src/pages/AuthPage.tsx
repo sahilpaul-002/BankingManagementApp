@@ -43,27 +43,27 @@ export default function AuthPage() {
                                 <FormSkeleton />
                             </Activity>
                             <Activity mode={dnsConfig ? "visible" : "hidden"}>
-                                <div className="authForm-container w-full h-full flex flex-col justify-between items-center">
+                                <div className="authForm-container w-full h-full flex flex-col justify-between items-center py-4!">
                                     <Outlet />
                                     {/* Footer */}
-                                    <div className="authPage-footer-container w-full h-[60px] px-4! py-2! z-[99]">
-                                        <div className="authPage-footer-texts w-full h-full flex flex-col justify-center lg:justify-between items-center gap-1">
-                                            <div className="authPage-footer-termsConditon-privacyPolicy-texts w-fit h-fir flex justify-center items-center gap-2">
+                                    <div className="authPage-footer-container w-full h-fit px-4!">
+                                        <div className="authPage-footer-texts w-full h-full flex flex-col justify-center items-center">
+                                            <div className="authPage-footer-termsConditon-privacyPolicy-texts w-fit h-fit flex justify-center items-center gap-2">
                                                 {/* Terms & Condition Text */}
-                                                <span className="authPage-footer-copyrightText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Terms & Condition</span>
+                                                <span className="authPage-footer-copyrightText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-normal hover:underline cursor-pointer">Terms & Condition</span>
 
                                                 {/* Separator */}
                                                 <div className="authPage-footer-separator text-[var(--gold)]">|</div>
 
                                                 {/* Terms & Condition Text */}
-                                                <span className="authPage-footer-privacyPolicyText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-tight hover:underline cursor-pointer">Privacy Policy</span>
+                                                <span className="authPage-footer-privacyPolicyText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-normal hover:underline cursor-pointer">Privacy Policy</span>
                                             </div>
 
                                             {/* Separator */}
                                             <div className="authPage-footer-separator text-[var(--gold))] hidden">|</div>
 
                                             {/* Copy Right Text */}
-                                            <span className="authPage-footer-copyrightText text-[var(--nav-text-strong)] text-center text-[12px] font-normal tracking-tight">CopyRight © {currentYear} {dnsDetails?.dashboard_name || 'Banking Management App'} - All Right Reserved.</span>
+                                            <span className="authPage-footer-copyrightText text-[var(--nav-text-strong)] text-center text-[12px] font-normal tracking-normal">CopyRight © {currentYear} {dnsDetails?.dashboard_name || 'Banking Management App'} - All Right Reserved.</span>
                                         </div>
                                     </div>
                                 </div>

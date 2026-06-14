@@ -15,7 +15,7 @@ export default function ApplicationLoader() {
 
       {/* Grid pattern background */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-30"
+        className="checkBoxPageDesignocontainer w-full h-full pointer-events-none absolute inset-0 opacity-30 blur-[0.3px] bg-size-[64px_64px]"
         style={{
           backgroundImage: `
             repeating-linear-gradient(

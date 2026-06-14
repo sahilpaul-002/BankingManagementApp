@@ -22,8 +22,7 @@ const CustomInput = forwardRef<HTMLInputElement, PasswordInputPropsTypes>((props
 
     // Get window pathname
     const windowPathname = window.location.pathname
-    console.log(windowPathname)
-    const authPathnames = ["/", "signup"]
+    const authPathnames = ["/", "/signup", "/send2FaCode", "/verify2FaCode", "/sendForgotPasswordCode", "/verifyForgotPasswordCode"]
 
     return (
         <div className="input-container w-full h-fit">

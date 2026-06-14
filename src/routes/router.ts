@@ -55,6 +55,24 @@ const router = createBrowserRouter([
                         path: "signup",
                         Component: SignUpPage,
                     },
+                    // {
+                    //     path: "send2FaCode",
+                    //     loader: requireAuthentication,
+                    //     Component: Send2FaCodeComponent,
+                    // },
+                    // {
+                    //     path: "verify2FaCode",
+                    //     loader: requireAuthentication,
+                    //     Component: Verify2FaCodeComponent,
+                    // },
+                    // {
+                    //     path: "sendForgotPasswordCode",
+                    //     Component: ForgotPasswordRequestComponent,
+                    // },
+                    // {
+                    //     path: "verifyForgotPasswordCode",
+                    //     Component: VerifyForgotPasswordCodeComponent,
+                    // },
                 ],
             },
         ],
