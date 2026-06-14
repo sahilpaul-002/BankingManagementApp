@@ -11,7 +11,7 @@ export default function PasswordValidationRules(props: Props) {
     const { passwordValidationRules } = props
 
     return (
-        <div className='passwordValidationRules w-full h-[200px] overflow-scroll p-2!'>
+        <div className='passwordValidationRules w-full h-[200px] overflow-y-scroll p-2!'>
             {passwordValidationRules.map((rule: {valid: boolean, message: string}, index: number) => (
                 <div key={index} className="flex justify-start items-start gap-2">
                     <span className={`text-start  font-medium ${rule.valid ? "text-green-600" : "text-red-600"}`}>

@@ -73,7 +73,7 @@ const CustomPasswordInput = forwardRef<HTMLInputElement, InputPropsTypes>((props
                 <div className="customPasswordInput-input-container relative">
                     <Input ref={ref} id={id} type={type} placeholder={placeholder ?? "Input Placeholder"} className={inputClassname} aria-invalid={error ? true : false} onChange={handlePasswordChange} onFocus={() => setPasswordFocused(true)} onBlur={() => setPasswordFocused(false)} {...rest} />
                     {passwordFocused && (
-                        <div className="forgetPassword-newPassowrdInput-validationRules w-full h-fit bg-white px-2 py-1 border border-gray-300 shadow-lg tracking-normal rounded-lg absolute top-16 sm:top-10 left-0 z-[9999]">
+                        <div className="forgetPassword-newPassowrdInput-validationRules w-full h-fit bg-white px-2 py-1 border border-gray-300 shadow-lg tracking-normal rounded-sm absolute top-16 sm:top-10 left-0 z-[9999]">
                             <PasswordValidationRules passwordValidationRules={passwordValidationRules} />
                         </div>
                     )}
