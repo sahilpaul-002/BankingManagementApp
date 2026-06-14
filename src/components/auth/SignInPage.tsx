@@ -7,6 +7,7 @@ import z from 'zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useSignInMutation } from '@/redux/features/user/userApi';
+import { toast } from 'react-toastify';
 
 export default function SignInPage() {
   // State to manage the password visibility
@@ -55,9 +56,11 @@ export default function SignInPage() {
     try {
       const signInResponse = await signIn({ email, password }).unwrap()
       console.log('Success:', signInResponse)
+      toast.success("Sign in successfull. Redirecting to 2 factor authentication.");
       console.log(data);
     } catch (err) {
       console.log('Error:', err)
+      toast.error("Sign in failed");
     }
   };
 

@@ -11,6 +11,7 @@ import { Link, useNavigate } from 'react-router';
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useSignUpMutation } from '@/redux/features/user/userApi';
+import { toast } from 'react-toastify';
 
 export default function SignUpPage() {
     // SignUp Api Mutation
@@ -134,11 +135,12 @@ export default function SignUpPage() {
         console.log(formData);
         try {
             const signUpResponse = await signUp(formData).unwrap()
-            console.log('Success:', signUpResponse)
-            console.log(data);
+            console.log('Success:', signUpResponse?.data)
+            toast.success("Sign up successfull.");
         }
         catch (error) {
             console.log('Error:', error)
+            toast.error("Sign up failed.");
         }
     };
 
@@ -201,7 +203,7 @@ export default function SignUpPage() {
                                 <CustomPasswordInput id={"signupForm1-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} password={password} {...register("password")} />
 
                                 {/* Confirm Password */}
-                                <CustomPasswordInput id={"signupForm1-input-confirmPassword"} label={"Confirm Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} {...register("confirmPassword")} />
+                                <CustomPasswordInput id={"signupForm1-input-confirmPassword"} label={"Confirm Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.confirmPassword?.message} {...register("confirmPassword")} />
 
                                 {/* Button */}
                                 <div className="signupPage-signupForm1-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
@@ -337,7 +339,7 @@ export default function SignUpPage() {
                                 {/* Button */}
                                 <div className="signupPage-signupForm2-button-wrapper w-full h-fit flex justify-center items-center mt-5!">
                                     <div className="signupPage-signupForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                                        <CustomButton id={"signPage-signinForm-button"} label={"Sign Up"} variant={"navy"} />
+                                        <CustomButton id={"signPage-signinForm-button"} label={"Sign Up"} showButtonLoader={isLoading} variant={"navy"} />
                                     </div>
                                 </div>
 

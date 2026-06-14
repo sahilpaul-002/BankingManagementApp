@@ -23,16 +23,12 @@ export default function ServiceUnavailable503() {
     // Configure useNavigate
     const navigate = useNavigate();
 
-    // State to manage the button loader
-    const [showButtonLoader, setShowButtonLoader] = useState(false);
-
     // Dns Config Query
-    const [fetchDnsConfigQueryTrigger] = useLazyGetDnsConfigQuery()
+    const [fetchDnsConfigQueryTrigger, {isLoading}] = useLazyGetDnsConfigQuery()
     // Function to manage tryAgain click action
     const domainName = window.location.hostname;
     const onTryAgainClick = async (): Promise<void> => {
         try {
-            setShowButtonLoader(true);
             const result = await fetchDnsConfigQueryTrigger({
                 // domainName: 'business.banking-management.com'
                 domainName: domainName 
@@ -48,9 +44,6 @@ export default function ServiceUnavailable503() {
         } catch (err) {
             toast.error("Still service unavailable. Please try again later!");
             console.error(err);
-        }
-        finally {
-            setShowButtonLoader(false);
         }
     };
 
@@ -172,7 +165,7 @@ export default function ServiceUnavailable503() {
                 {/* Try Again Button */}
                 <div className="serviceUnavailable503-button-wrapper w-full h-fit flex justify-center items-center">
                     <div className="serviceUnavailablePage-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]" onClick={() => onTryAgainClick()}>
-                        <CustomButton id={"serviceUnavailablePage-button"} label={"Try Again"} showButtonLoader={showButtonLoader} variant={"navy"} />
+                        <CustomButton id={"serviceUnavailablePage-button"} label={"Try Again"} showButtonLoader={isLoading} variant={"navy"} />
                     </div>
                 </div>
 
