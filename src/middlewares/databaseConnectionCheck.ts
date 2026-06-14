@@ -8,7 +8,7 @@ export const checkDatabaseConnection = (
     next: NextFunction
 ) => {
 
-    if (mongoose.connection.readyState === 1) {
+    if (mongoose.connection.readyState !== 1) {
         throw new ServiceUnavailableError("Database service unavailable")
     }
 
