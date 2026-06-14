@@ -18,7 +18,7 @@ export default function SignUpPage() {
     const [signUp, { isLoading, error, data, isSuccess, reset: resetMutation }] = useSignUpMutation()
 
     // Configure useNavigate
-    const nav = useNavigate();
+    const navigate = useNavigate();
 
     // ---------------------------------- LOGIC TO GET COUNTRY CODES LIST ---------------------------------- \\
     // State to manage countryCodes list
@@ -137,6 +137,9 @@ export default function SignUpPage() {
             const signUpResponse = await signUp(formData).unwrap()
             console.log('Success:', signUpResponse?.data)
             toast.success("Sign up successfull.");
+            setTimeout(() => {
+                navigate("/");
+            }, 1000)
         }
         catch (error) {
             console.log('Error:', error)

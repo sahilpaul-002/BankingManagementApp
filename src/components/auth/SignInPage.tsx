@@ -2,7 +2,7 @@ import React, { Activity, useState } from 'react'
 import CustomInput from '../common/CustomInput'
 import CustomPasswordInput from '../common/CustomPasswordInput'
 import CustomButton from '../common/CustomButton';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import z from 'zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,9 @@ import { useSignInMutation } from '@/redux/features/user/userApi';
 import { toast } from 'react-toastify';
 
 export default function SignInPage() {
+  // Configure useNavigate
+  const navigate = useNavigate();
+  
   // State to manage the password visibility
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
@@ -24,9 +27,9 @@ export default function SignInPage() {
       .min(1, "Email required")
       .email("Invalid email")
       .regex(
-      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
-      'Invalid email format'
-    ),
+        /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+        'Invalid email format'
+      ),
     password: z.string()
       .min(8, 'Password must be atleast of 8 characters')
       .regex(/[A-Z]/, 'Password must contain a uppercase character')
@@ -58,6 +61,9 @@ export default function SignInPage() {
       console.log('Success:', signInResponse)
       toast.success("Sign in successfull. Redirecting to 2 factor authentication.");
       console.log(data);
+      // setTimeout(() => {
+      //   navigate("/");
+      // }, 1000)
     } catch (err) {
       console.log('Error:', err)
       toast.error("Sign in failed");
