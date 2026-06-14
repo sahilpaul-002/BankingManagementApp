@@ -55,7 +55,7 @@ function App() {
         />
       </Activity>
 
-      <div className="application-container bg-[var(--color-800)] w-screen min-h-screen">
+      <div className="application-container bg-[var(--bg-app)] text-[var(--ink)] w-screen min-h-screen">
         <Outlet />
       </div>
     </>

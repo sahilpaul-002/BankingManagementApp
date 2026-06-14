@@ -32,10 +32,8 @@ const CustomDatePicker = forwardRef<HTMLButtonElement, DatePickerPropsTypes>((pr
                     <Button
                         ref={ref}
                         id={id}
-                        type="button"
-                        variant="outline"
                         data-empty={!date}
-                        className={clsx(`min-w-[212px] px-2! justify-between text-left font-normal data-[empty=true]:text-muted-foreground ${error ? "border-destructive ring-3 ring-destructive/20" : ""}`, className)}
+                        className={clsx(`min-w-[212px] px-2! justify-between text-left font-normal data-[empty=true]:text-muted-foreground bg-[var(--navy-bg)] ring-[1px] ring-white ${error ? "border-destructive ring-3 ring-destructive/20" : ""}`, className)}
                         {...restAttributes}
                     >
                         {date ? format(date, "PPP") : <span>{label}</span>}
