@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { EyeOff, Eye } from "lucide-react";
 import validatePassword, { type validatePasswordType } from '@/utils/validatePassword';
 import checkPasswordStrength, { type passwordStrengthType } from "../../utils/checkPasswordStrength"
-import PasswordValidationRules from './PasswordValidationRules';
+import PasswordValidationRules from './PasswordValidationRulesComponent';
 
 interface InputPropsTypes extends InputHTMLAttributes<HTMLInputElement> {
     id: string,
@@ -23,7 +23,7 @@ interface InputPropsTypes extends InputHTMLAttributes<HTMLInputElement> {
     password?: string
 }
 
-const CustomPasswordInput = forwardRef<HTMLInputElement, InputPropsTypes>((props, ref) => {
+const CustomPasswordInputComponent = forwardRef<HTMLInputElement, InputPropsTypes>((props, ref) => {
     // Destructure Props
     const { id, label, type, placeholder, error, hint, fieldLabelClassname, inputClassname, fieldDescriptionRequired, fieldDescriptionText, fieldDescriptionClassname, showPassword, setShowPassword, password, ...restAttributes } = props
 
@@ -102,6 +102,6 @@ const CustomPasswordInput = forwardRef<HTMLInputElement, InputPropsTypes>((props
     )
 })
 
-CustomPasswordInput.displayName = "CustomPasswordInput"
+CustomPasswordInputComponent.displayName = "CustomPasswordInputComponent"
 
-export default CustomPasswordInput
+export default CustomPasswordInputComponent

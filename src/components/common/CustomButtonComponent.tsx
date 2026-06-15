@@ -12,7 +12,7 @@ interface ButtonPropsTypes extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant: "link" | "default" | "navy" | "gold" | "outline" | "secondary" | "ghost" | "destructive" | null | undefined
 }
 
-const CustomButton = forwardRef<HTMLButtonElement, ButtonPropsTypes>((props, ref) => {
+const CustomButtonComponent = forwardRef<HTMLButtonElement, ButtonPropsTypes>((props, ref) => {
     // Destructure props
     const { id, label, type, className, showButtonLoader, variant, ...restAttributes } = props
 
@@ -36,5 +36,5 @@ const CustomButton = forwardRef<HTMLButtonElement, ButtonPropsTypes>((props, ref
     )
 })
 
-CustomButton.displayName = "CustomButton"
-export default CustomButton
+CustomButtonComponent.displayName = "CustomButtonComponent"
+export default CustomButtonComponent

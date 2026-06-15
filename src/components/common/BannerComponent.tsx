@@ -33,7 +33,7 @@ const VARIANT_CONFIG: Record<BannerVariant, VariantConfig> = {
 };
 
 
-export default function Banner({
+export default function BannerComponent({
     message,
     variant,
     visible,

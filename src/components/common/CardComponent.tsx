@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function Card() {
+export default function CardComponent() {
     return (
         <div className="cardComponent-container w-full h-full backdrop-blur-3xl flex items-center justify-center rounded-3xl p-2!">
             <div className="cardComponent-card relative w-full h-full min-w-[400px] min-h-[240px] rounded-3xl bg-black shadow-[0_0_10px_16px_rgba(128,128,128,0.35)] p-8! flex flex-col justify-between overflow-hidden">

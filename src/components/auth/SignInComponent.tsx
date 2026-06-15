@@ -1,7 +1,7 @@
 import React, { Activity, useState } from 'react'
-import CustomInput from '../common/CustomInput'
-import CustomPasswordInput from '../common/CustomPasswordInput'
-import CustomButton from '../common/CustomButton';
+import CustomInput from '../common/CustomInputComponent'
+import CustomPasswordInput from '../common/CustomPasswordInputComponent'
+import CustomButton from '../common/CustomButtonComponent';
 import { Link, useNavigate } from 'react-router';
 import z from 'zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSignInMutation } from '@/redux/features/user/userApi';
 import { toast } from 'react-toastify';
 
-export default function SignInPage() {
+export default function SignInComponent() {
   // Configure useNavigate
   const navigate = useNavigate();
   
@@ -110,7 +110,7 @@ export default function SignInPage() {
             {/* Button */}
             <div className="signinPage-signinForm-button-wrapper w-full h-fit flex justify-center items-center mt-6!">
               <div className="signinPage-signinForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                <CustomButton id={"signPage-signinForm-button"} label={"Sign In"} showButtonLoader={isLoading} variant={"navy"} />
+                <CustomButton id={"signPage-signinForm-button"} label={"Sign In"} type="submit" showButtonLoader={isLoading} variant={"navy"} />
               </div>
             </div>
 

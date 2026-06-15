@@ -1,11 +1,11 @@
 import { useState, Activity, useEffect } from "react";
-import HourGlassLoader from "../components/common/loaders/HourGlassLoader";
+import HourGlassLoader from "../components/common/loaders/HourGlassLoaderComponent";
 import AuthPage from "../pages/AuthPage";
 import { useGetDnsConfigQuery, useLazyGetDnsConfigQuery } from "@/redux/features/config/configApi";
 import { useNavigate } from "react-router";
 import { useSelector } from "react-redux";
 import { selectDnsConfigDetails } from "@/redux/slice/config/configSlice";
-import ApplicationLoader from "@/components/common/loaders/ApplicationLoader";
+import ApplicationLoader from "@/components/common/loaders/ApplicationLoaderComponent";
 
 
 export default function AuthLayout() {

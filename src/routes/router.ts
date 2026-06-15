@@ -1,39 +1,12 @@
-// import { createBrowserRouter } from "react-router"
-// import App from "../App"
-// import AuthLayout from "../layouts/AuthLayout"
-// import { Component } from "react"
-// import SignInPage from "../components/auth/SignInPage"
-// import SignUpPage from "@/components/auth/SignUpPage"
-
-// const router = createBrowserRouter([
-//     {
-//         path: "/",
-//         Component: App,
-//         children: [
-//             {
-//                 Component: AuthLayout,
-//                 children: [
-//                     {
-//                         index: true,
-//                         Component: SignInPage
-//                     },
-//                     {
-//                         path: "/signup",
-//                         Component: SignUpPage
-//                     }
-//                 ]
-//             }
-//         ]
-//     }
-// ])
-
 // export default router
 import { createBrowserRouter } from "react-router";
 import App from "../App";
 import AuthLayout from "../layouts/AuthLayout";
-import SignInPage from "../components/auth/SignInPage";
-import SignUpPage from "@/components/auth/SignUpPage";
+import SignInComponent from "../components/auth/SignInComponent";
+import SignUpComponent from "@/components/auth/SignUpComponent";
 import ServiceUnavailable503 from "@/pages/ServiceUnavailable503";
+import { requireAuthentication } from "./gaurds/requireAuthentication";
+import VerifyEmailComponent from "@/components/auth/VerifyEmailComponent";
 
 const router = createBrowserRouter([
     {
@@ -49,11 +22,16 @@ const router = createBrowserRouter([
                 children: [
                     {
                         index: true,
-                        Component: SignInPage,
+                        Component: SignInComponent,
                     },
                     {
                         path: "signup",
-                        Component: SignUpPage,
+                        Component: SignUpComponent,
+                    },
+                    {
+                        path: "verifyEmail",
+                        // loader: requireAuthentication,
+                        Component: VerifyEmailComponent,
                     },
                     // {
                     //     path: "send2FaCode",

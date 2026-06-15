@@ -14,7 +14,7 @@ interface HourGlassLoaderProps {
     wrappperClassName?: string;
 }
 
-export default function HourGlassLoader(props: HourGlassLoaderProps) {
+export default function HourGlassLoaderComponent(props: HourGlassLoaderProps) {
     // Destructure props
     const {height, width, visible, ariaLabel, wrapperStyle, wrapperClass, primaryColor, secondaryColor, wrappperClassName} = props;
 

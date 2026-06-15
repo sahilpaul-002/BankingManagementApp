@@ -83,7 +83,7 @@ const Field: FC<FieldProps> = ({ labelWidth = "w-20", delay = 0 }) => (
   </div>
 );
 
-const FormSkeleton: FC = () => {
+const FormSkeletonComponent: FC = () => {
   return (
     <>
       <style>{shimmerStyle}</style>
@@ -121,4 +121,4 @@ const FormSkeleton: FC = () => {
   );
 };
 
-export default FormSkeleton;
+export default FormSkeletonComponent;

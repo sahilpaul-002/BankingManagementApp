@@ -8,6 +8,8 @@ import { ApplicationServiceError } from '@/errorHandling/error'
 import mapToRtkError from '@/errorHandling/mapToRtkError'
 import { helperApis } from '../helper/helperApis'
 import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError'
+import executeBaseQuery from '../executeBaseQuery'
+import { setAuthenticated } from '@/redux/slice/user/userSlice'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
@@ -115,7 +117,7 @@ export const userApis = createApi({
                         throw new ApplicationServiceError("UserSignUp - Missing required dynamic api headers");
                     }
 
-                    const result = await baseQuery({
+                    const result = await executeBaseQuery(baseQuery, {
                         url: `${USER_URL}/signUp`,
                         method: 'POST',
                         headers,
@@ -124,12 +126,6 @@ export const userApis = createApi({
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown
-                    }
-
-                    if (result.error) {
-                        return {
-                            error: result.error,
-                        };
                     }
 
                     return {
@@ -188,7 +184,7 @@ export const userApis = createApi({
                         throw new ApplicationServiceError("UserSignIn - Missing required dynamic api headers");
                     }
 
-                    const result = await baseQuery({
+                    const result = await executeBaseQuery(baseQuery, {
                         url: `${USER_URL}/login`,
                         method: 'POST',
                         headers,
@@ -199,14 +195,11 @@ export const userApis = createApi({
                         error?: unknown
                     }
 
-                    if (result.error) {
-                        return {
-                            error: result.error,
-                        };
-                    }
-
                     // Store user email in session storage
                     sessionStorage.setItem('userEmail', payload.email);
+
+                    // Update authentication status of user
+                    dispatch(setAuthenticated(true));
 
                     return {
                         data: result.data as apiResponseType<apiResponseDataType>,

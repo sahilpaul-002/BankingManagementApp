@@ -1,0 +1,13 @@
+// User credentials verified and 2fa pending state (i.e user authenticated but not yet authorized)
+import { store } from "@/redux/sotre";
+import { redirect } from "react-router-dom";
+
+export const requireAuthentication = () => {
+    const state = store.getState();
+
+    if (!state.user.isAuthenticated) {
+        return redirect("/");
+    }
+
+    return null;
+};

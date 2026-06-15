@@ -10,6 +10,7 @@ import type { apiResponseType, applicationHeadersType, dnsConfigRequestType, dns
 import { logError } from '@/errorHandling/errorLogger'
 import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError'
 import { CONFIG_URL } from '@/configs/constants'
+import executeBaseQuery from '../executeBaseQuery'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsBaseUrl = import.meta.env.VITE_DNS_BASE_URL
@@ -70,17 +71,11 @@ export const configApis = createApi({
 
                     const encryptedPayloads = { encryptedPayload1: rsaEncryptionResponse?.ciphertextBase64, encryptedPayload2: aesEncryptionResponse?.ciphertextHex }
                     // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
-                    const result = await baseQuery({
+                    const result = await executeBaseQuery(baseQuery, {
                         url: `${CONFIG_URL}/getDnsConfig`,
                         method: "GET",
                         params: encryptedPayloads,
                     });
-                    
-                    if (result.error) {
-                        return {
-                            error: result.error,
-                        };
-                    }
                     // ---------------------------- Decrypt the respnose data using AES ---------------------------- \\
                     let decryptedData: dnsConfigResponseType;
 

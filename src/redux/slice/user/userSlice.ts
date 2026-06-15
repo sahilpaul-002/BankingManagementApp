@@ -28,14 +28,14 @@ interface UserDetails {
 
 interface UserState {
   userDetails: UserDetails | null
-  isLogin: boolean
+  isAuthorized: boolean
   isAuthenticated: boolean
 }
 
 // 🧠 Initial State
 const initialState: UserState = {
   userDetails: null,
-  isLogin: false,
+  isAuthorized: false,
   isAuthenticated: false
 }
 
@@ -54,14 +54,14 @@ const userSlice = createSlice({
       state.isAuthenticated = action.payload
     },
 
-    // Set Login
-    setLogin: (state, action: PayloadAction<boolean>) => {
-      state.isLogin = action.payload
+    // Set Authorized
+    setAuthorized: (state, action: PayloadAction<boolean>) => {
+      state.isAuthorized = action.payload
     },
 
     // ❌ Logout
     logout: (state) => {
-      state.isLogin = false
+      state.isAuthorized = false
       state.isAuthenticated = false
     },
 
@@ -71,7 +71,7 @@ const userSlice = createSlice({
 })
 
 // 📤 Export actions
-export const { setUserDetails, logout, resetUserState } = userSlice.actions
+export const { setUserDetails, setAuthenticated, setAuthorized, logout, resetUserState } = userSlice.actions
 
 // 📤 Export reducer
 export default userSlice
@@ -79,3 +79,4 @@ export default userSlice
 // 📌 Selectors
 export const selectUserDetails = (state: rootStateType) => state.user.userDetails
 export const selectIsAuthenticated = (state: rootStateType) => state.user.isAuthenticated
+export const selectIsAuthorized = (state: rootStateType) => state.user.isAuthorized

@@ -1,5 +1,5 @@
 import { Activity, useEffect, useState } from "react";
-import CustomButton from "../components/common/CustomButton";
+import CustomButton from "../components/common/CustomButtonComponent";
 import { useGetDnsConfigQuery, useLazyGetDnsConfigQuery } from "@/redux/features/config/configApi";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";

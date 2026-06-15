@@ -6,7 +6,7 @@ interface Props {
   passwordValidationRules: validatePasswordType
 }
 
-export default function PasswordValidationRules(props: Props) {
+export default function PasswordValidationRulesComponent(props: Props) {
     // Destructure props
     const { passwordValidationRules } = props
 

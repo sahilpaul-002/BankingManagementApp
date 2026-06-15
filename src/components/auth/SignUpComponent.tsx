@@ -1,10 +1,10 @@
 import React, { Activity, useEffect, useState } from 'react'
-import CustomInput from '../common/CustomInput';
-import CustomPasswordInput from '../common/CustomPasswordInput';
-import CustomButton from '../common/CustomButton';
-import CustomSelect from '../common/CustomSelect';
+import CustomInput from '../common/CustomInputComponent';
+import CustomPasswordInput from '../common/CustomPasswordInputComponent';
+import CustomButton from '../common/CustomButtonComponent';
+import CustomSelect from '../common/CustomSelectComponent';
 import { CircleArrowLeft, CircleArrowRight } from 'lucide-react';
-import CustomDatePicker from '../common/CustomDatePicker';
+import CustomDatePicker from '../common/CustomDatePickerComponent';
 import mobileCountryCodesLists from '@/utils/mobileCountryCodesList';
 import { Controller, useForm, type SubmitHandler, type SubmitErrorHandler } from "react-hook-form"
 import { Link, useNavigate } from 'react-router';
@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useSignUpMutation } from '@/redux/features/user/userApi';
 import { toast } from 'react-toastify';
 
-export default function SignUpPage() {
+export default function SignUpComponent() {
     // SignUp Api Mutation
     const [signUp, { isLoading, error, data, isSuccess, reset: resetMutation }] = useSignUpMutation()
 
@@ -342,7 +342,7 @@ export default function SignUpPage() {
                                 {/* Button */}
                                 <div className="signupPage-signupForm2-button-wrapper w-full h-fit flex justify-center items-center mt-5!">
                                     <div className="signupPage-signupForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                                        <CustomButton id={"signPage-signinForm-button"} label={"Sign Up"} showButtonLoader={isLoading} variant={"navy"} />
+                                        <CustomButton id={"signPage-signinForm-button"} label={"Sign Up"} type="submit" showButtonLoader={isLoading} variant={"navy"} />
                                     </div>
                                 </div>
 

@@ -3,9 +3,9 @@ import { Outlet } from 'react-router'
 import './App.css'
 import { ToastContainer, Bounce, Zoom, Slide, Flip } from "react-toastify";
 import { selectDestroySessionParams, selectShowDestroySession, selectShowErrorBanner, selectShowInfoBanner, selectMessageBanner, clearBanner } from './redux/slice/utility/utilitySlice';
-import DestroySession from './components/common/DestroySession';
+import DestroySession from './components/common/DestroySessionComponent';
 import { useDispatch, useSelector } from 'react-redux';
-import Banner from './components/common/Banner';
+import Banner from './components/common/BannerComponent';
 import { Activity } from 'react';
 
 function App() {

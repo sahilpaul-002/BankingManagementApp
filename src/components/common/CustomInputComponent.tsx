@@ -16,13 +16,13 @@ interface PasswordInputPropsTypes extends InputHTMLAttributes<HTMLInputElement> 
     fieldDescriptionClassname?: string
 }
 
-const CustomInput = forwardRef<HTMLInputElement, PasswordInputPropsTypes>((props, ref) => {
+const CustomInputComponent = forwardRef<HTMLInputElement, PasswordInputPropsTypes>((props, ref) => {
     // Destructure Props
     const { id, label, type, placeholder, error, hint, fieldLabelClassname, inputClassname, fieldDescriptionRequired, fieldDescriptionText, fieldDescriptionClassname, ...restAttributes } = props
 
     // Get window pathname
     const windowPathname = window.location.pathname
-    const authPathnames = ["/", "/signup", "/send2FaCode", "/verify2FaCode", "/sendForgotPasswordCode", "/verifyForgotPasswordCode"]
+    const authPathnames = ["/", "/signup", "/verifyEmail", "/send2FaCode", "/verify2FaCode", "/sendForgotPasswordCode", "/verifyForgotPasswordCode"]
 
     return (
         <div className="input-container w-full h-fit">
@@ -45,6 +45,6 @@ const CustomInput = forwardRef<HTMLInputElement, PasswordInputPropsTypes>((props
     )
 })
 
-// CustomInput.displayName = "CustomInput"
+CustomInputComponent.displayName = "CustomInputComponent"
 
-export default CustomInput
+export default CustomInputComponent

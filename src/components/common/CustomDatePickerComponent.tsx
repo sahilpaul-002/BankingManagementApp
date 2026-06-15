@@ -21,7 +21,7 @@ interface DatePickerPropsTypes extends ButtonHTMLAttributes<HTMLButtonElement> {
     hint?: string,
 }
 
-const CustomDatePicker = forwardRef<HTMLButtonElement, DatePickerPropsTypes>((props, ref) => {
+const CustomDatePickerComponent = forwardRef<HTMLButtonElement, DatePickerPropsTypes>((props, ref) => {
     // Destructure props
     const { id, label, date, setDate, className, error, hint, ...restAttributes } = props
 
@@ -61,5 +61,5 @@ const CustomDatePicker = forwardRef<HTMLButtonElement, DatePickerPropsTypes>((pr
     )
 })
 
-CustomDatePicker.displayName = "CustomDatePicker"
-export default CustomDatePicker;
+CustomDatePickerComponent.displayName = "CustomDatePickerComponent"
+export default CustomDatePickerComponent;

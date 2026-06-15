@@ -24,7 +24,7 @@ interface SelectPropsTypes {
     hint?: string,
 }
 
-const CustomSelect = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref) => {
+const CustomSelectComponent = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref) => {
     // Destructure props
     const { id, label, labelCategory, labels, className, value, hint, error, onChange, ...restAttributes } = props
 
@@ -95,6 +95,6 @@ const CustomSelect = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref
     )
 })
 
-CustomSelect.displayName = "CustomSelect";
+CustomSelectComponent.displayName = "CustomSelectComponent";
 
-export default CustomSelect;
+export default CustomSelectComponent;

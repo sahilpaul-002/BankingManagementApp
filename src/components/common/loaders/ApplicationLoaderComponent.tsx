@@ -1,8 +1,8 @@
-import DotSpinnerLoader from "./DotSpinnerLoader";
-import HourGlassLoader from "./HourGlassLoader";
-import RingSpinnerLoader from "./RingSpinnerLoader";
+import DotSpinnerLoader from "./DotSpinnerLoaderComponent";
+import HourGlassLoader from "./HourGlassLoaderComponent";
+import RingSpinnerLoader from "./RingSpinnerLoaderComponent";
 
-export default function ApplicationLoader() {
+export default function ApplicationLoaderComponent() {
   return (
     <div className="w-full h-screen bg-[var(--nav-bg)] flex items-center justify-center relative overflow-hidden">
       {/* Gradient overlays - matching BrandingComponent */}

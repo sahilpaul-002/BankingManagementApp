@@ -1,4 +1,4 @@
-import type { destroySessionPropsTypes } from "@/components/common/DestroySession";
+import type { destroySessionPropsTypes } from "@/components/common/DestroySessionComponent";
 import type { rootStateType } from "@/redux/sotre";
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 

@@ -1,7 +1,7 @@
 import React, { Activity, useEffect, useState } from 'react'
 import BrandingComponent from '../components/auth/BrandingComponent';
 import { Outlet } from 'react-router';
-import FormSkeleton from "../components/common/FormSkeleton";
+import FormSkeleton from "../components/common/FormSkeletonComponent";
 import { selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice';
 import { useSelector } from 'react-redux';
 
@@ -18,7 +18,7 @@ export default function AuthPage() {
 
     return (
         <div className="authPage-container w-screen min-h-screen relative overflow-hidden text-white bg-[var(--nav-bg)]">
-            {/* Gold glow top-left */}
+            {/* Gold glow bottom-left */}
             <div className="pointer-events-none absolute -bottom-40 -right-32 h-[40vw] w-[40vw] rounded-full bg-[var(--gold)] opacity-[0.07] blur-[160px] animate-[pulseGlow_8s_ease-in-out_infinite]" />
 
             {/* Header */}

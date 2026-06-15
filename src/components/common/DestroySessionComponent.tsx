@@ -11,7 +11,7 @@ export type destroySessionPropsTypes = {
     duration?: number;
 };
 
-export default function DestroySession({ title, subtitle = 'Redirecting, logging you out...', type = 'DEFAULT', duration = 10 }: destroySessionPropsTypes) {
+export default function DestroySessionComponent({ title, subtitle = 'Redirecting, logging you out...', type = 'DEFAULT', duration = 10 }: destroySessionPropsTypes) {
     const dispatch = useDispatch<appDispatchType>();
 
     const initialDuration = type === 'SESSION_INACTIVITY' ? 60 : duration;
