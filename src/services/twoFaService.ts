@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import type { successResponseJson } from "../types/responseJson.js";
+import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import dotenv from "dotenv"
 import logger from "../utils/logger.js";
@@ -18,23 +18,64 @@ import QRCode from "qrcode";
 import userEmailValidationSchema from "../validations/userEmailValidation.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
+import destroySession from "../utils/destroySession.js";
 
 dotenv.config();
 
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 
 // SEND EMAIL SERVICE
-export const sendVerificationEmailService = async (requestSession: Request["session"], userMail: string, type?: string, emailTemplate?: any): Promise<successResponseJson> => {
+export const sendVerificationEmailService = async (req: Request, res: Response,  userMail: string): Promise<successResponseJson | failedResponseJson> => {
     try {
+        // Check if collection exist in MongoDB
+        const isCollectionPresent1 = await checkMongoDbCollectionExist("user_details");
+        if (isCollectionPresent1.status !== "SUCCESS") {
+            throw new NotFoundError("User_details collection does not exist in MongoDB");
+        }
+
         if (!userMail) {
             throw new BadRequestError("Email not found in the request")
         }
-        if (!type || !emailTemplate) {
-            throw new BadRequestError("Email-template-type or Email-template not found in the request")
+
+        // Get user from DB
+        const checkUserExistInDB = async (): Promise<userDetailsSchemaTypes | null> => {
+            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: userMail });
+            return userExistResponse;
         }
+        const userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB();
+
+        // Check user exist in DB
+        if (!userDetails) {
+            const destroySessionResponse = await destroySession(req.session, res);
+            throw new ForbiddenError("User does not exist")
+        }
+
+        // Check collection exist in Mongo DB
+        const isCollectionPresent2 = await checkMongoDbCollectionExist("user_meta_details");
+        if (isCollectionPresent2.status !== "SUCCESS") {
+            throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
+        }
+
+        // Generate verificaiton code and its expiry time
+        const verificationData = await generateVerificationCodeService();
+        // HashVerification code
+        const salt = genSaltSync(10);
+        const hashedVerificationCode = hashSync(verificationData.verificationCode as string, salt);
+
+        // Generate email template
+        const userName = userDetails?.full_name || "User"
+        const dashboardName = req.session.sessiondata?.dashboardName || "BMA"
+        const emailTemplate = generateEmailTemplate(
+            "EMAIL_VERIFICATION_CODE",
+            {
+                verificationCode: verificationData.verificationCode,
+                userName: userName,
+                dashboardName: dashboardName
+            }
+        );
+
         const toEmail: string = userMail
         const sendEmail: string = fromEmail
-        const dashboardName: string = requestSession?.sessiondata?.dashboardName || "BMA"
         const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
         // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
         const gmailMailServiceResponse = await gmailSendService(mainConfig)
@@ -42,7 +83,18 @@ export const sendVerificationEmailService = async (requestSession: Request["sess
         if (gmailMailServiceResponse?.status !== "SUCCESS") {
             throw new ServiceError("GmailSendService is facing error")
         }
-        return { status: "SUCCESS", data: gmailMailServiceResponse?.id, message: "Email send using service" }
+
+        const userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
+            { user_id: userDetails._id },
+            { verification_code: hashedVerificationCode, verification_code_expires_at: verificationData.expiresAt },
+            { upsert: true, new: true }
+        )
+        if (userMetaDetailsDoc) {
+            return { status: "SUCCESS", data: gmailMailServiceResponse?.id, message: "Email send using service" }
+        }
+        else {
+            return { status: "BAD_REQUEST", message: "Failed to send email using service" }
+        }
     }
     catch (err) {
         const error = err as any;

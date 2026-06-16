@@ -27,7 +27,6 @@ export const resolveDomain = (origin?: string): string => {
     }
 
     if (origin.includes("localhost")) {
-        // return "console.qa.zoqq.com";
         return "business.banking-management.com";
     }
 

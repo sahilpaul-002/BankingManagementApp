@@ -262,45 +262,17 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Get the device id from header
         const deviceId = req.headers['x-device-id'];
 
+        let sendEmailResponse;
         let userMetaDetailsDoc;
         // Check user email verified
         if (userDetails.is_email_verified === "N") {
-            // Generate verificaiton code and its expiry time
-            const verificationData = await generateVerificationCodeService();
-            // HashVerification code
-            const salt = genSaltSync(10);
-            const hashedVerificationCode = hashSync(verificationData.verificationCode as string, salt);
-
-            // Generate email template
-            const userName = userDetails?.full_name || "User"
-            const dashboardName = req.session.sessiondata?.dashboardName || "BMA"
-            const emailTemplate = generateEmailTemplate(
-                "EMAIL_VERIFICATION_CODE",
-                {
-                    verificationCode: verificationData.verificationCode,
-                    userName: userName,
-                    dashboardName: dashboardName
-                }
-            );
-
-            // Send email verification code
-            const sendEmailResponse = await sendVerificationEmailService(req.session, userDetails.email, "EMAIL_VERIFICATION", emailTemplate);
-            if (sendEmailResponse?.status === "SUCCESS") {
-                // Insert user meta details
-                userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
-                    { user_id: updatedUserDetails._id },
-                    { device_id: deviceId, ip_address: clientIp, userAgent: req.headers["user-agent"], login_at: new Date(), verification_code: hashedVerificationCode, verification_code_expires_at: verificationData.expiresAt },
-                    { upsert: true, new: true }
-                )
-            }
-            else {
-                // Insert user meta details
-                userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
-                    { user_id: updatedUserDetails._id },
-                    { device_id: deviceId, ip_address: clientIp, userAgent: req.headers["user-agent"], login_at: new Date() },
-                    { upsert: true, new: true }
-                )
-            }
+            sendEmailResponse = await sendVerificationEmailService(req, res, userDetails.email);
+            // Insert user meta details
+            userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
+                { user_id: updatedUserDetails._id },
+                { device_id: deviceId, ip_address: clientIp, userAgent: req.headers["user-agent"], login_at: new Date() },
+                { upsert: true, new: true }
+            )
         }
         else {
             // Insert user meta details
@@ -400,7 +372,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         if (userDetails.is_email_verified === "Y") {
             return { status: "SUCCESS", message: "User login successful", data: updatedUserDetails }
         }
-        else if (userDetails.is_email_verified === "N" && userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
+        else if (userDetails.is_email_verified === "N" && sendEmailResponse?.status === "SUCCESS" && userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
             return { status: "SUCCESS", message: "User login successful, verification code sent to email", data: updatedUserDetails }
         }
         else {
