@@ -15,7 +15,7 @@ export const verifyEmail = async (req: Request, res: Response): Promise<Response
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const verifyEmailServiceResponse = await verifyEmailService(requestSession, res, aesDecryptedBodyData)
+        const verifyEmailServiceResponse = await verifyEmailService(requestSession, aesDecryptedBodyData)
         if (verifyEmailServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Email verification failed", 400);
         }
@@ -53,7 +53,7 @@ export const send2FaVerificationCode = async (req: Request, res: Response): Prom
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const send2FaCodeServiceResponse = await send2FaCodeService(requestSession, res, aesDecryptedBodyData)
+        const send2FaCodeServiceResponse = await send2FaCodeService(requestSession, aesDecryptedBodyData)
         if (send2FaCodeServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to send two factor auth verification code in email", 400);
         }
@@ -97,7 +97,7 @@ export const verify2FaCode = async (req: Request, res: Response): Promise<Respon
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const verifyEmailServiceResponse = await verify2FaCodeService(requestSession, res, aesDecryptedBodyData)
+        const verifyEmailServiceResponse = await verify2FaCodeService(requestSession, aesDecryptedBodyData)
         if (verifyEmailServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Two factor auth code verification failed", 400);
         }
@@ -130,7 +130,7 @@ export const sendResetPasswordVerificationCode = async (req: Request, res: Respo
     try {
         const aesDecryptedBodyData = req.body;
 
-        const send2FaCodeServiceResponse = await sendResetPasswordCodeService(req.session, res, aesDecryptedBodyData)
+        const send2FaCodeServiceResponse = await sendResetPasswordCodeService(req.session, aesDecryptedBodyData)
         if (send2FaCodeServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to send reset password verification code in email", 400);
         }
@@ -164,7 +164,7 @@ export const verifyResetPasswordCode = async (req: Request, res: Response): Prom
     try {
         const aesDecryptedBodyData = req.body;
 
-        const verifyEmailServiceResponse = await verify2FaCodeService(req.session, res, aesDecryptedBodyData)
+        const verifyEmailServiceResponse = await verify2FaCodeService(req.session, aesDecryptedBodyData)
         if (verifyEmailServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Reset password code verification failed", 400);
         }

@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import type { successResponseJson } from "../types/responseJson.js";
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { resendMailSendService } from "./resendMailService.js";
 import dotenv from "dotenv"
 import logger from "../utils/logger.js";
 import { gmailSendService } from "./gmailSendService.js";
@@ -10,7 +9,6 @@ import checkStringBody from "../utils/checkStringBody.js";
 import type { userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_details.js";
-import destroySession from "../utils/destroySession.js";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
 import type { Schema } from "mongoose";
 import { generateVerificationCodeService } from "./generateVerificationCodeService.js";
@@ -73,7 +71,7 @@ export const sendVerificationEmailService = async (requestSession: Request["sess
 }
 
 // VERIFY EMAIL SERVICE
-export const verifyEmailService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const verifyEmailService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -197,7 +195,7 @@ export const verifyEmailService = async (requestSession: Request["session"], res
 }
 
 // SEND 2FA VERIFICATION CODE SERVICE
-export const send2FaCodeService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const send2FaCodeService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -361,7 +359,7 @@ export const send2FaCodeService = async (requestSession: Request["session"], res
 }
 
 // VERIFY 2 FA CODE SERVICE
-export const verify2FaCodeService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const verify2FaCodeService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -532,7 +530,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], r
 }
 
 // SEND RESET PASSWORD VERIFICATION CODE SERVICE
-export const sendResetPasswordCodeService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const sendResetPasswordCodeService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -637,7 +635,7 @@ export const sendResetPasswordCodeService = async (requestSession: Request["sess
 }
 
 // VERIFY RESET PASSWORD CODE SERVICE
-export const verifyResetPasswordCodeService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const verifyResetPasswordCodeService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");

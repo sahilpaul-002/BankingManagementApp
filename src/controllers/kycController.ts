@@ -15,7 +15,7 @@ export const getKyc = async (req: Request, res: Response): Promise<Response<succ
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const getKycServiceResponse = await getKycService(requestSession, res, aesDecryptedBodyData)
+        const getKycServiceResponse = await getKycService(requestSession, aesDecryptedBodyData)
         if (getKycServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to fetch user kyc details", 400);
         }
@@ -48,7 +48,7 @@ export const uploadKyc = async (req: Request, res: Response): Promise<Response<s
     try {
         const aesDecryptedBodyData = req.body;
 
-        const uploadKycServiceResponse = await uploadKycService(req, res, aesDecryptedBodyData)
+        const uploadKycServiceResponse = await uploadKycService(req, aesDecryptedBodyData)
         if (uploadKycServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to fetch user kyc details", 400);
         }
@@ -86,7 +86,7 @@ export const sendKycVerificationMail = async (req: Request, res: Response): Prom
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const sendKycVerificationMailServiceResponse = await sendKycVerificationMailService(requestSession, res, aesDecryptedBodyData)
+        const sendKycVerificationMailServiceResponse = await sendKycVerificationMailService(requestSession, aesDecryptedBodyData)
         if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to sent user kyc verification mail", 400);
         }
@@ -119,7 +119,7 @@ export const getKycVerificationWebhook = async (req: Request, res: Response): Pr
     try {
         const aesDecryptedQueryData = req.query;
 
-        const sendKycVerificationMailServiceResponse = await kycVerificationWebhookService(res, aesDecryptedQueryData)
+        const sendKycVerificationMailServiceResponse = await kycVerificationWebhookService(aesDecryptedQueryData)
         if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {
             if (sendKycVerificationMailServiceResponse?.message === "Exipred verification link or RFI requested") {
                 return res.status(200).send(`

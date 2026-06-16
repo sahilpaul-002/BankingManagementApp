@@ -21,7 +21,7 @@ const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@g
 const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
 
 // ------------------------------------- GET KYC SERVICE ------------------------------------- \\
-export const getKycService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const getKycService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -73,7 +73,7 @@ interface kycMulterFiles {
     poa_document?: Express.Multer.File[];
 }
 
-export const uploadKycService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const uploadKycService = async (req: Request, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -246,7 +246,7 @@ export const uploadKycService = async (req: Request, res: Response, aesDecrypted
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 // ------------------------------------- SEND KYC VERIFICATION MAIL SERVICE ------------------------------------- \\
-export const sendKycVerificationMailService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const sendKycVerificationMailService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -377,7 +377,7 @@ interface kycVerificationJwtPayloadType extends JwtPayload {
     kycRequestId: string;
 }
 
-export const kycVerificationWebhookService = async (res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson | void> => {
+export const kycVerificationWebhookService = async (aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson | void> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid request query params data");

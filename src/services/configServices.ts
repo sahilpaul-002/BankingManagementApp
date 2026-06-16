@@ -33,7 +33,7 @@ export const resolveDomain = (origin?: string): string => {
 
     return origin.split("//")[1] || "";
 };
-export const getDnsConfigService = async (req: Request, res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
+export const getDnsConfigService = async (req: Request, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");

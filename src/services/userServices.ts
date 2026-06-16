@@ -48,7 +48,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         }
 
         if (!req.session || !req.session?.initiated || !req.session?.lastActivity || !req.session?.sessiondata || !req.session?.meta) {
-            const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, res, aesDecryptedQueryData);
+            const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, aesDecryptedQueryData);
 
             if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
                 throw new ServiceError("getDnsConfigService facing isssue");
@@ -166,7 +166,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             throw new BadRequestError("Invalid query data");
         }
         if (!req.session || !req.session?.initiated || !req.session?.lastActivity || !req.session?.sessiondata || !req.session?.meta) {
-            const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, res, aesDecryptedQueryData);
+            const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, aesDecryptedQueryData);
 
             if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
                 throw new ServiceError("getDnsConfigService facing isssue");
