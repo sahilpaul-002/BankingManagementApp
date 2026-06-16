@@ -497,6 +497,9 @@ export const verify2FaCodeService = async (requestSession: Request["session"], r
             }
         );
 
+        // Set verified 2fa status in session
+        requestSession.is2faVerified = true;
+
         return {
             status: "SUCCESS",
             message: "Two factor auth code verified successfully"

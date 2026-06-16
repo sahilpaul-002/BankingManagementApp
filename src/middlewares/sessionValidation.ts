@@ -24,8 +24,8 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
         }
 
         // Skip portal header check for selcted pathes
-        const excludedPaths: string[] = ["/signUp", "/login", "/sendResetPasswordCode", "/verifyResetPasswordCode"];
-        if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
+        const excludedPaths1: string[] = ["/signUp", "/login", "/sendResetPasswordCode", "/verifyResetPasswordCode"];
+        if (excludedPaths1.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
         else {
@@ -114,6 +114,17 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             if (!isValidMeta) {
                 const destroySessionResponse = await destroySession(req.session, res);
                 throw new UnauthorizedError("User is not authorized - Invalid user meta details");
+            }
+
+            // Skip portal session check for selcted pathes
+            const excludedPaths2 = ["/send2FaCode", "/verify2FaCode", "/enable2Fa"]
+            if (excludedPaths2.some(p => req.path === p || req.path.startsWith(p + "/"))) {
+                return next();
+            }
+            else {
+                if (!req.session.is2faVerified) {
+                    throw new UnauthorizedError("Unauthorised session - session validation faliure")
+                }
             }
 
             // // Check user status

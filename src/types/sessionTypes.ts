@@ -57,6 +57,7 @@ export interface sessionItemsTypes {
     userId?: string;
     passwordHash: string;
     userType: UserType;
+    is2faVerified: boolean;
     headerKeys: headerKeysType;
     sessiondata: sessionDataTypes;
     meta?: sessionMeta;
