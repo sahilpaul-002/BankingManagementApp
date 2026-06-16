@@ -15,7 +15,7 @@ const userControllerHeader = (req: Request) => {
 export const userSignUp = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     try {
         let aesDecryptedBodyData = req.body
-        const aesDecryptedQueryData = req.query
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
         const requestSession: Request["session"] | undefined = getRequestSession();
         if (!requestSession) {
             throw new UnauthenticatedError("Unauthenticated session");
@@ -40,7 +40,6 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
             gender: aesDecryptedBodyData?.gender?.toUpperCase(),
         };
         aesDecryptedBodyData = transformedPayload;
-        // const aesDecryptedQueryData = req.query;
         const userSignUpResponse = await userSignUpService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
 
         if (userSignUpResponse?.status !== "SUCCESS") {
@@ -74,7 +73,7 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
 export const userLogin = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body
-        const aesDecryptedQueryData = req.query
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query
         const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
 
         if (userLoginServiceResponse?.status !== "SUCCESS") {
@@ -190,7 +189,7 @@ export const sendBankVerificationMail = async (req: Request, res: Response): Pro
 // ------------------------------------- FUNCTION TO GET USER BANK VERIFICATION WEBHOOK ------------------------------------- \\
 export const getUserBankVerificationWebhook = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
-        const aesDecryptedQueryData = req.query;
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
 
         const sendKycVerificationMailServiceResponse = await userBankVerificationWebhookService(res, aesDecryptedQueryData)
         if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {

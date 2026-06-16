@@ -86,7 +86,8 @@ const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) 
             // req.query = JSON.parse(aesRes.decryptedText);
             const decryptedQuery = JSON.parse(aesRes.decryptedText);
 
-            Object.assign(req.query, decryptedQuery);
+            // Object.assign(req.query, decryptedQuery);
+            (req as any).reqDecryptedQuery = decryptedQuery;
         }
 
         // STORE IV FOR RESPONSE

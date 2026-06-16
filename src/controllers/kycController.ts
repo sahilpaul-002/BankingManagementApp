@@ -117,7 +117,7 @@ export const sendKycVerificationMail = async (req: Request, res: Response): Prom
 // ------------------------------------- FUNCTION TO GET KYC VERIFICATION WEBHOOK ------------------------------------- \\
 export const getKycVerificationWebhook = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
-        const aesDecryptedQueryData = req.query;
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
 
         const sendKycVerificationMailServiceResponse = await kycVerificationWebhookService(aesDecryptedQueryData)
         if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {
