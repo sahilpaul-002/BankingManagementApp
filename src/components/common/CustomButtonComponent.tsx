@@ -9,7 +9,7 @@ interface ButtonPropsTypes extends ButtonHTMLAttributes<HTMLButtonElement> {
     type?: "submit" | "reset" | "button" | undefined
     className?: string
     showButtonLoader?: boolean
-    variant: "link" | "default" | "navy" | "gold" | "outline" | "secondary" | "ghost" | "destructive" | null | undefined
+    variant?: "link" | "default" | "navy" | "gold" | "authResend" | "authLink" | "outline" | "secondary" | "ghost" | "destructive" | null | undefined
 }
 
 const CustomButtonComponent = forwardRef<HTMLButtonElement, ButtonPropsTypes>((props, ref) => {
@@ -22,7 +22,7 @@ const CustomButtonComponent = forwardRef<HTMLButtonElement, ButtonPropsTypes>((p
                 variant={variant}
                 type={type}
                 size="lg"
-                className="customButton-container w-full h-full text-[var(--nav-text-strong)] text-sm font-semibold tracking-normal cursor-pointer"
+                className="customButton-container w-full h-full text-sm font-semibold tracking-normal cursor-pointer"
                 disabled={showButtonLoader}
                 {...restAttributes}
             >

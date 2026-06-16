@@ -51,6 +51,111 @@ export const twoFaApis = createApi({
     baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // =======================================================
+        // SEND VERIFY EMAIL CODE
+        // =======================================================
+        sendVerifyEmailCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    const state = getState() as rootStateType
+
+                    // Get user api headers
+                    let headers = twoFaApiHeaders(state)
+                    if (!headers || Object.keys(headers).length === 0) {
+                        // throw new ApplicationServiceError("Verify2FaCode - Missing required dynamic api headers");
+                        const domainName = window.location.hostname;
+                        const result = await dispatch(
+                            configApis.endpoints.getDnsConfig.initiate(
+                                {
+                                    domainName: domainName,
+                                },
+                                {
+                                    forceRefetch: true  // Force RTK to refetch the query
+                                }
+                            )
+                        )
+                        if (result.isError) {
+                            throw new ApplicationServiceError("SEND-EMAIL-CODE - Failed to fetch DNS Config data")
+                        }
+
+                        headers = twoFaApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${TWO_FA_URL}/sendVerifyEmailCode`,
+                        method: 'POST',
+                        headers,
+                        data: payload,
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, "SEND-EMAL-CODE faced application error ");
+                    return rtkError;
+                }
+            },
+        }),
+
+        // =======================================================
+        // VERIFY TWO FA CODE
+        // =======================================================
+        verifyEmailCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string, code: string }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    const state = getState() as rootStateType
+
+                    // Get user api headers
+                    let headers = twoFaApiHeaders(state)
+                    if (!headers || Object.keys(headers).length === 0) {
+                        // throw new ApplicationServiceError("Verify2FaCode - Missing required dynamic api headers");
+                        const domainName = window.location.hostname;
+                        const result = await dispatch(
+                            configApis.endpoints.getDnsConfig.initiate(
+                                {
+                                    domainName: domainName,
+                                },
+                                {
+                                    forceRefetch: true  // Force RTK to refetch the query
+                                }
+                            )
+                        )
+                        if (result.isError) {
+                            throw new ApplicationServiceError("VERIFY-EMAIL-CODE - Failed to fetch DNS Config data")
+                        }
+
+                        headers = twoFaApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${TWO_FA_URL}/verifyEmail`,
+                        method: 'POST',
+                        headers,
+                        data: payload,
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    // Update the authorization status of user
+                    dispatch(setAuthorized(true));
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, "VERIFY-EMAIL-CODE faced application error ");
+                    return rtkError;
+                }
+            },
+        }),
+
+        // =======================================================
         // SEND TWO FA CODE
         // =======================================================
         sendTwoFaCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string }>({
@@ -265,4 +370,4 @@ export const twoFaApis = createApi({
     })
 })
 
-export const { useSendTwoFaCodeMutation, useVerifyTwoFaCodeMutation, useSendResetPasswordCodeMutation, useVerifyResetPasswordCodeMutation } = twoFaApis
+export const { useSendVerifyEmailCodeMutation, useVerifyEmailCodeMutation, useSendTwoFaCodeMutation, useVerifyTwoFaCodeMutation, useSendResetPasswordCodeMutation, useVerifyResetPasswordCodeMutation } = twoFaApis

@@ -17,13 +17,10 @@
 
 /* GLOBAL CSS */
 :root {
-  font-family: Orbitron, Avenir, Helvetica, Arial, sans-serif, system-ui;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  /* color: rgba(255, 255, 255, 0.87); */
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -76,79 +73,42 @@
   --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  /* Sizing */
-  --radius: 8px;
-  --radius-lg: 12px;
-  --radius-pill: 999px;
-
   --color-link1: #9193f7;
   --color-link2: #383acf;
   --color-link3: #2e30a3;
 
   --border-radius: 6px;
-
   --background: oklch(1 0 0);
-
   --foreground: oklch(0.145 0 0);
-
   --card: oklch(1 0 0);
-
   --card-foreground: oklch(0.145 0 0);
-
   --popover: oklch(1 0 0);
-
   --popover-foreground: oklch(0.145 0 0);
-
   --primary: oklch(0.205 0 0);
-
   --primary-foreground: oklch(0.985 0 0);
-
   --secondary: oklch(0.97 0 0);
-
   --secondary-foreground: oklch(0.205 0 0);
-
   --muted: oklch(0.97 0 0);
-
   --muted-foreground: oklch(0.556 0 0);
-
   --accent: oklch(0.97 0 0);
-
   --accent-foreground: oklch(0.205 0 0);
-
   --destructive: oklch(0.577 0.245 27.325);
-
   --border: oklch(0.922 0 0);
-
   --input: oklch(0.922 0 0);
-
   --ring: oklch(0.708 0 0);
-
   --chart-1: oklch(0.809 0.105 251.813);
-
   --chart-2: oklch(0.623 0.214 259.815);
-
   --chart-3: oklch(0.546 0.245 262.881);
-
   --chart-4: oklch(0.488 0.243 264.376);
-
   --chart-5: oklch(0.424 0.199 265.638);
-
   --radius: 0.625rem;
-
   --sidebar: oklch(0.985 0 0);
-
   --sidebar-foreground: oklch(0.145 0 0);
-
   --sidebar-primary: oklch(0.205 0 0);
-
   --sidebar-primary-foreground: oklch(0.985 0 0);
-
   --sidebar-accent: oklch(0.97 0 0);
-
   --sidebar-accent-foreground: oklch(0.205 0 0);
-
   --sidebar-border: oklch(0.922 0 0);
-
   --sidebar-ring: oklch(0.708 0 0);
 }
 
@@ -238,15 +198,18 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--color-border);
+  }
+
+  html,
+  body {
+    font-family: var(--font-sans);
   }
 
   body {
-    @apply bg-background text-foreground;
-  }
-
-  html {
-    @apply font-sans;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    -webkit-font-smoothing: antialiased;
   }
 }
 
@@ -295,65 +258,5 @@
 
   100% {
     background-position: 200% 0;
-  }
-}
-
-@layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
-  html,
-  body {
-    font-family: var(--font-sans);
-  }
-
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    -webkit-font-smoothing: antialiased;
-  }
-}
-
-@layer utilities {
-  .bg-gradient-panel {
-    background: var(--gradient-panel);
-  }
-
-  .bg-gradient-cta {
-    background: var(--gradient-cta);
-  }
-
-  .bg-gradient-brand {
-    background: var(--gradient-brand);
-  }
-
-  .shadow-soft {
-    box-shadow: var(--shadow-soft);
-  }
-
-  .shadow-elegant {
-    box-shadow: var(--shadow-elegant);
-  }
-
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-
-  .shadow-card-float {
-    box-shadow: var(--shadow-card-float);
-  }
-
-  .glass {
-    background: oklch(1 0 0 / 0.08);
-    backdrop-filter: blur(20px) saturate(140%);
-    -webkit-backdrop-filter: blur(20px) saturate(140%);
-    border: 1px solid oklch(1 0 0 / 0.12);
-  }
-
-  .glass-strong {
-    background: oklch(1 0 0 / 0.14);
-    backdrop-filter: blur(28px) saturate(160%);
-    border: 1px solid oklch(1 0 0 / 0.2);
   }
 }

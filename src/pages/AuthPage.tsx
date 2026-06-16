@@ -6,10 +6,7 @@ import { selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/co
 import { useSelector } from 'react-redux';
 
 export default function AuthPage() {
-    // State to manage to display service unavailable page\
-    const [showServiceUnavailablePage, setShowServiceUnavailablePage] = useState(false);
-
-    // // Dns Config Data
+    // Dns Config Data
     const dnsConfig: dnsConfigDataType | null = useSelector(selectDnsConfigDetails)
 
     // Get current year for footer
@@ -17,7 +14,7 @@ export default function AuthPage() {
     const dnsDetails: { dashboard_name?: string } = {}
 
     return (
-        <div className="authPage-container w-screen min-h-screen relative overflow-hidden text-white bg-[var(--nav-bg)]">
+        <div className="authPage-container w-screen min-h-screen relative overflow-hidden bg-[var(--nav-bg)]">
             {/* Gold glow bottom-left */}
             <div className="pointer-events-none absolute -bottom-40 -right-32 h-[40vw] w-[40vw] rounded-full bg-[var(--gold)] opacity-[0.07] blur-[160px] animate-[pulseGlow_8s_ease-in-out_infinite]" />
 

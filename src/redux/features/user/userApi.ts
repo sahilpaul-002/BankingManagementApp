@@ -93,10 +93,11 @@ export const userApis = createApi({
 
                     let dnsConfig = selectDnsConfigDetails(state)
                     if (!dnsConfig || !isSessionValid) {
+                        const domainName = window.location.hostname;
                         const result = await dispatch(
                             configApis.endpoints.getDnsConfig.initiate(
                                 {
-                                    domainName: 'business.banking-management.com',
+                                    domainName: domainName,
                                 },
                                 {
                                     forceRefetch: true  // Force RTK to refetch the query
@@ -160,10 +161,11 @@ export const userApis = createApi({
 
                     let dnsConfig = selectDnsConfigDetails(state)
                     if (!dnsConfig || !isSessionValid) {
+                        const domainName = window.location.hostname;
                         const result = await dispatch(
                             configApis.endpoints.getDnsConfig.initiate(
                                 {
-                                    domainName: 'business.banking-management.com',
+                                    domainName: domainName,
                                 },
                                 {
                                     forceRefetch: true  // Force RTK to refetch the query

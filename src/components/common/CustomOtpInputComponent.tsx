@@ -8,6 +8,9 @@ interface OtpInputPropsTypes {
     label: string,
     otpValue: string;
     onChange: (value: string) => void;
+    onPaste?: (
+        e: React.ClipboardEvent<HTMLInputElement>
+    ) => void
     error?: string | undefined,
     hint?: string,
     otpLength?: number;
@@ -19,7 +22,7 @@ interface OtpInputPropsTypes {
 
 const CustomOtpInput = forwardRef<React.ElementRef<typeof InputOTP>, OtpInputPropsTypes>((props, ref) => {
     // Destructuring props
-    const { id, label, otpValue, onChange, error, hint, otpLength, disabled, fieldLabelClassname, otpInputClassName, otpInputGroupClass } = props
+    const { id, label, otpValue, onChange, onPaste, error, hint, otpLength, disabled, fieldLabelClassname, otpInputClassName, otpInputGroupClass, ...restAttributes } = props
     const length = otpLength ?? 6
 
     // Get window pathname
@@ -36,25 +39,29 @@ const CustomOtpInput = forwardRef<React.ElementRef<typeof InputOTP>, OtpInputPro
                     maxLength={length ?? 6}
                     value={otpValue}
                     onChange={onChange}
+                    onPaste={onPaste}
                     disabled={disabled}
-                    className={otpInputClassName}
+                    className={cn("", otpInputClassName)}
+                    {...restAttributes}
                 >
-                    <InputOTPGroup>
-                        {Array.from({ length }).map((_, index) => (
-                            <InputOTPSlot
-                                key={index}
-                                index={index}
-                                className={cn("size-12 text-base ring-[var(--gold)]",otpInputGroupClass)}
-                            />
-                        ))}
-                    </InputOTPGroup>
+                    <div className="otpInputGroup-error-hint-container flex flex-col justify-center items-start gap-2">
+                        <InputOTPGroup>
+                            {Array.from({ length }).map((_, index) => (
+                                <InputOTPSlot
+                                    key={index}
+                                    index={index}
+                                    className={cn("size-12 text-base ring-[var(--gold)]", otpInputGroupClass)}
+                                />
+                            ))}
+                        </InputOTPGroup>
+                        <Activity mode={error ? "visible" : "hidden"}>
+                            <p className={authPathnames.includes(windowPathname) ? "auth-input-error" : "input-error"}>{error}</p>
+                        </Activity>
+                        <Activity mode={(hint && !error) ? "visible" : "hidden"}>
+                            <p className="input-hint">{hint}</p>
+                        </Activity>
+                    </div>
                 </InputOTP>
-                <Activity mode={error ? "visible" : "hidden"}>
-                    <p className={authPathnames.includes(windowPathname) ? "auth-input-error" : "input-error"}>{error}</p>
-                </Activity>
-                <Activity mode={(hint && !error) ? "visible" : "hidden"}>
-                    <p className="input-hint">{hint}</p>
-                </Activity>
             </Field>
         </div>
     )
