@@ -46,7 +46,7 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
             return res.fail("SERVICE_ERROR", "UserSignUp is facing issue", 400);
         }
 
-        return res.success("Sign up successfull", userSignUpResponse?.data, 200);
+        return res.success("Sign up successfull", {}, 200);
     }
     catch (err) {
         const error = err as any;
