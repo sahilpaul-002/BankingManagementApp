@@ -113,7 +113,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             }
 
             // Skip portal session check for selcted pathes
-            const excludedPaths2 = ["/send2FaCode", "/verify2FaCode", "/enable2Fa"]
+            const excludedPaths2 = ["/sendVerifyEmailCode", "/verifyEmail", "/send2FaCode", "/verify2FaCode", "/enable2Fa"]
             if (excludedPaths2.some(p => req.path === p || req.path.startsWith(p + "/"))) {
                 return next();
             }
