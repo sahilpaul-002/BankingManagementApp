@@ -5,6 +5,7 @@ import configSlice from './slice/config/configSlice.js'
 import { configApis } from './features/config/configApi.js'
 import { helperApis } from './features/helper/helperApis.js'
 import utilitySlice from './slice/utility/utilitySlice.js'
+import { twoFaApis } from './features/twoFa/twoFaApis.js'
 
 // EXPORT RTK STORE
 export const store = configureStore({
@@ -18,11 +19,12 @@ export const store = configureStore({
         [configApis.reducerPath]: configApis.reducer, 
         [helperApis.reducerPath]: helperApis.reducer,
         [userApis.reducerPath]: userApis.reducer,
+        [twoFaApis.reducerPath]: twoFaApis.reducer,
     },
 
     // 🔥 RTK Query middleware
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware),
+        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware, twoFaApis.middleware),
 })
 
 // EXPORT STORE DISPATCH

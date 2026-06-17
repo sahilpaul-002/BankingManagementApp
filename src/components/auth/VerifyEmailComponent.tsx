@@ -197,7 +197,7 @@ export default function VerifyEmailComponent() {
                                             : 'Resend Code'
                                     }
                                     onClick={handleResendCode} showButtonLoader={false} variant={"authResend"}
-                                    disabled={isResendDisabled || isSendingCode}
+                                    // disabled={isResendDisabled || isSendingCode}
                                 />
                             </div>
                         </div>
