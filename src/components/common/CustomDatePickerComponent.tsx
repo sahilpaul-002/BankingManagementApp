@@ -6,6 +6,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { Field, FieldLabel } from "@/components/ui/field"
 import { format } from "date-fns"
 import { ChevronDownIcon } from "lucide-react"
 import clsx from 'clsx'
@@ -13,51 +14,70 @@ import clsx from 'clsx'
 interface DatePickerPropsTypes extends ButtonHTMLAttributes<HTMLButtonElement> {
     id: string
     label: string
-    date: Date | null | undefined,
-    setDate: React.Dispatch<React.SetStateAction<Date | null | undefined>>
+    date?: Date
+    setDate: (date: Date | undefined) => void
     max?: Date
-    className?: string,
+    fieldLabelClassName?: string
+    popoverTriggerButtonClassName?: string
     error?: string | undefined,
     hint?: string,
 }
 
 const CustomDatePickerComponent = forwardRef<HTMLButtonElement, DatePickerPropsTypes>((props, ref) => {
     // Destructure props
-    const { id, label, date, setDate, className, error, hint, ...restAttributes } = props
+    const { id, label, date, setDate, fieldLabelClassName, popoverTriggerButtonClassName, max, error, hint, ...restAttributes } = props
+
+    const [open, setOpen] = React.useState(false)
 
     return (
         <div className="customDatePicker-container w-full h-full">
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button
-                        ref={ref}
-                        id={id}
-                        data-empty={!date}
-                        className={clsx(`min-w-[212px] px-2! justify-between text-left font-normal data-[empty=true]:text-muted-foreground bg-[var(--navy-bg)] ring-[1px] ring-white ${error ? "border-destructive ring-3 ring-destructive/20" : ""}`, className)}
-                        {...restAttributes}
+
+            <Field className="mx-auto w-full h-fit min-w-44">
+                <FieldLabel htmlFor="date-required" className={fieldLabelClassName}>{label ?? "Field Label"}</FieldLabel>
+                <Popover open={open} onOpenChange={setOpen}>
+                    <PopoverTrigger asChild>
+                        <Button
+                            // variant="outline"
+                            ref={ref}
+                            id={id}
+                            data-empty={!date}
+                            className={clsx(` w-full min-w-[212px] px-2! justify-between text-left font-normal data-[empty=true]:text-muted-foreground ring-[1px] ring-white cursor-pointer ${error ? "border-destructive ring-3 ring-destructive/20" : ""}`, popoverTriggerButtonClassName)}
+                            {...restAttributes}
+                        >
+                            {date ? date.toLocaleDateString() : "Select date"}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                        className="w-auto overflow-hidden p-2!"
+                        align="end"
+                        alignOffset={-8}
+                        sideOffset={10}
                     >
-                        {date ? format(date, "PPP") : <span>{label}</span>}
-                        <ChevronDownIcon />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto px-2! py-1!" align="start">
-                    <Calendar
-                        mode="single"
-                        selected={date ?? undefined}
-                        onSelect={(d) => setDate(d)}
-                        disabled={(d) => d > new Date()}
-                        captionLayout="dropdown"
-                        {...(date && { defaultMonth: date })}
-                    />
-                </PopoverContent>
+                        <Calendar
+                            mode="single"
+                            selected={date ?? undefined}
+                            {...(date ? { defaultMonth: date } : {})}
+                            disabled={
+                                max
+                                    ? { after: max }
+                                    : undefined
+                            }
+                            captionLayout="dropdown"
+                            onSelect={(date) => {
+                                setDate(date)
+                                setOpen(false)
+                            }}
+                        />
+                    </PopoverContent>
+                </Popover>
                 <Activity mode={error ? "visible" : "hidden"}>
-                    <p className="input-error mt-1.5!">{error}</p>
+                    <p className="input-error">{error}</p>
                 </Activity>
                 <Activity mode={(hint && !error) ? "visible" : "hidden"}>
                     <p className="input-hint mt-1.5!">{hint}</p>
                 </Activity>
-            </Popover>
-        </div>
+            </Field>
+        </div >
     )
 })
 

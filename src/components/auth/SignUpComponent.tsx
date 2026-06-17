@@ -12,6 +12,7 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useSignUpMutation } from '@/redux/features/user/userApi';
 import { toast } from 'react-toastify';
+import ShowInConsole from '@/utils/ShowInConsole';
 
 export default function SignUpComponent() {
     // SignUp Api Mutation
@@ -132,18 +133,24 @@ export default function SignUpComponent() {
     })
 
     const onValid: SubmitHandler<SignupFormData> = async (formData) => {
-        console.log(formData);
         try {
-            const signUpResponse = await signUp(formData).unwrap()
-            console.log('Success:', signUpResponse?.data)
+            debugger
+            const result = await signUp(formData).unwrap()
+            console.log('Sign up success', result?.data)
+
+            if (result?.status?.toUpperCase() !== "SUCCESS") {
+                toast.error("Sign up service failed.");
+                return
+            }
+
             toast.success("Sign up successfull.");
             setTimeout(() => {
                 navigate("/");
             }, 1000)
         }
-        catch (error) {
-            console.log('Error:', error)
-            toast.error("Sign up failed.");
+        catch (error: any) {
+            ShowInConsole('Sign up error', error)
+            toast.error("Sign up service failed.");
         }
     };
 
@@ -153,13 +160,24 @@ export default function SignUpComponent() {
             "email",
             "password",
             "confirmPassword",
-            "gender",
         ] as const;
 
         const hasStep1Error = step1Fields.some((field) => errors[field]);
 
         if (hasStep1Error) {
             setFormStep(1);
+        };
+
+        const step2Fields = [
+            "dialCode",
+            "countryCode",
+            "phoneNumber",
+        ] as const;
+
+        const hasStep2Error = step2Fields.some((field) => errors[field]);
+
+        if (hasStep2Error) {
+            setFormStep(2);
         };
     };
 
@@ -170,8 +188,8 @@ export default function SignUpComponent() {
     // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
     return (
-        <div className="signupPage-wrapper w-full h-fit flex justify-center items-center px-6! xl:px-10! py-4!">
-            <div className="signupPage-containerw-full h-fit flex flex-col justify-start items-center gap-4">
+        <div className="signupPage-wrapper w-full h-fit flex justify-center items-center px-16! lg:px-13! xl:px-14!py-2!">
+            <div className="signupPage-container w-full h-fit flex flex-col justify-start items-center gap-4">
                 {/* Logo */}
                 <div className="signinPage-logo bg-amber-100 w-[100px] h-[60px] xl:w-[120px] xl:h-[50px]"></div>
 
@@ -183,8 +201,8 @@ export default function SignUpComponent() {
                 {/* Signin Link */}
                 <div className="signinPage-signinForm-createNewAccount-container w-full h-fit flex justify-center items-center">
                     <div className="signinPage-signinForm-createNewAccount w-fit h-fit">
-                        <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--color-text3)] tracking-normal inline-block">Already have an account -</span>
-                        <span className="signinPage-singinForm-createAccount-text ms-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! inline-block cursor-pointer">
+                        <span className="signinPage-singinForm-createAccount-text me-1! text-sm text-[var(--line-strong)] tracking-normal inline-block">Already have an account -</span>
+                        <span className="signinPage-singinForm-createAccount-text ms-1! text-sm text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! inline-block cursor-pointer">
                             <Link to="/">Sign In</Link>
                         </span>
                     </div>
@@ -192,25 +210,25 @@ export default function SignUpComponent() {
 
                 {/* Signup Form */}
                 <form className="signupForm-signupForm-wrapper w-full h-fit" noValidate onSubmit={onSignupFormSubmit}>
-                    <div className="signupPage-signupForm-container w-full h-full">
+                    <div className="signupPage-signupForm-container w-full h-fit space-y-2!">
                         {/* Form step 1*/}
                         <Activity mode={formStep === 1 ? 'visible' : 'hidden'}>
                             <div className="signupPage-signupForm1-container w-full h-fit space-y-2!">
                                 {/* Full Name */}
-                                <CustomInput id={"signupForm1-input-email"} label={"Full Name"} type={"text"} placeholder={"Enter full name"} inputClassname={"px-4!"} autoFocus={true} error={errors?.fullName?.message} {...register("fullName")} />
+                                <CustomInput id={"signupForm1-input-email"} label={"Full Name"} type={"text"} placeholder={"Enter full name"} fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} autoFocus={true} error={errors?.fullName?.message} {...register("fullName")} />
 
                                 {/* Email */}
-                                <CustomInput id={"signupForm1-input-email"} label={"Email"} type={"email"} placeholder={"Enter Email"} inputClassname={"px-4!"} autoComplete={"email"} error={errors?.email?.message} {...register("email")} />
+                                <CustomInput id={"signupForm1-input-email"} label={"Email"} type={"email"} placeholder={"Enter Email"} fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} autoComplete={"email"} error={errors?.email?.message} {...register("email")} />
 
                                 {/* Password */}
-                                <CustomPasswordInput id={"signupForm1-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} password={password} {...register("password")} />
+                                <CustomPasswordInput id={"signupForm1-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} password={password} {...register("password")} />
 
                                 {/* Confirm Password */}
-                                <CustomPasswordInput id={"signupForm1-input-confirmPassword"} label={"Confirm Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4!"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.confirmPassword?.message} {...register("confirmPassword")} />
+                                <CustomPasswordInput id={"signupForm1-input-confirmPassword"} label={"Confirm Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.confirmPassword?.message} {...register("confirmPassword")} />
 
                                 {/* Button */}
                                 <div className="signupPage-signupForm1-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
-                                    <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--color-text1)] hover:text-[var(--color-text3)] cursor-pointer" onClick={() => { setFormStep(2) }}>
+                                    <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--gold)] hover:text-[var(--gold-2)] cursor-pointer" onClick={() => { setFormStep(2) }}>
                                         <CircleArrowRight size={24} />
                                     </div>
                                 </div>
@@ -219,7 +237,7 @@ export default function SignUpComponent() {
 
                         {/* Form step 2 */}
                         <Activity mode={formStep === 2 ? 'visible' : 'hidden'}>
-                            <div className="signupPage-signupForm2-container w-full h-fit space-y-6!">
+                            <div className="signupPage-signupForm2-container w-full h-fit space-y-2!">
                                 {/* Phone Dial Code */}
                                 <Controller
                                     name="dialCode"
@@ -228,12 +246,13 @@ export default function SignUpComponent() {
                                     render={({ field }) => (
                                         <>
                                             <div className="signupForm2-dialCodeSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
-                                                <span className="signupForm2-phoneDialCode-text text-sm font-semibold tracking-tight">Phone Dial Code</span>
+                                                <span className="signupForm2-phoneDialCode-text text-sm text-[var(--line-strong)] font-semibold tracking-tight">Phone Dial Code</span>
                                                 <CustomSelect
                                                     id="signupForm1-input-select-phoneDialCode"
                                                     label="Select Dial Code"
                                                     labels={mobileDialCodes}
-                                                    className="w-full h-full"
+                                                    selectTriggerClassName="w-full h-fit px-4! text-[var(--line-strong)]"
+                                                    selectGroupClassName="w-full h-fit px-4! text-[var(--line-strong)]"
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={errors?.countryCode?.message}
@@ -251,12 +270,13 @@ export default function SignUpComponent() {
                                     render={({ field }) => (
                                         <>
                                             <div className="signupForm2-countryCodeSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
-                                                <span className="signupForm2-countryCodeSelect-text text-sm font-semibold tracking-tight">Country Code</span>
+                                                <span className="signupForm2-countryCodeSelect-text text-sm text-[var(--line-strong)] font-semibold tracking-tight">Country Code</span>
                                                 <CustomSelect
                                                     id="signupForm1-input-select-countryCode"
                                                     label="Select Country Code"
                                                     labels={mobileCountryCodes}
-                                                    className="w-full h-full"
+                                                    selectTriggerClassName="w-full h-fit px-4! text-[var(--line-strong)]"
+                                                    selectGroupClassName="w-full h-fit px-4! text-[var(--line-strong)]"
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={errors?.countryCode?.message}
@@ -267,20 +287,20 @@ export default function SignUpComponent() {
                                 />
 
                                 {/* Phone Number */}
-                                <CustomInput id={"signupForm2-input-phoneNumber"} label={"Phone Number"} type={"text"} placeholder={"Enter phone number"} inputClassname={"px-4!"} hint={"* Enter number without country code"} error={errors?.phoneNumber?.message} {...register("phoneNumber")} />
+                                <CustomInput id={"signupForm2-input-phoneNumber"} label={"Phone Number"} type={"text"} placeholder={"Enter phone number"} fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} hint={"* Enter number without country code"} error={errors?.phoneNumber?.message} {...register("phoneNumber")} />
 
                                 {/* Direction buttons */}
                                 <div className="directionButtons-container w-fit h-fit m-auto! flex justify-center items-center gap-2">
                                     {/* Back Button */}
                                     <div className="signupPage-signupForm2-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
-                                        <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--color-text1)] hover:text-[var(--color-text3)] cursor-pointer" onClick={() => { setFormStep(1) }}>
+                                        <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--gold)] hover:text-[var(--gold-2)] cursor-pointer" onClick={() => { setFormStep(1) }}>
                                             <CircleArrowLeft size={24} />
                                         </div>
                                     </div>
 
                                     {/* Front Button */}
                                     <div className="signupPage-signupForm1-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
-                                        <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--color-text1)] hover:text-[var(--color-text3)] cursor-pointer" onClick={() => { setFormStep(3) }}>
+                                        <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--gold)] hover:text-[var(--gold-2)] cursor-pointer" onClick={() => { setFormStep(3) }}>
                                             <CircleArrowRight size={24} />
                                         </div>
                                     </div>
@@ -290,7 +310,7 @@ export default function SignUpComponent() {
 
                         {/* Form step 3 */}
                         <Activity mode={formStep === 3 ? 'visible' : 'hidden'}>
-                            <div className="signupPage-signupForm2-container w-full h-fit space-y-6!">
+                            <div className="signupPage-signupForm2-container w-full h-fit space-y-2!">
 
                                 {/* Gender */}
                                 <Controller
@@ -300,12 +320,13 @@ export default function SignUpComponent() {
                                     render={({ field }) => (
                                         <>
                                             <div className="signupForm2-genderSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
-                                                <span className="signupForm1-genderSelect-text text-sm font-semibold tracking-normal">Gender</span>
+                                                <span className="signupForm1-genderSelect-text text-sm text-[var(--line-strong)] font-semibold tracking-normal">Gender</span>
                                                 <CustomSelect
                                                     id="signupForm1-input-select-gender"
                                                     label="Select Gender"
                                                     labels={["Male", "Female", "Other"]}
-                                                    className="w-full h-full"
+                                                    selectTriggerClassName="w-full h-fit px-4! text-[var(--line-strong)]"
+                                                    selectGroupClassName="w-full h-fit px-4! text-[var(--line-strong)]"
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     error={errors?.gender?.message}
@@ -319,17 +340,17 @@ export default function SignUpComponent() {
                                 <Controller
                                     name="dateOfBirth"
                                     control={control}
-                                    // defaultValue={undefined}
+                                    // defaultValue={""}
                                     render={({ field }) => (
                                         <>
                                             <div className="signupForm2-dateOfBirthSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
-                                                <span className="signupForm2-dateOfBirthSelect-text text-sm font-semibold tracking-normal">Date of Birth</span>
                                                 <CustomDatePicker
                                                     id="signupForm2-input-select-dateOfBirth"
-                                                    label="Pick a date"
+                                                    label="Date of Birth"
                                                     date={field.value}
                                                     setDate={field.onChange}
-                                                    className="w-full"
+                                                    fieldLabelClassName={"text-[var(--line-strong)]"}
+                                                    popoverTriggerButtonClassName={"px-4! text-[var(--line-strong)] bg-[var(--navy-bg)]"}
                                                     max={new Date()}
                                                     hint={"* Date of birth must be above 18 years"}
                                                     error={errors?.dateOfBirth?.message}
@@ -348,7 +369,7 @@ export default function SignUpComponent() {
 
                                 {/* Back Button */}
                                 <div className="signupPage-signupForm2-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
-                                    <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--color-text1)] hover:text-[var(--color-text3)] cursor-pointer" onClick={() => { setFormStep(2) }}>
+                                    <div className="signupPage-signupForm1-button-container w-fit h-fit text-[var(--gold)] hover:text-[var(--gold-2)] cursor-pointer" onClick={() => { setFormStep(2) }}>
                                         <CircleArrowLeft size={24} />
                                     </div>
                                 </div>

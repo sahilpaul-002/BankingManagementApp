@@ -163,8 +163,8 @@ export default function SignInComponent() {
   // ------------------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------------------ \\
 
   return (
-    <div className="signinPage-wrapper w-full h-fit flex justify-center items-center px-6! xl:px-10! py-2!">
-      <div className="signinPage-container w-full h-full flex flex-col justify-start items-center gap-4">
+    <div className="signinPage-wrapper w-full h-fit flex justify-center items-center px-16! lg:px-13! xl:px-14! py-2!">
+      <div className="signinPage-container w-full h-fit flex flex-col justify-start items-center gap-4">
         {/* Logo */}
         <div className="signinPage-logo bg-amber-100 w-[100px] h-[60px] xl:w-[120px] xl:h-[50px]"></div>
 
@@ -187,11 +187,11 @@ export default function SignInComponent() {
 
             <div className="signinPage-signinForm-password-forgotPassword-container w-full h-fit flex flex-col justify-center items-end gap-1">
               {/* Password */}
-              <CustomPasswordInput id={"signinForm-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" inputClassname={"px-4! text-[var(--line-strong)]"} showPassword={showPassword} setShowPassword={setShowPassword} password={password} error={errors?.password?.message} {...register("password")} />
+              <CustomPasswordInput id={"signinForm-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} showPassword={showPassword} setShowPassword={setShowPassword} password={password} error={errors?.password?.message} {...register("password")} />
 
               {/* Forgot Password */}
               <div className="signinPage-signinForm-forgotPassword-container">
-                <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! cursor-pointer">Forgot Password ?</span>
+                <span className="signinPage-singinForm-createAccount-text me-1! text-sm text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! cursor-pointer">Forgot Password ?</span>
               </div>
             </div>
 
@@ -205,8 +205,8 @@ export default function SignInComponent() {
             {/* Create New Account */}
             <div className="signinPage-signinForm-createNewAccount-container w-full h-fit flex justify-center items-center">
               <div className="signinPage-signinForm-createNewAccount w-fit h-fit">
-                <span className="signinPage-singinForm-createAccount-text me-1! text-[12px] sm:text-[14px] text-[var(--line-strong)] tracking-normal inline-block">Create a new account -</span>
-                <span className="signinPage-singinForm-createAccount-text ms-1! text-[12px] sm:text-[14px] text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! inline-block cursor-pointer">
+                <span className="signinPage-singinForm-createAccount-text me-1! text-sm text-[var(--line-strong)] tracking-normal inline-block">Create a new account -</span>
+                <span className="signinPage-singinForm-createAccount-text ms-1! text-sm text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! inline-block cursor-pointer">
                   <Link to="/signup">Sign Up</Link>
                 </span>
               </div>

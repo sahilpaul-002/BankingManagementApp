@@ -17,7 +17,8 @@ interface SelectPropsTypes {
     label: string,
     labelCategory?: string,
     labels: LabelItem[] | null | undefined
-    className?: string
+    selectTriggerClassName?: string
+    selectGroupClassName?: string
     value: string | null
     onChange: (value: string) => void
     error?: string | undefined,
@@ -26,7 +27,7 @@ interface SelectPropsTypes {
 
 const CustomSelectComponent = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref) => {
     // Destructure props
-    const { id, label, labelCategory, labels, className, value, hint, error, onChange, ...restAttributes } = props
+    const { id, label, labelCategory, labels, selectTriggerClassName, selectGroupClassName, value, hint, error, onChange, ...restAttributes } = props
 
     // Get the selected item
     const selectedItem = labels?.find((item) => {
@@ -45,7 +46,7 @@ const CustomSelectComponent = forwardRef<HTMLButtonElement, SelectPropsTypes>((p
                 <SelectTrigger
                     id={id}
                     ref={ref}
-                    className={clsx(`w-full min-w-36 px-2! ${error ? "border-destructive ring-3 ring-destructive/20" : ""}`, className)}
+                    className={clsx(`w-full h-full min-w-36 ${error ? "border-destructive ring-3 ring-destructive/20" : ""} cursor-pointer`, selectTriggerClassName)}
                     {...restAttributes}
                 >
                     <SelectValue placeholder={label}>
@@ -59,23 +60,23 @@ const CustomSelectComponent = forwardRef<HTMLButtonElement, SelectPropsTypes>((p
                     </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectGroup className='w-full min-w-36 max-h-[160px] overflow-scroll p-2!'>
+                    <SelectGroup className={clsx(`w-full min-w-36 max-h-[160px] overflow-scroll`, selectGroupClassName)}>
                         {/* <SelectLabel>{labelCategory}</SelectLabel> */}
 
                         {labels?.map((item, index) => {
                             if (typeof item === "string") {
                                 return (
-                                    <SelectItem key={index} value={item}>
+                                    <SelectItem key={index} value={item} className="w-full [&>span:first-child]:hidden [&>span:last-child]:w-full text-[var(--ink)]">
                                         {item}
                                     </SelectItem>
                                 )
                             }
 
                             return (
-                                <SelectItem key={index} value={item.value} className='w-full'>
-                                    <div className="min-w-36 w-full border-b border-gray-300 flex justify-between items-center gap-4">
-                                        <span className='w-[30vw]'>{item.label}</span>
-                                        <span className="w-[10vw] text-muted-foreground">
+                                <SelectItem key={index} value={item.value} className='w-full [&>span:first-child]:hidden [&>span:last-child]:w-full'>
+                                    <div className="w-full! border-b border-gray-300 flex justify-between items-center">
+                                        <span className='text-left truncate text-[var(--ink)]'>{item.label}</span>
+                                        <span className="text-right truncate text-[var(--ink)]">
                                             {item.value}
                                         </span>
                                     </div>
@@ -84,6 +85,49 @@ const CustomSelectComponent = forwardRef<HTMLButtonElement, SelectPropsTypes>((p
                         })}
                     </SelectGroup>
                 </SelectContent>
+
+                {/* <SelectContent>
+                    <SelectGroup
+                        className={clsx(
+                            "max-h-[160px] overflow-y-auto bg-red-400",
+                            selectGroupClassName
+                        )}
+                    >
+                        {labels?.map((item, index) => {
+                            if (typeof item === "string") {
+                                return (
+                                    <SelectItem
+                                        key={index}
+                                        value={item}
+                                    >
+                                        {item}
+                                    </SelectItem>
+                                )
+                            }
+
+                            return (
+                                <SelectItem
+                                    key={index}
+                                    value={item.value}
+                                    className="
+        w-full
+        px-2
+        [&>span:first-child]:hidden
+        [&>span:last-child]:w-full
+        bg-pink-400
+    "
+                                >
+                                    <div className="w-full flex justify-between bg-blue-400">
+                                        <span>{item.label}</span>
+                                        <span>{item.value}</span>
+                                    </div>
+                                </SelectItem>
+                            )
+                        })}
+                    </SelectGroup>
+                </SelectContent> */}
+
+
                 <Activity mode={error ? "visible" : "hidden"}>
                     <p className="input-error mt-1.5!">{error}</p>
                 </Activity>
