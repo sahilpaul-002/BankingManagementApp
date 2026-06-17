@@ -9,7 +9,7 @@ import mapToRtkError from '@/errorHandling/mapToRtkError'
 import { helperApis } from '../helper/helperApis'
 import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError'
 import executeBaseQuery from '../executeBaseQuery'
-import { setAuthenticated } from '@/redux/slice/user/userSlice'
+import { setAuthenticated, setUserDetails, type UserDetailsType } from '@/redux/slice/user/userSlice'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
@@ -199,6 +199,12 @@ export const userApis = createApi({
 
                     // Store user email in session storage
                     sessionStorage.setItem('userEmail', payload.email);
+
+                    console.log("Sign in data: ", result?.data?.data);
+                    // Set the user details in slice
+                    if (result.data?.data) {
+                        dispatch(setUserDetails(result.data.data as UserDetailsType))
+                    }
 
                     // Update authentication status of user
                     dispatch(setAuthenticated(true));

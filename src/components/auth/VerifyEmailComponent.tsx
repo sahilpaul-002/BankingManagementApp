@@ -168,7 +168,7 @@ export default function VerifyEmailComponent() {
                     </h2>
                     {/* <p className="text-sm text-[var(--nav-text)]"> */}
                     <p className="text-sm text-[var(--line-strong)]">
-                        A 6 digit verifycation code is sent to your emial.
+                        A 6 digit verifycation code is sent to your email.
                     </p>
                 </div>
 
@@ -189,7 +189,7 @@ export default function VerifyEmailComponent() {
                         <div className="verifyEmail-verifyEmailForm-resendCode-button-wrapper w-full h-fit flex justify-center items-center mt-6!">
                             <div className="verifyEmail-verifyEmailForm-resendCode-button-container w-fit h-fit">
                                 <CustomButton id={"verifyEmail-verifyEmailForm-resendCode-button"}
-                                    // label={"Resend Code"}
+                                    type={"button"}
                                     label={isSendingCode
                                         ? 'Resending...'
                                         : isResendDisabled
@@ -197,7 +197,7 @@ export default function VerifyEmailComponent() {
                                             : 'Resend Code'
                                     }
                                     onClick={handleResendCode} showButtonLoader={false} variant={"authResend"}
-                                    // disabled={isResendDisabled || isSendingCode}
+                                    disabled={isResendDisabled || isSendingCode}
                                 />
                             </div>
                         </div>
@@ -208,7 +208,7 @@ export default function VerifyEmailComponent() {
                                 Back To -
                             </span>
                             <div className="verifyEmail-verifyEmailForm-backToSignin-button-container w-fit h-fit">
-                                <CustomButton id={"verifyEmail-verifyEmailForm-backToSignin-button"}
+                                <CustomButton id={"verifyEmail-verifyEmailForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
                                     onClick={() => {navigate("/")}} showButtonLoader={false} variant={"authLink"}
                                 />

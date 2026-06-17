@@ -13,12 +13,9 @@ import ShowInConsole from '@/utils/ShowInConsole';
 export default function SignInComponent() {
   // Configure useNavigate
   const navigate = useNavigate();
-  
+
   // State to manage the password visibility
   const [showPassword, setShowPassword] = useState<boolean>(false);
-
-  // SignIn Api Mutation
-  const [signIn, { isLoading, error, data, isSuccess, reset: resetMutation }] = useSignInMutation()
 
   // ------------------------------------- ZOD + REACT HOOK FORM ------------------------------------- \\
   // Configure Zod Validation
@@ -54,20 +51,110 @@ export default function SignInComponent() {
     reValidateMode: 'onChange',
   })
 
+  // SignIn Api Mutation
+  const [signIn, { isLoading, error, data, isSuccess, reset: resetMutation }] = useSignInMutation()
+  // Function to handle form submission
   const onSigninFormSubmit: SubmitHandler<SigninFormData> = async (formData) => {
     // console.log(formData);
     const { email, password } = formData
     try {
-      const signInResponse = await signIn({ email, password }).unwrap()
-      console.log('Success:', signInResponse)
-      toast.success("Sign in successfull.");
-      console.log(data);
-      // setTimeout(() => {
-      //   navigate("/");
-      // }, 1000)
-    } catch (err: any) {
+      let redirectionStep: "SEND" | "VERIFY" | "SELECT-2FA" | "EMAIL-OTP" | "TOTP" | "SMS-OTP" |  null = null;
+      const result = await signIn({ email, password }).unwrap()
+      
+      ShowInConsole("Sign in response:", result);
+      const successMessage = result?.message || ""
+      const normalizedMessage = successMessage.toLowerCase();
+
+      switch (true) {
+        case normalizedMessage.includes("user login successfull, verification code sent to the email"):
+          toast.success("Sign in successful! Redirecting to email verification.");
+          redirectionStep = "VERIFY";
+          break;
+
+        case normalizedMessage.includes("user login successfull, but failed to send verification code"):
+          toast.success("Sign in successful but failed to generate email verification code.");
+          redirectionStep = "SEND";
+          break;
+
+        case normalizedMessage.includes("user login successfull, 2fa not enabled"):
+          toast.success("Sign in successful! Redirecting to 2-factor-authentication method selection.");
+          redirectionStep = "SELECT-2FA";
+          break;
+
+        case normalizedMessage.includes("user login successful, 2fa enabled"):
+          if (result?.data?.twoFaType === "EMAIL-OTP") {
+            toast.success("Sign in successful! Redirecting to 2-factor-authentication using email.");
+            redirectionStep = "EMAIL-OTP";
+          }
+          else if (result?.data?.twoFaType === "TOTP") {
+            toast.success("Sign in successful! Redirecting to 2-factor-authentication using authenticator.");
+            redirectionStep = "TOTP";
+          }
+          else  {
+            toast.success("Sign in successful! Redirecting to 2-factor-authentication using SMS.");
+            redirectionStep = "SMS-OTP";
+          }
+          break;
+
+        default:
+          toast.error("Sign in service is facing issue. Please try again later. If issue persist please contact support.");
+          redirectionStep = null;
+          break;
+      }
+
+      if (redirectionStep === "SEND") {
+        setTimeout(() => {
+          navigate("/sendVerifyEmailCode");
+        }, 2000)
+      }
+      else if (redirectionStep === "VERIFY") {
+        setTimeout(() => {
+          navigate("/verifyEmail");
+        }, 2000)
+      }
+      else if (redirectionStep === "SELECT-2FA") {
+        setTimeout(() => {
+          navigate("/select2fa");
+        }, 2000)
+      }
+      else if (redirectionStep === "EMAIL-OTP") {
+        setTimeout(() => {
+          navigate("/sendEmailOtp");
+        }, 2000)
+      }
+      else if (redirectionStep === "TOTP") {
+        setTimeout(() => {
+          navigate("/verifyAuthenticator");
+        }, 2000)
+      }
+    }
+    catch (err: any) {
       ShowInConsole('Sign in error:', err)
-      toast.error("Sign in failed");
+
+      const errorMessage =
+        err?.data?.message ||
+        err?.message ||
+        "Sign in service is facing issue. Please try again later. If issue persist please contact support.";
+
+      const normalizedMessage = errorMessage.toLowerCase();
+
+      switch (true) {
+        case normalizedMessage.includes("user does not exist"):
+          toast.error("No account found with this email. Please check your email or contact support.");
+          break;
+
+        case normalizedMessage.includes("invalid credentials"):
+          toast.error("Sign in service failed due to invalid credentials.");
+          break;
+
+        case normalizedMessage.includes("user configuration does not match"):
+          toast.error("Account is not authorized to access this application. Please check your email or contact support.");
+          break;
+
+        default:
+          toast.error("Sign in service is facing issue. Please try again later. If issue persist please contact support.");
+          break;
+      }
     }
   };
 

@@ -17,8 +17,10 @@ const CustomButtonComponent = forwardRef<HTMLButtonElement, ButtonPropsTypes>((p
     const { id, label, type, className, showButtonLoader, variant, ...restAttributes } = props
 
     return (
-        <button id={id} ref={ref} className='customButtom-container-wrapper w-full h-full flex justify-center itmes-center'>
+        <div className='customButtom-container-wrapper w-full h-full flex justify-center itmes-center'>
             <Button
+                id={id} 
+                ref={ref}
                 variant={variant}
                 type={type}
                 size="lg"
@@ -32,7 +34,7 @@ const CustomButtonComponent = forwardRef<HTMLButtonElement, ButtonPropsTypes>((p
                     label
                 )}
             </Button>
-        </button>
+        </div>
     )
 })
 

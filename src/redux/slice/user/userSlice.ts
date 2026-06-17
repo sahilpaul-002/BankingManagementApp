@@ -2,32 +2,23 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { rootStateType } from '../../sotre'
 
 // 🔐 Define State Type
-interface UserDetails {
-  _id: string | null
-  full_name: string | null
-  // agent_code: string | null
-  // subagent_code: string | null
-  // program_id: string | null
-  // business_id: string | null
-  // client_id: string | null
+export interface UserDetailsType {
+  fullName: string | null
   email: string | null
-  mobile_country_code: string | null
-  mobile_country_name: string | null
-  phone_number: string | null
-  date_of_birth: string | null
+  mobileCountryCode: string | null
+  mobileCountryName: string | null
+  phoneNumber: string | null
+  dob: string | null
   gender: string | null
-  kyc_status: string | null
-  // risk_category: string | null
-  wallet_id: string | null
-  status: string | null
-  is_active: boolean | null
-  is_email_verified: boolean | null
-  is_phone_verified: boolean | null
-  is_2fa_enabled: boolean | null
+  kycStatus: string | null
+  isEmailVerified: boolean | null
+  is2faEnabled: boolean | null
+  twoFaType: "SMS-OTP"| "EMAIL-OTP" | "TOTP" | null
+  authenticatorSecret: string | null
 }
 
 interface UserState {
-  userDetails: UserDetails | null
+  userDetails: UserDetailsType | null
   isAuthorized: boolean
   isAuthenticated: boolean
 }
@@ -45,7 +36,7 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     // Set User Details
-    setUserDetails: (state, action: PayloadAction<UserDetails>) => {
+    setUserDetails: (state, action: PayloadAction<UserDetailsType>) => {
       state.userDetails = action.payload
     },
 

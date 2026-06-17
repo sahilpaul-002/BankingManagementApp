@@ -57,7 +57,6 @@ const handleErrors = (error: unknown, dispatch: any): never => {
                 throw error
 
             case 403:
-                console.error("FORBIDDEN", err);
                 dispatch(triggerDestroySession({
                     title: 'Forbidden Session Access',
                     type: 'DEFAULT'
