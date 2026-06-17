@@ -43,7 +43,7 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
         const userSignUpResponse = await userSignUpService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
 
         if (userSignUpResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "UserSignUp is facing isssue", 400);
+            return res.fail("SERVICE_ERROR", "UserSignUp is facing issue", 400);
         }
 
         return res.success("Sign up successfull", userSignUpResponse?.data, 200);
@@ -77,17 +77,23 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
         const userLoginServiceResponse = await userLoginService(req, res, aesDecryptedBodyData, aesDecryptedQueryData);
 
         if (userLoginServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "UserLogin is facing isssue", 400);
+            return res.fail("SERVICE_ERROR", "UserLogin is facing issue", 400);
         }
 
-        if (userLoginServiceResponse?.message === "User login successful, verification code sent to email") {
-            return res.success("User sign in successfull and verification code sent to the email", userLoginServiceResponse?.data, 200)
+        if (userLoginServiceResponse?.message?.includes("verification code sent to email")) {
+            return res.success("User login successfull, verification code sent to the email", userLoginServiceResponse?.data, 200)
         }
-        else if (userLoginServiceResponse?.message === "User login successful") {
-            return res.success("User sign in successfull.", userLoginServiceResponse?.data, 200)
+        else if (userLoginServiceResponse?.message?.includes("failed to send verification code")) {
+            return res.success("User login successfull, but failed to send verification code.", userLoginServiceResponse?.data, 200)
+        }
+        else if (userLoginServiceResponse?.message?.includes("2fa not enabled")) {
+            return res.success("User login successfull, 2fa not enabled.", userLoginServiceResponse?.data, 200)
+        }
+        else if (userLoginServiceResponse?.message?.includes("2fa enabled")) {
+            return res.success("User login successful, 2fa enabled.", userLoginServiceResponse?.data, 200)
         }
         else {
-            return res.success("User login successfull, but failed to send verification code", userLoginServiceResponse?.data, 200)
+            return res.fail("SERVICE_ERROR", "UserLogin is facing issue", 400);
         }
     }
     catch (err) {
@@ -123,7 +129,7 @@ export const onboarding = async (req: Request, res: Response): Promise<Response<
         const userOnboardingServiceResponse = await userOnboardingService(requestSession, res, aesDecryptedBodyData);
 
         if (userOnboardingServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "User onboarding is facing isssue", 400);
+            return res.fail("SERVICE_ERROR", "User onboarding is facing issue", 400);
         }
 
         return res.success("User onboarded successfull.", userOnboardingServiceResponse?.data, 200)

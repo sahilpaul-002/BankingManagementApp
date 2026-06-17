@@ -49,23 +49,19 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
 
             // Check user exist in DB
             if (!userDetails) {
-                try {
-                    const destroySessionResponse = await destroySession(req.session, res);
+                const destroySessionResponse = await destroySession(req.session, res);
 
-                    if (destroySessionResponse?.status !== "SUCCESS") {
-                        if ((destroySessionResponse as failedResponseJson)?.error) {
-                            throw new InternalSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
-                        }
-                        else {
-                            throw new InternalSeverError("FAILED TO DESTROY SESSION")
-                        }
+                if (destroySessionResponse?.status !== "SUCCESS") {
+                    if ((destroySessionResponse as failedResponseJson)?.error) {
+                        throw new InternalSeverError("FAILED TO DESTROY SESSION", (destroySessionResponse as failedResponseJson)?.error)
                     }
-                    throw new ForbiddenError("User does not exists");
+                    else {
+                        throw new InternalSeverError("FAILED TO DESTROY SESSION")
+                    }
                 }
-                catch (error) {
-                    throw new InternalSeverError("DESTROY SESSION SERVICE FACING ISSUE.");
-                }
+                throw new ForbiddenError("User does not exists");
             }
+
 
             // Check user activated
             if (!userDetails?.is_active) {

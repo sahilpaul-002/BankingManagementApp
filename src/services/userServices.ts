@@ -38,7 +38,7 @@ const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@g
 const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
 
 // ------------------------------------- USER SIGN UP SERVICE -------------------------------------  \\
-export const userSignUpService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
+export const userSignUpService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid body data");
@@ -51,7 +51,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
             const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, aesDecryptedQueryData);
 
             if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
-                throw new ServiceError("getDnsConfigService facing isssue");
+                throw new ServiceError("getDnsConfigService facing issue");
             }
         }
 
@@ -157,7 +157,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 // ------------------------------------- USER LOG IN SERVICE -------------------------------------  \\
-export const userLoginService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined) => {
+export const userLoginService = async (req: Request, res: Response, aesDecryptedBodyData: Record<string, string> | undefined, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -169,7 +169,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             const getDnsConfigServiceResponse: Record<string, any> | undefined = await getDnsConfigService(req, aesDecryptedQueryData);
 
             if (getDnsConfigServiceResponse?.status !== "SUCCESS") {
-                throw new ServiceError("getDnsConfigService facing isssue");
+                throw new ServiceError("getDnsConfigService facing issue");
             }
         }
 
@@ -216,20 +216,20 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Check user exist in DB
         if (!userDetails) {
             const destroySessionResponse = await destroySession(req.session, res);
-            throw new ForbiddenError("User does not exist")
+            throw new ServiceError("User does not exist")
         }
 
         // Check user input password validity
         const isPasswordValid = compareSync(password, userDetails?.password);
         if (!isPasswordValid) {
             const destroySessionResponse = await destroySession(req.session, res);
-            throw new ForbiddenError("Invalid credentials")
+            throw new ServiceError("Invalid credentials")
         }
 
         // Check user configuration
         if (userDetails.agent_code !== req.session?.sessiondata?.agentCode || userDetails.subagent_code !== req.session?.sessiondata?.subAgentCode || userDetails.program_id !== req.session?.sessiondata?.programId || userDetails.business_id !== req.session?.sessiondata?.businessId || userDetails.client_id !== req.session?.sessiondata?.clientId) {
             const destroySessionResponse = await destroySession(req.session, res);
-            throw new ForbiddenError("User configuration does not match")
+            throw new ServiceError("User configuration does not match")
         }
 
         const isCollectionPresent2 = await checkMongoDbCollectionExist("user_meta_details");
@@ -368,16 +368,38 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             throw new ServiceUnavailableError("Failed to set response refresh-token cookie");
         }
 
-
-        if (userDetails.is_email_verified === "Y") {
-            return { status: "SUCCESS", message: "User login successful", data: updatedUserDetails }
+        const frontendUserDetails = {
+            fullName: userDetails?.full_name,
+            userEmail: userDetails?.email,
+            mobileCountryCode: userDetails?.mobile_country_code,
+            mobileCountryName: userDetails?.mobile_country_name,
+            gender: userDetails?.gender,
+            dob: userDetails?.date_of_birth,
+            isAdmin: userDetails?.is_admin,
+            isMasterAdmin: userDetails?.is_master_admin,
+            isEmailVerified: userDetails?.is_email_verified,
+            is2FaEnabled: userDetails?.is_2fa_enabled,
+            twoFaType: userDetails?.two_fa_type,
+            authenticatorSecret: userDetails?.authenticator_secret
         }
-        else if (userDetails.is_email_verified === "N" && sendEmailResponse?.status === "SUCCESS" && userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
-            return { status: "SUCCESS", message: "User login successful, verification code sent to email", data: updatedUserDetails }
+
+        // Check if user email verified
+        if (userDetails?.is_email_verified === "N" && sendEmailResponse?.status === "SUCCESS" && userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
+            return { status: "SUCCESS", message: "User login successful, verification code sent to email", data: frontendUserDetails }
+        }
+        else if (userDetails?.is_email_verified === "N" && (sendEmailResponse?.status !== "SUCCESS" || !userMetaDetailsDoc?.verification_code || !userMetaDetailsDoc?.verification_code_expires_at)){
+            return { status: "SUCCESS", message: "User login successfull, but failed to send verification code", data: frontendUserDetails }
+        }
+        else if (userDetails?.is_email_verified === "Y" && (userDetails.is_2fa_enabled !== "Y" || !userDetails?.two_fa_type)) {
+            return { status: "SUCCESS", message: "User login successfull, 2fa not enabled",  data: frontendUserDetails }
+        }
+        else if (userDetails?.is_email_verified === "Y" && userDetails?.is_2fa_enabled === "Y" && userDetails?.two_fa_type) {
+            return { status: "SUCCESS", message: "User login successful, 2fa enabled", data: frontendUserDetails }
         }
         else {
-            return { status: "SUCCESS", message: "User login successfull, but failed to send verification code", data: updatedUserDetails }
+            return { status: "SERVICE_ERROR", message: "User login failed"}
         }
+
     }
     catch (err) {
         const error = err as any;
