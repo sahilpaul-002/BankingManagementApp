@@ -7,6 +7,7 @@ import SignUpComponent from "@/components/auth/SignUpComponent";
 import ServiceUnavailable503 from "@/pages/ServiceUnavailable503";
 import { requireAuthentication } from "./gaurds/requireAuthentication";
 import VerifyEmailComponent from "@/components/auth/VerifyEmailComponent";
+import SendEmailVerificationCodeComponent from "@/components/auth/SendEmailVerificationCodeComponent";
 
 const router = createBrowserRouter([
     {
@@ -27,6 +28,11 @@ const router = createBrowserRouter([
                     {
                         path: "signup",
                         Component: SignUpComponent,
+                    },
+                    {
+                        path: "sendEmailVerificationCode",
+                        // loader: requireAuthentication,
+                        Component: SendEmailVerificationCodeComponent,
                     },
                     {
                         path: "verifyEmail",

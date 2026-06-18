@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import CustomButton from '../common/CustomButtonComponent'
 import CustomOtpInput from '../common/CustomOtpInputComponent'
 import { toast } from 'react-toastify';
-import { useSendVerifyEmailCodeMutation } from '@/redux/features/twoFa/twoFaApis';
+import { useSendVerifyEmailCodeMutation, useVerifyEmailCodeMutation } from '@/redux/features/twoFa/twoFaApis';
 import { useNavigate } from 'react-router';
 import ShowInConsole from '@/utils/ShowInConsole';
 
@@ -12,6 +12,17 @@ export default function VerifyEmailComponent() {
 
     // Configure useNavigate
     const navigate = useNavigate();
+
+    // UseEffect to check is session storage email is present
+    useEffect(() => {
+        if (!storedEmail) {
+            navigate("/sendEmailVerificationCode", {
+                replace: true
+            });
+
+            return;
+        }
+    }, [storedEmail, navigate]);
 
     // Otp Value
     const [otpValue, setOtpValue] = useState<string>("");
@@ -51,6 +62,9 @@ export default function VerifyEmailComponent() {
         }
     }
 
+    // ------------------------------------ Verify Code Submit ------------------------------------ \\
+    // Send verify email code Api Mutation
+    const [verifyEmailCode, { isLoading: isVerifyingCode, error: verifyCodeError, data: verifyCodeData, isSuccess: verifyCodeSuccess }] = useVerifyEmailCodeMutation()
     // Function to handle onSubmit
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -71,22 +85,48 @@ export default function VerifyEmailComponent() {
             return;
         }
         try {
-            // const response = await verifyOtpApi(otpValue);
+            // Check email stored in session storage
+            if (!storedEmail) {
+                navigate("/sendEmailVerificationCode")
+            }
+            const payload = {
+                email: storedEmail || "",
+                code: otpValue
+            };
+            const result = await verifyEmailCode(payload).unwrap();
 
-            // if (response.success) {
-            //     console.log("OTP verified successfully");
+            ShowInConsole("Verify email verification code response:", result);
+            if (result?.status?.toUpperCase() !== "SUCCESS") {
+                toast.error("Email verification service is facing issue. Please try again later. If issue persist please contact support.")
+                return
+            }
 
-            //     // navigate("/dashboard")
-            toast.success("OTP verified")
+            toast.success("Email verified successfully.")
+
+            // setTimeout(() => {
+            //     navigate("/")
+            // }, 1500);
         }
-        catch (error) {
-            setOtpError(
-                error instanceof Error
-                    ? error.message
-                    : "OTP verification failed"
-            );
+        catch (err: any) {
+            ShowInConsole('Verify email verification code service error:', err)
+            const errorMessage =
+                err?.data?.message ||
+                err?.message ||
+                "Email verification service is facing issue. Please try again later. If issue persist please contact support.";
+            const normalizedMessage = errorMessage.toLowerCase();
+
+            if (normalizedMessage.includes("invalid verification code")) {
+                toast.error("Email verification failed due to invalid code");
+            }
+            else if (normalizedMessage.includes("verification code expired")) {
+                toast.error("Email verification failed due to expired code");
+            }
+            else {
+                toast.error("Email verification service is facing issue. Please try again later. If issue persist please contact support.");
+            }
         }
     };
+    // -------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXx -------------------------------- \\
 
     // --------------------------------- Resend Code Timer --------------------------------- \\
     const [timeRemaining, setTimeRemaining] = useState<number>(60)
@@ -121,7 +161,7 @@ export default function VerifyEmailComponent() {
 
     // --------------------------------- Resend Code --------------------------------- \\
     // Send verify email code Api Mutation
-    const [sendVerifyEmailCode, { isLoading: isSendingCode, error, data, isSuccess, reset: resetMutation }] = useSendVerifyEmailCodeMutation()
+    const [sendVerifyEmailCode, { isLoading: isSendingCode, error: sendVerificationCodeError, data: sendVerificationCodeData, isSuccess: sendVerificationCodeSuccess }] = useSendVerifyEmailCodeMutation()
 
     // Function to handle resend code
     const handleResendCode = async () => {
@@ -129,15 +169,14 @@ export default function VerifyEmailComponent() {
         try {
             // Check email stored in session storage
             if (!storedEmail) {
-                // navigate("/sendVerifyEmailCode")
-                navigate("/")
+                navigate("/sendEmailVerificationCode")
             }
             const payload = {
                 email: storedEmail || ""
             };
             const result = await sendVerifyEmailCode(payload).unwrap();
 
-            ShowInConsole("Send Two-Factor Code response:", result);
+            ShowInConsole("Send email verification code response:", result);
             if (result?.status?.toUpperCase() !== "SUCCESS") {
                 toast.error("Resend email verification code service failed.")
                 return
@@ -150,13 +189,13 @@ export default function VerifyEmailComponent() {
             setIsResendDisabled(true)
         }
         catch (err: any) {
-            ShowInConsole('Sign in error:', err)
+            ShowInConsole('Resend email verification code service error:', err)
             toast.error("Resend email verification code service failed.");
         }
     }
 
     return (
-        <div className="verifyEmail-wrapper w-full h-fit flex justify-center items-center px-6! xl:px-10! py-2!">
+        <div className="verifyEmail-wrapper w-full h-fit flex justify-center items-center px-16! lg:px-13! xl:px-14! py-2!">
             <div className="verifyEmail-container w-full h-full flex flex-col justify-start items-center gap-4">
                 {/* Logo */}
                 <div className="verifyEmail-logo bg-amber-100 w-[100px] h-[60px] xl:w-[120px] xl:h-[50px]"></div>
@@ -181,7 +220,7 @@ export default function VerifyEmailComponent() {
                         {/* Submit Button */}
                         <div className="verifyEmail-verifyEmailForm-button-wrapper w-full h-fit flex justify-center items-center mt-6!">
                             <div className="verifyEmail-verifyEmailForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                                <CustomButton id={"verifyEmail-verifyEmailForm-button"} label={"Verify Otp"} type="submit" showButtonLoader={false} variant={"navy"} />
+                                <CustomButton id={"verifyEmail-verifyEmailForm-button"} label={"Verify Otp"} type="submit" showButtonLoader={isVerifyingCode} variant={"navy"} />
                             </div>
                         </div>
 
@@ -197,7 +236,7 @@ export default function VerifyEmailComponent() {
                                             : 'Resend Code'
                                     }
                                     onClick={handleResendCode} showButtonLoader={false} variant={"authResend"}
-                                    // disabled={isResendDisabled || isSendingCode}
+                                    disabled={isResendDisabled || isSendingCode}
                                 />
                             </div>
                         </div>
@@ -210,7 +249,7 @@ export default function VerifyEmailComponent() {
                             <div className="verifyEmail-verifyEmailForm-backToSignin-button-container w-fit h-fit">
                                 <CustomButton id={"verifyEmail-verifyEmailForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
-                                    onClick={() => {navigate("/")}} showButtonLoader={false} variant={"authLink"}
+                                    onClick={() => { navigate("/") }} showButtonLoader={false} variant={"authLink"}
                                 />
                             </div>
                         </div>

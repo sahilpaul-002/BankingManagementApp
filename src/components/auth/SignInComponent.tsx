@@ -55,7 +55,6 @@ export default function SignInComponent() {
   const [signIn, { isLoading, error, data, isSuccess, reset: resetMutation }] = useSignInMutation()
   // Function to handle form submission
   const onSigninFormSubmit: SubmitHandler<SigninFormData> = async (formData) => {
-    // console.log(formData);
     const { email, password } = formData
     try {
       let redirectionStep: "SEND" | "VERIFY" | "SELECT-2FA" | "EMAIL-OTP" | "TOTP" | "SMS-OTP" |  null = null;

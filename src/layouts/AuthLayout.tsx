@@ -62,24 +62,33 @@ export default function AuthLayout() {
   // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 
   // -------------------------------------- Logic to display the loader -------------------------------------- \\
-  // State to manage the display of page loader
-  const [displayPageLoader, setDisplayPageLoader] = useState(true);
+  // State to manage display of page loader
+  const [displayPageLoader, setDisplayPageLoader] = useState(() => {
+    return sessionStorage.getItem("app-loader-shown") !== "true";
+  });
 
   // UseEffect to configre timer for loasder display
   useEffect(() => {
-    // Start 3s timeout
+    // Already shown once → skip
+    if (!displayPageLoader) return;
+
     const timer = setTimeout(() => {
       setDisplayPageLoader(false)
+
+      // Mark loader as already displayed
+      sessionStorage.setItem("app-loader-shown", "true");
     }, 3000)
 
     // If dnsDetails arrives early → stop loader immediately
     if (isSuccess && Object.keys(data || {}).length > 0) {
       clearTimeout(timer)
       setDisplayPageLoader(false)
+
+      sessionStorage.setItem("app-loader-shown", "true");
     }
 
     return () => clearTimeout(timer)
-  }, [data])
+  }, [displayPageLoader, isSuccess, data]);
   // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\ 
 
 
