@@ -260,7 +260,7 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
         // Check code type present in request body
         const codeType: string | null = checkStringBody(aesDecryptedBodyData, "code_type")
         if (!codeType) {
-            throw new InvalidRequestBodyError("Email not present in the request body");
+            throw new InvalidRequestBodyError("Code type not present in the request body");
         }
 
         // Check user mail with session mail
@@ -425,13 +425,13 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
         // Check verificationCode present in request body
         const verificationCode: string | null = checkStringBody(aesDecryptedBodyData, "code")
         if (!verificationCode) {
-            throw new InvalidRequestBodyError("Email not present in the request body");
+            throw new InvalidRequestBodyError("Code not present in the request body");
         }
 
         // Check code type present in request body
         const codeType: string | null = checkStringBody(aesDecryptedBodyData, "code_type")
         if (!codeType) {
-            throw new InvalidRequestBodyError("Email not present in the request body");
+            throw new InvalidRequestBodyError("Code type not present in the request body");
         }
 
         // Check user mail with session mail
