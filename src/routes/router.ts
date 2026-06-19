@@ -8,6 +8,7 @@ import ServiceUnavailable503 from "@/pages/ServiceUnavailable503";
 import { requireAuthentication } from "./gaurds/requireAuthentication";
 import VerifyEmailComponent from "@/components/auth/VerifyEmailComponent";
 import SendEmailVerificationCodeComponent from "@/components/auth/SendEmailVerificationCodeComponent";
+import Select2FaMethodComponent from "@/components/auth/Select2FaMethodComponent";
 
 const router = createBrowserRouter([
     {
@@ -38,6 +39,11 @@ const router = createBrowserRouter([
                         path: "verifyEmail",
                         // loader: requireAuthentication,
                         Component: VerifyEmailComponent,
+                    },
+                    {
+                        path: "select2FaMethod",
+                        // loader: requireAuthentication,
+                        Component: Select2FaMethodComponent,
                     },
                     // {
                     //     path: "send2FaCode",

@@ -15,9 +15,6 @@ export default function SendEmailVerificationCodeComponent() {
     // Configure useNavigate
     const navigate = useNavigate();
 
-    // State to manage the password visibility
-    const [showPassword, setShowPassword] = useState<boolean>(false);
-
     // ------------------------------------- ZOD + REACT HOOK FORM ------------------------------------- \\
     // Configure Zod Validation
     const sendEmailVerificationCodeFormValidationSchema = z.object({

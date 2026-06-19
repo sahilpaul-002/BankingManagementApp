@@ -34,8 +34,8 @@ export default function AuthPage() {
                     </section>
 
                     {/* Right Login */}
-                    <section className="authPage-mainContent-loginContainer-wrapper flex h-screen items-center justify-center px-6! lg:px-20! py-12!">
-                        <div className="authForm-container-wrapper relative w-fit xl:w-full h-full rounded-xl border-2 border-[#C1A050]/50 bg-[linear-gradient(180deg,#0f172a,#0b1120)] ring-1 ring-[#C0C0C0]/20 shadow-[0_0_0_1px_rgba(193,160,80,0.25), 0_0_60px_rgba(192,192,192,0.18), 0_0_120px_rgba(193,160,80,0.20), 0_30px_100px_rgba(0,0,0,0.65)] transition-all duration-500 hover:shadow-[0_0_0_1px_rgba(203,171,88,0.35), 0_0_80px_rgba(192,192,192,0.22), 0_0_140px_rgba(187,152,71,0.24), 0_35px_120px_rgba(0,0,0,0.70)]" >
+                    <section className="authPage-mainContent-authContainer-wrapper flex h-screen items-center justify-center px-6! xl:px-20! py-12!">
+                        <div className="authForm-container-wrapper relative w-md xl:w-full h-full rounded-xl border-2 border-[#C1A050]/50 bg-[linear-gradient(180deg,#0f172a,#0b1120)] ring-1 ring-[#C0C0C0]/20 shadow-[0_0_0_1px_rgba(193,160,80,0.25), 0_0_60px_rgba(192,192,192,0.18), 0_0_120px_rgba(193,160,80,0.20), 0_30px_100px_rgba(0,0,0,0.65)] transition-all duration-500 hover:shadow-[0_0_0_1px_rgba(203,171,88,0.35), 0_0_80px_rgba(192,192,192,0.22), 0_0_140px_rgba(187,152,71,0.24), 0_35px_120px_rgba(0,0,0,0.70)]" >
                             <Activity mode={!dnsConfig ? "visible" : "hidden"}>
                                 <FormSkeleton />
                             </Activity>

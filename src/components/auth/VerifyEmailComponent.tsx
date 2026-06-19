@@ -103,9 +103,9 @@ export default function VerifyEmailComponent() {
 
             toast.success("Email verified successfully.")
 
-            // setTimeout(() => {
-            //     navigate("/")
-            // }, 1500);
+            setTimeout(() => {
+                navigate("/select2FaMethod")
+            }, 1500);
         }
         catch (err: any) {
             ShowInConsole('Verify email verification code service error:', err)
