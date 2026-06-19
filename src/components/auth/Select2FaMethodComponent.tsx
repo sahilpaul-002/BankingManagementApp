@@ -10,13 +10,33 @@ export default function Select2FaMethodComponent() {
     // Configure useNavigate
     const navigate = useNavigate();
 
+    const [select2FaMethodError, setSelect2FaMMethodError] = useState("")
+
     // ------------------------------------ Select 2Fa Method Submit ------------------------------------ \\
     const [twoFaMethodType, setTwoFaMethodType] = useState("EMAIL-OTP")
 
     // Function to handle onSubmit
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        if (!twoFaMethodType) {
+            setSelect2FaMMethodError(
+                "2-factor-authentication method is required"
+            )
+            return
         }
+
+        setSelect2FaMMethodError("")
+
+        if (twoFaMethodType === "TOTP") {
+            navigate("/send2FaCode/totp")
+            return
+        }
+
+        if (twoFaMethodType === "EMAIL-OTP") {
+            navigate("/send2FaCode/emailOtp")
+        }
+    }
     // -------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXx -------------------------------- \\
 
     return (
@@ -40,12 +60,12 @@ export default function Select2FaMethodComponent() {
                 <form className='select2FaMethod-select2FaMethodForm-wrapper w-full h-fit' onSubmit={handleSubmit}>
                     <div className="select2FaMethod-select2FaMethodForm-container w-full h-fit space-y-2!">
                         {/* Method Selection */}
-                        <CustonRadioGroupChoiceCardComponent id={"authForm-radioGroupChoiceCards"} label={"Select Type"} fieldLegendClassname={"text-center text-[var(--line-strong)]"} defaultItem={"EMAIL-OTP"} feildLabelClassname={"px-4! text-[var(--line-strong)] border-[var(--line)}"} fieldItems={[{title: "Authenticator App", description: "Use 2-factor-authenticator app to get time-based-otp", value:"TOPT"}, {title: "Email Otp", description: "Get 2-factor-authentication code on your email", value:"EMAIL-OTP"}]} onValueChange={(value) => {setTwoFaMethodType(value)}}/>
+                        <CustonRadioGroupChoiceCardComponent id={"authForm-radioGroupChoiceCards"} label={"Select Type"} fieldLegendClassname={"text-center text-[var(--line-strong)]"} defaultItem={"EMAIL-OTP"} feildLabelClassname={"px-4! text-[var(--line-strong)] border-[var(--line)}"} fieldItems={[{ title: "Authenticator App", description: "Use 2-factor-authenticator app to get time-based-otp", value: "TOTP" }, { title: "Email Otp", description: "Get 2-factor-authentication code on your email", value: "EMAIL-OTP" }]} onValueChange={(value) => { setTwoFaMethodType(value); setSelect2FaMMethodError("") }} error={select2FaMethodError} />
 
                         {/* Submit Button */}
                         <div className="select2FaMethod-select2FaMethodForm-button-wrapper w-full h-fit flex justify-center items-center mt-6!">
                             <div className="select2FaMethod-select2FaMethodForm-button-container w-[200px] sm:w-[260px] h-[30px] sm:h-[40px]">
-                                <CustomButton id={"select2FaMethod-select2FaMethodForm-button"} label={"Select Method"} type="button" variant={"navy"} />
+                                <CustomButton id={"select2FaMethod-select2FaMethodForm-button"} label={"Select Method"} type="submit" variant={"navy"} />
                             </div>
                         </div>
 

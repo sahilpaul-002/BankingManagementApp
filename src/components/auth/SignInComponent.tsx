@@ -57,7 +57,7 @@ export default function SignInComponent() {
   const onSigninFormSubmit: SubmitHandler<SigninFormData> = async (formData) => {
     const { email, password } = formData
     try {
-      let redirectionStep: "SEND" | "VERIFY" | "SELECT-2FA" | "EMAIL-OTP" | "TOTP" | "SMS-OTP" |  null = null;
+      let redirectionStep: "SEND-VERIFY-EMAIL" | "VERIFY-EMAIL" | "SELECT-2FA" | "SEND-EMAIL-OTP" | "VERIFY-TOTP" | "SMS-OTP" |  null = null;
       const result = await signIn({ email, password }).unwrap()
       
       ShowInConsole("Sign in response:", result);
@@ -67,12 +67,12 @@ export default function SignInComponent() {
       switch (true) {
         case normalizedMessage.includes("user login successfull, verification code sent to the email"):
           toast.success("Sign in successful! Redirecting to email verification.");
-          redirectionStep = "VERIFY";
+          redirectionStep = "VERIFY-EMAIL";
           break;
 
         case normalizedMessage.includes("user login successfull, but failed to send verification code"):
           toast.success("Sign in successful but failed to generate email verification code.");
-          redirectionStep = "SEND";
+          redirectionStep = "SEND-VERIFY-EMAIL";
           break;
 
         case normalizedMessage.includes("user login successfull, 2fa not enabled"):
@@ -83,11 +83,11 @@ export default function SignInComponent() {
         case normalizedMessage.includes("user login successful, 2fa enabled"):
           if (result?.data?.twoFaType === "EMAIL-OTP") {
             toast.success("Sign in successful! Redirecting to 2-factor-authentication using email.");
-            redirectionStep = "EMAIL-OTP";
+            redirectionStep = "SEND-EMAIL-OTP";
           }
           else if (result?.data?.twoFaType === "TOTP") {
             toast.success("Sign in successful! Redirecting to 2-factor-authentication using authenticator.");
-            redirectionStep = "TOTP";
+            redirectionStep = "VERIFY-TOTP";
           }
           else  {
             toast.success("Sign in successful! Redirecting to 2-factor-authentication using SMS.");
@@ -101,29 +101,29 @@ export default function SignInComponent() {
           break;
       }
 
-      if (redirectionStep === "SEND") {
+      if (redirectionStep === "SEND-VERIFY-EMAIL") {
         setTimeout(() => {
           navigate("/sendVerifyEmailCode");
         }, 2000)
       }
-      else if (redirectionStep === "VERIFY") {
+      else if (redirectionStep === "VERIFY-EMAIL") {
         setTimeout(() => {
           navigate("/verifyEmail");
         }, 2000)
       }
       else if (redirectionStep === "SELECT-2FA") {
         setTimeout(() => {
-          navigate("/select2fa");
+          navigate("/select2FaMethod");
         }, 2000)
       }
-      else if (redirectionStep === "EMAIL-OTP") {
+      else if (redirectionStep === "SEND-EMAIL-OTP") {
         setTimeout(() => {
-          navigate("/sendEmailOtp");
+          navigate("/send2FaCode/emailOtp");
         }, 2000)
       }
-      else if (redirectionStep === "TOTP") {
+      else if (redirectionStep === "VERIFY-TOTP") {
         setTimeout(() => {
-          navigate("/verifyAuthenticator");
+          navigate("/verify2FaCode/totp");
         }, 2000)
       }
     }

@@ -9,6 +9,8 @@ import { requireAuthentication } from "./gaurds/requireAuthentication";
 import VerifyEmailComponent from "@/components/auth/VerifyEmailComponent";
 import SendEmailVerificationCodeComponent from "@/components/auth/SendEmailVerificationCodeComponent";
 import Select2FaMethodComponent from "@/components/auth/Select2FaMethodComponent";
+import Send2FaCodeComponent from "@/components/auth/Send2FaCodeComponent";
+import Verify2FaCodeComponent from "@/components/auth/Verify2FaCodeComponent";
 
 const router = createBrowserRouter([
     {
@@ -45,16 +47,16 @@ const router = createBrowserRouter([
                         // loader: requireAuthentication,
                         Component: Select2FaMethodComponent,
                     },
-                    // {
-                    //     path: "send2FaCode",
-                    //     loader: requireAuthentication,
-                    //     Component: Send2FaCodeComponent,
-                    // },
-                    // {
-                    //     path: "verify2FaCode",
-                    //     loader: requireAuthentication,
-                    //     Component: Verify2FaCodeComponent,
-                    // },
+                    {
+                        path: "send2FaCode/:twoFatype",
+                        // loader: requireAuthentication,
+                        Component: Send2FaCodeComponent,
+                    },
+                    {
+                        path: "verify2FaCode/:twoFatype",
+                        // loader: requireAuthentication,
+                        Component: Verify2FaCodeComponent,
+                    },
                     // {
                     //     path: "sendForgotPasswordCode",
                     //     Component: ForgotPasswordRequestComponent,
