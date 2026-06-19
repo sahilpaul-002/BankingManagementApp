@@ -40,7 +40,7 @@ export default function AuthPage() {
                                 <FormSkeleton />
                             </Activity>
                             <Activity mode={dnsConfig ? "visible" : "hidden"}>
-                                <div className="authForm-container w-full h-full flex flex-col justify-between items-center py-4!">
+                                <div className="authForm-container w-full h-full flex flex-col justify-between items-center py-4! overflow-y-scroll">
                                     <Outlet />
                                     {/* Footer */}
                                     <div className="authPage-footer-container w-full h-fit px-4!">

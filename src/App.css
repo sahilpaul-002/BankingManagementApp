@@ -21,30 +21,40 @@
 /* Chrome, Edge, Safari */
 ::-webkit-scrollbar {
   width: 4px;
-  height: 10px;
+  /* height: 10px; */
   border-radius: 100%;
 }
 
 ::-webkit-scrollbar-track {
-  background: #ffffff;
+  background: transparent;
+}
+
+::-webkit-scrollbar-track-piece {
+  background: transparent;
 }
 
 /* Thumb */
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(to bottom,
-      #000000,
-      /* top edge - black */
-      #808080,
-      /* grey */
-      #ffffff,
-      /* center white */
-      #808080,
-      /* grey */
-      #000000
-      /* bottom edge - black */
-    );
+      var(--gold),
+      var(--ink-2),
+      var(--ink),
+      var(--ink-2),
+      var(--gold));
 
   border-radius: 100%;
+}
+
+/* Hover */
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    to bottom,
+    var(--ink-soft),
+    var(--ink-2),
+    var(--ink),
+    var(--ink-2),
+    var(--ink-soft)
+  );
 }
 
 @layer utilities {

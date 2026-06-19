@@ -75,7 +75,6 @@ export default function Send2FaCodeComponent() {
                 email: formData?.email,
                 code_type: codeType
             }
-            console.log("Payload: ", payload)
             const result = await send2FaCode(payload).unwrap();
 
             ShowInConsole("Send 2fa code response:", result);
@@ -105,7 +104,8 @@ export default function Send2FaCodeComponent() {
                     navigate("/verify2FaCode/totp", {
                         state: {
                             secretKey: result?.data?.secretKey,
-                            qrCodeUrl: result?.data?.qrCodeUrl
+                            qrCodeUrl: result?.data?.qrCodeUrl,
+                            previosPath: location.pathname
                         }
                     })
                 }

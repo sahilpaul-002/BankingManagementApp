@@ -2,8 +2,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import CustomButton from '../common/CustomButtonComponent'
 import CustomOtpInput from '../common/CustomOtpInputComponent'
 import { toast } from 'react-toastify';
-import { useSendVerifyEmailCodeMutation, useVerifyEmailCodeMutation, useVerifyTwoFaCodeMutation } from '@/redux/features/twoFa/twoFaApis';
-import { replace, useNavigate, useParams } from 'react-router';
+import { useSendTwoFaCodeMutation, useSendVerifyEmailCodeMutation, useVerifyEmailCodeMutation, useVerifyTwoFaCodeMutation } from '@/redux/features/twoFa/twoFaApis';
+import { replace, useLocation, useNavigate, useParams } from 'react-router';
 import ShowInConsole from '@/utils/ShowInConsole';
 
 export default function Verify2FaCodeComponent() {
@@ -16,6 +16,9 @@ export default function Verify2FaCodeComponent() {
     // Configure useNavigate
     const navigate = useNavigate();
 
+    // Configure useLocation
+    const location = useLocation();
+
     // UseEffect to check is session storage email is present
     useEffect(() => {
         if (!storedEmail) {
@@ -24,6 +27,24 @@ export default function Verify2FaCodeComponent() {
             return;
         }
     }, [storedEmail, navigate]);
+
+    // Check the previos pathname and check if secretKey and qrCodeUrl present
+    useEffect(() => {
+        if (location.state?.previousPath === "/send2FaCode/totp") {
+            const missingSecret =
+                !location.state?.secretKey
+
+            const missingQr =
+                !location.state?.qrCodeUrl
+
+            if (missingSecret || missingQr) {
+                navigate(
+                    "/send2FaCode/totp",
+                    { replace: true }
+                )
+            }
+        }
+    }, [location.state, navigate])
 
     // Otp Value
     const [otpValue, setOtpValue] = useState<string>("");
@@ -198,8 +219,7 @@ export default function Verify2FaCodeComponent() {
 
     // --------------------------------- Resend Code --------------------------------- \\
     // Send verify email code Api Mutation
-    const [sendVerifyEmailCode, { isLoading: isSendingCode, error: sendVerificationCodeError, data: sendVerificationCodeData, isSuccess: sendVerificationCodeSuccess }] = useSendVerifyEmailCodeMutation()
-
+    const [send2FaCode, { isLoading: isSendingCode, error: send2FaCodeError, data: send2FaCodeData, isSuccess: send2FaCodeSuccess }] = useSendTwoFaCodeMutation()
     // Function to handle resend code
     const handleResendCode = async () => {
         setOtpError("");
@@ -209,25 +229,26 @@ export default function Verify2FaCodeComponent() {
                 navigate(`/send2FaCode/${twoFatype}`, { replace: true })
             }
             const payload = {
-                email: storedEmail || ""
-            };
-            const result = await sendVerifyEmailCode(payload).unwrap();
+                email: storedEmail as string,
+                code_type: "EMAIL-OTP"
+            }
+            const result = await send2FaCode(payload).unwrap();
 
-            ShowInConsole("Send email verification code response:", result);
+            ShowInConsole("Send 2fa code response:", result);
             if (result?.status?.toUpperCase() !== "SUCCESS") {
-                toast.error("Resend email verification code service failed.")
+                toast.error("Resend 2-factor-authentication code service is facing issue. Please try again later. If issue persist please contact support.")
                 return
             }
 
-            toast.success("Email verification code sent to email. Please check email.")
+            toast.success("2-factor-authentication code sent to email successfully.")
 
             // Reset timer to 60 seconds
             setTimeRemaining(60)
             setIsResendDisabled(true)
         }
         catch (err: any) {
-            ShowInConsole('Resend email verification code service error:', err)
-            toast.error("Resend email verification code service failed.");
+            ShowInConsole('Get 2fa code error:', err)
+            toast.error("Resend 2-factor-authentication code service is facing issue. Please try again later. If issue persist please contact support.")
         }
     }
 
@@ -242,7 +263,6 @@ export default function Verify2FaCodeComponent() {
                     <h2 className="verify2FaCode-text text-2xl font-bold tracking-normal text-[var(--gold)]">
                         Verify Authentication Code
                     </h2>
-                    {/* <p className="text-sm text-[var(--nav-text)]"> */}
                     <p className="text-sm text-[var(--line-strong)]">
                         {twoFatype === "emailOtp" ? (
                             `A 6 digit authentication code is sent on email.`
@@ -251,6 +271,27 @@ export default function Verify2FaCodeComponent() {
                         )}
                     </p>
                 </div>
+
+                {/* Authenticator secretKey + qrCodeUrl */}
+                {(location.state?.previosPath === "/send2FaCode/totp") && (
+                    <div className="verify2FaCode-text w-full h-fit flex flex-col items-center text-center gap-2">
+                        {(location.state?.qrCodeUrl) && (
+                            <div className="w-[80px] h-[80px]">
+                                <img
+                                    src={location.state.qrCodeUrl}
+                                    alt="Authenticator QR Code"
+                                    className="w-full h-full object-contain rounded-lg"
+                                />
+                            </div>
+                        )}
+                        {(location.state?.secretKey) && (
+                            <span className="verify2FaCode-text text-start text-[10px] font-bold tracking-normal text-[var(--line-strong)]">
+                                {`SecretKey : `}
+                                <span className='text-[8px]'>{location.state?.secretKey}</span>
+                            </span>
+                        )}
+                    </div>
+                )}
 
                 {/* Verify Email Form */}
                 <form className='verify2FaCode-verify2FaCodeForm-wrapper w-full h-fit' onSubmit={handleSubmit}>
