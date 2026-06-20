@@ -136,9 +136,9 @@ export default function Verify2FaCodeComponent() {
 
             toast.success("2-factor-authentication code verified successfully.")
 
-            // setTimeout(() => {
-            //     navigate("/select2FaMethod")
-            // }, 1500);
+            setTimeout(() => {
+                navigate("/dashBoard")
+            }, 1500);
         }
         catch (err: any) {
             ShowInConsole('2Fa code verification service error:', err)
