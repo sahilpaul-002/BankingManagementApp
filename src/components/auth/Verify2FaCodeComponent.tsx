@@ -137,8 +137,8 @@ export default function Verify2FaCodeComponent() {
             toast.success("2-factor-authentication code verified successfully.")
 
             setTimeout(() => {
-                navigate("/dashBoard")
-            }, 1500);
+                navigate("/dashBoard", {replace: true})
+            }, 500);
         }
         catch (err: any) {
             ShowInConsole('2Fa code verification service error:', err)
@@ -153,21 +153,21 @@ export default function Verify2FaCodeComponent() {
                     toast.error("2-factor-authentication service failed due to icorrect account email state. Please restart the verification process.");
                     setTimeout(() => {
                         navigate("/select2FaMethod", { replace: true })
-                    }, 1500)
+                    }, 500)
                     break;
 
                 case normalizedMessage.includes("email not in the valid state for 2 factor authentication using authenticator - 2fa not configured for authenticator"):
                     toast.error("2-factor-authentication service failed due to icorrect account email state. Please restart the verification process.");
                     setTimeout(() => {
                         navigate("/select2FaMethod", { replace: true })
-                    }, 1500)
+                    }, 500)
                     break;
 
                 case normalizedMessage.includes("verifiEmailService is facing issue - email not in the correct state for two factor auth verification"):
                     toast.error("2-factor-authentication service failed due to icorrect account email state. Please restart the verification process.");
                     setTimeout(() => {
                         navigate("/select2FaMethod", { replace: true })
-                    }, 1500)
+                    }, 500)
                     break;
 
                 case normalizedMessage.includes("verification code expired"):
@@ -333,7 +333,7 @@ export default function Verify2FaCodeComponent() {
                             <div className="verify2FaCode-verify2FaCodeForm-backToSignin-button-container w-fit h-fit">
                                 <CustomButton id={"verify2FaCode-verify2FaCodeForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
-                                    onClick={() => { navigate("/") }} showButtonLoader={false} variant={"authLink"}
+                                    onClick={() => { navigate("/", {replace: true}) }} showButtonLoader={false} variant={"authLink"}
                                 />
                             </div>
                         </div>

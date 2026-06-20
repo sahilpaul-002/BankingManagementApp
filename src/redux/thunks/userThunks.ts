@@ -59,7 +59,7 @@ export const logoutUser = createAsyncThunk(
         finally {
             setTimeout(() => {
                 isLoggingOut = false;
-            }, 1000);
+            }, 500);
         }
     }
 );

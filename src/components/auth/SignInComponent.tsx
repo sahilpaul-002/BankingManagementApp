@@ -103,28 +103,28 @@ export default function SignInComponent() {
 
       if (redirectionStep === "SEND-VERIFY-EMAIL") {
         setTimeout(() => {
-          navigate("/sendVerifyEmailCode");
-        }, 2000)
+          navigate("/sendVerifyEmailCode", {replace: true});
+        }, 500)
       }
       else if (redirectionStep === "VERIFY-EMAIL") {
         setTimeout(() => {
-          navigate("/verifyEmail");
-        }, 2000)
+          navigate("/verifyEmail", {replace: true});
+        }, 500)
       }
       else if (redirectionStep === "SELECT-2FA") {
         setTimeout(() => {
-          navigate("/select2FaMethod");
-        }, 2000)
+          navigate("/select2FaMethod", {replace: true});
+        }, 500)
       }
       else if (redirectionStep === "SEND-EMAIL-OTP") {
         setTimeout(() => {
-          navigate("/send2FaCode/emailOtp");
-        }, 2000)
+          navigate("/send2FaCode/emailOtp", {replace: true});
+        }, 500)
       }
       else if (redirectionStep === "VERIFY-TOTP") {
         setTimeout(() => {
-          navigate("/verify2FaCode/totp");
-        }, 2000)
+          navigate("/verify2FaCode/totp", {replace: true});
+        }, 500)
       }
     }
     catch (err: any) {
@@ -190,7 +190,7 @@ export default function SignInComponent() {
 
               {/* Forgot Password */}
               <div className="signinPage-signinForm-forgotPassword-container">
-                <span className="signinPage-singinForm-createAccount-text me-1! text-sm text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! cursor-pointer">Forgot Password ?</span>
+                <Link to="/sendResetPasswordCode" className="signinPage-singinForm-createAccount-text me-1! text-sm text-[var(--color-link1)] hover:text-[var(--color-link2)] font-semibold tracking-normal hover:underline! cursor-pointer">Forgot Password ?</Link>
               </div>
             </div>
 

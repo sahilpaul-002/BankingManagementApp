@@ -134,7 +134,6 @@ export default function SignUpComponent() {
 
     const onValid: SubmitHandler<SignupFormData> = async (formData) => {
         try {
-            debugger
             const result = await signUp(formData).unwrap()
             console.log('Sign up success', result?.data)
 
@@ -145,7 +144,7 @@ export default function SignUpComponent() {
 
             toast.success("Sign up successfull.");
             setTimeout(() => {
-                navigate("/");
+                navigate("/", {replace: true});
             }, 1000)
         }
         catch (error: any) {

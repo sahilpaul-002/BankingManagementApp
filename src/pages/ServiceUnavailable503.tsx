@@ -40,7 +40,7 @@ export default function ServiceUnavailable503() {
                 console.error("Still service unavailable. Please try again later!");
                 return
             }
-            navigate("/");
+            navigate("/", {replace: true});
         } catch (err) {
             toast.error("Still service unavailable. Please try again later!");
             console.error(err);

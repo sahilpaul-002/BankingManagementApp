@@ -345,7 +345,7 @@ export const twoFaApis = createApi({
                     }
 
                     const result = await executeBaseQuery(baseQuery, {
-                        url: `${TWO_FA_URL}/verifyResetPasswrodCode`,
+                        url: `${TWO_FA_URL}/verifyResetPasswordCode`,
                         method: 'POST',
                         headers,
                         data: payload,

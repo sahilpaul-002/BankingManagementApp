@@ -11,6 +11,8 @@ import SendEmailVerificationCodeComponent from "@/components/auth/SendEmailVerif
 import Select2FaMethodComponent from "@/components/auth/Select2FaMethodComponent";
 import Send2FaCodeComponent from "@/components/auth/Send2FaCodeComponent";
 import Verify2FaCodeComponent from "@/components/auth/Verify2FaCodeComponent";
+import SendResetPasswordCodeComponent from "@/components/auth/SendResetPasswordCodeComponent";
+import VerifyResetPasswordCodeComponent from "@/components/auth/VerifyResetPasswordCodeComponent";
 
 const router = createBrowserRouter([
     {
@@ -57,14 +59,16 @@ const router = createBrowserRouter([
                         // loader: requireAuthentication,
                         Component: Verify2FaCodeComponent,
                     },
-                    // {
-                    //     path: "sendForgotPasswordCode",
-                    //     Component: ForgotPasswordRequestComponent,
-                    // },
-                    // {
-                    //     path: "verifyForgotPasswordCode",
-                    //     Component: VerifyForgotPasswordCodeComponent,
-                    // },
+                    {
+                        path: "sendResetPasswordCode",
+                        // loader: requireAuthentication,
+                        Component: SendResetPasswordCodeComponent,
+                    },
+                    {
+                        path: "verifyForgotPasswordCode",
+                        // loader: requireAuthentication,
+                        Component: VerifyResetPasswordCodeComponent,
+                    },
                 ],
             },
         ],

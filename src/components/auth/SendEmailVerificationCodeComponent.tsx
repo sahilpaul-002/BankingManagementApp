@@ -1,12 +1,10 @@
 import React, { Activity, useState } from 'react'
 import CustomInput from '../common/CustomInputComponent'
-import CustomPasswordInput from '../common/CustomPasswordInputComponent'
 import CustomButton from '../common/CustomButtonComponent';
 import { Link, useNavigate } from 'react-router';
 import z from 'zod';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useSignInMutation } from '@/redux/features/user/userApi';
 import { toast } from 'react-toastify';
 import ShowInConsole from '@/utils/ShowInConsole';
 import { useSendVerifyEmailCodeMutation } from '@/redux/features/twoFa/twoFaApis';
@@ -62,8 +60,8 @@ export default function SendEmailVerificationCodeComponent() {
             sessionStorage.setItem("userEmail", formData?.email);
 
             setTimeout(() => {
-                navigate("/verifyEmail")
-            }, 1500);
+                navigate("/verifyEmail", {replace: true})
+            }, 500);
         }
         catch (err: any) {
             ShowInConsole('Send email verification code error:', err)
@@ -110,7 +108,7 @@ export default function SendEmailVerificationCodeComponent() {
                             <div className="sendEmailVerificationCode-sendEmailVerificationCodeForm-backToSignin-button-container w-fit h-fit">
                                 <CustomButton id={"sendEmailVerificationCode-sendEmailVerificationCodeForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
-                                    onClick={() => { navigate("/") }} showButtonLoader={false} variant={"authLink"}
+                                    onClick={() => { navigate("/", {replace: true}) }} showButtonLoader={false} variant={"authLink"}
                                 />
                             </div>
                         </div>

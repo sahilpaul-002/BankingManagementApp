@@ -87,7 +87,7 @@ export default function VerifyEmailComponent() {
         try {
             // Check email stored in session storage
             if (!storedEmail) {
-                navigate("/sendEmailVerificationCode")
+                navigate("/sendEmailVerificationCode", {replace: true})
             }
             const payload = {
                 email: storedEmail || "",
@@ -104,8 +104,8 @@ export default function VerifyEmailComponent() {
             toast.success("Email verified successfully.")
 
             setTimeout(() => {
-                navigate("/select2FaMethod")
-            }, 1500);
+                navigate("/select2FaMethod", {replace: true})
+            }, 500);
         }
         catch (err: any) {
             ShowInConsole('Verify email verification code service error:', err)
@@ -169,7 +169,7 @@ export default function VerifyEmailComponent() {
         try {
             // Check email stored in session storage
             if (!storedEmail) {
-                navigate("/sendEmailVerificationCode")
+                navigate("/sendEmailVerificationCode", {replace: true})
             }
             const payload = {
                 email: storedEmail || ""
@@ -249,7 +249,7 @@ export default function VerifyEmailComponent() {
                             <div className="verifyEmail-verifyEmailForm-backToSignin-button-container w-fit h-fit">
                                 <CustomButton id={"verifyEmail-verifyEmailForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
-                                    onClick={() => { navigate("/") }} showButtonLoader={false} variant={"authLink"}
+                                    onClick={() => { navigate("/", {replace: true}) }} showButtonLoader={false} variant={"authLink"}
                                 />
                             </div>
                         </div>
