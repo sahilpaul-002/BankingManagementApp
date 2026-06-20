@@ -220,69 +220,137 @@ const generateEmailTemplate = (
                 subject: "Reset Your Password",
 
                 html: `
-                <div>
-                    <h2>Password Reset Request</h2>
+                    <div style="
+                        font-family: Arial, sans-serif;
+                        background-color: #f4f4f4;
+                        padding: 40px 20px;
+                    ">
+                        <div style="
+                            max-width: 600px;
+                            margin: auto;
+                            background: #ffffff;
+                            border-radius: 10px;
+                            overflow: hidden;
+                            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        ">
 
-                    <p>
-                        ${verificationPayload.userName
-                        ? `Hello ${verificationPayload.userName},`
-                        : "Hello,"
-                    }
-                    </p>
+                            <!-- HEADER -->
+                            <div style="
+                                background: #111827;
+                                padding: 20px;
+                                text-align: center;
+                            ">
+                                <h1 style="
+                                    color: #ffffff;
+                                    margin: 0;
+                                    font-size: 24px;
+                                ">
+                                    ${dashboardTitle} Password Reset
+                                </h1>
+                            </div>
 
-                    <p>
-                        Use the verification code below to reset your password.
-                    </p>
+                            <!-- BODY -->
+                            <div style="
+                                padding: 40px 30px;
+                            ">
 
-                    <h1>
-                        ${verificationPayload.verificationCode}
-                    </h1>
+                                <h2 style="
+                                    margin-top: 0;
+                                    color: #111827;
+                                ">
+                                    Reset Your Password
+                                </h2>
 
-                    <p>
-                        This code will expire shortly.
-                    </p>
-                </div>
-                `
+                                <p style="
+                                    font-size: 16px;
+                                    color: #374151;
+                                    line-height: 1.6;
+                                ">
+                                    ${verificationPayload.userName
+                                    ? `Hello ${verificationPayload.userName},`
+                                    : "Hello,"
+                                }
+                                </p>
+
+                                <p style="
+                                    font-size: 16px;
+                                    color: #374151;
+                                    line-height: 1.7;
+                                ">
+                                    We received a request to reset your password.
+                                    Use the verification code below to continue.
+                                </p>
+
+                                <!-- CODE -->
+                                <div style="
+                                    text-align: center;
+                                    margin: 35px 0;
+                                ">
+                                    <span style="
+                                        display: inline-block;
+                                        background: #111827;
+                                        color: #ffffff;
+                                        padding: 16px 32px;
+                                        font-size: 32px;
+                                        letter-spacing: 8px;
+                                        border-radius: 8px;
+                                        font-weight: bold;
+                                    ">
+                                        ${verificationPayload.verificationCode}
+                                    </span>
+                                </div>
+
+                                <!-- INFO -->
+                                <p style="
+                                    font-size: 14px;
+                                    color: #6b7280;
+                                    line-height: 1.7;
+                                ">
+                                    This verification code will expire shortly.
+                                </p>
+
+                                <div style="
+                                    margin-top: 24px;
+                                    padding: 16px;
+                                    background: #f9fafb;
+                                    border-left: 4px solid #111827;
+                                    border-radius: 6px;
+                                ">
+                                    <p style="
+                                        margin: 0;
+                                        color: #4b5563;
+                                        font-size: 14px;
+                                        line-height: 1.6;
+                                    ">
+                                        If you did not request a password reset,
+                                        you can safely ignore this email.
+                                        Your account will remain secure.
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            <!-- FOOTER -->
+                            <div style="
+                                background: #f9fafb;
+                                padding: 20px;
+                                text-align: center;
+                                font-size: 13px;
+                                color: #6b7280;
+                            ">
+                                © ${new Date().getFullYear()} ${dashboardTitle}.
+                                All rights reserved.
+                            </div>
+
+                        </div>
+                    </div>
+                    `
             };
         }
 
         // =========================================================
         // TWO FACTOR AUTH
         // =========================================================
-        // case "TWO_FACTOR_AUTH_CODE": {
-
-        //     const verificationPayload =
-        //         payload as verificationCodePayloadType;
-
-        //     return {
-        //         subject: "Your Two-Factor Authentication Code",
-
-        //         html: `
-        //         <div>
-        //             <h2>Security Verification</h2>
-
-        //             <p>
-        //                 ${verificationPayload.userName
-        //                 ? `Hello ${verificationPayload.userName},`
-        //                 : "Hello,"
-        //             }
-        //             </p>
-
-        //             <p>
-        //                 Use the code below to complete your login.
-        //             </p>
-
-        //             <h1>
-        //                 ${verificationPayload.verificationCode}
-        //             </h1>
-
-        //             <p>
-        //                 Never share this code with anyone.
-        //             </p>
-        //         </div>
-        //         `
-        //     };
-        // }
         case "TWO_FACTOR_AUTH_CODE": {
             const verificationPayload =
                 payload as verificationCodePayloadType;
@@ -334,9 +402,9 @@ const generateEmailTemplate = (
                                 line-height: 1.6;
                             ">
                                 ${verificationPayload.userName
-                                ? `Hello ${verificationPayload.userName},`
-                                : "Hello,"
-                            }
+                        ? `Hello ${verificationPayload.userName},`
+                        : "Hello,"
+                    }
                             </p>
 
                             <p style="

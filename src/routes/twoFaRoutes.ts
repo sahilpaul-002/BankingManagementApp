@@ -10,6 +10,6 @@ router.post("/verifyEmail", jwtAuthTokenValidation, verifyEmail);
 router.post("/send2FaCode", jwtAuthTokenValidation, send2FaVerificationCode);
 router.post("/verify2FaCode", jwtAuthTokenValidation, verify2FaCode);
 router.post("/sendResetPasswordCode", sendResetPasswordVerificationCode);
-router.post("/verifyResetPasswrodCode", verifyResetPasswordCode);
+router.post("/verifyResetPasswordCode", verifyResetPasswordCode);
 
 export default router;

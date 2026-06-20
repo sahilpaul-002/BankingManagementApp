@@ -6,7 +6,7 @@ import logger from "../utils/logger.js";
 
 const sessionExpiration = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
-        const excludedPaths1: string[] = ["/api/v1/helper", "/api/v1/config", "/api/v1/user/signUp", "/api/v1/user/login"];
+        const excludedPaths1: string[] = ["/api/v1/helper", "/api/v1/config", "/api/v1/user/signUp", "/api/v1/user/login", "/api/v1/twoFa/sendResetPasswordCode", "/api/v1/twoFa/verifyResetPasswordCode"];
 
         if (!req.session || !req.session?.lastActivity || excludedPaths1.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();

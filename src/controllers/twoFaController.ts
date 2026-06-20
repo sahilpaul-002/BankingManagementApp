@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { send2FaCodeService, sendResetPasswordCodeService, sendVerificationEmailService, verify2FaCodeService, verifyEmailService } from "../services/twoFaService.js";
+import { send2FaCodeService, sendResetPasswordCodeService, sendVerificationEmailService, verify2FaCodeService, verifyEmailService, verifyResetPasswordCodeService } from "../services/twoFaService.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 
@@ -203,7 +203,7 @@ export const verifyResetPasswordCode = async (req: Request, res: Response): Prom
     try {
         const aesDecryptedBodyData = req.body;
 
-        const verifyEmailServiceResponse = await verify2FaCodeService(req.session, aesDecryptedBodyData)
+        const verifyEmailServiceResponse = await verifyResetPasswordCodeService(req.session, aesDecryptedBodyData)
         if (verifyEmailServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Reset password code verification failed", 400);
         }

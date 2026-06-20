@@ -10,55 +10,55 @@ const ENVIRONMENT: string = process.env.NODE_ENV || "production";
 
 const checkRequestSource = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
 
-    // ------------------------ Logic to check request headers ------------------------ \\
-    try {
-        if (ENVIRONMENT.toUpperCase() === "PRODUCTION") {
-
-            const ua: string = req.headers["user-agent"] || "";
-
-            const isBrowserUA =
-                ua.includes("Mozilla") &&
-                (
-                    ua.includes("Chrome") ||
-                    ua.includes("Safari") ||
-                    ua.includes("Firefox") ||
-                    ua.includes("Edg") ||
-                    ua.includes("OPR") ||
-                    ua.includes("Brave")
-                );
-
-            if (!isBrowserUA) {
-                throw new ForbiddenError(
-                    "User is not allowed to access the application"
-                );
-            }
-        }
-    }
-    catch (err) {
-        const error = err as any;
-        const url = req.path || "UNKNOWN_URL";
-        const errorStatus = error?.status || "UnknownErrorStatus";
-
-        logger.error(error, {
-            serviceName: "CheckRequestSourceMiddleware",
-            // url: req.path,
-            // method: req.method
-        });
-        if (error instanceof AppErrorClass) {
-            throw error
-        }
-        throw new ServiceError(
-            `Request source header validation facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
-    }
-    // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
-
     const excludedPaths1: string[] = ["/api/v1/helper", "/api/v1/config", "/api/v1/user/signUp", "/api/v1/user/login", "/api/v1/twoFa/sendResetPasswordCode", "/api/v1/twoFa/verifyResetPasswrodCode"];
     if (excludedPaths1.some(path => req.path === path || req.path.startsWith(path + "/"))) {
         return next();
     }
     else {
+        // ------------------------ Logic to check request headers ------------------------ \\
+        try {
+            if (ENVIRONMENT.toUpperCase() === "PRODUCTION") {
+
+                const ua: string = req.headers["user-agent"] || "";
+
+                const isBrowserUA =
+                    ua.includes("Mozilla") &&
+                    (
+                        ua.includes("Chrome") ||
+                        ua.includes("Safari") ||
+                        ua.includes("Firefox") ||
+                        ua.includes("Edg") ||
+                        ua.includes("OPR") ||
+                        ua.includes("Brave")
+                    );
+
+                if (!isBrowserUA) {
+                    throw new ForbiddenError(
+                        "User is not allowed to access the application"
+                    );
+                }
+            }
+        }
+        catch (err) {
+            const error = err as any;
+            const url = req.path || "UNKNOWN_URL";
+            const errorStatus = error?.status || "UnknownErrorStatus";
+
+            logger.error(error, {
+                serviceName: "CheckRequestSourceMiddleware",
+                // url: req.path,
+                // method: req.method
+            });
+            if (error instanceof AppErrorClass) {
+                throw error
+            }
+            throw new ServiceError(
+                `Request source header validation facing issue: [${errorStatus}] ${error.message}`,
+                error?.error ? error.error : error
+            );
+        }
+        // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+        
         // ----------------------------- Logic to check request domain ----------------------------- \\
         try {
             // Check client domain matches the session domain
