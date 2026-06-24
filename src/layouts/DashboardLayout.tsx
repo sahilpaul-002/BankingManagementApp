@@ -30,22 +30,18 @@ export default function DashboardLayout() {
       <NavbarComponent />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="w-full h-full flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
-        <div
-          className="h-16 border-b bg-[var(--bg-surface)] border border-[var(--line)] flex items-center justify-between px-10!"
-        >
+        <div className="w-full h-16 border-b bg-[var(--bg-surface)] border border-[var(--line)] flex items-center justify-between px-10!" >
           {/* Page Name */}
-          <h1
-            className="text-xl text-[var(--ink)] font-semibold"
-          >
+          <h1 className="w-fit h-fit text-xl text-[var(--ink)] font-semibold">
             {pageName}
           </h1>
 
           {/* Right Section: Search, Notification, Language */}
-          <div className="flex items-center gap-4">
+          <div className="w-fit h-fit flex items-center gap-4">
             {/* Search Input */}
-            <div className="w-lg relative hidden lg:inline-block">
+            <div className="w-sm relative hidden lg:inline-block">
               <Search
                 className="absolute left-3 top-1/2 -translate-y-1/4 w-4 h-4 text-[var(--mute)]"
               />
@@ -54,29 +50,27 @@ export default function DashboardLayout() {
 
             {/* Notification Icon */}
             <button
-              className="p-2 rounded-lg hover:bg-opacity-50 transition-colors relative"
-              style={{ backgroundColor: 'var(--bg-hover)' }}
+              className="p-2! bg-[var(--bg-hover)] rounded-lg hover:bg-opacity-50 transition-colors relative"
             >
-              <Bell className="w-5 h-5" style={{ color: 'var(--ink)' }} />
+              <Bell className="w-5 h-5 text-[var(--ink)]" />
               {/* Notification Badge */}
               <span
-                className="absolute top-1 right-1 w-2 h-2 rounded-full"
-                style={{ backgroundColor: 'var(--danger)' }}
+                className="bg-[var(--danger)] absolute top-1 right-1 w-2 h-2 rounded-full"
               />
             </button>
 
             {/* Language/Globe Icon */}
             <button
-              className="p-2 rounded-lg hover:bg-opacity-50 transition-colors"
-              style={{ backgroundColor: 'var(--bg-hover)' }}
+              className="p-2! bg-[var(--bg-hover)] rounded-lg hover:bg-opacity-50 transition-colors"
             >
-              <Globe className="w-5 h-5" style={{ color: 'var(--ink)' }} />
+              <Globe className="w-5 h-5 text-[var(--ink)]" />
             </button>
           </div>
         </div>
 
         {/* Page Content - Outlet */}
-        <div className="flex-1 overflow-y-auto p-6!">
+        {/* <div className="w-full h-full flex-1 overflow-y-auto p-6!"> */}
+        <div className="w-full h-screen min-h-0 bg-green-400 flex-1 px-2! sm:px-4! py-2!">
           <Outlet />
         </div>
       </div>

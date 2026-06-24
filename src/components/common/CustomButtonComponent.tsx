@@ -24,7 +24,7 @@ const CustomButtonComponent = forwardRef<HTMLButtonElement, ButtonPropsTypes>((p
                 variant={variant}
                 type={type}
                 size="lg"
-                className="customButton-container w-full h-full text-sm font-semibold tracking-normal cursor-pointer"
+                className={clsx("customButton-container w-full h-full text-xs sm:text-sm font-semibold tracking-normal cursor-pointer", className)}
                 disabled={showButtonLoader}
                 {...restAttributes}
             >

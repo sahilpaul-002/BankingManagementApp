@@ -28,60 +28,24 @@ export default function WalletBalanceSection({
   const navigate = useNavigate();
 
   return (
-    <div 
-      className="p-6 mb-6 border"
-      style={{ 
-        backgroundColor: 'var(--bg-surface)',
-        borderColor: 'var(--line)',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-sm)'
-      }}
-    >
+    <div className="w-full h-full p-6! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow shadow-[var(--shadow-sm)]">
       {/* Treasury Total Section */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <div 
-            className="text-[10.5px] font-semibold tracking-[0.28em] uppercase flex items-center gap-2.5 mb-3.5"
-            style={{ color: 'var(--ink-soft)' }}
-          >
+      <div className="w-full h-fit flex items-start justify-between mb-8!">
+        <div className='flex flex-col justify-center items-start'>
+          <div className="text-sm text-[var(--ink-soft)] font-semibold uppercase flex items-center gap-2.5 mb-1.5!" >
             <span style={{ color: 'var(--gold)' }}>—</span>
             Total treasury · USD equivalent
           </div>
-          <div 
-            className="font-medium tracking-[-0.004em]"
-            style={{ 
-              fontFamily: 'var(--display)',
-              fontSize: '56px',
-              lineHeight: '1',
-              color: 'var(--ink)',
-              fontVariantNumeric: 'tabular-nums'
-            }}
-          >
+          <div className="text-[var(--ink)] text-4xl font-medium">
             ${totalUSD.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-            <span 
-              className="font-semibold uppercase ml-1.5"
-              style={{ 
-                fontFamily: 'var(--sans)',
-                fontSize: '0.55em',
-                color: 'var(--mute)',
-                letterSpacing: '0.18em',
-                verticalAlign: '0.18em'
-              }}
-            >
+            <span className="text-2xl font-semibold uppercase ml-3!">
               USD
             </span>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2.5 text-[13px]">
-          <span
-            className="inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-[11px] font-semibold uppercase tracking-[0.04em]"
-            style={{ backgroundColor: 'var(--ok-bg)', color: 'var(--ok)' }}
-          >
-            <TrendingUp className="w-3 h-3" />
-            +{changePercent}% · 7D
-          </span>
-          <span style={{ color: 'var(--ink-soft)' }}>
+
+        <div className="text-sm text-[var(--ink-soft)]">
+          <span >
             refreshed {lastRefreshed}
           </span>
         </div>
@@ -90,34 +54,17 @@ export default function WalletBalanceSection({
       {/* FIAT/CRYPTO Breakdown - Horizontal Layout */}
       <div className="grid grid-cols-2 gap-8">
         {/* FIAT Section */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
+        <div className='flex flex-col justify-center items-start gap-1'>
+          <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#2a6fdb' }} />
-            <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-soft)' }}>
+            <span className="text-sm text-[var(--ink-soft)] font-semibold uppercase tracking-wider">
               FIAT
             </span>
           </div>
-          <div 
-            className="font-medium tracking-[-0.004em] mb-3"
-            style={{ 
-              fontFamily: 'var(--display)',
-              fontSize: '28px',
-              color: 'var(--ink)',
-              fontVariantNumeric: 'tabular-nums'
-            }}
-          >
+          <div className="font-medium text-[var(--ink)] mb-3!">
             $370,431
-            <span 
-              className="font-semibold uppercase ml-1"
-              style={{ 
-                fontFamily: 'var(--sans)',
-                fontSize: '0.55em',
-                color: 'var(--mute)',
-                letterSpacing: '0.18em',
-                verticalAlign: '0.18em'
-              }}
-            >
-              USD
+            <span className="font-semibold uppercase ml-20!">
+              USDT
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -140,9 +87,9 @@ export default function WalletBalanceSection({
               CRYPTO
             </span>
           </div>
-          <div 
+          <div
             className="font-medium tracking-[-0.004em] mb-3"
-            style={{ 
+            style={{
               fontFamily: 'var(--display)',
               fontSize: '28px',
               color: 'var(--ink)',
@@ -150,9 +97,9 @@ export default function WalletBalanceSection({
             }}
           >
             $11,024,215
-            <span 
+            <span
               className="font-semibold uppercase ml-1"
-              style={{ 
+              style={{
                 fontFamily: 'var(--sans)',
                 fontSize: '0.55em',
                 color: 'var(--mute)',
