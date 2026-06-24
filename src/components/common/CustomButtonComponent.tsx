@@ -1,11 +1,11 @@
 import clsx from 'clsx'
-import React, { Activity, forwardRef, type ButtonHTMLAttributes } from 'react'
+import React, { Activity, forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import BeatLoaderComponent from './loaders/BeatLoaderComponent'
 import { Button } from '../ui/button'
 
 interface ButtonPropsTypes extends ButtonHTMLAttributes<HTMLButtonElement> {
     id: string,
-    label: string,
+    label: ReactNode,
     type?: "submit" | "reset" | "button" | undefined
     className?: string
     showButtonLoader?: boolean

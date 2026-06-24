@@ -5,7 +5,7 @@ import AuthLayout from "../layouts/AuthLayout";
 import SignInComponent from "../components/auth/SignInComponent";
 import SignUpComponent from "@/components/auth/SignUpComponent";
 import ServiceUnavailable503 from "@/pages/ServiceUnavailable503";
-import { requireAuthentication } from "./gaurds/requireAuthentication";
+import { requireAuthentication, requireAuthorization } from "./gaurds/requireAuthentication";
 import VerifyEmailComponent from "@/components/auth/VerifyEmailComponent";
 import SendEmailVerificationCodeComponent from "@/components/auth/SendEmailVerificationCodeComponent";
 import Select2FaMethodComponent from "@/components/auth/Select2FaMethodComponent";
@@ -13,6 +13,8 @@ import Send2FaCodeComponent from "@/components/auth/Send2FaCodeComponent";
 import Verify2FaCodeComponent from "@/components/auth/Verify2FaCodeComponent";
 import SendResetPasswordCodeComponent from "@/components/auth/SendResetPasswordCodeComponent";
 import VerifyResetPasswordCodeComponent from "@/components/auth/VerifyResetPasswordCodeComponent";
+import DashboardLayout from "@/layouts/DashboardLayout";
+import DashboardPage from "@/pages/DashboardPage";
 
 const router = createBrowserRouter([
     {
@@ -36,38 +38,48 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "sendEmailVerificationCode",
-                        // loader: requireAuthentication,
+                        loader: requireAuthentication,
                         Component: SendEmailVerificationCodeComponent,
                     },
                     {
                         path: "verifyEmail",
-                        // loader: requireAuthentication,
+                        loader: requireAuthentication,
                         Component: VerifyEmailComponent,
                     },
                     {
                         path: "select2FaMethod",
-                        // loader: requireAuthentication,
+                        loader: requireAuthentication,
                         Component: Select2FaMethodComponent,
                     },
                     {
                         path: "send2FaCode/:twoFatype",
-                        // loader: requireAuthentication,
+                        loader: requireAuthentication,
                         Component: Send2FaCodeComponent,
                     },
                     {
                         path: "verify2FaCode/:twoFatype",
-                        // loader: requireAuthentication,
+                        loader: requireAuthentication,
                         Component: Verify2FaCodeComponent,
                     },
                     {
                         path: "sendResetPasswordCode",
-                        // loader: requireAuthentication,
+                        loader: requireAuthentication,
                         Component: SendResetPasswordCodeComponent,
                     },
                     {
                         path: "verifyForgotPasswordCode",
-                        // loader: requireAuthentication,
+                        loader: requireAuthentication,
                         Component: VerifyResetPasswordCodeComponent,
+                    },
+                ],
+            },
+            {
+                Component: DashboardLayout,
+                // loader: requireAuthorization,
+                children: [
+                    {
+                        path: "dashboard",
+                        Component: DashboardPage,
                     },
                 ],
             },

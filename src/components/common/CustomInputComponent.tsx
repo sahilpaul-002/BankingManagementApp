@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 
 interface PasswordInputPropsTypes extends InputHTMLAttributes<HTMLInputElement> {
     id: string,
-    label: string,
+    label?: string,
     type: string,
     placeholder: string,
     error?: string | undefined,
@@ -27,7 +27,7 @@ const CustomInputComponent = forwardRef<HTMLInputElement, PasswordInputPropsType
     return (
         <div className="input-container w-full h-fit">
             <Field>
-                <FieldLabel htmlFor={`${id}`} className={fieldLabelClassname}>{label ?? "Field Label"}</FieldLabel>
+                <FieldLabel htmlFor={`${id}`} className={fieldLabelClassname}>{label}</FieldLabel>
                 <Input ref={ref} id={id} type={type} placeholder={placeholder ?? "Input Placeholder"} className={inputClassname} aria-invalid={error ? true : false} {...restAttributes} />
                 <Activity mode={fieldDescriptionRequired ? "visible" : "hidden"} >
                     <FieldDescription className={fieldDescriptionClassname}>

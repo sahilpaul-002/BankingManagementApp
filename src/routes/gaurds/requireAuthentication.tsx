@@ -11,3 +11,11 @@ export const requireAuthentication = () => {
 
     return null;
 };
+
+export const requireAuthorization = () => {
+    const state = store.getState();
+
+    if (!state.user.isAuthorized) {
+        return redirect("/")
+    }
+}

@@ -1,0 +1,131 @@
+export interface Statement {
+  id: string;
+  date: string;
+  type: 'Withdrawal' | 'Deposit' | 'SWIFT' | 'Conversion';
+  description: string;
+  amount: number;
+  currency: string;
+  counterparty: string;
+  status: 'PROCESSING' | 'COMPLETED';
+  fee: number;
+  attachedDocument?: string;
+}
+
+export const STATEMENTS: Statement[] = [
+  {
+    id: 'e5a9bf7e',
+    date: 'Dec 24, 2025',
+    type: 'Withdrawal',
+    description: 'Crypto Withdrawal',
+    amount: -25000,
+    currency: 'USDC',
+    counterparty: '0x12bc...a87f',
+    status: 'PROCESSING',
+    fee: 0.00,
+    attachedDocument: 'invoice.pdf',
+  },
+  {
+    id: 'b3c8d4f2',
+    date: 'Nov 26, 2025',
+    type: 'Withdrawal',
+    description: 'Crypto Withdrawal',
+    amount: -12000,
+    currency: 'USDC',
+    counterparty: '0x9a3f...b21d',
+    status: 'PROCESSING',
+    fee: 0.00,
+    attachedDocument: 'invoice.pdf',
+  },
+  {
+    id: 'a7f9e2d1',
+    date: 'Nov 26, 2025',
+    type: 'SWIFT',
+    description: 'SWIFT USDC',
+    amount: 850000,
+    currency: 'SGD',
+    counterparty: 'From IN',
+    status: 'COMPLETED',
+    fee: 25.00,
+    attachedDocument: 'invoice.pdf',
+  },
+  {
+    id: 'c9b4e8a3',
+    date: 'Nov 4, 2025',
+    type: 'Withdrawal',
+    description: 'Crypto Withdrawal',
+    amount: -4500,
+    currency: 'USDT',
+    counterparty: '0xb44e...d8f1',
+    status: 'PROCESSING',
+    fee: 0.00,
+  },
+  {
+    id: 'd2f7b9c5',
+    date: 'Oct 30, 2025',
+    type: 'Deposit',
+    description: 'Crypto Deposit',
+    amount: 200000,
+    currency: 'USDC',
+    counterparty: '0x2b75...7869',
+    status: 'COMPLETED',
+    fee: 0.00,
+    attachedDocument: 'invoice.pdf',
+  },
+  {
+    id: 'e8a3c1d6',
+    date: 'Oct 22, 2025',
+    type: 'Conversion',
+    description: 'USD → SGD',
+    amount: -99.6,
+    currency: 'SGD',
+    counterparty: 'Internal',
+    status: 'COMPLETED',
+    fee: 2.50,
+  },
+  {
+    id: 'f1b9d7e2',
+    date: 'Oct 15, 2025',
+    type: 'Deposit',
+    description: 'Wire Transfer',
+    amount: 50000,
+    currency: 'USD',
+    counterparty: 'Acme Corp',
+    status: 'COMPLETED',
+    fee: 15.00,
+    attachedDocument: 'invoice.pdf',
+  },
+  {
+    id: 'g4c2a8f3',
+    date: 'Oct 10, 2025',
+    type: 'Withdrawal',
+    description: 'Crypto Withdrawal',
+    amount: -8500,
+    currency: 'USDC',
+    counterparty: '0x3c4d...e9a2',
+    status: 'COMPLETED',
+    fee: 0.00,
+  },
+  {
+    id: 'h7d5b3e1',
+    date: 'Sep 28, 2025',
+    type: 'SWIFT',
+    description: 'SWIFT Payment',
+    amount: 125000,
+    currency: 'EUR',
+    counterparty: 'From DE',
+    status: 'COMPLETED',
+    fee: 35.00,
+    attachedDocument: 'invoice.pdf',
+  },
+  {
+    id: 'i9f1c6d4',
+    date: 'Sep 20, 2025',
+    type: 'Conversion',
+    description: 'EUR → USD',
+    amount: -150.25,
+    currency: 'USD',
+    counterparty: 'Internal',
+    status: 'COMPLETED',
+    fee: 3.00,
+  },
+];
