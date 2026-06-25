@@ -70,7 +70,7 @@ export default function DashboardLayout() {
 
         {/* Page Content - Outlet */}
         {/* <div className="w-full h-full flex-1 overflow-y-auto p-6!"> */}
-        <div className="w-full h-screen min-h-0 bg-green-400 flex-1 px-2! sm:px-4! py-2!">
+        <div className="w-full h-screen min-h-0 flex-1 px-2! sm:px-4! py-2! overflow-scroll">
           <Outlet />
         </div>
       </div>

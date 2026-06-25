@@ -28,15 +28,7 @@ const getTypeIcon = (type: string) => {
 
 export default function ScheduledPaymentsList({ payments }: ScheduledPaymentsListProps) {
   return (
-    <div 
-      className="p-5 border"
-      style={{ 
-        backgroundColor: 'var(--bg-surface)',
-        borderColor: 'var(--line)',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-sm)'
-      }}
-    >
+    <div className="scheduledPayments-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
       <div className="flex items-center justify-between mb-4">
         <h3 
           className="text-[10.5px] font-semibold tracking-[0.28em] uppercase flex items-center gap-2.5"

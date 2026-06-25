@@ -15,7 +15,7 @@ interface NeedsAttentionCardProps {
 export default function NeedsAttentionCard({ items }: NeedsAttentionCardProps) {
   return (
     <div 
-      className="p-5 border"
+      className="needsAttention-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]"
       style={{ 
         backgroundColor: 'var(--bg-surface)',
         borderColor: 'var(--line)',

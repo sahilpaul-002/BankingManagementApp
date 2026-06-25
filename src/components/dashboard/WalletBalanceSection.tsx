@@ -28,12 +28,12 @@ export default function WalletBalanceSection({
   const navigate = useNavigate();
 
   return (
-    <div className="walletBalanceSection-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow shadow-[var(--shadow-sm)]">
+    <div className="walletBalanceSection-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
       {/* Treasury Total Section */}
       <div className="totalWalletBalanceHeader-container w-full h-fit flex flex-col sm:flex-row items-start justify-between mb-4!">
         <div className='flex flex-col justify-center items-start'>
-          <div className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold uppercase flex items-center gap-2.5 mb-1.5!" >
-            <span style={{ color: 'var(--gold)' }}>—</span>
+          <div className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold uppercase flex items-center gap-2.5 mb-4!" >
+            <span className='text-[var(--gold)]'>—</span>
             Total treasury · USD equivalent
           </div>
           <div className="text-[var(--ink)] text-2xl sm:text-4xl font-medium">

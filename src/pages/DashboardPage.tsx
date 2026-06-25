@@ -4,7 +4,7 @@ import { ArrowLeftRight, Send } from 'lucide-react';
 import { DEMO } from '@/fallbacks/dashboardFallbacks';
 import WalletBalanceSection from '@/components/dashboard/WalletBalanceSection';
 import NeedsAttentionCard from '@/components/dashboard/NeedsAttentionCard';
-import OutboundChartSection from '@/components/dashboard/OutboundChartSection';
+import ExpenditureChartSection from '@/components/dashboard/ExpenditureChartSection';
 import TopCardsSection from '@/components/dashboard/TopCardsSection';
 import RecentActivitySection from '@/components/dashboard/RecentActivitySection';
 import ScheduledPaymentsList from '@/components/dashboard/ScheduledPaymentsList';
@@ -47,7 +47,7 @@ export default function DashboardPage() {
     }, []);
 
     return (
-        <div className='dashboardPage-container w-full h-full overflow-y-scroll bg-amber-300'>
+        <div className='dashboardPage-container w-full h-fit flex flex-col justify-start items-stretch gap-3'>
             {/* Dashboard Page Header with Actions */}
             <div className="w-full h-fit flex flex-col lg:flex-row items-start lg:items-end justify-between gap-4 mb-7!">
                 <div className="min-w-0">
@@ -90,17 +90,22 @@ export default function DashboardPage() {
 
                 {/* ------------------- Row 2 ------------------- */}
                 {/* Chart Section */}
-                <OutboundChartSection />
-                {/* Need Attention Card */}
-                <NeedsAttentionCard items={DEMO.needsAttention} />
+                <ExpenditureChartSection />
+                {/* Schedule Payments List */}
+                <ScheduledPaymentsList payments={DEMO.scheduledPayments} />
 
                 {/* ------------------- Row 3 ------------------- */}
                 {/* Recent Activity Section */}
                 <RecentActivitySection />
-                {/* Schedule Payments List */}
-                <ScheduledPaymentsList payments={DEMO.scheduledPayments} />
+                {/* Need Attention Card */}
+                <NeedsAttentionCard items={DEMO.needsAttention} />
 
             </div>
+
+            {/* Recent Activity Section */}
+            {/* <div className="recentTransactions-section-container-wrapper w-full h-full">
+                <RecentActivitySection />
+            </div> */}
         </div>
     );
 }

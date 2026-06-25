@@ -24,15 +24,7 @@ export default function RecentActivitySection() {
   const navigate = useNavigate();
 
   return (
-    <div 
-      className="p-6 border mb-6"
-      style={{ 
-        backgroundColor: 'var(--bg-surface)',
-        borderColor: 'var(--line)',
-        borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-sm)'
-      }}
-    >
+    <div className="recentTransactions-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
       <div className="flex items-center justify-between mb-4">
         <h2 
           className="text-[22px] font-medium tracking-[-0.004em] m-0"
