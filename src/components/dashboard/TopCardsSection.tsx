@@ -32,7 +32,7 @@ export default function TopCardsSection({ cards }: TopCardsSectionProps) {
         </div>
       </div>
 
-      <div className="cardsListSection-container space-y-3">
+      <div className="cardsListSection-container space-y-2!">
         {cards.slice(0, 3).map((card) => {
           const usagePercent = (card.used / card.limit) * 100;
           return (

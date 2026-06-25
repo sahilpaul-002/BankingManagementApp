@@ -30,7 +30,7 @@ export default function WalletBalanceSection({
   return (
     <div className="walletBalanceSection-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
       {/* Treasury Total Section */}
-      <div className="totalWalletBalanceHeader-container w-full h-fit flex flex-col sm:flex-row items-start justify-between mb-4!">
+      <div className="totalWalletBalanceHeader-container w-full h-fit flex flex-col sm:flex-row items-start justify-between mb-8!">
         <div className='flex flex-col justify-center items-start'>
           <div className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold tracking-widest uppercase flex items-center gap-2.5 mb-4!" >
             <span className='text-[var(--gold)]'>—</span>

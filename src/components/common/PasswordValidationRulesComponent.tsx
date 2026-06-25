@@ -14,10 +14,10 @@ export default function PasswordValidationRulesComponent(props: Props) {
         <div className='passwordValidationRules w-full h-[200px] overflow-y-scroll p-2!'>
             {passwordValidationRules.map((rule: {valid: boolean, message: string}, index: number) => (
                 <div key={index} className="flex justify-start items-start gap-2">
-                    <span className={`text-start  font-medium ${rule.valid ? "text-green-600" : "text-red-600"}`}>
+                    <span className={`text-start tracking-wide ${rule.valid ? "text-green-600" : "text-red-600"}`}>
                         {rule.valid ? <Check size={14} /> : <X size={14} />}
                     </span>
-                    <span className="text-gray-800 text-[2.5vw] md:text-[1.5vw] lg:text-[14px]">{rule.message}</span>
+                    <span className="text-gray-800 text-xs">{rule.message}</span>
                 </div>
             ))}
         </div>
