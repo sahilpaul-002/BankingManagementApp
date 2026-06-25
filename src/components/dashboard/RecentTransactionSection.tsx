@@ -1,5 +1,6 @@
 import { ArrowUpRight, ArrowDownRight, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import CustomButtonComponent from '../common/CustomButtonComponent';
 
 interface Activity {
   id: string;
@@ -20,73 +21,51 @@ const activities: Activity[] = [
   // { id: '6', type: 'USD → SGD', date: 'Oct 22, 2025', desc: 'Internal', amount: -99.6, currency: 'SGD', status: 'completed' },
 ];
 
-export default function RecentActivitySection() {
+export default function RecentTransactionsSection() {
   const navigate = useNavigate();
 
   return (
     <div className="recentTransactions-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
-      <div className="flex items-center justify-between mb-4">
-        <h2 
-          className="text-[22px] font-medium tracking-[-0.004em] m-0"
-          style={{ color: 'var(--ink)', fontFamily: 'var(--display)' }}
-        >
-          Recent <em className="italic font-normal" style={{ color: 'var(--ink-soft)' }}>activity</em>
+      <div className="recentTransactions-texts-container flex items-center justify-between mb-4!">
+        <h2 className="text-xs sm:text-sm text-[var(--ink-soft)] tracking-widest font-semibold uppercase">
+          Recent Transactions
         </h2>
-        <button
-          onClick={() => navigate('/statements')}
-          className="text-[13px] font-medium flex items-center gap-1 transition-colors"
-          style={{ color: 'var(--ink)' }}
-        >
-          View statements
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
+        <div className="recentTransactions-allTransactions-button-container">
+          <CustomButtonComponent id={"recentTransactions-allTransactions-button"} label={<>View statements<ChevronRight className="w-3.5 h-3.5" /></>} type="button" variant={"link"} onClick={() => navigate('/statements')} />
+        </div>
       </div>
 
-      <div className="space-y-0">
+      <div className="recentTransactions-transactionList-container space-y-1!">
         {activities.map((activity, index) => (
-          <div
-            key={activity.id}
-            className="flex items-center justify-between py-4 cursor-pointer transition-colors hover:bg-opacity-50"
-            style={{ 
-              borderTop: index === 0 ? 'none' : '1px solid var(--line-faint)',
-            }}
-          >
+          <div key={activity.id} className={`recentTransactions-transactionList flex items-center justify-between py-1! cursor-pointer transition-colors hover:bg-opacity-50`}>
             <div className="flex items-center gap-3 flex-1">
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center"
-                style={{ 
-                  backgroundColor: activity.amount > 0 ? 'var(--ok-bg)' : 'var(--bg-subtle)'
-                }}
-              >
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${activity.amount > 0 ? "bg-[var(--ok-bg)]" : "bg-[var(--bg-subtle)]"}`}>
                 {activity.amount > 0 ? (
-                  <ArrowDownRight className="w-5 h-5" style={{ color: 'var(--ok)' }} />
+                  <ArrowDownRight className="w-5 h-5 text-[var(--ok)]"/>
                 ) : (
-                  <ArrowUpRight className="w-5 h-5" style={{ color: 'var(--ink-soft)' }} />
+                  <ArrowUpRight className="w-5 h-5 text-[var(--ink-soft)]"/>
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-medium text-[14px] mb-0.5" style={{ color: 'var(--ink)' }}>
+                <div className="font-medium text-xs text-[var(--ink)] mb-0.5!">
                   {activity.type}
                 </div>
-                <div className="text-[12px]" style={{ color: 'var(--mute)' }}>
+                <div className="text-xs text-[var(--mute)]">
                   {activity.date} · {activity.desc}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <div 
-                  className="font-semibold text-[14px]"
-                  style={{ color: activity.amount > 0 ? 'var(--ok)' : 'var(--ink)' }}
-                >
-                  {activity.amount > 0 ? '+' : ''}{activity.amount.toLocaleString('en-US')} 
-                  <span className="text-[11px] font-medium ml-1" style={{ color: 'var(--mute)' }}>
+                <div className={`font-semibold text-sm ${activity.amount > 0 ? "text-[var(--ok)" : "text-[var(--ink)]"}`}>
+                  {activity.amount > 0 ? '+' : ''}{activity.amount.toLocaleString('en-US')}
+                  <span className="text-xs text-[var(--mute)] font-medium ml-1!">
                     {activity.currency}
                   </span>
                 </div>
               </div>
               <span
-                className="inline-flex px-2.5 py-1 rounded-md text-[10px] font-semibold uppercase tracking-wider"
+                className={`inline-flex px-2.5 p-1! rounded-md text-xs font-semibold uppercase`}
                 style={{
                   backgroundColor: activity.status === 'completed' ? 'var(--ok-bg)' : 'var(--warn-bg)',
                   color: activity.status === 'completed' ? 'var(--ok)' : 'var(--warn)'

@@ -199,6 +199,22 @@ export const DEMO = {
       amount: -2842,
       currency: "USD",
     },
+    {
+      id: 1,
+      name: "Acme Logistics",
+      type: "invoice",
+      date: "Tue · May 19",
+      amount: -18750,
+      currency: "USD",
+    },
+    {
+      id: 2,
+      name: "Payroll batch",
+      type: "payroll",
+      date: "Wed · May 20",
+      amount: -94200,
+      currency: "GBP",
+    },
   ],
   outboundData: [
     { date: "30 days ago", payouts: 1200, cardSpend: 800 },

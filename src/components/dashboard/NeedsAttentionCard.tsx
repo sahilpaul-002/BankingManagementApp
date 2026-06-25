@@ -25,7 +25,7 @@ export default function NeedsAttentionCard({ items }: NeedsAttentionCardProps) {
     >
       <div className="flex items-center justify-between mb-4">
         <h3 
-          className="text-[10.5px] font-semibold tracking-[0.28em] uppercase flex items-center gap-2.5"
+          className="text-[10.5px] font-semibold uppercase flex items-center gap-2.5"
           style={{ color: 'var(--ink-soft)' }}
         >
           <span style={{ color: 'var(--gold)' }}>—</span>
@@ -39,7 +39,7 @@ export default function NeedsAttentionCard({ items }: NeedsAttentionCardProps) {
         </span>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3!">
         {items.map((item) => (
           <div
             key={item.id}

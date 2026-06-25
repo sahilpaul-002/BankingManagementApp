@@ -6,11 +6,12 @@ import WalletBalanceSection from '@/components/dashboard/WalletBalanceSection';
 import NeedsAttentionCard from '@/components/dashboard/NeedsAttentionCard';
 import ExpenditureChartSection from '@/components/dashboard/ExpenditureChartSection';
 import TopCardsSection from '@/components/dashboard/TopCardsSection';
-import RecentActivitySection from '@/components/dashboard/RecentActivitySection';
+import RecentTransactionsSection from '@/components/dashboard/RecentTransactionSection';
 import ScheduledPaymentsList from '@/components/dashboard/ScheduledPaymentsList';
 import { selectDnsConfigDetails } from '@/redux/slice/config/configSlice';
 import { useSelector } from 'react-redux';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
+import WalletBalanceChartSection from '@/components/dashboard/WalletBalanceChartSection';
 
 export default function DashboardPage() {
     // Configure useNavigate()
@@ -91,20 +92,19 @@ export default function DashboardPage() {
                 {/* ------------------- Row 2 ------------------- */}
                 {/* Chart Section */}
                 <ExpenditureChartSection />
-                {/* Schedule Payments List */}
-                <ScheduledPaymentsList payments={DEMO.scheduledPayments} />
+                {/* Wallet Balance Chart */}
+                <WalletBalanceChartSection />
 
                 {/* ------------------- Row 3 ------------------- */}
                 {/* Recent Activity Section */}
-                <RecentActivitySection />
-                {/* Need Attention Card */}
-                <NeedsAttentionCard items={DEMO.needsAttention} />
-
+                <RecentTransactionsSection />
+                {/* Schedule Payments List */}
+                <ScheduledPaymentsList payments={DEMO.scheduledPayments} />
             </div>
 
             {/* Recent Activity Section */}
             {/* <div className="recentTransactions-section-container-wrapper w-full h-full">
-                <RecentActivitySection />
+                <RecentTransactionsSection />
             </div> */}
         </div>
     );

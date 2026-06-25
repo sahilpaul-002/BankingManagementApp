@@ -1155,7 +1155,7 @@ export default function BrandingComponent() {
                 </div>
 
                 {/* BOTTOM: Feature badges */}
-                <div className="space-y-5 animate-[rise_0.8s_cubic-bezier(0.22,1,0.36,1)_both_0.3s] flex justify-center items-center gap-4">
+                <div className="space-y-5! animate-[rise_0.8s_cubic-bezier(0.22,1,0.36,1)_both_0.3s] flex justify-center items-center gap-4">
                     <div className="grid grid-cols-3 gap-3 max-w-full">
                         <FeatureBadge icon={<Shield className="h-4 w-4" />} label="Secure" />
                         <FeatureBadge icon={<Zap className="h-4 w-4" />} label="Instant" />

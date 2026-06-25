@@ -23,7 +23,7 @@ export default function TopCardsSection({ cards }: TopCardsSectionProps) {
     <div className="cardsSection-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
       <div className="flex items-center justify-between mb-2!">
         <h3
-          className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold uppercase flex items-center gap-2.5">
+          className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold tracking-widest uppercase flex items-center gap-2.5">
           <span className='text-[var(--gold)]'>—</span>
           Top Cards · This Month
         </h3>

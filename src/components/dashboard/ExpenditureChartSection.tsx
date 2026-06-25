@@ -81,7 +81,7 @@ export default function ExpenditureChartSection() {
       axisPointer: {
         type: 'shadow',
         shadowStyle: {
-          color: 'rgba(212, 159, 74, 0.6)',
+          color: 'rgba(212, 159, 74, 0.5)',
         }
       }
     }
@@ -89,7 +89,7 @@ export default function ExpenditureChartSection() {
 
   return (
     <div className="expenditureSection-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
-      <div className="expenditureSection-header-text text-xs sm:text-sm text-[var(--ink-soft)] font-semibold tracking-[0.28em] uppercase flex items-center gap-2.5 mb-3!">
+      <div className="expenditureSection-header-text text-xs sm:text-sm text-[var(--ink-soft)] tracking-widest font-semibold uppercase flex items-center gap-2.5 mb-3!">
         <span className='text-[var(--gold)]'>—</span>
         Expenditure · Last 30 Days
       </div>
@@ -102,7 +102,7 @@ export default function ExpenditureChartSection() {
       </div>
 
       {/* ECharts Chart */}
-      <div className="expenditureSection-chart h-24">
+      <div className="expenditureSection-chart h-34">
         <ReactECharts
           option={option}
           style={{ height: '100%', width: '100%' }}

@@ -32,7 +32,7 @@ export default function WalletBalanceSection({
       {/* Treasury Total Section */}
       <div className="totalWalletBalanceHeader-container w-full h-fit flex flex-col sm:flex-row items-start justify-between mb-4!">
         <div className='flex flex-col justify-center items-start'>
-          <div className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold uppercase flex items-center gap-2.5 mb-4!" >
+          <div className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold tracking-widest uppercase flex items-center gap-2.5 mb-4!" >
             <span className='text-[var(--gold)]'>—</span>
             Total treasury · USD equivalent
           </div>
