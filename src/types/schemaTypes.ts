@@ -50,7 +50,7 @@ export interface userDetailsSchemaTypes extends Document {
     gender: "MALE" | "FEMALE" | "OTHER";
     kyc_status: "PENDING" | "IN-PROGRESS" | "COMPLETED";
     risk_category?: "LOW" | "MEDIUM" | "HIGH";
-    wallet_id?: string | null;
+    cardholder_id?: string | null;
     status?: "DISABLED" | "PRE-VERIFIED" | "VERIFIED" | "ACTIVE";
     is_admin?: "Y" | "N";
     is_master_admin?: "Y" | "N";
@@ -126,8 +126,9 @@ export interface userKycDetailsSchemaTypes extends Document {
 export interface userWalletDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     wallet_id: string;
-    wallet_status: "ACTIVE" | "INACTIVE";
-    account_balance: number;
+    wallet_status?: "ACTIVE" | "INACTIVE";
+    account_balance?: number;
+    holding_amount?: number;
     wallet_type: "FIAT" | "CRYPTO";
     wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
 }
@@ -140,4 +141,35 @@ export interface beneficiariesBankDetailsSchemaTypes extends Document {
     iban_code: string;
     bank_name: string;
     is_verified?: boolean;
+}
+
+// Types for Cardholder Card Details Model Schema
+export interface cardLimitsTypes {
+    daily_limit: string;
+    monthly_limit: string;
+    yearly_limit: string;
+}
+export interface userCardDetailsSchemaTypes extends Document {
+    cardholder_id: string;
+    card_id: string;
+    card_number: string;
+    card_status: "ACTIVE" | "INACTIVE" | "FROZEN" | "BLOCKED";
+    cvv: string;
+    issued_date: Date;
+    valid_date: Date;
+    name_on_card: string;
+    card_type: "VIRTUAL" | "PHYSICAL";
+    card_currency: "USD" | "EUR" | "SGD";
+    card_limits: cardLimitsTypes
+}
+
+// Types for Fee Details Model Schema
+export interface feeDetailsSchemaTypes extends Document {
+    fee_unit: "PERCENTAGE";
+    load_fiat_wallet: 0.2;
+    load_crypto_wallet: 0.5;
+    load_card: 0.3;
+    card_transaction: 0.1;
+    m2p: 0.4
+    p2P: 0.3
 }

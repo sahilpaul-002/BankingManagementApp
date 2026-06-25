@@ -90,7 +90,7 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
         enum: ["LOW", "MEDIUM", "HIGH"],
         default: "LOW"
     },
-    wallet_id: {
+    cardholder_id: {
         type: String,
         default: null
     },

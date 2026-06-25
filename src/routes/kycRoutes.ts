@@ -5,8 +5,8 @@ import upload from "../middlewares/multer.js";
 
 const router: Router = express.Router()
 
-router.get("/getKyc", getKyc);
-router.post("/uploadKyc",
+router.get("/", getKyc);
+router.post("/upload",
     upload.fields([
         {
             name: "poi_document",
@@ -19,6 +19,6 @@ router.post("/uploadKyc",
     ]),
     uploadKyc
 );
-router.post("/sendKycVerificationMail", sendKycVerificationMail);
+router.post("/sendVerificationMail", sendKycVerificationMail);
 
 export default router

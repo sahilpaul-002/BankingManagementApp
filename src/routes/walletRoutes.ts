@@ -1,9 +1,10 @@
 import express from "express"
 import type { Router } from "express";
-import { getWallet } from "../controllers/walletController.js";
+import { createWallet, getWallet } from "../controllers/walletController.js";
 
 const router: Router = express.Router()
 
-router.get("/getWallet", getWallet)
+router.get("/", getWallet)
+router.post("/create", createWallet)
 
 export default router

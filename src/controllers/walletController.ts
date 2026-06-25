@@ -3,22 +3,23 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
+import { createWalletService, getWalletService } from "../services/walletServices.js";
 
-// FUNCTION TO GET WALLET
+// ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
 export const getWallet = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
-        const aesDecryptedBodyData = req.body;
-
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
         const requestSession: Request["session"] | undefined = getRequestSession();
         if (!requestSession) {
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        // const verifyEmailServiceResponse = await verifyEmailService(requestSession, res, aesDecryptedBodyData)
-        // if (verifyEmailServiceResponse?.status !== "SUCCESS") {
-        //     return res.fail("SERVICE_ERROR", "Email verification failed", 400);
-        // }
-        return res.success("Email verification successfull", {}, 200)
+        const getWalletServiceResponse = await getWalletService(requestSession, aesDecryptedQueryData)
+        if (getWalletServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to fetch user wallet details", 400);
+        }
+        return res.success("User wallet details fetched successfully", getWalletServiceResponse?.data || {}, 200)
     }
     catch (err) {
         const error = err as any;
@@ -45,3 +46,45 @@ export const getWallet = async (req: Request, res: Response): Promise<Response<s
         throw new ServiceUnavailableError("GetWalletController is facing unknown issue.", error)
     }
 }
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+// ------------------------------ FUNCTION TO PERFORM CREATE WALLET ------------------------------ \\
+export const createWallet = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query
+
+        // Get request session
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        const createWalletServiceResponse = await createWalletService(requestSession, aesDecryptedBodyData);
+
+        if (createWalletServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "UserLogin is facing issue", 400);
+        }
+
+        return res.success("Wallet created successfully.", createWalletServiceResponse?.data, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "CreateWalletController",
+            url: req.path,
+            method: req.method
+        });
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(
+            `CreateWalletController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+}
+// ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\

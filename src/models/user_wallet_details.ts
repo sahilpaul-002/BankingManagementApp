@@ -31,16 +31,22 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
             min: 0,
         },
 
+        holding_amount: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+
         wallet_type: {
             type: String,
-            enum: ["FIAT", "CRYPTO"],
             required: true,
+            enum: ["FIAT", "CRYPTO"],
         },
 
         wallet_currency: {
             type: String,
-            enum: ["USD", "EUR", "SGD", "USDC", "USDT"],
             required: true,
+            enum: ["USD", "EUR", "SGD", "USDC", "USDT"],
         },
     },
     { timestamps: true }

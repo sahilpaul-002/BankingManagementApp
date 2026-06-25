@@ -33,6 +33,17 @@ export const getKycService = async (requestSession: Request["session"], aesDecry
             throw new NotFoundError("User_kyc_details collection does not exist in MongoDB");
         }
 
+        // Check email present in request body
+        const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not present in the request body");
+        }
+
+        // Check request body email with session email
+        if (requestSession?.userEmail !== email) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+
         // Get user id from session
         const userId: unknown = requestSession?.userId
 
@@ -112,6 +123,17 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
         const isCollectionPresent1 = await checkMongoDbCollectionExist("user_kyc_details");
         if (isCollectionPresent1.status !== "SUCCESS") {
             throw new NotFoundError("User_kyc_details collection does not exist in MongoDB");
+        }
+
+        // Check email present in request body
+        const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not present in the request body");
+        }
+
+        // Check request body email with session email
+        if (req.session?.userEmail !== email) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
         }
 
         // Get user id from session
@@ -396,7 +418,7 @@ export const kycVerificationWebhookService = async (aesDecryptedQueryData: Recor
         const currentKycDoc = await user_kyc_details.findOne({ user_id: decoded.userId });
         if (currentKycDoc?.kyc_request_id !== decoded?.kycRequestId) {
             // throw new ServiceError("Expired kyc verification link.")
-            return {status: "SERVICE_ERROR", message: "Exipred verification link or RFI requested"}
+            return { status: "SERVICE_ERROR", message: "Exipred verification link or RFI requested" }
         }
 
         let updatedStatus

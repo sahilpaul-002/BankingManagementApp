@@ -211,7 +211,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: email });
             return userExistResponse;
         }
-        const userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB();
+        let userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB();
 
         // Check user exist in DB
         if (!userDetails) {
@@ -238,12 +238,9 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         // Update user status in DB if not already activated
-        let updatedUserDetails: userDetailsSchemaTypes
         if (userDetails?.is_active === "N") {
-            updatedUserDetails = await user_details.findByIdAndUpdate(userDetails._id, { is_active: "N", status: "ACTIVE" }, { new: true }) as userDetailsSchemaTypes;
-        }
-        else {
-            updatedUserDetails = userDetails;
+            const updatedUserDetails: userDetailsSchemaTypes = await user_details.findByIdAndUpdate(userDetails._id, { is_active: "Y", status: "ACTIVE", cardholder_id: crypto.randomUUID() }, { new: true }) as userDetailsSchemaTypes;
+            userDetails = updatedUserDetails
         }
 
         // Get the client IP address
@@ -269,7 +266,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             sendEmailResponse = await sendVerificationEmailService(req, res, userDetails.email);
             // Insert user meta details
             userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
-                { user_id: updatedUserDetails._id },
+                { user_id: userDetails._id },
                 { device_id: deviceId, ip_address: clientIp, userAgent: req.headers["user-agent"], login_at: new Date() },
                 { upsert: true, new: true }
             )
@@ -277,7 +274,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         else {
             // Insert user meta details
             userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
-                { user_id: updatedUserDetails._id },
+                { user_id: userDetails._id },
                 { device_id: deviceId, ip_address: clientIp, userAgent: req.headers["user-agent"], login_at: new Date() },
                 { upsert: true, new: true }
             )
@@ -289,7 +286,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         // Check if session is already valid, if yes then delete the old session and create a new session
-        if (req.session.valid && req.session.userId === updatedUserDetails._id.toString()) {
+        if (req.session.valid && req.session.userId === userDetails._id.toString()) {
             // Get sessiondata from session before destroying the session
             const sessionData: sessionDataTypes = req.session.sessiondata;
             const encryptionKey = req.session.encryptionKey
@@ -327,10 +324,10 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         // Update session with userId and email
-        req.session.userEmail = updatedUserDetails.email;
-        req.session.userName = updatedUserDetails.full_name;
-        req.session.userId = updatedUserDetails._id.toString();
-        req.session.userType = updatedUserDetails.is_master_admin === "Y" ? "SUPERADMIN" : updatedUserDetails.is_admin === "Y" ? "ADMIN" : "USER";
+        req.session.userEmail = userDetails.email;
+        req.session.userName = userDetails.full_name;
+        req.session.userId = userDetails._id.toString();
+        req.session.userType = userDetails.is_master_admin === "Y" ? "SUPERADMIN" : userDetails.is_admin === "Y" ? "ADMIN" : "USER";
 
         // Update the session validity
         req.session.valid = true;
@@ -369,6 +366,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         const frontendUserDetails = {
+            id: userDetails?._id,
             fullName: userDetails?.full_name,
             userEmail: userDetails?.email,
             mobileCountryCode: userDetails?.mobile_country_code,
@@ -380,6 +378,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             isEmailVerified: userDetails?.is_email_verified,
             is2FaEnabled: userDetails?.is_2fa_enabled,
             twoFaType: userDetails?.two_fa_type,
+            cardholderId: userDetails?.cardholder_id,
             authenticatorSecret: userDetails?.authenticator_secret
         }
 

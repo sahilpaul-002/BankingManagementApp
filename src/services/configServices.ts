@@ -30,7 +30,7 @@ export const resolveDomain = (origin?: string): string => {
         return "business.banking-management.com";
     }
 
-    return origin.split("//")[1] || "";
+    return origin.split("//")[1] || origin;
 };
 export const getDnsConfigService = async (req: Request, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
     try {
