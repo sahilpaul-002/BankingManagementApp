@@ -17,7 +17,7 @@ import userWalletLoadValidationSchema from "../validations/userWalletLoadValidat
 import userLoadWalletTransaction from "../mongoDbTransactions/userLoadWalletTransaction.js";
 import userWithdrawWalletTransaction from "../mongoDbTransactions/userWithdrawWalletTransaction.js";
 
-// ------------------------------------- CREATE WALLET SERVICE -------------------------------------  \\
+// ------------------------------------- GET WALLET SERVICE -------------------------------------  \\
 export const getWalletService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
