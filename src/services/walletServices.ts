@@ -14,6 +14,8 @@ import z from "zod";
 import userWalletCreationValidationSchema from "../validations/userWalletCreationValidation.js"
 import type { Schema } from "mongoose";
 import userWalletLoadValidationSchema from "../validations/userWalletLoadValidation.js";
+import userLoadWalletTransaction from "../mongoDbTransactions/userLoadWalletTransaction.js";
+import userWithdrawWalletTransaction from "../mongoDbTransactions/userWithdrawWalletTransaction.js";
 
 // ------------------------------------- CREATE WALLET SERVICE -------------------------------------  \\
 export const getWalletService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
@@ -55,7 +57,7 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
             wallets_details: userWalletDetails?.wallets_details
         }
 
-        return { status: "SUCCESS", data: userWalletDetails || {}, message: "User wallet details fetched" }
+        return { status: "SUCCESS", data: walletDetails || {}, message: "User wallet details fetched" }
     }
     catch (err) {
         const error = err as any;
@@ -195,7 +197,7 @@ export const createWalletService = async (requestSession: Request["session"], ae
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// ------------------------------------- CREATE WALLET SERVICE -------------------------------------  \\
+// ------------------------------------- LOAD WALLET SERVICE -------------------------------------  \\
 export const loadWalletService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -265,32 +267,115 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
 
         // await userWalletDetails.save();
 
-        // Update wallet
-        const updatedWallet = await user_wallet_details.findOneAndUpdate({
-            wallet_id: walletId,
-            wallets_details: {
-                $elemMatch: {
-                    wallet_type: validationResult.data.wallet_type,
-                    wallet_currency: validationResult.data.wallet_currency,
-                }
-            }
-        },
-            {
-                $inc: {
-                    "wallets_details.$.account_balance": validationResult.data.amount,
-                },
-            },
-            {
-                new: true, // return updated document
-            }
-        ).lean();
+        // Load wallet transaction
+        const loadWalletTransactionResult = await userLoadWalletTransaction(walletId, validationResult, selectedWallet)
 
-        const walletDetails = {
-            walletId: updatedWallet?.wallet_id,
-            wallets_details: updatedWallet?.wallets_details
+        if (loadWalletTransactionResult?.status !== "SUCCESS") {
+            throw new ServiceError("Load wallet service failed to load wallet")
         }
 
-        return { status: "SUCCESS", message: "Document inserted successfully", data: walletDetails }
+        return { status: "SUCCESS", message: "Wallet loaded successfully", data: loadWalletTransactionResult?.data }
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "LoadWalletService",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(
+            `LoadWalletService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+// ------------------------------------- WITHDRAW WALLET SERVICE -------------------------------------  \\
+export const withdrawWalletService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid body data");
+        }
+
+        // Check if collection exist in MongoDB
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_wallet_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist in MongoDB");
+        }
+
+        // Check email present in request body
+        const walletId: string | null = checkStringBody(aesDecryptedBodyData, "wallet_id")
+        if (!walletId) {
+            throw new InvalidRequestBodyError("Wallet-id not present in the request body");
+        }
+
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof userWalletLoadValidationSchema>> = userWalletLoadValidationSchema.safeParse(
+            {
+                wallet_type: aesDecryptedBodyData.wallet_type,
+                wallet_currency: aesDecryptedBodyData.wallet_currency,
+                amount: Number(aesDecryptedBodyData.amount),
+            }
+        );
+        if (!validationResult.success) {
+            // return res.status(400).json({
+            //     status: "SERVICE_ERROR",
+            //     message: "Invalid request body",
+            //     // errors: validationResult.error.issues.map(issue => issue.message)
+            //     // errors: validationResult.error.issues.map(issue => ({
+            //     //     [issue.path.join(".")]: issue.message
+            //     // }))
+            //     errors: z.flattenError(validationResult.error)
+            // });
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
+
+        // Get user id from session
+        const userId: unknown = requestSession?.userId
+
+        // Get wallet details from DB
+        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ wallet_id: walletId }).lean();
+
+        // Check user exist in DB
+        if (!userWalletDetails) {
+            throw new NotFoundError("User wallet does not exists");
+        }
+
+        // Check wallet authenticity
+        if (userWalletDetails?.user_id.toString() !== userId) {
+            throw new BadRequestError("Failed to fetch user wallet details - invalid wallet id provided")
+        }
+
+        // Find wallet in wallets_details for request currency
+        const selectedWallet = userWalletDetails.wallets_details.find((wallet) =>
+            wallet.wallet_type === validationResult.data.wallet_type && wallet.wallet_currency === validationResult.data.wallet_currency
+        );
+
+        if (!selectedWallet) {
+            throw new NotFoundError("Requested wallet does not exist");
+        }
+
+        // // Load amount
+        // selectedWallet.account_balance = (selectedWallet.account_balance ?? 0) + validationResult.data.amount;
+
+        // await userWalletDetails.save();
+
+        // Load wallet transaction
+        const withdrawWalletTransactionResult = await userWithdrawWalletTransaction(walletId, validationResult, selectedWallet)
+
+        if (withdrawWalletTransactionResult?.status !== "SUCCESS") {
+            throw new ServiceError("Widthraw wallet service failed to load wallet")
+        }
+
+        return { status: "SUCCESS", message: "Wallet withdrawed successfully", data: withdrawWalletTransactionResult?.data }
     }
     catch (err) {
         const error = err as any;

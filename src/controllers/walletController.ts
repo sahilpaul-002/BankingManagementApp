@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createWalletService, getWalletService, loadWalletService } from "../services/walletServices.js";
+import { createWalletService, getWalletService, loadWalletService, withdrawWalletService } from "../services/walletServices.js";
 
 // ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
 export const getWallet = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -124,6 +124,47 @@ export const loadWallet = async (req: Request, res: Response): Promise<Response<
         }
         throw new ServiceError(
             `LoadWalletController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+}
+// ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
+
+// ------------------------------ FUNCTION TO PERFORM WITHDRAW WALLET ------------------------------ \\
+export const withdrAawWallet = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query
+
+        // Get request session
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        const loadWalletServiceResponse = await withdrawWalletService(requestSession, aesDecryptedBodyData);
+
+        if (loadWalletServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Withdraw wallet service is facing issue", 400);
+        }
+
+        return res.success("Ammount withdraw from wallet successfully.", loadWalletServiceResponse?.data, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "withdrawWalletController",
+            url: req.path,
+            method: req.method
+        });
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(
+            `withdrawWalletController facing issue: [${errorStatus}] ${error.message}`,
             error?.error ? error.error : error
         );
     }
