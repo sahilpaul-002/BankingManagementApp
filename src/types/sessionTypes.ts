@@ -59,6 +59,8 @@ export interface sessionItemsTypes {
     userType: UserType;
     is2faVerified: boolean;
     headerKeys: headerKeysType;
+    cardholderId?: string;
+    walletId?: string;
     sessiondata: sessionDataTypes;
     meta?: sessionMeta;
 }

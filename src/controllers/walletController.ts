@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createWalletService, getWalletService } from "../services/walletServices.js";
+import { createWalletService, getWalletService, loadWalletService } from "../services/walletServices.js";
 
 // ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
 export const getWallet = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -83,6 +83,47 @@ export const createWallet = async (req: Request, res: Response): Promise<Respons
         }
         throw new ServiceError(
             `CreateWalletController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+}
+// ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
+
+// ------------------------------ FUNCTION TO PERFORM LOAD WALLET ------------------------------ \\
+export const loadWallet = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query
+
+        // Get request session
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        const loadWalletServiceResponse = await loadWalletService(requestSession, aesDecryptedBodyData);
+
+        if (loadWalletServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "UserLogin is facing issue", 400);
+        }
+
+        return res.success("Wallet loaded successfully.", loadWalletServiceResponse?.data, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "LoadWalletController",
+            url: req.path,
+            method: req.method
+        });
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(
+            `LoadWalletController facing issue: [${errorStatus}] ${error.message}`,
             error?.error ? error.error : error
         );
     }

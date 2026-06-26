@@ -10,7 +10,7 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
             unique: true,
             index: true,
         },
-        
+
         wallet_id: {
             type: String,
             required: true,
@@ -19,35 +19,37 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
             trim: true,
         },
 
-        wallet_status: {
-            type: String,
-            enum: ["ACTIVE", "INACTIVE"],
-            default: "ACTIVE",
-        },
+        wallets_details: {
+            wallet_status: {
+                type: String,
+                enum: ["ACTIVE", "INACTIVE"],
+                default: "ACTIVE",
+            },
 
-        account_balance: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
+            account_balance: {
+                type: Number,
+                default: 0,
+                min: 0,
+            },
 
-        holding_amount: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
+            holding_amount: {
+                type: Number,
+                default: 0,
+                min: 0,
+            },
 
-        wallet_type: {
-            type: String,
-            required: true,
-            enum: ["FIAT", "CRYPTO"],
-        },
+            wallet_type: {
+                type: String,
+                required: true,
+                enum: ["FIAT", "CRYPTO"],
+            },
 
-        wallet_currency: {
-            type: String,
-            required: true,
-            enum: ["USD", "EUR", "SGD", "USDC", "USDT"],
-        },
+            wallet_currency: {
+                type: String,
+                required: true,
+                enum: ["USD", "EUR", "SGD", "USDC", "USDT"],
+            },
+        }
     },
     { timestamps: true }
 );

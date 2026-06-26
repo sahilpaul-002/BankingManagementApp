@@ -14,6 +14,7 @@ import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import { gmailSendService } from "./gmailSendService.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import type { ParsedQs } from "qs";
+import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 
 dotenv.config();
 
@@ -21,9 +22,9 @@ const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@g
 const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
 
 // ------------------------------------- GET KYC SERVICE ------------------------------------- \\
-export const getKycService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const getKycService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
     try {
-        if (!aesDecryptedBodyData) {
+        if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid request body data");
         }
 
@@ -34,7 +35,7 @@ export const getKycService = async (requestSession: Request["session"], aesDecry
         }
 
         // Check email present in request body
-        const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
+        const email: string | null = checkStringQueryParams(aesDecryptedQueryData, "email")
         if (!email) {
             throw new InvalidRequestBodyError("Email not present in the request body");
         }

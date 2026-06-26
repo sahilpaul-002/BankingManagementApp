@@ -239,8 +239,13 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 
         // Update user status in DB if not already activated
         if (userDetails?.is_active === "N") {
-            const updatedUserDetails: userDetailsSchemaTypes = await user_details.findByIdAndUpdate(userDetails._id, { is_active: "Y", status: "ACTIVE", cardholder_id: crypto.randomUUID() }, { new: true }) as userDetailsSchemaTypes;
+            const cardholderId = crypto.randomUUID();
+
+            const updatedUserDetails: userDetailsSchemaTypes = await user_details.findByIdAndUpdate(userDetails._id, { is_active: "Y", status: "ACTIVE", cardholder_id: cardholderId }, { new: true }) as userDetailsSchemaTypes;
             userDetails = updatedUserDetails
+
+            // Update cardholderId in session
+            req.session.cardholderId = cardholderId;
         }
 
         // Get the client IP address
@@ -366,7 +371,6 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         const frontendUserDetails = {
-            id: userDetails?._id,
             fullName: userDetails?.full_name,
             userEmail: userDetails?.email,
             mobileCountryCode: userDetails?.mobile_country_code,
@@ -386,17 +390,17 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         if (userDetails?.is_email_verified === "N" && sendEmailResponse?.status === "SUCCESS" && userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
             return { status: "SUCCESS", message: "User login successful, verification code sent to email", data: frontendUserDetails }
         }
-        else if (userDetails?.is_email_verified === "N" && (sendEmailResponse?.status !== "SUCCESS" || !userMetaDetailsDoc?.verification_code || !userMetaDetailsDoc?.verification_code_expires_at)){
+        else if (userDetails?.is_email_verified === "N" && (sendEmailResponse?.status !== "SUCCESS" || !userMetaDetailsDoc?.verification_code || !userMetaDetailsDoc?.verification_code_expires_at)) {
             return { status: "SUCCESS", message: "User login successfull, but failed to send verification code", data: frontendUserDetails }
         }
         else if (userDetails?.is_email_verified === "Y" && (userDetails.is_2fa_enabled !== "Y" || !userDetails?.two_fa_type)) {
-            return { status: "SUCCESS", message: "User login successfull, 2fa not enabled",  data: frontendUserDetails }
+            return { status: "SUCCESS", message: "User login successfull, 2fa not enabled", data: frontendUserDetails }
         }
         else if (userDetails?.is_email_verified === "Y" && userDetails?.is_2fa_enabled === "Y" && userDetails?.two_fa_type) {
             return { status: "SUCCESS", message: "User login successful, 2fa enabled", data: frontendUserDetails }
         }
         else {
-            return { status: "SERVICE_ERROR", message: "User login failed"}
+            return { status: "SERVICE_ERROR", message: "User login failed" }
         }
 
     }

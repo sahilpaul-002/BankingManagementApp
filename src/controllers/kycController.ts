@@ -8,14 +8,14 @@ import { getKycService, kycVerificationWebhookService, sendKycVerificationMailSe
 // ------------------------------------- FUNCTION TO GET KYC ------------------------------------- \\
 export const getKyc = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
-        const aesDecryptedBodyData = req.body;
-
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
         const requestSession: Request["session"] | undefined = getRequestSession();
         if (!requestSession) {
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const getKycServiceResponse = await getKycService(requestSession, aesDecryptedBodyData)
+        const getKycServiceResponse = await getKycService(requestSession, aesDecryptedQueryData)
         if (getKycServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to fetch user kyc details", 400);
         }

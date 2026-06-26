@@ -126,11 +126,13 @@ export interface userKycDetailsSchemaTypes extends Document {
 export interface userWalletDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     wallet_id: string;
-    wallet_status?: "ACTIVE" | "INACTIVE";
-    account_balance?: number;
-    holding_amount?: number;
-    wallet_type: "FIAT" | "CRYPTO";
-    wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
+    wallets_details: {
+        wallet_status?: "ACTIVE" | "INACTIVE";
+        account_balance?: number;
+        holding_amount?: number;
+        wallet_type: "FIAT" | "CRYPTO";
+        wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
+    }
 }
 
 // Type for Beneficiaries Bank Details Model Schema
