@@ -1,22 +1,6 @@
 import z from "zod";
 
-const userWalletCreationValidationSchema = z.object({
-    wallet_status: z
-        .enum(["ACTIVE", "INACTIVE"])
-        .optional(),
-
-    account_balance: z
-        .number("Account balance must be a number")
-        .min(0, "Account balance cannot be negative")
-        .optional()
-        .default(0),
-
-    holding_amount: z
-        .number("Holding amount must be a number")
-        .min(0, "Holding amount cannot be negative")
-        .optional()
-        .default(0),
-
+const userWalletLoadValidationSchema = z.object({
     wallet_type: z
         .enum(["FIAT", "CRYPTO"], {
             error: "Wallet type must be either FIAT or CRYPTO"
@@ -25,7 +9,16 @@ const userWalletCreationValidationSchema = z.object({
     wallet_currency: z
         .enum(["USD", "EUR", "SGD", "USDC", "USDT"], {
             error: "Invalid wallet currency"
+        }),
+
+     amount: z
+        .number({
+            error:
+                "Amount must be a number",
         })
+        .positive(
+            "Amount must be greater than 0"
+        ),
 })
     .superRefine((data, ctx) => {
         // Optional business rule:
@@ -60,4 +53,4 @@ const userWalletCreationValidationSchema = z.object({
         }
     });
 
-export default userWalletCreationValidationSchema;
+export default userWalletLoadValidationSchema;

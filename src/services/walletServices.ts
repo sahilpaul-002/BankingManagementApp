@@ -5,13 +5,15 @@ import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import checkStringBody from "../utils/checkStringBody.js";
 import logger from "../utils/logger.js";
-import type { Schema } from "mongoose";
+import { Types } from "mongoose";
 import type { ParsedQs } from "qs";
-import type { userWalletDetailsSchemaTypes } from "../types/schemaTypes.js";
+import type { userWalletDetailsSchemaTypes, walletDetailsType } from "../types/schemaTypes.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import userWalletCreationValidationSchema from "../validations/userWalletCreationValidation.js"
+import type { Schema } from "mongoose";
+import userWalletLoadValidationSchema from "../validations/userWalletLoadValidation.js";
 
 // ------------------------------------- CREATE WALLET SERVICE -------------------------------------  \\
 export const getWalletService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
@@ -46,6 +48,11 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
         });
         if (!userWalletDetails) {
             throw new NotFoundError("User wallet details not found")
+        }
+
+        const walletDetails = {
+            walletId: userWalletDetails?.wallet_id,
+            wallets_details: userWalletDetails?.wallets_details
         }
 
         return { status: "SUCCESS", data: userWalletDetails || {}, message: "User wallet details fetched" }
@@ -97,23 +104,16 @@ export const createWalletService = async (requestSession: Request["session"], ae
             throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
         }
 
+        // Check wallet details present in request body
+        if (!aesDecryptedBodyData?.wallets_details) {
+            throw new InvalidRequestBodyError("Wallet details not present in the request body");
+        }
+
         // Get user id from session
         const userId: unknown = requestSession?.userId
 
-        // Get wallet details from DB
-        const checkUserWalletExistInDB = async (): Promise<boolean | null> => {
-            const userWalletExistResponse: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ user_id: userId as Schema.Types.ObjectId });
-            return userWalletExistResponse !== null;
-        }
-        const userWalletExistance: boolean | null = await checkUserWalletExistInDB();
-
-        // Check user exist in DB
-        if (userWalletExistance) {
-            throw new ServiceError("User wallet already exists");
-        }
-
         // Check Validations
-        const validationResult: SafeParseResult<z.infer<typeof userWalletCreationValidationSchema>> = userWalletCreationValidationSchema.safeParse(aesDecryptedBodyData);
+        const validationResult: SafeParseResult<z.infer<typeof userWalletCreationValidationSchema>> = userWalletCreationValidationSchema.safeParse(aesDecryptedBodyData?.wallets_details);
         if (!validationResult.success) {
             // return res.status(400).json({
             //     status: "SERVICE_ERROR",
@@ -127,32 +127,51 @@ export const createWalletService = async (requestSession: Request["session"], ae
             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
 
-        // Format document by adding the agent_code and subagent_code from session
-        const document: object = {
-            user_id: userId as Schema.Types.ObjectId,
-            wallet_id: crypto.randomUUID(),
+        // New wallet object
+        const newWallet: walletDetailsType = {
             wallet_status: "ACTIVE",
-            account_balance: 0,
-            holding_amount: 0,
-            wallet_type: validationResult?.data?.wallet_type,
-            wallet_currency: validationResult?.data?.wallet_currency,
+            account_balance: validationResult.data.account_balance ?? 0,
+            holding_amount: validationResult.data.holding_amount ?? 0,
+            wallet_type: validationResult.data.wallet_type,
+            wallet_currency: validationResult.data.wallet_currency,
         };
 
-        // Insert document in collection
-        const insertedDocument = await user_wallet_details.create(document);
-        const walletDetails = {
-            walletId: insertedDocument?.wallet_id,
-            wallets_details: {
-                walletStatus: insertedDocument?.wallets_details?.wallet_status,
-                accountBalance: insertedDocument?.wallets_details?.account_balance,
-                holdingAmount: insertedDocument?.wallets_details?.holding_amount,
-                walletType: insertedDocument?.wallets_details?.wallet_type,
-                walletCurrency: insertedDocument?.wallets_details?.wallet_currency
+        // Find existing wallet document
+        const existingWallet = await user_wallet_details.findOne({ user_id: userId as Schema.Types.ObjectId });
+
+        // Existing user → Add wallet
+        if (existingWallet) {
+            const duplicate = existingWallet.wallets_details.some(
+                (wallet) =>
+                    wallet.wallet_currency ===
+                    newWallet.wallet_currency
+            );
+
+            if (duplicate) {
+                throw new ServiceError(`${newWallet.wallet_currency} wallet already exists`);
             }
+
+            existingWallet.wallets_details.push(newWallet);
+
+            await existingWallet.save();
+
+            requestSession.walletId = existingWallet.wallet_id;
+
+            return { status: "SUCCESS", message: "Wallet added successfully", data: { walletId: existingWallet.wallet_id, wallets_details: existingWallet.wallets_details, } };
         }
 
-        // console.log("Document inserted: ", insertedDocument);
-        return { status: "SUCCESS", message: "Document inserted successfully", data: walletDetails }
+        // First wallet → Create document
+        const insertedDocument: userWalletDetailsSchemaTypes = await user_wallet_details.create({
+            user_id: userId as Types.ObjectId,
+            wallet_id: crypto.randomUUID(),
+            wallets_details: [
+                newWallet,
+            ],
+        });
+
+        requestSession.walletId = insertedDocument.wallet_id;
+
+        return { status: "SUCCESS", message: "Wallet created successfully", data: { walletId: insertedDocument.wallet_id, wallets_details: insertedDocument.wallets_details, } };
     }
     catch (err) {
         const error = err as any;
@@ -195,19 +214,32 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
             throw new InvalidRequestBodyError("Wallet-id not present in the request body");
         }
 
-        // Check amount present in request body
-        if (!aesDecryptedBodyData?.amount || typeof aesDecryptedBodyData.amount !== "number") {
-            throw new InvalidRequestBodyError("Amount not present in the request body or not a number");
-        }
-        if (aesDecryptedBodyData?.amount <= 0) {
-            throw new InvalidRequestBodyError("Invalid amount provided - ammount cannot be 0 or negative");
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof userWalletLoadValidationSchema>> = userWalletLoadValidationSchema.safeParse(
+            {
+                wallet_type: aesDecryptedBodyData.wallet_type,
+                wallet_currency: aesDecryptedBodyData.wallet_currency,
+                amount: Number(aesDecryptedBodyData.amount),
+            }
+        );
+        if (!validationResult.success) {
+            // return res.status(400).json({
+            //     status: "SERVICE_ERROR",
+            //     message: "Invalid request body",
+            //     // errors: validationResult.error.issues.map(issue => issue.message)
+            //     // errors: validationResult.error.issues.map(issue => ({
+            //     //     [issue.path.join(".")]: issue.message
+            //     // }))
+            //     errors: z.flattenError(validationResult.error)
+            // });
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
 
         // Get user id from session
         const userId: unknown = requestSession?.userId
 
         // Get wallet details from DB
-        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ wallet_id: walletId });
+        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ wallet_id: walletId }).lean();
 
         // Check user exist in DB
         if (!userWalletDetails) {
@@ -215,30 +247,47 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         }
 
         // Check wallet authenticity
-        if (userWalletDetails?.user_id !== userId) {
+        if (userWalletDetails?.user_id.toString() !== userId) {
             throw new BadRequestError("Failed to fetch user wallet details - invalid wallet id provided")
         }
 
-        // Deposit amount in wallet
-        const updatedWallet = await user_wallet_details.findOneAndUpdate(
-            { user_id: userId },
+        // Find wallet in wallets_details for request currency
+        const selectedWallet = userWalletDetails.wallets_details.find((wallet) =>
+            wallet.wallet_type === validationResult.data.wallet_type && wallet.wallet_currency === validationResult.data.wallet_currency
+        );
+
+        if (!selectedWallet) {
+            throw new NotFoundError("Requested wallet does not exist");
+        }
+
+        // // Load amount
+        // selectedWallet.account_balance = (selectedWallet.account_balance ?? 0) + validationResult.data.amount;
+
+        // await userWalletDetails.save();
+
+        // Update wallet
+        const updatedWallet = await user_wallet_details.findOneAndUpdate({
+            wallet_id: walletId,
+            wallets_details: {
+                $elemMatch: {
+                    wallet_type: validationResult.data.wallet_type,
+                    wallet_currency: validationResult.data.wallet_currency,
+                }
+            }
+        },
             {
                 $inc: {
-                    account_balance: aesDecryptedBodyData?.amount
-                }
+                    "wallets_details.$.account_balance": validationResult.data.amount,
+                },
             },
-            { new: true }
-        );
+            {
+                new: true, // return updated document
+            }
+        ).lean();
 
         const walletDetails = {
             walletId: updatedWallet?.wallet_id,
-            wallets_details: {
-                walletStatus: updatedWallet?.wallets_details?.wallet_status,
-                accountBalance: updatedWallet?.wallets_details?.account_balance,
-                holdingAmount: updatedWallet?.wallets_details?.holding_amount,
-                walletType: updatedWallet?.wallets_details?.wallet_type,
-                walletCurrency: updatedWallet?.wallets_details?.wallet_currency
-            }
+            wallets_details: updatedWallet?.wallets_details
         }
 
         return { status: "SUCCESS", message: "Document inserted successfully", data: walletDetails }

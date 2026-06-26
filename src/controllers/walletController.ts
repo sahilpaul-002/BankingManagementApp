@@ -63,7 +63,7 @@ export const createWallet = async (req: Request, res: Response): Promise<Respons
         const createWalletServiceResponse = await createWalletService(requestSession, aesDecryptedBodyData);
 
         if (createWalletServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "UserLogin is facing issue", 400);
+            return res.fail("SERVICE_ERROR", "Create wallet service is facing issue", 400);
         }
 
         return res.success("Wallet created successfully.", createWalletServiceResponse?.data, 200)
@@ -104,7 +104,7 @@ export const loadWallet = async (req: Request, res: Response): Promise<Response<
         const loadWalletServiceResponse = await loadWalletService(requestSession, aesDecryptedBodyData);
 
         if (loadWalletServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "UserLogin is facing issue", 400);
+            return res.fail("SERVICE_ERROR", "Load wallet service is facing issue", 400);
         }
 
         return res.success("Wallet loaded successfully.", loadWalletServiceResponse?.data, 200)

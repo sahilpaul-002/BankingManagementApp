@@ -123,16 +123,46 @@ export interface userKycDetailsSchemaTypes extends Document {
 }
 
 // Types for User Wallet Details Model Schema
+export type walletDetailsType = {
+    wallet_status?: "ACTIVE" | "INACTIVE";
+    account_balance?: number;
+    holding_amount?: number;
+    wallet_type: "FIAT" | "CRYPTO";
+    wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
+};
 export interface userWalletDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     wallet_id: string;
-    wallets_details: {
-        wallet_status?: "ACTIVE" | "INACTIVE";
-        account_balance?: number;
-        holding_amount?: number;
+    // wallets_details: [
+    //     {
+    //         wallet_status?: "ACTIVE" | "INACTIVE";
+    //         account_balance?: number;
+    //         holding_amount?: number;
+    //         wallet_type: "FIAT" | "CRYPTO";
+    //         wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
+    //     }
+    // ]
+    wallets_details: walletDetailsType[]
+}
+
+// Types for User Wallet Transactions Model Schema
+export interface userWalletTransactionsTypes extends Document {
+    user_id: Types.ObjectId;
+    wallet_id: string;
+    transaction_id: string;
+    transaction_type: "LOAD" | "WITHDRAW" | "TRANSFER" | "HOLD" | "RELEASE" | "REFUND";
+    transaction_status: "PENDING" | "SUCCESS" | "FAILED" | "REVERSED";
+    wallet_details: {
         wallet_type: "FIAT" | "CRYPTO";
         wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
-    }
+    };
+    amount: number;
+    balance_before: number;
+    balance_after: number;
+    reference_id?: string | null;
+    remarks?: string | null;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Type for Beneficiaries Bank Details Model Schema
