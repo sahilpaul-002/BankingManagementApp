@@ -4,13 +4,15 @@ import { userWalletTransactionsModel as user_wallet_transactions } from "../mode
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import type { walletDetailsType } from "../types/schemaTypes.js";
-import userWalletLoadValidationSchema from "../validations/userWalletLoadValidation.js";
-import type z from "zod";
+import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
+import z from "zod";
 import type { SafeParseSuccess } from "zod/v3";
+import userWalletTransactionsValidationSchema from "../validations/userWalletTransactionsValidation.js";
+import type { SafeParseResult } from "../types/zodTypes.js";
 
-type userWalletLoadValidationType = SafeParseSuccess<z.infer<typeof userWalletLoadValidationSchema> >;
+type userWalletActionValidationType = SafeParseSuccess<z.infer<typeof userWalletActionValidationSchema>>;
 
-const userLoadWalletTransaction = async (walletId: string, validationResult: userWalletLoadValidationType, selectedWallet: walletDetailsType) => {
+const userLoadWalletTransaction = async (walletId: string, userWalletActionData: userWalletActionValidationType, selectedWallet: walletDetailsType) => {
     const mongoSession =
         await mongoose.startSession();
 
@@ -25,14 +27,14 @@ const userLoadWalletTransaction = async (walletId: string, validationResult: use
                 {
                     $elemMatch:
                     {
-                        wallet_type: validationResult.data.wallet_type,
-                        wallet_currency: validationResult.data.wallet_currency,
+                        wallet_type: userWalletActionData.data.wallet_type,
+                        wallet_currency: userWalletActionData.data.wallet_currency,
                     },
                 },
             },
             {
                 $inc: {
-                    "wallets_details.$.account_balance": validationResult.data.amount,
+                    "wallets_details.$.account_balance": userWalletActionData.data.amount,
                 },
             },
             {
@@ -44,25 +46,54 @@ const userLoadWalletTransaction = async (walletId: string, validationResult: use
         if (!updatedWallet) {
             throw new ServiceError("Wallet update failed");
         }
-        
-        // Create transaction entry
+
+        // Prepare transaction payload
+        const transactionPayload = {
+            transaction_type: "LOAD",
+            transaction_status: "SUCCESS",
+            wallet_details: {
+                wallet_type: userWalletActionData.data.wallet_type,
+                wallet_currency: userWalletActionData.data.wallet_currency
+            },
+            amount: userWalletActionData.data.amount,
+            balance_before: selectedWallet.account_balance ?? 0,
+            balance_after: (selectedWallet.account_balance ?? 0) + userWalletActionData.data.amount,
+            reference_id: crypto.randomUUID(),
+            remarks: "Wallet loaded",
+        };
+
+        // Check Transaction Validations
+        const validationResult: SafeParseResult<z.infer<typeof userWalletTransactionsValidationSchema>> = userWalletTransactionsValidationSchema.safeParse(transactionPayload);
+        if (!validationResult.success) {
+            // return res.status(400).json({
+            //     status: "SERVICE_ERROR",
+            //     message: "Invalid request body",
+            //     // errors: validationResult.error.issues.map(issue => issue.message)
+            //     // errors: validationResult.error.issues.map(issue => ({
+            //     //     [issue.path.join(".")]: issue.message
+            //     // }))
+            //     errors: z.flattenError(validationResult.error)
+            // });
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
+
+        // Create load transaction entry
         await user_wallet_transactions.create(
             [
                 {
                     wallet_id: walletId,
                     transaction_id: crypto.randomUUID(),
-                    transaction_type: "LOAD",
-                    transaction_status: "SUCCESS",
+                    transaction_type: validationResult?.data?.transaction_type,
+                    transaction_status: validationResult?.data?.transaction_status,
                     wallet_details: {
-                        wallet_type: validationResult.data.wallet_type,
-                        wallet_currency: validationResult.data.wallet_currency,
+                        wallet_type: validationResult?.data?.wallet_details?.wallet_type,
+                        wallet_currency: validationResult?.data?.wallet_details?.wallet_currency,
                     },
                     amount: validationResult.data.amount,
-                    balance_before: selectedWallet.account_balance ?? 0,
-
-                    balance_after: (selectedWallet.account_balance ?? 0) + validationResult.data.amount,
-                    remarks:
-                        "Wallet loaded",
+                    balance_before: validationResult?.data?.balance_before,
+                    balance_after: validationResult?.data?.balance_after,
+                    reference_id: validationResult?.data?.reference_id,
+                    remarks: validationResult?.data?.remarks,
                 },
             ],
             {

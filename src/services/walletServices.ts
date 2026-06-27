@@ -13,9 +13,9 @@ import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import userWalletCreationValidationSchema from "../validations/userWalletCreationValidation.js"
 import type { Schema } from "mongoose";
-import userWalletLoadValidationSchema from "../validations/userWalletLoadValidation.js";
 import userLoadWalletTransaction from "../mongoDbTransactions/userLoadWalletTransaction.js";
 import userWithdrawWalletTransaction from "../mongoDbTransactions/userWithdrawWalletTransaction.js";
+import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
 
 // ------------------------------------- GET WALLET SERVICE -------------------------------------  \\
 export const getWalletService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
@@ -217,7 +217,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         }
 
         // Check Validations
-        const validationResult: SafeParseResult<z.infer<typeof userWalletLoadValidationSchema>> = userWalletLoadValidationSchema.safeParse(
+        const validationResult: SafeParseResult<z.infer<typeof userWalletActionValidationSchema>> = userWalletActionValidationSchema.safeParse(
             {
                 wallet_type: aesDecryptedBodyData.wallet_type,
                 wallet_currency: aesDecryptedBodyData.wallet_currency,
@@ -318,7 +318,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         }
 
         // Check Validations
-        const validationResult: SafeParseResult<z.infer<typeof userWalletLoadValidationSchema>> = userWalletLoadValidationSchema.safeParse(
+        const validationResult: SafeParseResult<z.infer<typeof userWalletActionValidationSchema>> = userWalletActionValidationSchema.safeParse(
             {
                 wallet_type: aesDecryptedBodyData.wallet_type,
                 wallet_currency: aesDecryptedBodyData.wallet_currency,

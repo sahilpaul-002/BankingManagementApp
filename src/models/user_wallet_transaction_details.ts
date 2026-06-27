@@ -64,12 +64,14 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
             reference_id: {
                 type: String,
                 trim: true,
+                required: true,
                 default: null,
             },
 
             remarks: {
                 type: String,
                 trim: true,
+                required: true,
                 default: null,
             },
         },

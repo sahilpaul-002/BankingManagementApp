@@ -1,6 +1,6 @@
 import z from "zod";
 
-const userWalletLoadValidationSchema = z.object({
+const userWalletActionValidationSchema = z.object({
     wallet_type: z
         .enum(["FIAT", "CRYPTO"], {
             error: "Wallet type must be either FIAT or CRYPTO"
@@ -53,4 +53,4 @@ const userWalletLoadValidationSchema = z.object({
         }
     });
 
-export default userWalletLoadValidationSchema;
+export default userWalletActionValidationSchema;
