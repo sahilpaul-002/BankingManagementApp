@@ -16,6 +16,7 @@ import type { Schema } from "mongoose";
 import userLoadWalletTransaction from "../mongoDbTransactions/userLoadWalletTransaction.js";
 import userWithdrawWalletTransaction from "../mongoDbTransactions/userWithdrawWalletTransaction.js";
 import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
+import deductFeeSrive from "./deductFeesService.js";
 
 // ------------------------------------- GET WALLET SERVICE -------------------------------------  \\
 export const getWalletService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
@@ -132,8 +133,8 @@ export const createWalletService = async (requestSession: Request["session"], ae
         // New wallet object
         const newWallet: walletDetailsType = {
             wallet_status: "ACTIVE",
-            account_balance: validationResult.data.account_balance ?? 0,
-            holding_amount: validationResult.data.holding_amount ?? 0,
+            account_balance: 0,
+            holding_amount: 0,
             wallet_type: validationResult.data.wallet_type,
             wallet_currency: validationResult.data.wallet_currency,
         };
@@ -267,6 +268,8 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
 
         // await userWalletDetails.save();
 
+        const finalAmount: number = deductFeeSrive(validationResult.data.amount, validationResult.data.wallet_type === "FIAT" ? "load_fiat_wallet" : "load_crypto_wallet");
+        validationResult.data.amount = finalAmount
         // Load wallet transaction
         const loadWalletTransactionResult = await userLoadWalletTransaction(walletId, validationResult, selectedWallet)
 

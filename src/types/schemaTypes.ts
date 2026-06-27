@@ -196,12 +196,12 @@ export interface userCardDetailsSchemaTypes extends Document {
 }
 
 // Types for Fee Details Model Schema
-export interface feeDetailsSchemaTypes extends Document {
+export interface feeDetailsSchemaTypes {
     fee_unit: "PERCENTAGE";
-    load_fiat_wallet: 0.2;
-    load_crypto_wallet: 0.5;
-    load_card: 0.3;
-    card_transaction: 0.1;
-    m2p: 0.4
-    p2P: 0.3
+    load_fiat_wallet: number;
+    load_crypto_wallet: number;
+    load_card: number;
+    card_transaction: number;
+    m2p: number;
+    p2P: number;
 }
