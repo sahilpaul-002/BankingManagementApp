@@ -173,6 +173,7 @@ app.use("/api/v1/twoFa", headerTypeValidation, headerValidations, sessionValidat
 app.use("/api/v1/kyc", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), kycRoutes);
 app.use("/api/v1/wallet", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletRoutes);
 app.use("/api/v1/walletTransaction", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletTransactionRoutes);
+app.use("/api/v1/cards", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletTransactionRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\

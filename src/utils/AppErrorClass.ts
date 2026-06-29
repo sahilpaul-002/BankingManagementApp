@@ -53,6 +53,9 @@ export class InvalidRequestBodyError extends AppErrorClass {
 export class InvalidRequestQueryError extends AppErrorClass {
     constructor(message: string, error?: any) { super(406, 'INVALID_REQUEST_QUERY_PARAMETER', message, error); }
 }
+export class InvalidRequestParamsError extends AppErrorClass {
+    constructor(message: string, error?: any) { super(406, 'INVALID_REQUEST_PARAMS_PARAMETER', message, error); }
+}
 export class ServiceTimeoutError extends AppErrorClass {
     constructor(message: string, error?: any) { super(429, 'SERVICE_TIMEOUT', message, error); }
 }

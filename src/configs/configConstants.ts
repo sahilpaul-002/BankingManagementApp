@@ -6,7 +6,7 @@ export const DNS_CONFIG_X_API_KEYS: Record<string, string> = {
 
 export const FEE_DETAILS: feeDetailsSchemaTypes = {
     'fee_unit': "PERCENTAGE",
-    'load_fiat_wallet': 0.2,
+    'load_fiat_wallet': 0.3,
     'load_crypto_wallet': 0.5,
     'load_card': 0.3,
     'card_transaction': 0.1,

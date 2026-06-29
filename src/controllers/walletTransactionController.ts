@@ -4,6 +4,7 @@ import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 import { getWalletTransactionService } from "../services/walletTransactionService.js";
+
 // ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
 export const getWalletTransactions = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
