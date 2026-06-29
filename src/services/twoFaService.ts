@@ -496,7 +496,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
                 { user_id: userId as Schema.Types.ObjectId }
             ).select("verification_code verification_code_expires_at");
             if (!twoFaVerificationDataDoc?.verification_code || !twoFaVerificationDataDoc?.verification_code_expires_at) {
-                throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for two factor auth verification")
+                throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for two factor auth verification, 2fa configuration not found")
             }
 
             // Check verification code expiry

@@ -51,10 +51,39 @@ const addressSchema = z.object({
 // USER ADDRESS DETAILS VALIDATION SCHEMA
 export const userAddressDetailsValidationSchema = z.object({
 
-    user_id: z
-        .string("User id is required and must be a string")
+    email: z
+        .email("Invalid email format")
         .trim()
-        .min(1, "User id is required"),
+        .min(1, "Email is required")
+        .max(100, "Email too long")
+        .refine((email) => {
+            // Prevent disposable email domains
+            const disposableDomains = [
+                // "example.com",
+                "mailinator.com",
+                "10minutemail.com",
+                "tempmail.com",
+                "guerrillamail.com",
+                "dispostable.com",
+                "trashmail.com",
+                // "yopmail.com",
+                "fakeinbox.com",
+                "getnada.com",
+                "temp-mail.org",
+                "maildrop.cc",
+                "mytemp.email",
+                "disposablemail.com",
+                "trashmail.net",
+                "tempmail.net",
+                "throwawaymail.com"
+            ];
+
+            const domain = email.split("@")[1];
+
+            return domain ? !disposableDomains.includes(domain) : false;
+        }, {
+            message: "Disposable email addresses are not allowed"
+        }),
 
     billing_address: addressSchema
         .refine((data) => data.type === "Billing", {
@@ -75,10 +104,39 @@ export const userAddressDetailsValidationSchema = z.object({
 // USER BANK DETAILS VALIDATION SCHEMA
 export const userBankDetailsValidationSchema = z.object({
 
-    user_id: z
-        .string("User id is required and must be a string")
+    email: z
+        .email("Invalid email format")
         .trim()
-        .min(1, "User id is required"),
+        .min(1, "Email is required")
+        .max(100, "Email too long")
+        .refine((email) => {
+            // Prevent disposable email domains
+            const disposableDomains = [
+                // "example.com",
+                "mailinator.com",
+                "10minutemail.com",
+                "tempmail.com",
+                "guerrillamail.com",
+                "dispostable.com",
+                "trashmail.com",
+                // "yopmail.com",
+                "fakeinbox.com",
+                "getnada.com",
+                "temp-mail.org",
+                "maildrop.cc",
+                "mytemp.email",
+                "disposablemail.com",
+                "trashmail.net",
+                "tempmail.net",
+                "throwawaymail.com"
+            ];
+
+            const domain = email.split("@")[1];
+
+            return domain ? !disposableDomains.includes(domain) : false;
+        }, {
+            message: "Disposable email addresses are not allowed"
+        }),
 
     account_holder_name: z
         .string("Account holder name is required and must be a string")
@@ -145,8 +203,8 @@ export const userOnboardingDetailsValidationSchema = z.object({
 
         // Ensure same user_id in both schemas
         if (
-            data.address_details.user_id !==
-            data.bank_details.user_id
+            data.address_details.email !==
+            data.bank_details.email
         ) {
             ctx.addIssue({
                 code: "custom",

@@ -275,9 +275,15 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
             throw new BadRequestError("Invalid request body data");
         }
 
+        // Check email present in request body
+        const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not present in the request body");
+        }
+
         // Get user data from session
         const userEmail = requestSession?.userEmail
-        if (!userEmail) {
+        if (!userEmail || userEmail !== email) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
         const userId: unknown = requestSession?.userId

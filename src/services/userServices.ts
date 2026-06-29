@@ -427,7 +427,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 // -------------------------------------  XXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
 
 // ------------------------------------- USER ONBOARDING SERVICE -------------------------------------  \\
-export const userOnboardingService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined) => {
+export const userOnboardingService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid body data");
@@ -448,9 +448,11 @@ export const userOnboardingService = async (requestSession: Request["session"], 
         // Validated data
         const validatedData = validationResult.data;
 
-        // Get user from DB
-        // const email = req.session?.userEmail as string;
-        // const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ email: email });
+        // Validate email
+        if (validatedData.address_details.email !== requestSession?.userEmail || validatedData.bank_details.email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+
         const userId: unknown = requestSession?.userId
 
         // =========================================
@@ -667,15 +669,21 @@ export const userOnboardingService = async (requestSession: Request["session"], 
 // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
 
 // ------------------------------------- SEND BANK VERIFICATION MAIL SERVICE ------------------------------------- \\
-export const sendBankVerificationMailService = async (requestSession: Request["session"], res: Response, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+export const sendBankVerificationMailService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
         }
 
+        // Check email present in request body
+        const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not present in the request body");
+        }
+
         // Get user data from session
         const userEmail = requestSession?.userEmail
-        if (!userEmail) {
+        if (!userEmail || userEmail !== email) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
         const userId: unknown = requestSession?.userId
@@ -797,7 +805,7 @@ interface userBankVerificationJwtPayloadType extends JwtPayload {
     userBankRequestId: string;
 }
 
-export const userBankVerificationWebhookService = async (res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson | void> => {
+export const userBankVerificationWebhookService = async (aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson | void> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid request query params data");

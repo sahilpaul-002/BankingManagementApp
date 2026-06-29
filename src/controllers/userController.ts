@@ -126,7 +126,7 @@ export const onboarding = async (req: Request, res: Response): Promise<Response<
         if (!requestSession) {
             throw new UnauthenticatedError("Unauthenticated session");
         }
-        const userOnboardingServiceResponse = await userOnboardingService(requestSession, res, aesDecryptedBodyData);
+        const userOnboardingServiceResponse = await userOnboardingService(requestSession, aesDecryptedBodyData);
 
         if (userOnboardingServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "User onboarding is facing issue", 400);
@@ -165,7 +165,7 @@ export const sendBankVerificationMail = async (req: Request, res: Response): Pro
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const sendBankVerificationMailServiceResponse = await sendBankVerificationMailService(requestSession, res, aesDecryptedBodyData)
+        const sendBankVerificationMailServiceResponse = await sendBankVerificationMailService(requestSession, aesDecryptedBodyData)
         if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to sent user bank account verification mail", 400);
         }
@@ -197,7 +197,7 @@ export const getUserBankVerificationWebhook = async (req: Request, res: Response
     try {
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
 
-        const sendKycVerificationMailServiceResponse = await userBankVerificationWebhookService(res, aesDecryptedQueryData)
+        const sendKycVerificationMailServiceResponse = await userBankVerificationWebhookService(aesDecryptedQueryData)
         if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {
             if (sendKycVerificationMailServiceResponse?.message === "Exipred verification link") {
                 return res.status(200).send(`

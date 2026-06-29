@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import type { successResponseJson } from "../types/responseJson.js";
+import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import { AppErrorClass, BadRequestError, InvalidRequestBodyError, InvalidRequestParamsError, InvalidRequestQueryError, NotFoundError, ServiceError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
@@ -270,7 +270,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
 
         // await userWalletDetails.save();
 
-        const finalAmount: number = deductFeeSrive(validationResult.data.amount, validationResult.data.wallet_type === "FIAT" ? "load_fiat_wallet" : "load_crypto_wallet");
+        const finalAmount: number = deductFeeSrive(validationResult.data.amount, validationResult.data.wallet_type === "FIAT" ? "load_fiat_wallet_percent" : "load_crypto_wallet_percent");
         validationResult.data.amount = finalAmount
         // Load wallet transaction
         const loadWalletTransactionResult = await userLoadWalletTransaction(walletId, validationResult, selectedWallet)
@@ -405,7 +405,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 // ----------------------------------- GET WALLET TRANSACTIONS ----------------------------------- \\
-export const getWalletTransactionService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, transactionId?: string): Promise<successResponseJson> => {
+export const getWalletTransactionService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, transactionId?: string): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");

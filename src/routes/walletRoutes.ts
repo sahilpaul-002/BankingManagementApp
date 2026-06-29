@@ -5,6 +5,7 @@ import { createWallet, getWallet, getWalletTransactions, loadWallet, withdrAawWa
 const router: Router = express.Router()
 
 router.get("/", getWallet)
+router.get("/:currencyType", getWallet)
 router.post("/create", createWallet)
 router.post("/load", loadWallet)
 router.post("/withdraw", withdrAawWallet)

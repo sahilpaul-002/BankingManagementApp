@@ -5,7 +5,6 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
     {
         user_id: {
             type: Schema.Types.ObjectId,
-            ref: "user_details",
             required: true,
             unique: true,
             index: true,

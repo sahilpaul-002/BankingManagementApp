@@ -1,9 +1,9 @@
 import express from "express"
 import type { Router } from "express";
-import { getWalletTransactions } from "../controllers/walletTransactionController.js";
+import { createCard } from "../controllers/cardController.js";
 
 const router: Router = express.Router()
 
-router.get("/", getWalletTransactions)
+router.post("/create", createCard)
 
 export default router

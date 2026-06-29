@@ -42,13 +42,13 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             let userDetails: userDetailsSchemaTypes | null
             // Get user from DB
             const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
-                const userExistResponse: userDetailsSchemaTypes | null = await user_details.findById(req.session.userId);
+                const userExistResponse: userDetailsSchemaTypes | null = await user_details.findById(req.session.userId).lean();
                 return userExistResponse;
             }
             userDetails = await checkUserExistInDB(req);
 
             // Check user exist in DB
-            if (!userDetails) {
+            if (!userDetails || (userDetails?.email !== req.session.userEmail)) {
                 const destroySessionResponse = await destroySession(req.session, res);
 
                 if (destroySessionResponse?.status !== "SUCCESS") {

@@ -7,7 +7,6 @@ export type UserMetaDetailsDocument =
 const userMetaDetailsSchema = new Schema<userMetaDetailsSchemaTypes>({
     user_id: {
         type: Schema.Types.ObjectId,
-        ref: "user_details", // Foreign key reference to user_details collection
         required: true,
     },
     device_id: {

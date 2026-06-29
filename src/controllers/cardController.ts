@@ -3,10 +3,10 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { getWalletTransactionService } from "../services/walletTransactionService.js";
+import { createCardService } from "../services/cardService.js";
 
 // ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
-export const getWalletTransactions = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+export const createCard = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         let aesDecryptedBodyData = req.body
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
@@ -15,11 +15,11 @@ export const getWalletTransactions = async (req: Request, res: Response): Promis
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const getWalletTransactionServiceResponse = await getWalletTransactionService(requestSession, aesDecryptedQueryData)
-        if (getWalletTransactionServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "Failed to fetch user wallet transaction details", 400);
+        const createCardResponse = await createCardService(requestSession, aesDecryptedBodyData)
+        if (createCardResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Create card service faled to create card", 400);
         }
-        return res.success("User wallet transaction details fetched successfully", getWalletTransactionServiceResponse?.data || {}, 200)
+        return res.success("Card created successfully", createCardResponse?.data, 200)
     }
     catch (err) {
         const error = err as any;

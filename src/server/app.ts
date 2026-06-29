@@ -39,7 +39,7 @@ import twoFaRoutes from "../routes/twoFaRoutes.js";
 import kycRoutes from "../routes/kycRoutes.js";
 import walletRoutes from "../routes/walletRoutes.js";
 import publicRoutes from "../routes/publicRoutes.js";
-import walletTransactionRoutes from "../routes/walletTransactionRoutes.js";
+import cardRoutes from "../routes/cardRoutes.js";
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -172,8 +172,7 @@ app.use("/api/v1/user", headerTypeValidation, headerValidations, sessionValidati
 app.use("/api/v1/twoFa", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaRoutes);
 app.use("/api/v1/kyc", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), kycRoutes);
 app.use("/api/v1/wallet", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletRoutes);
-app.use("/api/v1/walletTransaction", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletTransactionRoutes);
-app.use("/api/v1/cards", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletTransactionRoutes);
+app.use("/api/v1/card", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), cardRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\
