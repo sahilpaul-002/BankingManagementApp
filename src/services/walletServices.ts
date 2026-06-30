@@ -18,7 +18,7 @@ import userWithdrawWalletTransaction from "../mongoDbTransactions/userWithdrawWa
 import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
 import deductFeeSrive from "./deductFeesService.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
-import checkStringParams from "../utils/checkStringParams.js";
+import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
 
 // ------------------------------------- GET WALLET SERVICE -------------------------------------  \\
 export const getWalletService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
@@ -109,13 +109,25 @@ export const createWalletService = async (requestSession: Request["session"], ae
             throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
         }
 
+        // Get user id from session
+        const userId: unknown = requestSession?.userId
+
+        // Validation user bank details exist and verified
+        // Get user bank details details
+        const userBankDetailsDoc = await user_bank_details.findOne({
+            user_id: userId as Schema.Types.ObjectId
+        }).lean();
+        if (!userBankDetailsDoc) {
+            throw new NotFoundError("User bank details not found");
+        }
+        if (!userBankDetailsDoc.is_verified) {
+            throw new UnauthorizedError("User bank details are not verified");
+        }
+
         // Check wallet details present in request body
         if (!aesDecryptedBodyData?.wallets_details) {
             throw new InvalidRequestBodyError("Wallet details not present in the request body");
         }
-
-        // Get user id from session
-        const userId: unknown = requestSession?.userId
 
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof userWalletCreationValidationSchema>> = userWalletCreationValidationSchema.safeParse(aesDecryptedBodyData?.wallets_details);

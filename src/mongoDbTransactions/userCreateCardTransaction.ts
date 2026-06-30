@@ -15,6 +15,26 @@ import crypto from "crypto"
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import userCardCreationValidationSchema from "../validations/userCardCreationValidation.js";
 
+const generateCardNumber = (): string => {
+    const prefixes = ["4", "2", "5"];
+
+    const firstDigit =
+        prefixes[
+        crypto.randomInt(
+            0,
+            prefixes.length
+        )
+        ];
+
+    const remainingDigits =
+        Array.from(
+            { length: 15 },
+            () => crypto.randomInt(0, 10)
+        ).join("");
+
+    return firstDigit + remainingDigits;
+};
+
 type userCardDataValidationType = SafeParseSuccess<z.infer<typeof userCardCreationValidationSchema>>;
 
 const userCreateCardTransaction = async (userId: string, userUsdWalletDetails: walletDetailsType, cardholderId: string, userCardData: userCardDataValidationType, walletId?: string) => {
@@ -53,7 +73,7 @@ const userCreateCardTransaction = async (userId: string, userUsdWalletDetails: w
 
         // Generate card details
         const cardId = crypto.randomUUID();
-        const cardNumber = crypto.randomInt(0, 10).toString();
+        const cardNumber = generateCardNumber();
         const cvv = crypto.randomInt(100, 1000).toString();
 
         const issuedDate = new Date();
@@ -85,7 +105,7 @@ const userCreateCardTransaction = async (userId: string, userUsdWalletDetails: w
 
         // Prepare transaction payload
         const transactionPayload = {
-            transaction_type: "LOAD",
+            transaction_type: "WITHDRAW",
             transaction_status: "SUCCESS",
             wallet_details: {
                 wallet_type: userUsdWalletDetails?.wallet_type,
@@ -139,7 +159,7 @@ const userCreateCardTransaction = async (userId: string, userUsdWalletDetails: w
 
         await mongoSession.commitTransaction();
 
-        return { status: "SUCCESS", message: "Card created successfully", data: createdCard[0] };
+        return { status: "SUCCESS", message: "Card created successfully", data: createdCard[0]?.toObject() };
 
     }
     catch (err) {

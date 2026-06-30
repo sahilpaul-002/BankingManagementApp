@@ -132,7 +132,7 @@ export const onboarding = async (req: Request, res: Response): Promise<Response<
             return res.fail("SERVICE_ERROR", "User onboarding is facing issue", 400);
         }
 
-        return res.success("User onboarded successfull.", userOnboardingServiceResponse?.data, 200)
+        return res.success("User onboarding successfull.", userOnboardingServiceResponse?.data, 200)
     }
     catch (err) {
         const error = err as any;
@@ -197,9 +197,9 @@ export const getUserBankVerificationWebhook = async (req: Request, res: Response
     try {
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
 
-        const sendKycVerificationMailServiceResponse = await userBankVerificationWebhookService(aesDecryptedQueryData)
-        if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {
-            if (sendKycVerificationMailServiceResponse?.message === "Exipred verification link") {
+        const getUserBankVerificationMailServiceResponse = await userBankVerificationWebhookService(aesDecryptedQueryData)
+        if (getUserBankVerificationMailServiceResponse?.status !== "SUCCESS") {
+            if (getUserBankVerificationMailServiceResponse?.message === "Exipred verification link") {
                 return res.status(200).send(`
             <html>
                 <body style="
@@ -226,7 +226,7 @@ export const getUserBankVerificationWebhook = async (req: Request, res: Response
 
         // res.success will not work
         // return res.success("User kyc verificaiton sent successfully", {}, 200)
-        if (sendKycVerificationMailServiceResponse?.data === "User bank account verification accepted") {
+        if (getUserBankVerificationMailServiceResponse?.data === "User bank account verification accepted") {
             return res.status(200).send(`
             <html>
                 <body style="
@@ -246,7 +246,7 @@ export const getUserBankVerificationWebhook = async (req: Request, res: Response
         `
             );
         }
-        else if (sendKycVerificationMailServiceResponse?.data === "User bank account verification rejected") {
+        else if (getUserBankVerificationMailServiceResponse?.data === "User bank account verification rejected") {
             return res.status(200).send(`
             <html>
                 <body style="

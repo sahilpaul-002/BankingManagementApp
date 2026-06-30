@@ -4,7 +4,7 @@ import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import userLoginValidationSchema from "../validations/userLoginValidation.js";
-import type { userAddressDetailsSchemaTypes, userBankDetailsSchemaTypes, userDetailsSchemaTypes } from "../types/schemaTypes.js";
+import type { billingAddressTypes, deliveryAddressTypes, userAddressDetailsSchemaTypes, userBankDetailsSchemaTypes, userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import destroySession from "../utils/destroySession.js";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
@@ -31,6 +31,9 @@ import type { Types } from "mongoose";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv"
 import { gmailSendService } from "./gmailSendService.js";
+import userOnboardingTransaction from "../mongoDbTransactions/userOnboardingTransaction.js";
+import userLoginTransaction from "../mongoDbTransactions/userLoginTransaction.js";
+import UserBankVerifyTransaction from "../mongoDbTransactions/verifyUserBankDetailsTransaction.js";
 
 dotenv.config();
 
@@ -237,17 +240,6 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
         }
 
-        // Update user status in DB if not already activated
-        if (userDetails?.is_active === "N") {
-            const cardholderId = crypto.randomUUID();
-
-            const updatedUserDetails: userDetailsSchemaTypes = await user_details.findByIdAndUpdate(userDetails._id, { is_active: "Y", status: "ACTIVE", cardholder_id: cardholderId }, { new: true }) as userDetailsSchemaTypes;
-            userDetails = updatedUserDetails
-
-            // Update cardholderId in session
-            req.session.cardholderId = cardholderId;
-        }
-
         // Get the client IP address
         const getClientIP = (req: Request): string => {
             let ip =
@@ -262,33 +254,24 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         const clientIp = getClientIP(req)
 
         // Get the device id from header
-        const deviceId = req.headers['x-device-id'];
+        const deviceId = req.headers['x-device-id'] as string;
+
+        // User login transaction
+        const userLoginTransactionResult = await userLoginTransaction(userDetails, deviceId, clientIp, req.headers["user-agent"] ?? null)
+
+        if (userLoginTransactionResult?.status !== "SUCCESS") {
+            throw new ServiceError("User login service facing issue. Login failed")
+        }
 
         let sendEmailResponse;
         let userMetaDetailsDoc;
         // Check user email verified
         if (userDetails.is_email_verified === "N") {
             sendEmailResponse = await sendVerificationEmailService(req, res, userDetails.email);
-            // Insert user meta details
-            userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
-                { user_id: userDetails._id },
-                { device_id: deviceId, ip_address: clientIp, userAgent: req.headers["user-agent"], login_at: new Date() },
-                { upsert: true, new: true }
-            )
-        }
-        else {
-            // Insert user meta details
-            userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
-                { user_id: userDetails._id },
-                { device_id: deviceId, ip_address: clientIp, userAgent: req.headers["user-agent"], login_at: new Date() },
-                { upsert: true, new: true }
-            )
         }
 
-        // Check if meta user data updated
-        if (!userMetaDetailsDoc) {
-            throw new ServiceError("UserLoginService is facing issue - failed to update user meta details");
-        }
+        userDetails = userLoginTransactionResult?.data?.userDetailsDoc;
+        userMetaDetailsDoc = userLoginTransactionResult?.data?.userMetaDetailsDoc;
 
         // Check if session is already valid, if yes then delete the old session and create a new session
         if (req.session.valid && req.session.userId === userDetails._id.toString()) {
@@ -333,6 +316,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         req.session.userName = userDetails.full_name;
         req.session.userId = userDetails._id.toString();
         req.session.userType = userDetails.is_master_admin === "Y" ? "SUPERADMIN" : userDetails.is_admin === "Y" ? "ADMIN" : "USER";
+        req.session.cardholderId = userDetails.cardholder_id ?? null
 
         // Update the session validity
         req.session.valid = true;
@@ -458,27 +442,29 @@ export const userOnboardingService = async (requestSession: Request["session"], 
         // =========================================
         // ADDRESS DETAILS
         // =========================================
+        const billingAddress: billingAddressTypes = {
+            line1: validatedData.address_details.billing_address.line1,
+            line2: validatedData.address_details.billing_address.line2 ?? null,
+            city: validatedData.address_details.billing_address.city,
+            state: validatedData.address_details.billing_address.state,
+            postal_code: validatedData.address_details.billing_address.postal_code,
+            country: validatedData.address_details.billing_address.country,
+            type: "Billing"
+        }
+        const deliveryAddress: deliveryAddressTypes = {
+            line1: validatedData.address_details.delivery_address.line1,
+            line2: validatedData.address_details.delivery_address.line2 ?? null,
+            city: validatedData.address_details.delivery_address.city,
+            state: validatedData.address_details.delivery_address.state,
+            postal_code: validatedData.address_details.delivery_address.postal_code,
+            country: validatedData.address_details.delivery_address.country,
+            type: "Delivery"
+        }
         const addressDocument = {
             user_id: userId as Types.ObjectId,
-            billing_address: {
-                line1: validatedData.address_details.billing_address.line1,
-                line2: validatedData.address_details.billing_address.line2 ?? null,
-                city: validatedData.address_details.billing_address.city,
-                state: validatedData.address_details.billing_address.state,
-                postal_code: validatedData.address_details.billing_address.postal_code,
-                country: validatedData.address_details.billing_address.country,
-                type: "Billing"
-            },
+            billing_address: billingAddress,
 
-            delivery_address: {
-                line1: validatedData.address_details.delivery_address.line1,
-                line2: validatedData.address_details.delivery_address.line2 ?? null,
-                city: validatedData.address_details.delivery_address.city,
-                state: validatedData.address_details.delivery_address.state,
-                postal_code: validatedData.address_details.delivery_address.postal_code,
-                country: validatedData.address_details.delivery_address.country,
-                type: "Delivery"
-            }
+            delivery_address: deliveryAddress
         };
 
         // =========================================
@@ -494,157 +480,14 @@ export const userOnboardingService = async (requestSession: Request["session"], 
             user_bank_request_id: crypto.randomUUID()
         };
 
-        // Check Existing User address details
-        const existingUserAddressDetailsDoc = await user_address_details.findOne({
-            user_id: userId as Schema.Types.ObjectId,
-        });
-        // Check Existing User bank details
-        const existingUserBankDetailsDoc = await user_bank_details.findOne({
-            user_id: userId as Schema.Types.ObjectId,
-        });
+        // Perform user onboarding mongodb transactioon
+        const userOnboardingTransactionResult = await userOnboardingTransaction(requestSession?.userId as string, addressDocument, bankDocument)
 
-        if (!existingUserAddressDetailsDoc && !existingUserBankDetailsDoc) {
-            // INSERT DOCUMENTS
-            const insertedAddressDocument =
-                await user_address_details.create(
-                    addressDocument
-                );
-            const insertedBankDocument =
-                await user_bank_details.create(
-                    bankDocument
-                );
-
-            return {
-                status: "SUCCESS",
-                message:
-                    "User address and bank details added successfully",
-                data: {
-                    address_details:
-                        insertedAddressDocument,
-
-                    bank_details:
-                        insertedBankDocument,
-                },
-            };
+        if (userOnboardingTransactionResult?.status !== "SUCCESS") {
+            throw new ServiceError("User onboarding service facing issue -  failed to onboard user")
         }
-        else if (!existingUserAddressDetailsDoc && existingUserBankDetailsDoc) {
-            // Insert user address details
-            const insertedAddressDocument =
-                await user_address_details.create(
-                    addressDocument
-                );
 
-            // Update user bank details
-            const { user_id, ...updatableBankFields } = bankDocument;
-            const updatedBankDocument = await user_bank_details.findOneAndUpdate(
-                {
-                    user_id: userId as Types.ObjectId
-                },
-                {
-                    ...updatableBankFields,
-                    is_verified: false
-                },
-                {
-                    new: true,
-                    runValidators: true
-                }
-            );
-
-            return {
-                status: "SUCCESS",
-                message:
-                    "Address added and bank details updated successfully",
-                data: {
-                    address_details:
-                        insertedAddressDocument,
-
-                    bank_details:
-                        updatedBankDocument,
-                },
-            };
-        }
-        else if (!existingUserBankDetailsDoc && existingUserAddressDetailsDoc) {
-            // Insert user bank details
-            const insertedBankDocument =
-                await user_bank_details.create(
-                    bankDocument
-                );
-            // Update the user addresss details
-            const { user_id, ...updatableAddressFields } = addressDocument;
-            const updatedAddressDocument = await user_address_details.findOneAndUpdate(
-                {
-                    user_id: userId as Types.ObjectId
-                },
-                {
-                    ...updatableAddressFields,
-                },
-                {
-                    new: true,
-                    runValidators: true
-                }
-            );
-
-            return {
-                status: "SUCCESS",
-                message:
-                    "Bank details added and address updated successfully",
-                data: {
-                    address_details:
-                        updatedAddressDocument,
-
-                    bank_details:
-                        insertedBankDocument,
-                },
-            };
-        }
-        else if (existingUserAddressDetailsDoc && existingUserBankDetailsDoc && !existingUserBankDetailsDoc?.is_verified) {
-            // Update the user address details & bank detais
-            const { user_id: addressUserId, ...updatableAddressFields } = addressDocument;
-            const updatedAddressDocument = await user_address_details.findOneAndUpdate(
-                {
-                    user_id: userId as Types.ObjectId
-                },
-                {
-                    ...updatableAddressFields,
-                },
-                {
-                    new: true,
-                    runValidators: true
-                }
-            );
-
-            // Update user bank details
-            const { user_id: bankUserId, ...updatableBankFields } = bankDocument;
-            const updatedBankDocument = await user_bank_details.findOneAndUpdate(
-                {
-                    user_id: userId as Types.ObjectId
-                },
-                {
-                    ...updatableBankFields,
-                    is_verified: false
-                },
-                {
-                    new: true,
-                    runValidators: true
-                }
-            );
-
-            return {
-                status: "SUCCESS",
-                message:
-                    "Bank details and address details updated successfully",
-                data: {
-                    address_details:
-                        updatedAddressDocument,
-
-                    bank_details:
-                        updatedBankDocument,
-                },
-            };
-        }
-        else {
-            throw new ServiceError("Address and bank details already exist for this user");
-        }
+        return { status: "SUCCESS", message: userOnboardingTransactionResult?.message, data: userOnboardingTransactionResult?.data }
     }
     catch (err) {
         const error = err as any;
@@ -821,57 +664,15 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
         const decoded = jwt.verify(token, jwtSecret) as userBankVerificationJwtPayloadType
         const userId: unknown = decoded.userId;
 
-        // Verify token
-        const currentUserBankDetailsDoc = await user_bank_details.findOne({ user_id: decoded.userId });
-        if (currentUserBankDetailsDoc?.user_bank_request_id !== decoded?.userBankRequestId) {
-            // throw new ServiceError("Expired kyc verification link.")
-            return { status: "SERVICE_ERROR", message: "Exipred verification link" }
+        // Perform user onboarding mongodb transactioon
+        const userBankVerificationTransactionResult = await UserBankVerifyTransaction(decoded)
+        if (userBankVerificationTransactionResult?.status !== "SUCCESS") {
+            throw new ServiceError("UserBankVerify service is facing issue - failed to verify user bank details")
         }
-
-        // Update the user bank request id
-        const updatedUserBankDetailsDoc = await user_bank_details.findOneAndUpdate(
-            {
-                user_id: userId as Types.ObjectId
-            },
-            {
-                user_bank_request_id: crypto.randomUUID()
-            },
-            {
-                new: true,
-                runValidators: true
-            }
-        );
-        if (!updatedUserBankDetailsDoc) {
-            throw new ServiceError(
-                "Failed to update user bank details request_id"
-            );
-        }
-
-        // Get user details
-        const userDetailsDoc = await user_details.findOne({
-            _id: userId as Schema.Types.ObjectId
-        })
-        if (!userDetailsDoc) {
-            throw new NotFoundError("User details not found");
-        }
+        const userBankDetailsDoc = userBankVerificationTransactionResult?.data?.userBankDetailsDoc
+        const userDetailsDoc = userBankVerificationTransactionResult?.data?.userDetailsDoc
 
         if (decoded.action === "APPROVE") {
-            // Update User Bank Account Status in DB
-            const userBankDetailsDoc = await user_bank_details.findOneAndUpdate(
-                {
-                    user_id: decoded.userId,
-                },
-                {
-                    is_verified: true,
-                },
-                {
-                    new: true,
-                }
-            );
-            if (!userBankDetailsDoc) {
-                throw new ServiceError("Failed to update the user details for bank account status")
-            }
-
             // =======================
             // Success mail to user
             // =======================
@@ -884,7 +685,7 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
                 }
             );
 
-            const toEmail: string = userDetailsDoc?.email;
+            const toEmail: string = userDetailsDoc?.email as string;
             const sendEmail: string = fromEmail
             const mainConfig = { toEmail, sendEmail, dashboardName: decoded?.dashboardName, emailTemplate }
             // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
@@ -921,22 +722,6 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
             return { status: "SUCCESS", data: "User bank account verification accepted", message: "User bank account verification email webhook sent succesfully" }
         }
         else if (decoded.action === "REJECT") {
-            // Update User Bank Account Status in DB
-            const userBankDetailsDoc = await user_bank_details.findOneAndUpdate(
-                {
-                    user_id: decoded.userId,
-                },
-                {
-                    is_verified: false,
-                },
-                {
-                    new: true,
-                }
-            );
-            if (!userBankDetailsDoc) {
-                throw new ServiceError("Failed to update the user details for bank account status")
-            }
-
             // Generate email template
             const emailTemplate = generateEmailTemplate(
                 "BANK_VERIFICATION_REJECTED",
@@ -946,7 +731,7 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
                 }
             );
 
-            const toEmail: string = userDetailsDoc?.email;
+            const toEmail: string = userDetailsDoc?.email as string;
             const sendEmail: string = fromEmail
             const mainConfig = { toEmail, sendEmail, dashboardName: decoded?.dashboardName, emailTemplate }
             // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)

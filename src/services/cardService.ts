@@ -29,10 +29,15 @@ export const createCardService = async (requestSession: Request["session"], aesD
             throw new NotFoundError("Required collection does not exist");
         }
 
+        // Validate session cardholderId
+        if (!requestSession?.cardholderId) {
+            throw new UnauthorizedError("Unauthorized access detected - cardholderId not found in session");
+        }
+
         // Wallet id
         const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
 
-        // Validate email
+        // Validate cardholderId
         if (cardholderId !== requestSession?.cardholderId) {
             throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided")
         }
@@ -52,6 +57,8 @@ export const createCardService = async (requestSession: Request["session"], aesD
                 "wallets_details.wallet_currency": "USD"
             },
             {
+                wallet_id: 1,
+                user_id: 1,
                 wallets_details: {
                     $elemMatch: {
                         wallet_currency: "USD"
@@ -90,13 +97,26 @@ export const createCardService = async (requestSession: Request["session"], aesD
         const walletId = userUsdWalletDetailsDoc?.wallet_id
 
         // Create card transaction
-        const withdrawWalletTransactionResult = await userCreateCardTransaction(userId, userUsdWallet, cardholderId, validationResult, walletId)
+        const cardCreationTransactionResult = await userCreateCardTransaction(userId, userUsdWallet, cardholderId, validationResult, walletId)
 
-        if (withdrawWalletTransactionResult?.status !== "SUCCESS") {
-            throw new ServiceError("Widthraw wallet service failed to load wallet")
+        if (cardCreationTransactionResult?.status !== "SUCCESS") {
+            throw new ServiceError("Create card service is facing - failed to create user card")
         }
 
-        return { status: "SUCCESS", message: "Wallet transactions fetched successfully", data: {} };
+        const cardDetails = {
+            cardholderId: cardCreationTransactionResult?.data?.cardholder_id,
+            cardId: cardCreationTransactionResult?.data?.card_id,
+            cardNumber: cardCreationTransactionResult?.data?.card_number,
+            nameOnCard: cardCreationTransactionResult?.data?.name_on_card,
+            cardStatus: cardCreationTransactionResult?.data?.card_status,
+            cardLimits: cardCreationTransactionResult?.data?.card_limits,
+            issueDate: cardCreationTransactionResult?.data?.issued_date,
+            validDate: cardCreationTransactionResult?.data?.valid_date,
+            cardType: cardCreationTransactionResult?.data?.card_type,
+            cardCurrency: cardCreationTransactionResult?.data?.card_currency,
+        };
+
+        return { status: "SUCCESS", message: "Wallet transactions fetched successfully", data: cardDetails };
 
     }
 
