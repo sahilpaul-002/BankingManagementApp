@@ -35,12 +35,6 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchemaTypes>({
         required: true,
     },
 
-    prefund_flag: {
-        type: Boolean,
-        required: true,
-        default: true,
-    },
-
     client_id: {
         type: String,
         required: true,
@@ -67,16 +61,6 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchemaTypes>({
         default: null,
     },
 
-    add_card_allowed: {
-        type: Boolean,
-        default: true,
-    },
-
-    crypto_allowed: {
-        type: Boolean,
-        default: false,
-    },
-
     slogan_line_1: {
         type: String,
         default: null,
@@ -85,26 +69,6 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchemaTypes>({
     slogan_line_2: {
         type: String,
         default: null,
-    },
-
-    logo: {
-        type: String,
-        default: null,
-    },
-
-    currency_symbol: {
-        type: String,
-        required: true
-    },
-
-    currency_name: {
-        type: String,
-        required: true,
-    },
-
-    currency_img: {
-        type: String,
-        required: true,
     },
 
     userportal_link: {
@@ -140,6 +104,12 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchemaTypes>({
         required: true,
         default: true
     },
+
+    admin_email: {
+        type: String,
+        required: true,
+        default: "bma_notification@yopmail.com"
+    }
 }, { minimize: false, timestamps: true });
 
 const portalConfigurationsModel = mongoose.model<portalConfigurationSchemaTypes>("PortalConfigurations", portalConfigurationsSchema, "portal_configurations");

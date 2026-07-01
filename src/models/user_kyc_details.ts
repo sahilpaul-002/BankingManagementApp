@@ -1,5 +1,6 @@
 import mongoose, { Schema, Types } from "mongoose";
 import type { userKycDetailsSchemaTypes } from "../types/schemaTypes.js";
+import crypto from "crypto";
 
 const userKycDetailsSchema = new Schema<userKycDetailsSchemaTypes>(
     {
@@ -16,34 +17,51 @@ const userKycDetailsSchema = new Schema<userKycDetailsSchemaTypes>(
             default: "PENDING",
         },
 
-        poi_number: {
-            type: String,
-            required: true,
-            unique: true,
-            index: true,
-        },
-
-        poa_number: {
-            type: String,
-            required: true,
-            unique: true,
-            index: true,
-        },
-
         poi_document: {
-            type: String,
-            required: true,
+            poi_number: {
+                type: String,
+                required: true,
+                unique: true,
+                index: true,
+            },
+            secure_url: {
+                type: String,
+                required: true,
+            },
+            public_id: {
+                type: String,
+                required: true,
+            }
         },
 
         poa_document: {
-            type: String,
-            required: true,
+            poa_number: {
+                type: String,
+                required: true,
+                unique: true,
+                index: true,
+            },
+            secure_url: {
+                type: String,
+                required: true,
+            },
+            public_id: {
+                type: String,
+                required: true,
+            }
         },
 
         kyc_request_id: {
             type: String,
             required: true,
+            unique: true,
+            default: () => crypto.randomUUID()
         },
+
+        deleted_at: {
+            type: Date,
+            optional: true
+        }
     },
     { timestamps: true }
 );

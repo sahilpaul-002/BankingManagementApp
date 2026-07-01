@@ -23,6 +23,9 @@ export type sessionDataTypes = {
     businessId: string;
     programId: string;
     clientId: string;
+    m2pAllowed: boolean;
+    p2pAllowed: boolean;
+    adminEmail: string;
     requestXApiKey: string;
     accessToken: string;
 }

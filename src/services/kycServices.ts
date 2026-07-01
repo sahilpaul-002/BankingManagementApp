@@ -15,6 +15,7 @@ import { gmailSendService } from "./gmailSendService.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import type { ParsedQs } from "qs";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
+import UserKycVerifyUpdateTransaction from "../mongoDbTransactions/verifyUserKycDetailsTransaction.js";
 
 dotenv.config();
 
@@ -85,6 +86,38 @@ interface kycMulterFiles {
     poa_document?: Express.Multer.File[];
 }
 
+const uploadKycDocuments = async (poiDocumentFile: Express.Multer.File, poaDocumentFile: Express.Multer.File, session: Request["session"], userId: string) => {
+    // Upload Documents To Cloudinary
+    const [poiUploadResponse, poaUploadResponse] = await Promise.all([
+        uploadOnCloudinary(
+            poiDocumentFile,
+            session?.sessiondata?.businessId as string,
+            session?.sessiondata?.clientId as string,
+            session?.sessiondata?.agentCode as string,
+            session?.sessiondata?.subAgentCode as string,
+            userId as string
+        ),
+        uploadOnCloudinary(
+            poaDocumentFile,
+            session?.sessiondata?.businessId as string,
+            session?.sessiondata?.clientId as string,
+            session?.sessiondata?.agentCode as string,
+            session?.sessiondata?.subAgentCode as string,
+            userId as string
+        )
+    ]);
+
+    if (poiUploadResponse?.status !== "SUCCESS") {
+        throw new ServiceError("Failed to upload POI file in cloud service")
+    }
+
+    if (poaUploadResponse?.status !== "SUCCESS") {
+        throw new ServiceError("Failed to upload POA file in cloud service")
+    }
+
+    return { status: "SUCCESS", data: { poiUploadResponse, poaUploadResponse } };
+};
+
 export const uploadKycService = async (req: Request, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -145,105 +178,72 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
             user_id: userId as Schema.Types.ObjectId,
         });
 
+        // Check KYC upload allowance
+        const allowUpload = !existingKycDoc || existingKycDoc?.kyc_status === "RFI";
+        if (!allowUpload) {
+            throw new ServiceError("KYC details already exist for this user");
+        }
+
+        // Upload Kyc Documents
+        const uploadKycDocumentsResponse = await uploadKycDocuments(poiDocumentFile, poaDocumentFile, req.session, userId as string);
+        if (uploadKycDocumentsResponse?.status !== "SUCCESS") {
+            throw new ServiceError("Failed to upload KYC documents");
+        }
+        const poiUploadResponse = uploadKycDocumentsResponse.data.poiUploadResponse;
+        const poaUploadResponse = uploadKycDocumentsResponse.data.poaUploadResponse;
+
+        // Update DB with KYC Details
+        const kycDetailsDoc = await user_kyc_details.findOneAndUpdate(
+            {
+                user_id: userId as Types.ObjectId
+            },
+            {
+                kyc_status: "IN-PROGRESS",
+                poi_document: {
+                    poi_number: poiNumber as string,
+                    secure_url: poiUploadResponse.secure_url,
+                    public_id: poiUploadResponse.public_id
+                },
+                poa_document: {
+                    poa_number: poaNumber as string,
+                    secure_url: poaUploadResponse.secure_url,
+                    public_id: poaUploadResponse.public_id
+                },
+                kyc_request_id: crypto.randomUUID()
+            },
+            {
+                upsert: true,
+                new: true,
+                runValidators: true
+            }
+        ).lean();
+
+        const kycDetails = {
+            poaDocDetails: {
+                poaNumber: kycDetailsDoc?.poa_document?.poa_number,
+                poaSecureUrl: kycDetailsDoc?.poa_document?.secure_url,
+            },
+            poiDocDetails: {
+                poiNumber: kycDetailsDoc?.poi_document?.poi_number,
+                poiSecureUrl: kycDetailsDoc?.poi_document?.secure_url,
+            }
+        }
 
         if (!existingKycDoc) {
-            // Upload Documents To Cloudinary
-            const poiUploadResponse = await uploadOnCloudinary(
-                poiDocumentFile,
-                req.session?.sessiondata?.businessId as string,
-                req.session?.sessiondata?.clientId as string,
-                req.session?.sessiondata?.agentCode as string,
-                req.session?.sessiondata?.subAgentCode as string,
-                userId as string
-            );
-            if (poiUploadResponse?.status !== "SUCCESS") {
-                throw new ServiceError("Failed to upload POI file in cloud service")
+            if (!kycDetailsDoc) {
+                throw new ServiceError("Failed to add KYC details");
             }
-            const poaUploadResponse = await uploadOnCloudinary(
-                poaDocumentFile,
-                req.session?.sessiondata?.businessId as string,
-                req.session?.sessiondata?.clientId as string,
-                req.session?.sessiondata?.agentCode as string,
-                req.session?.sessiondata?.subAgentCode as string,
-                userId as string
-            );
-            if (poiUploadResponse?.status !== "SUCCESS") {
-                throw new ServiceError("Failed to upload POA file in cloud service")
+            else {
+                return { status: "SUCCESS", data: kycDetails, message: "User kyc details uploaded" }
             }
-
-            // Create KYC Document
-            const newKycDoc = await user_kyc_details.create({
-                user_id: userId as Types.ObjectId,
-                kyc_status: "IN-PROGRESS",
-                poi_number: poiNumber as string,
-                poa_number: poaNumber as string,
-                poi_document: poiUploadResponse.secure_url,
-                poa_document: poaUploadResponse.secure_url,
-                kyc_request_id: crypto.randomUUID()
-            });
-
-            if (!newKycDoc) {
-                throw new ServiceError(
-                    "Failed to add KYC details"
-                );
-            }
-
-            return { status: "SUCCESS", data: newKycDoc, message: "User kyc details uploaded" }
-        }
-        else if (existingKycDoc?.kyc_status === "RFI") {
-            // Upload Documents To Cloudinary
-            const poiUploadResponse = await uploadOnCloudinary(
-                poiDocumentFile,
-                req.session?.sessiondata?.businessId as string,
-                req.session?.sessiondata?.clientId as string,
-                req.session?.sessiondata?.agentCode as string,
-                req.session?.sessiondata?.subAgentCode as string,
-                userId as string
-            );
-            if (poiUploadResponse?.status !== "SUCCESS") {
-                throw new ServiceError("Failed to upload POI file in cloud service")
-            }
-            const poaUploadResponse = await uploadOnCloudinary(
-                poaDocumentFile,
-                req.session?.sessiondata?.businessId as string,
-                req.session?.sessiondata?.clientId as string,
-                req.session?.sessiondata?.agentCode as string,
-                req.session?.sessiondata?.subAgentCode as string,
-                userId as string
-            );
-            if (poiUploadResponse?.status !== "SUCCESS") {
-                throw new ServiceError("Failed to upload POA file in cloud service")
-            }
-
-            // Create KYC Document
-            const updatedKycDoc = await user_kyc_details.findOneAndUpdate(
-                {
-                    user_id: userId as Types.ObjectId
-                },
-                {
-                    kyc_status: "IN-PROGRESS",
-                    poi_number: poiNumber as string,
-                    poa_number: poaNumber as string,
-                    poi_document: poiUploadResponse.secure_url,
-                    poa_document: poaUploadResponse.secure_url,
-                    kyc_request_id: crypto.randomUUID()
-                },
-                {
-                    new: true,
-                    runValidators: true
-                }
-            );
-
-            if (!updatedKycDoc) {
-                throw new ServiceError(
-                    "Failed to update RFI KYC details"
-                );
-            }
-
-            return { status: "SUCCESS", data: updatedKycDoc, message: "User kyc details uploaded" }
         }
         else {
-            throw new ServiceError("KYC details already exist for this user");
+            if (!kycDetailsDoc) {
+                throw new ServiceError("Failed to update RFI KYC details");
+            }
+            else {
+                return { status: "SUCCESS", data: kycDetailsDoc, message: "User kyc details updated" }
+            }
         }
     }
     catch (err) {
@@ -298,6 +298,10 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         if (!dashboardName) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
+        const adminEmail = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
+        if (!adminEmail) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
 
         // Get user details
         const userDetailsDoc = await user_details.findOne({
@@ -321,6 +325,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
                 userId,
                 userName,
                 dashboardName,
+                adminEmail: adminEmail,
                 action: "APPROVE",
                 kycRequestId: userKycDetailsDoc?.kyc_request_id
             },
@@ -334,6 +339,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
                 userId,
                 userName,
                 dashboardName,
+                adminEmail: adminEmail,
                 action: "REJECT",
                 kycRequestId: userKycDetailsDoc?.kyc_request_id
             },
@@ -348,8 +354,8 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         const rejectUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/kyc/kycVerificationWebhook?token=${encodeURIComponent(rejectToken)}`;
 
         // Generate email template
-        const poiDocumentUrl = userKycDetailsDoc?.poi_document
-        const poaDocumentUrl = userKycDetailsDoc?.poa_document
+        const poiDocumentUrl = userKycDetailsDoc?.poi_document?.secure_url
+        const poaDocumentUrl = userKycDetailsDoc?.poa_document?.secure_url
         const emailTemplate = generateEmailTemplate(
             "KYC_VERIFICATION",
             {
@@ -363,7 +369,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
             }
         );
 
-        const toEmail: string = bmaNotificationMail
+        const toEmail: string = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
         const sendEmail: string = fromEmail
         const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
         // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
@@ -402,6 +408,7 @@ interface kycVerificationJwtPayloadType extends JwtPayload {
     userId: string;
     userName: string;
     dashboardName: string;
+    adminEmail: string;
     action: "APPROVE" | "REJECT";
     kycRequestId: string;
 }
@@ -421,48 +428,18 @@ export const kycVerificationWebhookService = async (aesDecryptedQueryData: Recor
         const jwtSecret = process.env.JWT_SECRET_KEY as string;
         const decoded = jwt.verify(token, jwtSecret) as kycVerificationJwtPayloadType
 
-        // Verify token
-        const currentKycDoc = await user_kyc_details.findOne({ user_id: decoded.userId });
-        if (currentKycDoc?.kyc_request_id !== decoded?.kycRequestId) {
-            // throw new ServiceError("Expired kyc verification link.")
-            return { status: "SERVICE_ERROR", message: "Exipred verification link or RFI requested" }
+        const userKycVerifyUpdateTransactionResult = await UserKycVerifyUpdateTransaction(decoded);
+        if (userKycVerifyUpdateTransactionResult.status !== "SUCCESS") {
+            throw new ServiceError("UserKycVerifyUpdateTransaction is facing issue - failed to update kyc status");
+        }
+        const userDetailsDoc = userKycVerifyUpdateTransactionResult?.data?.userDetailsDoc
+        const kycDetailsDoc = userKycVerifyUpdateTransactionResult?.data?.userKycDetailsDoc
+        if (!userDetailsDoc || !kycDetailsDoc) {
+            throw new ServiceError("UserKycVerifyUpdateTransaction is facing issue - failed to fetch user details or kyc details");
         }
 
-        let updatedStatus
-
+        // Send email to user and admin based on action
         if (decoded.action === "APPROVE") {
-            updatedStatus = "COMPLETED";
-
-            // Update Kyc Status in DB
-            const userDetailsDoc = await user_details.findOneAndUpdate(
-                {
-                    _id: decoded.userId,
-                },
-                {
-                    kyc_status: updatedStatus,
-                },
-                {
-                    new: true,
-                }
-            );
-            if (!userDetailsDoc) {
-                throw new ServiceError("Failed to update the user details for kyc status")
-            }
-            const userKycDetailsDoc = await user_kyc_details.findOneAndUpdate(
-                {
-                    user_id: decoded.userId,
-                },
-                {
-                    kyc_status: updatedStatus,
-                },
-                {
-                    new: true,
-                }
-            );
-            if (!userKycDetailsDoc) {
-                throw new ServiceError("Failed to update the user details for kyc status")
-            }
-
             // =======================
             // Success mail to kyc user
             // =======================
@@ -500,7 +477,7 @@ export const kycVerificationWebhookService = async (aesDecryptedQueryData: Recor
                 }
             );
 
-            const toAdminEmail: string = bmaNotificationMail;
+            const toAdminEmail: string = decoded?.adminEmail || bmaNotificationMail;
             const mainConfigAdmin = { toEmail: toAdminEmail, sendEmail, dashboardName: "BMA_Admin", emailTemplate: emailTemplateAdmin }
             // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
             const gmailMailServiceResponse2 = await gmailSendService(mainConfigAdmin)
@@ -512,38 +489,6 @@ export const kycVerificationWebhookService = async (aesDecryptedQueryData: Recor
             return { status: "SUCCESS", data: "Kyc verification accepted", message: "Kyc verification email webhook send succesfully" }
         }
         else if (decoded.action === "REJECT") {
-            updatedStatus = "RFI";
-
-            // Update Kyc Status in DB
-            const userDetailsDoc = await user_details.findOneAndUpdate(
-                {
-                    _id: decoded.userId,
-                },
-                {
-                    kyc_status: updatedStatus,
-                },
-                {
-                    new: true,
-                }
-            );
-            if (!userDetailsDoc) {
-                throw new ServiceError("Failed to update the user details for kyc status")
-            }
-            const userKycDetailsDoc = await user_kyc_details.findOneAndUpdate(
-                {
-                    user_id: decoded.userId,
-                },
-                {
-                    kyc_status: updatedStatus,
-                },
-                {
-                    new: true,
-                }
-            );
-            if (!userKycDetailsDoc) {
-                throw new ServiceError("Failed to update the user details for kyc status")
-            }
-
             // Generate email template
             const emailTemplate = generateEmailTemplate(
                 "KYC_REJECTED",

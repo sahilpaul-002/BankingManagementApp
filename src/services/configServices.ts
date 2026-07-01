@@ -27,7 +27,7 @@ export const resolveDomain = (origin?: string): string => {
     }
 
     if (origin.includes("localhost")) {
-        return "business.banking-management.com";
+        return "business.banking.management.com";
     }
 
     return origin.split("//")[1] || origin;
@@ -114,6 +114,9 @@ export const getDnsConfigService = async (req: Request, aesDecryptedQueryData: R
             programId: dnsData.program_id,
             clientId: dnsData.client_id,
             requestXApiKey: dnsData.x_api_key,
+            m2pAllowed: dnsData.m2p_allowed,
+            p2pAllowed: dnsData.p2p_allowed,
+            adminEmail: dnsData.admin_email,
             accessToken: jwtAccessToken || ""
         };
 

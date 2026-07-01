@@ -174,7 +174,6 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
 
             // Optional: clear expired verification data
             await user_meta_details.updateOne(
-                // { user_id: userDetails._id },
                 { user_id: userId as Schema.Types.ObjectId },
                 {
                     $unset: {
@@ -197,7 +196,6 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
         }
 
         // Update the email verified status in DB
-        // const updatedUserDetails = await user_details.findByIdAndUpdate(userDetails._id, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }) as userDetailsSchemaTypes;
         const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }) as userDetailsSchemaTypes;
         if (!updatedUserDetails) {
             throw new ServiceError("User email verification status update service is facing issue");
@@ -205,7 +203,6 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
 
         // Optional: clear verification code after successful verification
         await user_meta_details.updateOne(
-            // { user_id: userDetails._id },
             { user_id: userId as Schema.Types.ObjectId },
             {
                 $unset: {

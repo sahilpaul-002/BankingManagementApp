@@ -541,6 +541,10 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
         if (!dashboardName) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
+        const adminEmail = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
+        if (!adminEmail) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
 
         // Get user details
         const userDetailsDoc = await user_details.findOne({
@@ -564,6 +568,7 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
                 userId,
                 userName,
                 dashboardName,
+                adminEmail: adminEmail,
                 action: "APPROVE",
                 userBankRequestId: userBankDetailsDoc?.user_bank_request_id
             },
@@ -577,6 +582,7 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
                 userId,
                 userName,
                 dashboardName,
+                adminEmail: adminEmail,
                 action: "REJECT",
                 userBankRequestId: userBankDetailsDoc?.user_bank_request_id
             },
@@ -605,7 +611,7 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
             }
         );
 
-        const toEmail: string = bmaNotificationMail
+        const toEmail: string = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
         const sendEmail: string = fromEmail
         const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
         // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
@@ -644,6 +650,7 @@ interface userBankVerificationJwtPayloadType extends JwtPayload {
     userId: string;
     userName: string;
     dashboardName: string;
+    adminEmail: string
     action: "APPROVE" | "REJECT";
     userBankRequestId: string;
 }
@@ -710,7 +717,7 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
                 }
             );
 
-            const toAdminEmail: string = bmaNotificationMail;
+            const toAdminEmail: string = decoded?.adminEmail || bmaNotificationMail
             const mainConfigAdmin = { toEmail: toAdminEmail, sendEmail, dashboardName: "BMA_Admin", emailTemplate: emailTemplateAdmin }
             // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
             const gmailMailServiceResponse2 = await gmailSendService(mainConfigAdmin)

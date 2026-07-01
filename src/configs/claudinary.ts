@@ -8,6 +8,7 @@ import streamifier from "streamifier";
 interface UploadCloudinaryResponse {
     status: "SUCCESS";
     secure_url: string;
+    public_id: string;
     message: string;
 }
 
@@ -85,7 +86,7 @@ const uploadOnCloudinary = async (file: Express.Multer.File, businessId: string,
             }
         );
 
-        return { status: "SUCCESS", secure_url: uploadResult.secure_url, message: "File uploaded to cloud service" };
+        return { status: "SUCCESS", secure_url: uploadResult.secure_url, public_id: uploadResult.public_id, message: "File uploaded to cloud service" };
     }
     catch (err) {
         const error = err as any;

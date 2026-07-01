@@ -18,6 +18,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
     try {
         mongoSession.startTransaction();
 
+        // Verify request id
         const currentBankDoc = await user_bank_details
             .findOne(
                 {
