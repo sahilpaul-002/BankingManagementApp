@@ -52,12 +52,18 @@ export const getKycService = async (requestSession: Request["session"], aesDecry
         // Get user kyc details
         const userKycDetailsDoc = await user_kyc_details.findOne({
             user_id: userId as Schema.Types.ObjectId
-        });
+        }, {_id: 0, kyc_status: 1, poi_document: 1, poa_document: 1, kyc_request_id: 1}).lean();
+
         if (!userKycDetailsDoc) {
             throw new NotFoundError("User kyc details not found")
         }
 
-        return { status: "SUCCESS", data: userKycDetailsDoc, message: "User kyc details fetched" }
+        const kycDetails = {
+            email,
+            ...userKycDetailsDoc
+        }
+
+        return { status: "SUCCESS", data: kycDetails, message: "User kyc details fetched" }
     }
     catch (err) {
         const error = err as any;
@@ -176,7 +182,7 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
         // Check Existing KYC
         const existingKycDoc = await user_kyc_details.findOne({
             user_id: userId as Schema.Types.ObjectId,
-        });
+        }).select("_id kyc_status").lean();
 
         // Check KYC upload allowance
         const allowUpload = !existingKycDoc || existingKycDoc?.kyc_status === "RFI";
@@ -216,9 +222,10 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
                 new: true,
                 runValidators: true
             }
-        ).lean();
+        ).select("kyc_status poi_document poa_document kyc_request_id").lean();
 
         const kycDetails = {
+            email,
             poaDocDetails: {
                 poaNumber: kycDetailsDoc?.poa_document?.poa_number,
                 poaSecureUrl: kycDetailsDoc?.poa_document?.secure_url,
@@ -306,14 +313,14 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         // Get user details
         const userDetailsDoc = await user_details.findOne({
             _id: userId as Schema.Types.ObjectId
-        })
+        }).select("_id email").lean();
         if (!userDetailsDoc) {
             throw new NotFoundError("User details not found");
         }
         // Get user kyc details
         const userKycDetailsDoc = await user_kyc_details.findOne({
             user_id: userId as Schema.Types.ObjectId
-        });
+        }).select("kyc_status poi_document poa_document kyc_request_id").lean();
         if (!userKycDetailsDoc) {
             throw new NotFoundError("User kyc details not found")
         }

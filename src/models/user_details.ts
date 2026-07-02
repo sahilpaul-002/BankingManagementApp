@@ -13,11 +13,13 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     agent_code: {
         type: String,
         required: true,
+        index: true,
         trim: true
     },
     subagent_code: {
         type: String,
         required: true,
+        index: true,
         trim: true
     },
     program_id: {
@@ -28,11 +30,13 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     business_id: {
         type: String,
         required: true,
+        index: true,
         trim: true
     },
     client_id: {
         type: String,
         required: true,
+        index: true,
         trim: true
     },
     email: {

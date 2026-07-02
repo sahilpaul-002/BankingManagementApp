@@ -45,7 +45,7 @@ export const createCardService = async (requestSession: Request["session"], aesD
         const userId = requestSession?.userId;
 
         // Verify cardholder id
-        const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ cardholder_id: cardholderId }).lean();
+        const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ cardholder_id: cardholderId }).select("_id").lean();
         if (!userDetailsDoc || (userDetailsDoc?._id.toString() !== userId)) {
             throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided");
         }

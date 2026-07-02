@@ -26,7 +26,10 @@ const UserKycVerifyUpdateTransaction = async (decoded: userKycVerificationJwtPay
             {
                 user_id: decoded.userId,
             },
-            null,
+            {
+                kyc_request_id: 1,
+                _id: 0,
+            },
             {
                 session: mongoSession,
             }
@@ -46,11 +49,11 @@ const UserKycVerifyUpdateTransaction = async (decoded: userKycVerificationJwtPay
             {
                 new: true,
                 runValidators: true,
-                session:
-                    mongoSession
+                projection: { _id: 1 },
+                session: mongoSession
             }
-        )
-            .lean();
+        ).lean();
+
         if (!updatedRequestDoc) {
             throw new ServiceError("Failed to update KYC request id");
         }
@@ -70,7 +73,7 @@ const UserKycVerifyUpdateTransaction = async (decoded: userKycVerificationJwtPay
                 new: true,
                 session: mongoSession
             }
-        ).lean();
+        ).select("_id").lean();
 
         if (!updatedKycDoc) {
             throw new ServiceError("Failed to update the kyc details for kyc status")
@@ -86,7 +89,7 @@ const UserKycVerifyUpdateTransaction = async (decoded: userKycVerificationJwtPay
                 new: true,
                 session: mongoSession
             }
-        ).lean();
+        ).select("email").lean();
 
         if (!updatedUserDoc) {
             throw new ServiceError("Failed to update the user details for kyc status")

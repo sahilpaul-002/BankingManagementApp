@@ -74,6 +74,12 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
                 required: true,
                 default: null,
             },
+
+            created_at: {
+                type: Date,
+                required: true,
+                default: Date.now,
+            },
         },
         {
             timestamps: true,

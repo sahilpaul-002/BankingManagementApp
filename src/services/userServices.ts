@@ -93,7 +93,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
 
         // Get user from DB
         const checkUserExistInDB = async (): Promise<boolean | null> => {
-            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: email });
+            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: email }).select("_id").lean();
             return userExistResponse !== null;
         }
         const userExistance: boolean | null = await checkUserExistInDB();
@@ -211,7 +211,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 
         // Get user from DB
         const checkUserExistInDB = async (): Promise<userDetailsSchemaTypes | null> => {
-            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: email });
+            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: email }).lean();
             return userExistResponse;
         }
         let userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB();
@@ -263,15 +263,17 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             throw new ServiceError("User login service facing issue. Login failed")
         }
 
-        let sendEmailResponse;
         let userMetaDetailsDoc;
+        userDetails = userLoginTransactionResult?.data?.userDetailsDoc;
+        userMetaDetailsDoc = userLoginTransactionResult?.data?.userMetaDetailsDoc;
+
+        let sendEmailResponse;
         // Check user email verified
         if (userDetails.is_email_verified === "N") {
             sendEmailResponse = await sendVerificationEmailService(req, res, userDetails.email);
-        }
 
-        userDetails = userLoginTransactionResult?.data?.userDetailsDoc;
-        userMetaDetailsDoc = userLoginTransactionResult?.data?.userMetaDetailsDoc;
+            userMetaDetailsDoc = await user_meta_details.findOne({ user_id: userDetails?._id }).select("verification_code verification_code_expires_at").lean()
+        }
 
         // Check if session is already valid, if yes then delete the old session and create a new session
         if (req.session.valid && req.session.userId === userDetails._id.toString()) {
@@ -549,14 +551,14 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
         // Get user details
         const userDetailsDoc = await user_details.findOne({
             _id: userId as Schema.Types.ObjectId
-        })
+        }).select("_id").lean();
         if (!userDetailsDoc) {
             throw new NotFoundError("User details not found");
         }
         // Get user kyc details
         const userBankDetailsDoc = await user_bank_details.findOne({
             user_id: userId as Schema.Types.ObjectId
-        });
+        }).select("_id user_bank_request_id account_holder_name account_number bank_name").lean();;
         if (!userBankDetailsDoc) {
             throw new NotFoundError("User bank details not found")
         }

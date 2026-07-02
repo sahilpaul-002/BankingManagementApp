@@ -48,7 +48,7 @@ const userLoginTransaction = async (userDetails: userDetailsSchemaTypes, deviceI
                     new: true,
                     session: mongoSession,
                 }
-            ).lean();
+            ).select("_id").lean();
 
         if (!metaDoc) {
             throw new ServiceError("User login service facing issue - failed updating meta details");

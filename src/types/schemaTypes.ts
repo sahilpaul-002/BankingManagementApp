@@ -159,8 +159,8 @@ export interface userWalletTransactionsTypes extends Document {
     balance_after: number;
     reference_id: string | null;
     remarks: string | null;
-    createdAt?: Date;
-    updatedAt?: Date;
+    created_at: Date;
+    updated_at?: Date;
 }
 
 // Type for Beneficiaries Bank Details Model Schema

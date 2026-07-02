@@ -19,13 +19,14 @@ import userEmailValidationSchema from "../validations/userEmailValidation.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import destroySession from "../utils/destroySession.js";
+import Send2FaCodeTransaction from "../mongoDbTransactions/snd2FaCodeTransaction.js";
 
 dotenv.config();
 
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 
-// SEND EMAIL SERVICE
-export const sendVerificationEmailService = async (req: Request, res: Response,  userMail: string): Promise<successResponseJson | failedResponseJson> => {
+// ------------------------------------- SEND EMAIL SERVICE ------------------------------------- \\
+export const sendVerificationEmailService = async (req: Request, res: Response, userMail: string): Promise<successResponseJson | failedResponseJson> => {
     try {
         // Check if collection exist in MongoDB
         const isCollectionPresent1 = await checkMongoDbCollectionExist("user_details");
@@ -88,7 +89,7 @@ export const sendVerificationEmailService = async (req: Request, res: Response, 
             { user_id: userDetails._id },
             { verification_code: hashedVerificationCode, verification_code_expires_at: verificationData.expiresAt },
             { upsert: true, new: true }
-        )
+        ).select("_id").lean();
         if (userMetaDetailsDoc) {
             return { status: "SUCCESS", data: gmailMailServiceResponse?.id, message: "Email send using service" }
         }
@@ -121,8 +122,10 @@ export const sendVerificationEmailService = async (req: Request, res: Response, 
         throw new ServiceUnavailableError("SendEmailService is unavailbale as facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// VERIFY EMAIL SERVICE
+
+// ------------------------------------- VERIFY EMAIL SERVICE ------------------------------------- \\
 export const verifyEmailService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -159,7 +162,8 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
         // Get verification code and expiry from the user meta details data base
         const verificationDataDoc = await user_meta_details.findOne(
             { user_id: userId as Schema.Types.ObjectId }
-        ).select("verification_code verification_code_expires_at");
+        ).select("verification_code verification_code_expires_at").lean();
+
         if (!verificationDataDoc?.verification_code || !verificationDataDoc?.verification_code_expires_at) {
             throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for verification")
         }
@@ -171,7 +175,6 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
         );
 
         if (currentTime > verificationCodeExpiryTime) {
-
             // Optional: clear expired verification data
             await user_meta_details.updateOne(
                 { user_id: userId as Schema.Types.ObjectId },
@@ -196,7 +199,7 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
         }
 
         // Update the email verified status in DB
-        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }) as userDetailsSchemaTypes;
+        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
         if (!updatedUserDetails) {
             throw new ServiceError("User email verification status update service is facing issue");
         }
@@ -242,8 +245,10 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
         throw new ServiceUnavailableError("VerifyEmailService is unavailbale as facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// SEND 2FA VERIFICATION CODE SERVICE
+
+// ------------------------------------- SEND 2FA VERIFICATION CODE SERVICE ------------------------------------- \\
 export const send2FaCodeService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -318,7 +323,7 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
                     new: true,
                     runValidators: true
                 }
-            );
+            ).select("_id").lean();
             if (!updatedUserDetailsDoc) {
                 throw new ServiceError("Failed to update two factor methods for user details.")
             }
@@ -328,20 +333,13 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
         // ===================================== XXXXXXXXXXXXXXXXXXXXXXX ===================================== \\
 
         // ====================================== EMAIL-OTP ====================================== \\
-        // Update user details for 2FA email
-        const updatedUserDetailsDoc = await user_details.findByIdAndUpdate(
-            userId,
-            {
-                is_2fa_enabled: "Y",
-                two_fa_type: "EMAIL-OTP"
-            },
-            {
-                new: true,
-                runValidators: true
-            }
+        const send2FaCodeTransactionResponse = await Send2FaCodeTransaction(
+            userId as string,
+            hashedVerificationCode,
+            verificationData.expiresAt
         );
-        if (!updatedUserDetailsDoc) {
-            throw new ServiceError("Failed to update two factor methods for user details.")
+        if (send2FaCodeTransactionResponse?.status !== "SUCCESS") {
+            throw new ServiceError("Send2FaCodeTransaction facing issue: Failed to update two factor methods for user details or user meta details")
         }
 
         // Generate email template
@@ -364,18 +362,6 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
 
         if (gmailMailServiceResponse?.status !== "SUCCESS") {
             throw new ServiceError("GmailSendService is facing error")
-        }
-
-        // Insert user meta details
-        const userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
-            { user_id: userId as Schema.Types.ObjectId },
-            { verification_code: hashedVerificationCode, verification_code_expires_at: verificationData.expiresAt },
-            { upsert: true, new: true }
-        )
-
-        // Check if meta user data updated
-        if (!userMetaDetailsDoc) {
-            throw new ServiceError("Failed to update user meta details");
         }
 
         return { status: "SUCCESS", data: gmailMailServiceResponse?.id, message: "Email send using service" }
@@ -406,8 +392,10 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
         throw new ServiceUnavailableError("VerifyEmailService is unavailbale as facing unknown issue.", error)
     }
 }
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
-// VERIFY 2 FA CODE SERVICE
+
+// ------------------------------------- VERIFY 2 FA CODE SERVICE ------------------------------------- \\
 export const verify2FaCodeService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -453,7 +441,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
 
         const userId: unknown = requestSession?.userId;
         // Get user details
-        const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ _id: userId as Schema.Types.ObjectId });
+        const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ _id: userId as Schema.Types.ObjectId }).select("two_fa_type is_2fa_enabled authenticator_secret").lean();
         // Check 2FA type
         // if (userDetailsDoc?.two_fa_type !== "EMAIL-OTP" && userDetailsDoc?.two_fa_type !== "TOTP" && userDetailsDoc?.two_fa_type !== "SMS-OTP") {
         if (userDetailsDoc?.two_fa_type !== "EMAIL-OTP" && userDetailsDoc?.two_fa_type !== "TOTP") {
@@ -491,7 +479,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
             // Get verification code and expiry from the user meta details data base
             const twoFaVerificationDataDoc = await user_meta_details.findOne(
                 { user_id: userId as Schema.Types.ObjectId }
-            ).select("verification_code verification_code_expires_at");
+            ).select("verification_code verification_code_expires_at").lean();
             if (!twoFaVerificationDataDoc?.verification_code || !twoFaVerificationDataDoc?.verification_code_expires_at) {
                 throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for two factor auth verification, 2fa configuration not found")
             }
@@ -528,7 +516,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
         }
 
         // Update the email verified status in DB
-        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }) as userDetailsSchemaTypes;
+        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
         if (!updatedUserDetails) {
             throw new ServiceError("User email verification status update service is facing issue");
         }
@@ -577,8 +565,10 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
         throw new ServiceUnavailableError("Verify2FaCodeService is unavailbale as facing unknown issue.", error)
     }
 }
+// -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
 
-// SEND RESET PASSWORD VERIFICATION CODE SERVICE
+
+// --------------------------- SEND RESET PASSWORD VERIFICATION CODE SERVICE --------------------------- \\
 export const sendResetPasswordCodeService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -609,7 +599,7 @@ export const sendResetPasswordCodeService = async (requestSession: Request["sess
         // Get the user details
         const userDetails = await user_details.findOne({
             email: userEmail?.trim()
-        });
+        }).select("_id").lean();
         if (!userDetails) {
             throw new NotFoundError("User with the provided email does not exist");
         }
@@ -648,7 +638,7 @@ export const sendResetPasswordCodeService = async (requestSession: Request["sess
             { user_id: userId as Schema.Types.ObjectId },
             { verification_code: hashedVerificationCode, verification_code_expires_at: verificationData.expiresAt },
             { upsert: true, new: true }
-        )
+        ).select("_id").lean();
 
         // Check if meta user data updated
         if (!userMetaDetailsDoc) {
@@ -682,8 +672,10 @@ export const sendResetPasswordCodeService = async (requestSession: Request["sess
         throw new ServiceUnavailableError("VerifyEmailService is unavailbale as facing unknown issue.", error)
     }
 }
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
-// VERIFY RESET PASSWORD CODE SERVICE
+
+// -------------------------------------- VERIFY RESET PASSWORD CODE SERVICE -------------------------------------- \\
 export const verifyResetPasswordCodeService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -720,7 +712,7 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
         // Get the user details
         const userDetails = await user_details.findOne({
             email: userEmail?.trim()
-        });
+        }).select("_id").lean();
         if (!userDetails) {
             throw new NotFoundError("User with the provided email does not exist");
         }
@@ -729,7 +721,7 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
         // Get verification code and expiry from the user meta details data base
         const twoFaVerificationDataDoc = await user_meta_details.findOne(
             { user_id: userId as Schema.Types.ObjectId }
-        ).select("verification_code verification_code_expires_at");
+        ).select("verification_code verification_code_expires_at").lean();
         if (!twoFaVerificationDataDoc?.verification_code || !twoFaVerificationDataDoc?.verification_code_expires_at) {
             throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for reset password code verification")
         }
@@ -765,7 +757,7 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
         }
 
         // Update the email verified status in DB
-        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }) as userDetailsSchemaTypes;
+        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
         if (!updatedUserDetails) {
             throw new ServiceError("User email verification status update service is facing issue");
         }
@@ -811,3 +803,4 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
         throw new ServiceUnavailableError("VerifyResetPasswordCodeService is unavailbale as facing unknown issue.", error)
     }
 }
+// -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\

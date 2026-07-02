@@ -19,8 +19,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
         mongoSession.startTransaction();
 
         // Verify request id
-        const currentBankDoc = await user_bank_details
-            .findOne(
+        const currentBankDoc = await user_bank_details.findOne(
                 {
                     user_id: decoded.userId,
                 },
@@ -28,7 +27,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
                 {
                     session: mongoSession,
                 }
-            ).lean();
+            ).select("_id").lean();
 
         if (currentBankDoc?.user_bank_request_id !== decoded.userBankRequestId) {
             throw new ServiceError("Expired verification link");
@@ -47,8 +46,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
                 runValidators: true,
                 session: mongoSession,
             }
-        )
-            .lean();
+        ).select("_id").lean();
 
         if (!updatedRequestDoc) {
             throw new ServiceError("Failed to update user bank details request_id");
@@ -60,8 +58,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
             {
                 session: mongoSession,
             }
-        )
-            .lean();
+        ).select("email").lean();
 
         if (!userDoc) {
             throw new NotFoundError("User details not found");
@@ -82,8 +79,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
                     new: true,
                     session: mongoSession,
                 }
-            )
-                .lean();
+            ).select("_id").lean();
 
             if (!updatedBankDoc) {
                 throw new ServiceError("VerifyUserBankDetails service facing issue - failed to update the user details for bank account status")
@@ -98,8 +94,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
                     new: true,
                     session: mongoSession,
                 }
-            )
-                .lean();
+            ).select("email").lean();
 
             if (!updatedUserDoc) {
                 throw new ServiceError("VerifyUserBandDetails service is facing issue - failed to add cardholder-id ");
@@ -108,8 +103,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
 
         if (decoded.action === "REJECT") {
             updatedBankDoc =
-                await user_bank_details
-                    .findOneAndUpdate(
+                await user_bank_details.findOneAndUpdate(
                         {
                             user_id: decoded.userId,
                         },
@@ -120,8 +114,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
                             new: true,
                             session: mongoSession,
                         }
-                    )
-                    .lean();
+                    ).select("_id").lean();
 
             if (!updatedBankDoc) {
                 throw new ServiceError("VerifyUserBankDetails service facing issue - failed to update the user details for bank account status")

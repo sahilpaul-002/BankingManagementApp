@@ -46,9 +46,9 @@ const userOnboardingTransaction = async (userId: string, addressDocument: userAd
     try {
         mongoSession.startTransaction();
 
-        const existingAddress = await user_address_details.findOne({ user_id: userId }, null, { session: mongoSession }).lean();
+        const existingAddress = await user_address_details.findOne({ user_id: userId }, null, { session: mongoSession }).select("_id").lean();
 
-        const existingBank = await user_bank_details.findOne({ user_id: userId }, null, { session: mongoSession }).lean();
+        const existingBank = await user_bank_details.findOne({ user_id: userId }, null, { session: mongoSession }).select("_id").lean();
 
         let addressResult = null;
         let bankResult = null;

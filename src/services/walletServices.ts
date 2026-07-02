@@ -109,6 +109,11 @@ export const createWalletService = async (requestSession: Request["session"], ae
             throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
         }
 
+        // Validation M2P is allowed
+        if (!requestSession?.sessiondata?.m2pAllowed) {
+            throw new ServiceError("Wallet creation is not allowed for this user - M2P is not allowed.")
+        }
+
         // Get user id from session
         const userId: unknown = requestSession?.userId
 

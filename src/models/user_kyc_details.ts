@@ -22,7 +22,6 @@ const userKycDetailsSchema = new Schema<userKycDetailsSchemaTypes>(
                 type: String,
                 required: true,
                 unique: true,
-                index: true,
             },
             secure_url: {
                 type: String,
@@ -39,7 +38,6 @@ const userKycDetailsSchema = new Schema<userKycDetailsSchemaTypes>(
                 type: String,
                 required: true,
                 unique: true,
-                index: true,
             },
             secure_url: {
                 type: String,

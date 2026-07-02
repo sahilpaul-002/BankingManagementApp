@@ -8,6 +8,8 @@ const userMetaDetailsSchema = new Schema<userMetaDetailsSchemaTypes>({
     user_id: {
         type: Schema.Types.ObjectId,
         required: true,
+        index: true,
+        upnique: true
     },
     device_id: {
         type: String,
