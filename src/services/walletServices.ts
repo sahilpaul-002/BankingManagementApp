@@ -19,6 +19,7 @@ import userWalletActionValidationSchema from "../validations/userWalletActionVal
 import deductFeeSrive from "./deductFeesService.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
+import getWalletTransactionsValidationSchema from "../validations/getWalletTransactionValidation.js";
 
 // ------------------------------------- GET WALLET SERVICE -------------------------------------  \\
 export const getWalletService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
@@ -438,7 +439,54 @@ export const getWalletTransactionService = async (requestSession: Request["sessi
         // Wallet id
         const walletId = checkStringQueryParams(aesDecryptedQueryData, "wallet_id");
         if (!walletId) {
-            throw new InvalidRequestQueryError("Wallet id not present");
+            throw new InvalidRequestQueryError("Wallet id not provided");
+        }
+
+        // let transactionType: string | null;
+        // if (aesDecryptedQueryData.transaction_type) {
+        //     transactionType = checkStringQueryParams(aesDecryptedQueryData, "transaction_type");
+        //     if (!transactionType) {
+        //         throw new InvalidRequestQueryError("Transaction type not present");
+        //     }
+        // }
+
+        // let walletType: string | null;
+        // if (aesDecryptedQueryData.wallet_type) {
+        //     walletType = checkStringQueryParams(aesDecryptedQueryData, "wallet_type");
+        //     if (!walletType) {
+        //         throw new InvalidRequestQueryError("Wallet type not present");
+        //     }
+        // }
+
+        // let walletCurrency: string | null;
+        // if (aesDecryptedQueryData.wallet_currency) {
+        //     walletCurrency = checkStringQueryParams(aesDecryptedQueryData, "wallet_currency");
+        //     if (!walletCurrency) {
+        //         throw new InvalidRequestQueryError("Wallet currency not present");
+        //     }
+        // }
+
+        // let transactionStatus: string | null;
+        // if (aesDecryptedQueryData.transaction_status) {
+        //     transactionStatus = checkStringQueryParams(aesDecryptedQueryData, "transaction_status");
+        //     if (!transactionStatus) {
+        //         throw new InvalidRequestQueryError("Transaction status not present");
+        //     }
+        // }
+
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof getWalletTransactionsValidationSchema>> = getWalletTransactionsValidationSchema.safeParse(aesDecryptedQueryData);
+        if (!validationResult.success) {
+            // return res.status(400).json({
+            //     status: "SERVICE_ERROR",
+            //     message: "Invalid request body",
+            //     // errors: validationResult.error.issues.map(issue => issue.message)
+            //     // errors: validationResult.error.issues.map(issue => ({
+            //     //     [issue.path.join(".")]: issue.message
+            //     // }))
+            //     errors: z.flattenError(validationResult.error)
+            // });
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
 
         const userId = requestSession?.userId;
@@ -494,9 +542,10 @@ export const getWalletTransactionService = async (requestSession: Request["sessi
             // Query filters
             const query = {
                 wallet_id: walletId,
-                ...(aesDecryptedQueryData.wallet_type && { "wallet_details.wallet_type": aesDecryptedQueryData.wallet_type }),
-                ...(aesDecryptedQueryData.wallet_currency && { "wallet_details.wallet_currency": aesDecryptedQueryData.wallet_currency }),
-                ...(aesDecryptedQueryData.transaction_type && { transaction_type: aesDecryptedQueryData.transaction_type }),
+                ...(validationResult?.data?.wallet_type && { "wallet_details.wallet_type": validationResult?.data?.wallet_type }),
+                ...(validationResult?.data?.wallet_currency && { "wallet_details.wallet_currency": validationResult?.data?.wallet_currency }),
+                ...(validationResult?.data?.transaction_type && { transaction_type: validationResult?.data?.transaction_type }),
+                ...(validationResult?.data?.transaction_status && { transaction_status: validationResult?.data?.transaction_status }),
                 ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
             };
 
