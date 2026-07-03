@@ -455,27 +455,73 @@ export const getWalletTransactionService = async (requestSession: Request["sessi
             throw new BadRequestError("Unauthorized wallet access - ivalid wallet id provided");
         }
 
-        // Optional filters
-        const query: Record<string, unknown> = { wallet_id: walletId };
-        if (aesDecryptedQueryData?.wallet_type) {
-            query["wallet_details.wallet_type"] = aesDecryptedQueryData.wallet_type;
-        }
-        if (aesDecryptedQueryData?.wallet_currency) {
-            query["wallet_details.wallet_currency"] = aesDecryptedQueryData.wallet_currency;
-        }
-        if (aesDecryptedQueryData?.transaction_type) {
-            query["transaction_type"] = aesDecryptedQueryData.transaction_type;
-        }
-        if (transactionId) {
-            query["transaction_id"] = transactionId;
-        }
-
         // Fetch transactions
-        const transactions = await user_wallet_transactions.find(query).sort({ createdAt: -1 }).lean();
+        let transactions
+        if (transactionId) {
+            transactions = await user_wallet_transactions.findOne({
+                wallet_id: walletId,
+                transaction_id: transactionId,
+            })
+                .select("transaction_id transaction_type transaction_status wallet_details amount balance_after createdAt")
+                .lean();
+        }
+        else {
+            // Date range filter
+            const dateFilter: Record<string, Date> = {};
+            let fromDate: string | null;
+            let toDate: string | null;
 
-        return { status: "SUCCESS", message: "Wallet transactions fetched successfully", data: { walletId, totalTransactions: transactions.length, transactions } };
+            if (aesDecryptedQueryData.from_date) {
+                fromDate = checkStringQueryParams(aesDecryptedQueryData, "from_date");
+                if (!fromDate) {
+                    throw new InvalidRequestQueryError("From date parameter is not present");
+                }
+                dateFilter.$gte = new Date(fromDate);
+            }
+
+            if (aesDecryptedQueryData.to_date) {
+                toDate = checkStringQueryParams(aesDecryptedQueryData, "to_date");
+                if (!toDate) {
+                    throw new InvalidRequestQueryError("To date parameter is not present");
+                }
+
+                const endDate = new Date(toDate);
+                endDate.setHours(23, 59, 59, 999);
+
+                dateFilter.$lte = endDate;
+            }
+
+            // Query filters
+            const query = {
+                wallet_id: walletId,
+                ...(aesDecryptedQueryData.wallet_type && { "wallet_details.wallet_type": aesDecryptedQueryData.wallet_type }),
+                ...(aesDecryptedQueryData.wallet_currency && { "wallet_details.wallet_currency": aesDecryptedQueryData.wallet_currency }),
+                ...(aesDecryptedQueryData.transaction_type && { transaction_type: aesDecryptedQueryData.transaction_type }),
+                ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+            };
+
+            // Query Selects
+            const querySelect = {
+                transaction_id: 1,
+                transaction_type: 1,
+                transaction_status: 1,
+                amount: 1,
+                balance_after: 1,
+                createdAt: 1,
+                ...(
+                    !aesDecryptedQueryData.wallet_type &&
+                    !aesDecryptedQueryData.wallet_currency && {
+                        wallet_details: 1,
+                    }
+                ),
+            };
+
+            // Fetch transactions
+            transactions = await user_wallet_transactions.find(query).sort({ createdAt: -1 }).select(querySelect).limit(20).lean();
+        }
+
+        return { status: "SUCCESS", message: "Wallet transactions fetched successfully", data: { walletId, totalTransactions: Array.isArray(transactions) ? transactions.length : (transactions ? 1 : 0), transactions } };
     }
-
     catch (err) {
         const error = err as any;
 

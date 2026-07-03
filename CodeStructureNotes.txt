@@ -23,5 +23,4 @@ Add global session logout in frontend
 Check lru cache for required apis
 benificiaries bank details to have foreign key as user id
 wallet transaction add more filters like wallet type and wallet currency and date
-get wallet add filters
 utilize m2p and p2p check in required services

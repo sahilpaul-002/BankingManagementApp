@@ -159,7 +159,7 @@ export interface userWalletTransactionsTypes extends Document {
     balance_after: number;
     reference_id: string | null;
     remarks: string | null;
-    created_at: Date;
+    created_at?: Date;
     updated_at?: Date;
 }
 
