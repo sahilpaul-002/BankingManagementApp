@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
 import logger from "../utils/logger.js";
-import { AppErrorClass, BadRequestError, ServiceError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, NotFoundError, ServiceError } from "../utils/AppErrorClass.js";
 import type { walletDetailsType } from "../types/schemaTypes.js";
 import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
 import z from "zod";
@@ -14,6 +14,7 @@ import { FEE_DETAILS } from "../configs/configConstants.js";
 import crypto from "crypto"
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import userCardCreationValidationSchema from "../validations/userCardCreationValidation.js";
+import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 
 const generateCardNumber = (): string => {
     const prefixes = ["4", "2", "5"];
@@ -43,6 +44,18 @@ const userCreateCardTransaction = async (userId: string, userUsdWalletDetails: w
 
     try {
         mongoSession.startTransaction();
+
+        // Check collection
+        const isCollectionPresent1 = await checkMongoDbCollectionExist("user_wallet_transactions");
+        if (isCollectionPresent1.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection(wallet transaction) does not exist");
+        }
+
+        // Check collection
+        const isCollectionPresent2 = await checkMongoDbCollectionExist("user_card_details");
+        if (isCollectionPresent2.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection(card details) does not exist");
+        }
 
         const deductionAmount = FEE_DETAILS.create_card;
 

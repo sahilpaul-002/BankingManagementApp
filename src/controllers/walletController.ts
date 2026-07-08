@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createWalletService, getWalletService, getWalletTransactionService, loadWalletService, withdrawWalletService } from "../services/walletServices.js";
+import { createWalletService, getWalletService, getWalletTransactionDetailsService, getWalletTransactionsService, loadWalletService, withdrawWalletService } from "../services/walletServices.js";
 
 // ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
 export const getWallet = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -171,8 +171,8 @@ export const withdrAawWallet = async (req: Request, res: Response): Promise<Resp
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
 
-// ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
-export const getWalletTransactions = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
+// ------------------------------------------ FUNCTION TO GET WALLET TRANSACTIONS ------------------------------------------ \\
+export const getWalletTransactions = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         let aesDecryptedBodyData = req.body
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
@@ -181,11 +181,11 @@ export const getWalletTransactions = async (req: Request<{ id?: string }>, res: 
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const getWalletTransactionServiceResponse = await getWalletTransactionService(requestSession, aesDecryptedQueryData, req.params.id)
+        const getWalletTransactionServiceResponse = await getWalletTransactionsService(requestSession, aesDecryptedQueryData)
         if (getWalletTransactionServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "Failed to fetch user wallet transaction details", 400);
+            return res.fail("SERVICE_ERROR", "Failed to fetch user wallet transactions", 400);
         }
-        return res.success("User wallet transaction details fetched successfully", getWalletTransactionServiceResponse?.data || {}, 200)
+        return res.success("User wallet transactions fetched successfully", getWalletTransactionServiceResponse?.data || {}, 200)
     }
     catch (err) {
         const error = err as any;
@@ -210,6 +210,50 @@ export const getWalletTransactions = async (req: Request<{ id?: string }>, res: 
             }
         }
         throw new ServiceUnavailableError("GetWalletTransactionsController is facing unknown issue.", error)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// ------------------------------------ FUNCTION TO GET WALLET TRANSACTION DETAILS ------------------------------------ \\
+export const getWalletTransactionDetails = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        const getWalletTransactionDetailsServiceResponse = await getWalletTransactionDetailsService(requestSession, aesDecryptedQueryData, req.params.id)
+        if (getWalletTransactionDetailsServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to fetch user wallet transaction details", 400);
+        }
+        return res.success("User wallet transaction details fetched successfully", getWalletTransactionDetailsServiceResponse?.data || {}, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetWalletTransactionDetailsController",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("GetWalletTransactionDetailsController is facing unknown issue.", error)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

@@ -38,6 +38,23 @@ const getWalletTransactionsValidationSchema = z.object({
     to_date: z.iso.date({
         error: "Date must be in YYYY-MM-DD format (e.g. 2026-07-03)",
     }).optional(),
+
+    page: z.coerce
+        .number({
+            error: "Page must be a number",
+        })
+        .int("Page must be a positive integer")
+        .min(1, "Page must be a positive integer")
+        .default(1),
+
+    page_size: z.coerce
+        .number({
+            error: "Page size must be a number",
+        })
+        .int("Page size must be an integer")
+        .min(1, "Page size must be at least 1")
+        .max(50, "Page size must not exceed 50")
+        .default(30),
 })
     .superRefine((data, ctx) => {
         if (!data.wallet_type || !data.wallet_currency) {

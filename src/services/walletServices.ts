@@ -423,7 +423,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 // ----------------------------------- GET WALLET TRANSACTIONS ----------------------------------- \\
-export const getWalletTransactionService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, transactionId?: string): Promise<successResponseJson | failedResponseJson> => {
+export const getWalletTransactionsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");
@@ -437,42 +437,10 @@ export const getWalletTransactionService = async (requestSession: Request["sessi
         }
 
         // Wallet id
-        const walletId = checkStringQueryParams(aesDecryptedQueryData, "wallet_id");
+        const walletId: string = checkStringQueryParams(aesDecryptedQueryData, "wallet_id") as string;
         if (!walletId) {
             throw new InvalidRequestQueryError("Wallet id not provided");
         }
-
-        // let transactionType: string | null;
-        // if (aesDecryptedQueryData.transaction_type) {
-        //     transactionType = checkStringQueryParams(aesDecryptedQueryData, "transaction_type");
-        //     if (!transactionType) {
-        //         throw new InvalidRequestQueryError("Transaction type not present");
-        //     }
-        // }
-
-        // let walletType: string | null;
-        // if (aesDecryptedQueryData.wallet_type) {
-        //     walletType = checkStringQueryParams(aesDecryptedQueryData, "wallet_type");
-        //     if (!walletType) {
-        //         throw new InvalidRequestQueryError("Wallet type not present");
-        //     }
-        // }
-
-        // let walletCurrency: string | null;
-        // if (aesDecryptedQueryData.wallet_currency) {
-        //     walletCurrency = checkStringQueryParams(aesDecryptedQueryData, "wallet_currency");
-        //     if (!walletCurrency) {
-        //         throw new InvalidRequestQueryError("Wallet currency not present");
-        //     }
-        // }
-
-        // let transactionStatus: string | null;
-        // if (aesDecryptedQueryData.transaction_status) {
-        //     transactionStatus = checkStringQueryParams(aesDecryptedQueryData, "transaction_status");
-        //     if (!transactionStatus) {
-        //         throw new InvalidRequestQueryError("Transaction status not present");
-        //     }
-        // }
 
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof getWalletTransactionsValidationSchema>> = getWalletTransactionsValidationSchema.safeParse(aesDecryptedQueryData);
@@ -503,73 +471,94 @@ export const getWalletTransactionService = async (requestSession: Request["sessi
             throw new BadRequestError("Unauthorized wallet access - ivalid wallet id provided");
         }
 
+        // Date range filter
+        const dateFilter: Record<string, Date> = {};
+        let fromDate: string | null;
+        let toDate: string | null;
+
+        if (aesDecryptedQueryData.from_date) {
+            fromDate = checkStringQueryParams(aesDecryptedQueryData, "from_date");
+            if (!fromDate) {
+                throw new InvalidRequestQueryError("From date parameter is not present");
+            }
+            dateFilter.$gte = new Date(fromDate);
+        }
+
+        if (aesDecryptedQueryData.to_date) {
+            toDate = checkStringQueryParams(aesDecryptedQueryData, "to_date");
+            if (!toDate) {
+                throw new InvalidRequestQueryError("To date parameter is not present");
+            }
+
+            const endDate = new Date(toDate);
+            endDate.setHours(23, 59, 59, 999);
+
+            dateFilter.$lte = endDate;
+        }
+
+        // Get page in request
+        const requestedPage = validationResult?.data?.page;
+        // Get page size in request
+        const pageSize = validationResult?.data?.page_size;
+
+        // Query filters
+        const query = {
+            wallet_id: walletId,
+            ...(validationResult?.data?.wallet_type && { "wallet_details.wallet_type": validationResult?.data?.wallet_type }),
+            ...(validationResult?.data?.wallet_currency && { "wallet_details.wallet_currency": validationResult?.data?.wallet_currency }),
+            ...(validationResult?.data?.transaction_type && { transaction_type: validationResult?.data?.transaction_type }),
+            ...(validationResult?.data?.transaction_status && { transaction_status: validationResult?.data?.transaction_status }),
+            ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
+        };
+
+        // Get total matching transactions
+        const totalTransactions = await user_wallet_transactions.countDocuments(query);
+        // Calculate total pages
+        const totalPages = Math.max(1, Math.ceil(totalTransactions / pageSize));
+        // Calculate current page
+        const currentPage = Math.min(requestedPage, totalPages);
+        // Calculate skip using the corrected page
+        const skip = (currentPage - 1) * pageSize; // Skip fetching documents for page number more than 1
+
+        // Query Selects
+        const querySelect = {
+            transaction_id: 1,
+            transaction_type: 1,
+            transaction_status: 1,
+            amount: 1,
+            balance_after: 1,
+            createdAt: 1,
+            ...(
+                !aesDecryptedQueryData.wallet_type &&
+                !aesDecryptedQueryData.wallet_currency && {
+                    wallet_details: 1,
+                }
+            ),
+        };
+
         // Fetch transactions
-        let transactions
-        if (transactionId) {
-            transactions = await user_wallet_transactions.findOne({
-                wallet_id: walletId,
-                transaction_id: transactionId,
-            })
-                .select("transaction_id transaction_type transaction_status wallet_details amount balance_after createdAt")
-                .lean();
-        }
-        else {
-            // Date range filter
-            const dateFilter: Record<string, Date> = {};
-            let fromDate: string | null;
-            let toDate: string | null;
+        const transactions = await user_wallet_transactions.find(query).sort({ createdAt: -1 }).skip(skip).limit(pageSize).select(querySelect).lean();
 
-            if (aesDecryptedQueryData.from_date) {
-                fromDate = checkStringQueryParams(aesDecryptedQueryData, "from_date");
-                if (!fromDate) {
-                    throw new InvalidRequestQueryError("From date parameter is not present");
-                }
-                dateFilter.$gte = new Date(fromDate);
-            }
-
-            if (aesDecryptedQueryData.to_date) {
-                toDate = checkStringQueryParams(aesDecryptedQueryData, "to_date");
-                if (!toDate) {
-                    throw new InvalidRequestQueryError("To date parameter is not present");
-                }
-
-                const endDate = new Date(toDate);
-                endDate.setHours(23, 59, 59, 999);
-
-                dateFilter.$lte = endDate;
-            }
-
-            // Query filters
-            const query = {
-                wallet_id: walletId,
-                ...(validationResult?.data?.wallet_type && { "wallet_details.wallet_type": validationResult?.data?.wallet_type }),
-                ...(validationResult?.data?.wallet_currency && { "wallet_details.wallet_currency": validationResult?.data?.wallet_currency }),
-                ...(validationResult?.data?.transaction_type && { transaction_type: validationResult?.data?.transaction_type }),
-                ...(validationResult?.data?.transaction_status && { transaction_status: validationResult?.data?.transaction_status }),
-                ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
-            };
-
-            // Query Selects
-            const querySelect = {
-                transaction_id: 1,
-                transaction_type: 1,
-                transaction_status: 1,
-                amount: 1,
-                balance_after: 1,
-                createdAt: 1,
-                ...(
-                    !aesDecryptedQueryData.wallet_type &&
-                    !aesDecryptedQueryData.wallet_currency && {
-                        wallet_details: 1,
-                    }
-                ),
-            };
-
-            // Fetch transactions
-            transactions = await user_wallet_transactions.find(query).sort({ createdAt: -1 }).select(querySelect).limit(20).lean();
+        if (!Array.isArray(transactions) || transactions.length === 0) {
+            throw new NotFoundError("Wallet transactions not found")
         }
 
-        return { status: "SUCCESS", message: "Wallet transactions fetched successfully", data: { walletId, totalTransactions: Array.isArray(transactions) ? transactions.length : (transactions ? 1 : 0), transactions } };
+        return {
+            status: "SUCCESS",
+            message: "Wallet transactions fetched successfully",
+            data: {
+                walletId,
+                pagination: {
+                    current_page: currentPage,
+                    page_size: pageSize,
+                    total_records: totalTransactions,
+                    total_pages: Math.ceil(totalTransactions / pageSize),
+                    has_next_page: currentPage * pageSize < totalTransactions,
+                    has_previous_page: currentPage > 1,
+                },
+                transactions,
+            },
+        };
     }
     catch (err) {
         const error = err as any;
@@ -581,6 +570,72 @@ export const getWalletTransactionService = async (requestSession: Request["sessi
         }
 
         throw new ServiceError(`GetWalletTransactionService facing issue: ${error.message}`, error);
+    }
+
+};
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\ 
+
+
+// ----------------------------------- GET WALLET TRANSACTION DETAILS ----------------------------------- \\
+export const getWalletTransactionDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, transactionId?: string): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_wallet_transactions");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist");
+        }
+
+        // Validate Wallet id
+        const walletId: string = checkStringQueryParams(aesDecryptedQueryData, "wallet_id") as string;
+        if (!walletId) {
+            throw new InvalidRequestQueryError("Wallet id not provided");
+        }
+
+        // Validate transaction id
+        if (!transactionId) {
+            throw new InvalidRequestQueryError("Transaction id not provided");
+        }
+
+        const userId = requestSession?.userId;
+
+        // Verify wallet
+        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ wallet_id: walletId }).lean();
+
+        if (!wallet) {
+            throw new NotFoundError("Wallet not found");
+        }
+
+        // Validate wallet
+        if (wallet.user_id.toString() !== String(userId)) {
+            throw new BadRequestError("Unauthorized wallet access - ivalid wallet id provided");
+        }
+
+        // Get Wallet Transaction Details
+        const transaction = await user_wallet_transactions.findOne({
+            wallet_id: walletId,
+            transaction_id: transactionId,
+        }).select("transaction_id transaction_type transaction_status wallet_details amount balance_after createdAt").lean();
+
+        if (!transaction) {
+            throw new NotFoundError("Wallet transactions not found")
+        }
+
+        return { status: "SUCCESS", message: "Wallet transaction fetched successfully", data: { walletId, transaction } };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, { serviceName: "GetWalletTransactionDetailsService" });
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`GetWalletTransactionDetailsService facing issue: ${error.message}`, error);
     }
 
 };
