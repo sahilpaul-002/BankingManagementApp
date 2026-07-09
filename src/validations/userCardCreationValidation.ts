@@ -35,7 +35,32 @@ const userCardCreationValidationSchema = z.object({
             monthly_limit: limitValidation,
 
             yearly_limit: limitValidation
-        }),
-});
+        })
+        .optional(),
+}).check(({ value, issues }) => {
+        if (!value.card_limits) {
+            return;
+        }
+
+        const { daily_limit, monthly_limit, yearly_limit } = value.card_limits;
+
+        if (Number(daily_limit) >= Number(monthly_limit)) {
+            issues.push({
+                code: "custom",
+                path: ["card_limits", "daily_limit"],
+                input: daily_limit,
+                message: "Daily limit must be less than monthly limit",
+            });
+        }
+
+        if (Number(monthly_limit) >= Number(yearly_limit)) {
+            issues.push({
+                code: "custom",
+                path: ["card_limits", "monthly_limit"],
+                input: monthly_limit,
+                message: "Monthly limit must be less than yearly limit",
+            });
+        }
+    });
 
 export default userCardCreationValidationSchema

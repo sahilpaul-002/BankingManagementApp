@@ -2,7 +2,7 @@ import type { Request } from "express";
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import logger from "../utils/logger.js";
-import { AppErrorClass, BadRequestError, InvalidRequestBodyError, InvalidRequestQueryError, NotFoundError, ServiceError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, InvalidRequestBodyError, InvalidRequestParamsError, InvalidRequestQueryError, NotFoundError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import type { userDetailsSchemaTypes, walletDetailsType, } from "../types/schemaTypes.js";
 import type { successResponseJson } from "../types/responseJson.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
@@ -15,6 +15,7 @@ import z from "zod";
 import type { Schema } from "mongoose";
 import userCreateCardTransaction from "../mongoDbTransactions/userCreateCardTransaction.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
+import userCardUpdateValidationSchema from "../validations/userCardUpdateValidation.js";
 
 // ----------------------------------- CREATE CARD SERVICE ----------------------------------- \\
 export const createCardService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
@@ -148,24 +149,45 @@ export const getCardsListService = async (requestSession: Request["session"], ae
             throw new NotFoundError("Required collection(card details) does not exist");
         }
 
-        // Validate session cardholderId
-        if (!requestSession?.cardholderId) {
-            throw new UnauthorizedError("Unauthorized access detected - cardholderId not found in session");
+        // Check userEmail from session
+        if (!requestSession?.userEmail) {
+            throw new UnauthenticatedError("Unauthenticated access detected - email not found in session");
         }
 
-        // Cardholder Id id
+        // Check cardholderId from session
+        if (!requestSession?.cardholderId) {
+            throw new UnauthenticatedError("Unauthenticated access detected - cardholderId not found in session");
+        }
+
+        // Validate Email & Cardholder Id
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestQueryError("Email not found in request query params")
+        }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
-        // Validate cardholderId
-        if (cardholderId !== requestSession?.cardholderId) {
-            throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided")
+        if (!cardholderId) {
+            throw new InvalidRequestQueryError("Cardholder-id not found in request query params")
+        }
+        if (email === requestSession?.userEmail) {
+            if (cardholderId !== requestSession?.cardholderId) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId")
+            }
+
         }
 
         const userId = requestSession?.userId;
 
         // Verify cardholder id
         const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ cardholder_id: cardholderId }).select("_id").lean();
-        if (!userDetailsDoc || (userDetailsDoc?._id.toString() !== userId)) {
-            throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided");
+        if (email === requestSession?.userEmail) {
+            if (!userDetailsDoc || (userDetailsDoc?._id.toString() !== userId)) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided");
+            }
+        }
+        else {
+            if (!userDetailsDoc) {
+                throw new ServiceError("Invalid cardholderId provided");
+            }
         }
 
         // Date range filter
@@ -253,7 +275,7 @@ export const getCardsListService = async (requestSession: Request["session"], ae
 // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
 
-// ----------------------------------- GET CARDS LIST SERVICE ----------------------------------- \\
+// ----------------------------------- GET CARDS DETAILS SERVICE ----------------------------------- \\
 export const getCardDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, cardId?: string): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
@@ -266,29 +288,49 @@ export const getCardDetailsService = async (requestSession: Request["session"], 
             throw new NotFoundError("Required collection(card details) does not exist");
         }
 
-        // Validate session cardholderId
-        if (!requestSession?.cardholderId) {
-            throw new UnauthorizedError("Unauthorized access detected - cardholderId not found in session");
+        // Check userEmail from session
+        if (!requestSession?.userEmail) {
+            throw new UnauthenticatedError("Unauthenticated access detected - email not found in session");
         }
 
-        // Cardholder Id id
+        // Check cardholderId from session
+        if (!requestSession?.cardholderId) {
+            throw new UnauthenticatedError("Unauthenticated access detected - cardholderId not found in session");
+        }
+
+        // Validate Email & Cardholder Id
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestQueryError("Email not found in request query params")
+        }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
-        // Validate cardholderId
-        if (cardholderId !== requestSession?.cardholderId) {
-            throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided")
+        if (!cardholderId) {
+            throw new InvalidRequestQueryError("Cardholder-id not found in request query params")
+        }
+        if (email === requestSession?.userEmail) {
+            if (cardholderId !== requestSession?.cardholderId) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId")
+            }
         }
 
         // Validate card id
         if (!cardId) {
-            throw new InvalidRequestQueryError("Card id not provided");
+            throw new InvalidRequestParamsError("Card id not provided");
         }
 
         const userId = requestSession?.userId;
 
         // Verify cardholder id
         const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ cardholder_id: cardholderId }).select("_id").lean();
-        if (!userDetailsDoc || (userDetailsDoc?._id.toString() !== userId)) {
-            throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided");
+        if (email === requestSession?.userEmail) {
+            if (!userDetailsDoc || (userDetailsDoc?._id.toString() !== userId)) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided");
+            }
+        }
+        else {
+            if (!userDetailsDoc) {
+                throw new ServiceError("Invalid cardholderId provided");
+            }
         }
 
         // Fetch Card Details
@@ -317,96 +359,286 @@ export const getCardDetailsService = async (requestSession: Request["session"], 
     }
 };
 // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
-// // ----------------------------------- GET CARDS LIST SERVICE ----------------------------------- \\
-// export const cardsListService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
-//     try {
-//         if (!aesDecryptedQueryData) {
-//             throw new BadRequestError("Invalid query data");
-//         }
 
-//         // Check collection
-//         const isCollectionPresent = await checkMongoDbCollectionExist("user_card_details");
-//         if (isCollectionPresent.status !== "SUCCESS") {
-//             throw new NotFoundError("Required collection(card details) does not exist");
-//         }
 
-//         // Pagination Logic
-//         const page = Number(aesDecryptedQueryData.page ?? 1);
-//         const pageSize = Number(aesDecryptedQueryData.page_size ?? 30);
-//         if (!Number.isInteger(page) || page < 1) {
-//             throw new BadRequestError("Page must be a positive integer");
-//         }
-//         if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 100) {
-//             throw new BadRequestError("Page size must be between 1 and 100");
-//         }
-//         const skip = (page - 1) * pageSize; // Skip fetching documents for page number more than 1
+// ----------------------------------- UPDATE CARDS STATUS SERVICE ----------------------------------- \\
+export const updateCardStatusService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined, cardId?: string): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid request body data");
+        }
 
-//         // Validate session cardholderId
-//         if (!requestSession?.cardholderId) {
-//             throw new UnauthorizedError("Unauthorized access detected - cardholderId not found in session");
-//         }
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_card_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection(card details) does not exist");
+        }
 
-//         // Cardholder Id id
-//         const cardholderId = checkStringBody(aesDecryptedQueryData, "cardholder_id");
+        // Check userEmail from session
+        if (!requestSession?.userEmail) {
+            throw new UnauthenticatedError("Unauthenticated access detected - email not found in session");
+        }
 
-//         // Validate cardholderId
-//         if (cardholderId !== requestSession?.cardholderId) {
-//             throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided")
-//         }
+        // Check cardholderId from session
+        if (!requestSession?.cardholderId) {
+            throw new UnauthenticatedError("Unauthenticated access detected - cardholderId not found in session");
+        }
 
-//         const userId = requestSession?.userId;
+        // Check card status
+        const cardStatus = checkStringBody(aesDecryptedBodyData, "card_status");
+        if (!cardStatus) {
+            throw new InvalidRequestBodyError("card_status not found in request query params")
+        }
 
-//         // Verify cardholder id
-//         const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ cardholder_id: cardholderId }).select("_id").lean();
-//         if (!userDetailsDoc || (userDetailsDoc?._id.toString() !== userId)) {
-//             throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided");
-//         }
+        // Validate Email & Cardholder Id
+        const email = checkStringBody(aesDecryptedBodyData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request query params")
+        }
+        const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
+        if (!cardholderId) {
+            throw new InvalidRequestBodyError("Cardholder-id not found in request query params")
+        }
+        if (email === requestSession?.userEmail) {
+            if (cardholderId !== requestSession?.cardholderId) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId")
+            }
+        }
 
-//         // Get Cards List
-//         const [totalCards, cardsList] = await Promise.all([
-//             user_card_details.countDocuments({
-//                 cardholder_id: cardholderId,
-//             }),
-//             user_card_details
-//                 .find({ cardholder_id: cardholderId })
-//                 .select("-cardholder_id")
-//                 .sort({ createdAt: -1 })
-//                 .skip(skip)
-//                 .limit(pageSize)
-//                 .lean(),
-//         ]);
+        // Validate card id
+        if (!cardId) {
+            throw new InvalidRequestParamsError("Card id not provided");
+        }
 
-//         if (!cardsList || !Array.isArray(cardsList) || cardsList.length === 0) {
-//             throw new NotFoundError("Cards list not found")
-//         }
+        const userId = requestSession?.userId;
 
-//         return {
-//             status: "SUCCESS",
-//             message: "Cards retrieved successfully",
-//             data: {
-//                 cards: cardsList,
-//                 pagination: {
-//                     current_page: page,
-//                     page_size: pageSize,
-//                     total_records: totalCards,
-//                     total_pages: Math.ceil(totalCards / pageSize),
-//                     has_next_page: page < Math.ceil(totalCards / pageSize),
-//                     has_previous_page: page > 1,
-//                 },
-//             },
-//         };
-//     }
-//     catch (err) {
-//         const error = err as any;
+        // Verify cardholder id
+        const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ cardholder_id: cardholderId }).select("_id").lean();
+        if (email === requestSession?.userEmail) {
+            if (!userDetailsDoc || (userDetailsDoc?._id.toString() !== userId)) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided");
+            }
+        }
+        else {
+            if (!userDetailsDoc) {
+                throw new ServiceError("Invalid cardholderId provided");
+            }
+        }
 
-//         logger.error(error, { serviceName: "CardsListService" });
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof userCardUpdateValidationSchema>> = userCardUpdateValidationSchema.safeParse(aesDecryptedBodyData);
+        if (!validationResult.success) {
+            // return res.status(400).json({
+            //     status: "SERVICE_ERROR",
+            //     message: "Invalid request body",
+            //     // errors: validationResult.error.issues.map(issue => issue.message)
+            //     // errors: validationResult.error.issues.map(issue => ({
+            //     //     [issue.path.join(".")]: issue.message
+            //     // }))
+            //     errors: z.flattenError(validationResult.error)
+            // });
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
 
-//         if (error instanceof AppErrorClass) {
-//             throw error;
-//         }
+        // Update Card Details
+        const updatedCardDetails = await user_card_details.findOneAndUpdate(
+            {
+                cardholder_id: cardholderId,
+                card_id: cardId,
+            },
+            {
+                $set: {
+                    card_status: validationResult.data.card_status,
+                },
+            },
+            {
+                new: true,
+                runValidators: true,
+            }
+        ).select("-cardholder_id -cvv -valid_date -createdAt -updatedAt -__v").lean();;
 
-//         throw new ServiceError(`CardsListService facing issue: ${error.message}`, error);
+        if (!updatedCardDetails) {
+            throw new NotFoundError("Card and card details not found");
+        }
 
-//     }
-// };
-// // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\ 
+        return { status: "SUCCESS", message: "Card status updated successfully", data: { cardholderId, cardDetails: updatedCardDetails } };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, { serviceName: "UpdateCardStatusService" });
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`UpdateCardStatusService facing issue: ${error.message}`, error);
+
+    }
+};
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+
+// ----------------------------------- UPDATE CARDS LIMITS SERVICE ----------------------------------- \\
+export const updateCardLimitsService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined, cardId?: string): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid request body data");
+        }
+
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_card_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection(card details) does not exist");
+        }
+
+        // Check userEmail from session
+        if (!requestSession?.userEmail) {
+            throw new UnauthenticatedError("Unauthenticated access detected - email not found in session");
+        }
+
+        // Check cardholderId from session
+        if (!requestSession?.cardholderId) {
+            throw new UnauthenticatedError("Unauthenticated access detected - cardholderId not found in session");
+        }
+
+        // Check card limits present in request body
+        if (!aesDecryptedBodyData?.card_limits) {
+            throw new InvalidRequestBodyError("Card_limits not found in the request body");
+        }
+
+        // Validate Email & Cardholder Id
+        const email = checkStringBody(aesDecryptedBodyData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request request body")
+        }
+        const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
+        if (!cardholderId) {
+            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        }
+        if (email === requestSession?.userEmail) {
+            if (cardholderId !== requestSession?.cardholderId) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId")
+            }
+        }
+
+        // Validate card id
+        if (!cardId) {
+            throw new InvalidRequestParamsError("Card id not provided");
+        }
+
+        const userId = requestSession?.userId;
+
+        // Verify cardholder id
+        const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ cardholder_id: cardholderId }).select("_id").lean();
+        if (email === requestSession?.userEmail) {
+            if (!userDetailsDoc || (userDetailsDoc?._id.toString() !== userId)) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided");
+            }
+        }
+        else {
+            if (!userDetailsDoc) {
+                throw new ServiceError("Invalid cardholderId provided");
+            }
+        }
+
+        // Check Card Status
+        const card = await user_card_details.findOne({ cardholder_id: cardholderId, card_id: cardId }).select("card_status card_limits").lean();
+        if (!card) {
+            throw new NotFoundError("Card not found");
+        }
+        if (card.card_status !== "ACTIVE") {
+            throw new BadRequestError("Card limits can only be updated when the card is ACTIVE state");
+        }
+
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof userCardUpdateValidationSchema>> = userCardUpdateValidationSchema.safeParse(aesDecryptedBodyData);
+        if (!validationResult.success) {
+            // return res.status(400).json({
+            //     status: "SERVICE_ERROR",
+            //     message: "Invalid request body",
+            //     // errors: validationResult.error.issues.map(issue => issue.message)
+            //     // errors: validationResult.error.issues.map(issue => ({
+            //     //     [issue.path.join(".")]: issue.message
+            //     // }))
+            //     errors: z.flattenError(validationResult.error)
+            // });
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
+        const updateData = validationResult.data;
+
+        // COnfigure the limits merging the existing and incoming limits
+        const mergedLimits = {
+            daily_limit:
+                updateData.card_limits?.daily_limit ??
+                card.card_limits.daily_limit,
+
+            monthly_limit:
+                updateData.card_limits?.monthly_limit ??
+                card.card_limits.monthly_limit,
+
+            yearly_limit:
+                updateData.card_limits?.yearly_limit ??
+                card.card_limits.yearly_limit,
+        };
+
+        // Validate limit amounts
+        const daily = Number(mergedLimits.daily_limit);
+        const monthly = Number(mergedLimits.monthly_limit);
+        const yearly = Number(mergedLimits.yearly_limit);
+        if (daily >= monthly) {
+            throw new BadRequestError(
+                "Daily limit must be less than monthly limit"
+            );
+        }
+        if (monthly >= yearly) {
+            throw new BadRequestError(
+                "Monthly limit must be less than yearly limit"
+            );
+        }
+
+        // Build update object
+        const updateFields: Record<string, string> = {};
+        if (validationResult.data.card_limits) {
+            Object.entries(validationResult.data.card_limits).forEach(([key, value]) => {
+                if (value !== undefined) {
+                    updateFields[`card_limits.${key}`] = value;
+                }
+            });
+        }
+
+        // Update Card Details
+        const updatedCard = await user_card_details.findOneAndUpdate(
+            {
+                cardholder_id: cardholderId,
+                card_id: cardId,
+            },
+            {
+                $set: updateFields,
+            },
+            {
+                new: true,
+                runValidators: true,
+            }
+        ).select("-cardholder_id -cvv -valid_date -createdAt -updatedAt -__v").lean();
+
+        if (!updatedCard) {
+            throw new ServiceError("Failed update card limits");
+        }
+
+        return { status: "SUCCESS", message: "Card limits updated successfully", data: { cardholderId, cardDetails: updatedCard } };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, { serviceName: "UpdateCardLimitsService" });
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`UpdateCardLimitsService facing issue: ${error.message}`, error);
+
+    }
+};
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
