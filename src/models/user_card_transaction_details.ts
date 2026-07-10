@@ -1,7 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import type { userWalletTransactionsTypes } from "../types/schemaTypes.js";
 
-const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
+const userCardTransactionSchema = new Schema<userWalletTransactionsTypes>(
     {
         wallet_id: {
             type: String,
@@ -80,7 +80,7 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
     }
 );
 
-userWalletTransactionSchema.index({
+userCardTransactionSchema.index({
     wallet_id: 1,
     "wallet_details.wallet_type": 1,
     "wallet_details.wallet_currency": 1,
@@ -88,6 +88,10 @@ userWalletTransactionSchema.index({
     createdAt: -1,
 });
 
-const userWalletTransactionsModel = mongoose.model<userWalletTransactionsTypes>("WalletTransactions", userWalletTransactionSchema, "user_wallet_transactions");
+const userCardTransactionsModel = mongoose.model<userWalletTransactionsTypes>(
+        "CardTransactions",
+        userCardTransactionSchema,
+        "user_card_transactions"
+    );
 
-export { userWalletTransactionsModel };
+export { userCardTransactionsModel };

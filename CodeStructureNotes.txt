@@ -22,5 +22,6 @@ complete sign up - refine the return data with only needed data
 Add global session logout in frontend
 Check lru cache for required apis
 benificiaries bank details to have foreign key as user id
-wallet transaction add more filters like wallet type and wallet currency and date
 utilize m2p and p2p check in required services
+card transaction api and card transactions list api
+card transaction will check if balance in wallet and cards limit

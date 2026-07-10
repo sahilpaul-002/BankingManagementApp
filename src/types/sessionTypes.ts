@@ -18,11 +18,6 @@ export type sessionDataTypes = {
     domainName: string;
     dashboardName: string;
     baseUrl: string
-    agentCode: string;
-    subAgentCode: string;
-    businessId: string;
-    programId: string;
-    clientId: string;
     m2pAllowed: boolean;
     p2pAllowed: boolean;
     adminEmail: string;
@@ -31,7 +26,7 @@ export type sessionDataTypes = {
 }
 
 // User type values
-type UserType = "ADMIN" | "USER" | "SUPERADMIN";
+type UserType = "ADMIN" | "USER" | "MASTER_ADMIN";
 
 // Meta information stored in session
 export interface sessionMeta {

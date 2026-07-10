@@ -1,11 +1,5 @@
 export type portalConfigurationDataType = {
     domain_name: string;
-    agent_code: string;
-    subagent_code: string;
-    business_id: string;
-    dashboard_name: string;
-    program_id: string;
-    client_id: string;
     x_api_key: string;
     logo_url?: string | null;
     base_url_api: string;

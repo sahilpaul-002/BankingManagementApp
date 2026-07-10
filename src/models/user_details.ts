@@ -7,22 +7,38 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     full_name: {
         type: String,
         required: true,
+        trim: true
+    },
+    business_name: {
+        type: String,
+        required: true,
         trim: true,
-        index: true
+        index: true,
+    },
+    program_type: {
+        type: String,
+        enum: {
+            values: ["MASTER", "VISA"],
+            message: "Invalid program type"
+        },
+        required: true,
+        trim: true,
+    },
+    program_id: {
+        type: String,
+        enum: {
+            values: ["MBMA010", "VBMA010"],
+            message: "Invalid program id"
+        },
+        required: true,
+        trim: true,
     },
     agent_code: {
         type: String,
         required: true,
-        index: true,
         trim: true
     },
     subagent_code: {
-        type: String,
-        required: true,
-        index: true,
-        trim: true
-    },
-    program_id: {
         type: String,
         required: true,
         trim: true
@@ -30,13 +46,6 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     business_id: {
         type: String,
         required: true,
-        index: true,
-        trim: true
-    },
-    client_id: {
-        type: String,
-        required: true,
-        index: true,
         trim: true
     },
     email: {
@@ -138,6 +147,49 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
 }, { timestamps: true, minimize: false }
 );
 
+// Compound index
+userDetailsSchema.index(
+    {
+        agent_code: 1,
+        subagent_code: 1,
+        business_id: 1,
+        program_id: 1
+    },
+    {
+        name: "idx_agent_subagent_business_program"
+    }
+);
+
+userDetailsSchema.index(
+    {
+        email: 1,
+        program_type: 1,
+        business_name: 1
+    },
+    {
+        unique: true,
+        name: "idx_email_business_program"
+    }
+);
+
+userDetailsSchema.index(
+    {
+        business_name: 1,
+        program_type: 1,
+        agent_code: 1,
+        subagent_code: 1
+    },
+    {
+        unique: true,
+        // TO HANDLE THE RACE CONDITION TWO CONCURRENT REQUEST ACTING AS THE PRIMARY USER WHEN CREATED & CREATE UPNIQUE ONLY FOR 01, 01
+        partialFilterExpression: {
+            agent_code: "01",
+            subagent_code: "01"
+        },
+        name: "unique_primary_user_per_business_program"
+    }
+);
+
 const userDetailsModel = mongoose.model<userDetailsSchemaTypes>("UserDetails", userDetailsSchema, "user_details");
 
-export {userDetailsModel};
+export { userDetailsModel };

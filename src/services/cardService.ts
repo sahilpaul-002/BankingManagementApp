@@ -36,12 +36,26 @@ export const createCardService = async (requestSession: Request["session"], aesD
             throw new UnauthorizedError("Unauthorized access detected - cardholderId not found in session");
         }
 
-        // Wallet id
-        const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
+        // Validate Email & Cardholder Id
+        const email = checkStringQueryParams(aesDecryptedBodyData, "email");
+        if (!email) {
+            throw new InvalidRequestQueryError("Email not found in request query params")
+        }
+        const cardholderId = checkStringQueryParams(aesDecryptedBodyData, "cardholder_id");
+        if (!cardholderId) {
+            throw new InvalidRequestQueryError("Cardholder-id not found in request query params")
+        }
+        if (email === requestSession?.userEmail) {
+            if (cardholderId !== requestSession?.cardholderId) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId")
+            }
 
-        // Validate cardholderId
-        if (cardholderId !== requestSession?.cardholderId) {
-            throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId provided")
+        }
+        else {
+            // Validation M2P is allowed
+            if (!requestSession?.sessiondata?.m2pAllowed) {
+                throw new ServiceError("Wallet creation is not allowed for this user - M2P is not allowed.")
+            }
         }
 
         const userId = requestSession?.userId;
@@ -404,6 +418,12 @@ export const updateCardStatusService = async (requestSession: Request["session"]
                 throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId")
             }
         }
+        else {
+            // Validation M2P is allowed
+            if (!requestSession?.sessiondata?.m2pAllowed) {
+                throw new ServiceError("Wallet creation is not allowed for this user - M2P is not allowed.")
+            }
+        }
 
         // Validate card id
         if (!cardId) {
@@ -519,6 +539,12 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
         if (email === requestSession?.userEmail) {
             if (cardholderId !== requestSession?.cardholderId) {
                 throw new UnauthorizedError("Unauthorized access detected - invalid cardholderId")
+            }
+        }
+        else {
+            // Validation M2P is allowed
+            if (!requestSession?.sessiondata?.m2pAllowed) {
+                throw new ServiceError("Wallet creation is not allowed for this user - M2P is not allowed.")
             }
         }
 

@@ -10,6 +10,13 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
             index: true,
         },
 
+        cardholder_id: {
+            type: String,
+            required: true,
+            unique: true,
+            index: true,
+        },
+
         wallet_id: {
             type: String,
             required: true,

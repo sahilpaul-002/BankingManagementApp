@@ -4,8 +4,8 @@ import { createCard, getCardDetails, getCardsList, updateCardLimits, updateCardS
 
 const router: Router = express.Router()
 
-router.get("/", getCardsList)
 router.post("/create", createCard)
+router.get("/", getCardsList)
 router.patch("/updateStatus/:id", updateCardStatus)
 router.patch("/updateLimits/:id", updateCardLimits)
 

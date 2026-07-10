@@ -13,35 +13,23 @@ const userDetailsValidationSchema = z.object({
         .regex(
             /^[a-zA-Z0-9\s.'-]+$/, "Full name can only contain letters, numbers, spaces, dots (.), apostrophes ('), and hyphens (-)."),
 
-    agent_code: z
-        .string("Agent code is required and must be string")
-        .trim()
-        .min(1, "Subagent code is required")
-        .optional(),
+    program_type: z
+        .enum(
+            ["MASTER", "VISA"],
+            {
+                error: "Invalid program type - program type must be ['MASTER', 'VISA']",
+            }
+        ),
 
-    subagent_code: z
-        .string("Subagent code is required and must be a string")
+    business_name: z
+        .string("Business name is required and must be a string")
         .trim()
-        .min(1, "Subagent code is required")
-        .optional(),
-
-    program_id: z
-        .string("Subagent code is required and must be a string")
-        .trim()
-        .min(1, "Subagent code is required")
-        .optional(),
-
-    business_id: z
-        .string("Business-id is required and must be a string")
-        .trim()
-        .min(1, "Business-id is required")
-        .optional(),
-
-    client_id: z
-        .string("Client-id, is required and must be a string")
-        .trim()
-        .min(1, "Client-id is required")
-        .optional(),
+        .min(1, "Business name is required")
+        .max(100, "Business name cannot exceed 100 characters")
+        .regex(
+            /^[A-Za-z0-9_.-]+$/,
+            "Business name can only contain letters, numbers, dots (.), hyphens (-), and underscores (_). Spaces are not allowed."
+        ),
 
     email: z
         .email("Invalid email format")

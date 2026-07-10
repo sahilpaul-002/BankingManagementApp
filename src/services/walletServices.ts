@@ -1,6 +1,6 @@
 import type { Request } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
-import { AppErrorClass, BadRequestError, InvalidRequestBodyError, InvalidRequestParamsError, InvalidRequestQueryError, NotFoundError, ServiceError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, InvalidRequestBodyError, InvalidRequestParamsError, InvalidRequestQueryError, NotFoundError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import checkStringBody from "../utils/checkStringBody.js";
@@ -20,6 +20,7 @@ import deductFeeSrive from "./deductFeesService.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
 import getWalletTransactionsValidationSchema from "../validations/getWalletTransactionValidation.js";
+import { userDetailsModel as user_details } from "../models/user_details.js";
 
 // ------------------------------------- GET WALLET SERVICE -------------------------------------  \\
 export const getWalletService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
@@ -34,23 +35,40 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
             throw new NotFoundError("Required collection does not exist in MongoDB");
         }
 
-        // Check email present in request body
-        const email: string | null = checkStringQueryParams(aesDecryptedQueryData, "email")
+        // Validate Email & User Id & Cardholder Id
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
         if (!email) {
-            throw new InvalidRequestBodyError("Email not present in the request body");
+            throw new InvalidRequestBodyError("Email not found in request request body")
         }
-
-        // Check request body email with session email
-        if (requestSession?.userEmail !== email) {
-            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        const userId = checkStringQueryParams(aesDecryptedQueryData, "user_id");
+        if (!userId) {
+            throw new InvalidRequestBodyError("User Id not found in request request body")
         }
-
-        // Get user id from session
-        const userId: unknown = requestSession?.userId
+        if (email === requestSession?.userEmail) {
+            if (userId !== requestSession?.userId) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid user_id")
+            }
+        }
+        else {
+            // Validation M2P is allowed
+            if (!requestSession?.sessiondata?.m2pAllowed) {
+                throw new ServiceError("Wallet creation is not allowed for this application - M2P is not allowed.")
+            }
+            // Validate MasterAdmin/Admin
+            const userType = requestSession?.userType
+            if (!userType || !["MASTER_ADMIN", "ADMIN"].includes(userType)) {
+                throw new ServiceError(`${requestSession?.userEmail} is not allowed to create wallet for ${email}`)
+            }
+            // Validate user details
+            const userDetails = await user_details.findOne({ email: email }).select("_id").lean();
+            if (userDetails?._id.toString() !== userId) {
+                throw new ServiceError("User Id provided is invalid or does not exist")
+            }
+        }
 
         // Get user wallet details details
         const userWalletDetails = await user_wallet_details.findOne({
-            user_id: userId as Schema.Types.ObjectId
+            user_id: userId
         });
         if (!userWalletDetails) {
             throw new NotFoundError("User wallet details not found")
@@ -99,30 +117,52 @@ export const createWalletService = async (requestSession: Request["session"], ae
             throw new NotFoundError("Required collection does not exist in MongoDB");
         }
 
-        // Check email present in request body
-        const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
+        // Validate Email & User Id & Cardholder Id
+        const email = checkStringBody(aesDecryptedBodyData, "email");
         if (!email) {
-            throw new InvalidRequestBodyError("Email not present in the request body");
+            throw new InvalidRequestBodyError("Email not found in request request body")
         }
-
-        // Check request body email with session email
-        if (requestSession?.userEmail !== email) {
-            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        const userId = checkStringBody(aesDecryptedBodyData, "user_id");
+        if (!userId) {
+            throw new InvalidRequestBodyError("User Id not found in request request body")
         }
-
-        // Validation M2P is allowed
-        if (!requestSession?.sessiondata?.m2pAllowed) {
-            throw new ServiceError("Wallet creation is not allowed for this user - M2P is not allowed.")
+        const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
+        if (!cardholderId) {
+            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
         }
-
-        // Get user id from session
-        const userId: unknown = requestSession?.userId
+        if (email === requestSession?.userEmail) {
+            if (cardholderId !== requestSession?.cardholderId) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid cardholder_id")
+            }
+            if (userId !== requestSession?.userId) {
+                throw new UnauthorizedError("Unauthorized access detected - invalid user_id")
+            }
+        }
+        else {
+            // Validation M2P is allowed
+            if (!requestSession?.sessiondata?.m2pAllowed) {
+                throw new ServiceError("Wallet creation is not allowed for this application - M2P is not allowed.")
+            }
+            // Validate MasterAdmin/Admin
+            const userType = requestSession?.userType
+            if (!userType || !["MASTER_ADMIN", "ADMIN"].includes(userType)) {
+                throw new ServiceError(`${requestSession?.userEmail} is not allowed to create wallet for ${email}`)
+            }
+            // Validate user details
+            const userDetails = await user_details.findOne({ email: email }).select("_id cardholder_id").lean();
+            if (userDetails?._id.toString() !== userId) {
+                throw new ServiceError("User Id provided is invalid or does not exist")
+            }
+            if (userDetails?.cardholder_id !== cardholderId) {
+                throw new ServiceError("Cardholder Id provided is invalid or does not exist")
+            }
+        }
 
         // Validation user bank details exist and verified
         // Get user bank details details
         const userBankDetailsDoc = await user_bank_details.findOne({
-            user_id: userId as Schema.Types.ObjectId
-        }).lean();
+            user_id: userId
+        }).select("_id is_verified").lean();
         if (!userBankDetailsDoc) {
             throw new NotFoundError("User bank details not found");
         }
@@ -160,7 +200,7 @@ export const createWalletService = async (requestSession: Request["session"], ae
         };
 
         // Find existing wallet document
-        const existingWallet = await user_wallet_details.findOne({ user_id: userId as Schema.Types.ObjectId });
+        const existingWallet = await user_wallet_details.findOne({ user_id: userId });
 
         // Existing user → Add wallet
         if (existingWallet) {
@@ -185,8 +225,9 @@ export const createWalletService = async (requestSession: Request["session"], ae
 
         // First wallet → Create document
         const insertedDocument: userWalletDetailsSchemaTypes = await user_wallet_details.create({
-            user_id: userId as Types.ObjectId,
+            user_id: userId,
             wallet_id: crypto.randomUUID(),
+            cardholder_id: cardholderId,
             wallets_details: [
                 newWallet,
             ],

@@ -3,12 +3,7 @@ import { Document, Types } from "mongoose";
 // Type for Portal Configuration Model Schema
 export interface portalConfigurationSchemaTypes extends Document {
     domain_name: string;
-    agent_code: string;
-    subagent_code: string;
-    business_id: string;
     dashboard_name: string;
-    program_id: string;
-    client_id: string;
     x_api_key: string;
     logo_url?: string | null;
     base_url_api: string;
@@ -27,10 +22,11 @@ export interface portalConfigurationSchemaTypes extends Document {
 // Type for User Details Model Schema
 export interface userDetailsSchemaTypes extends Document {
     full_name: string;
+    program_type: "MASTER" | "VISA";
+    business_name: string;
     agent_code: string;
     subagent_code: string;
-    program_id: string;
-    client_id: string;
+    program_id: "MBMA010" | "VBMA010";
     business_id: string;
     email: string;
     password: string;
@@ -130,6 +126,7 @@ export type walletDetailsType = {
 };
 export interface userWalletDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
+    cardholder_id: string;
     wallet_id: string;
     // wallets_details: [
     //     {
@@ -191,6 +188,26 @@ export interface userCardDetailsSchemaTypes extends Document {
     card_type: "VIRTUAL" | "PHYSICAL";
     card_currency: "USD" | "EUR" | "SGD";
     card_limits: cardLimitsTypes
+}
+
+// Types for User Card Transactions Model Schema
+export interface userWalletTransactionsTypes extends Document {
+    user_id: Types.ObjectId;
+    wallet_id: string;
+    transaction_id: string;
+    transaction_type: "LOAD" | "WITHDRAW" | "TRANSFER" | "HOLD" | "RELEASE" | "REFUND";
+    transaction_status: "PENDING" | "SUCCESS" | "FAILED" | "REVERSED";
+    wallet_details: {
+        wallet_type: "FIAT" | "CRYPTO";
+        wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
+    };
+    amount: number;
+    balance_before: number;
+    balance_after: number;
+    reference_id: string | null;
+    remarks: string | null;
+    created_at?: Date;
+    updated_at?: Date;
 }
 
 // Types for Fee Details Model Schema

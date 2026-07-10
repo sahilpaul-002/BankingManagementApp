@@ -34,6 +34,7 @@ import { gmailSendService } from "./gmailSendService.js";
 import userOnboardingTransaction from "../mongoDbTransactions/userOnboardingTransaction.js";
 import userLoginTransaction from "../mongoDbTransactions/userLoginTransaction.js";
 import UserBankVerifyTransaction from "../mongoDbTransactions/verifyUserBankDetailsTransaction.js";
+import userSignUpTransaction from "../mongoDbTransactions/userSignUpTransaction.js";
 
 dotenv.config();
 
@@ -64,78 +65,32 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
             throw new NotFoundError("Required collection does not exist in MongoDB");
         }
 
-        // Check email present in request body
-        const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
-        if (!email) {
-            throw new InvalidRequestBodyError("Email not present in the request body");
+        // Sign Up MongoDb Transaction
+        const signUpTransaciotnResponse = await userSignUpTransaction(req, res, aesDecryptedBodyData);
+        if (signUpTransaciotnResponse?.status?.toUpperCase() !== "SUCCESS") {
+            throw new ServiceError("User sign up service facing issue. Sign Up failed")
         }
+        const insertedData = signUpTransaciotnResponse?.data;
 
-        // Check password present in request body
-        const userPassword: string | null = checkStringBody(aesDecryptedBodyData, "password")
-        if (!userPassword) {
-            throw new InvalidRequestBodyError("Password not present in the request body");
+        const frontendUserDetails = {
+            userId: insertedData?._id,
+            fullName: insertedData?.full_name,
+            userEmail: insertedData?.email,
+            mobileCountryCode: insertedData?.mobile_country_code,
+            mobileCountryName: insertedData?.mobile_country_name,
+            gender: insertedData?.gender,
+            dob: insertedData?.date_of_birth,
+            isAdmin: insertedData?.is_admin,
+            isMasterAdmin: insertedData?.is_master_admin,
+            isEmailVerified: insertedData?.is_email_verified,
+            is2FaEnabled: insertedData?.is_2fa_enabled,
+            twoFaType: insertedData?.two_fa_type,
+            cardholderId: insertedData?.cardholder_id,
+            authenticatorSecret: insertedData?.authenticator_secret
         }
-
-        // Check Validations
-        const validationResult: SafeParseResult<z.infer<typeof userDetailsValidationSchema>> = userDetailsValidationSchema.safeParse(aesDecryptedBodyData);
-        if (!validationResult.success) {
-            // return res.status(400).json({
-            //     status: "SERVICE_ERROR",
-            //     message: "Invalid request body",
-            //     // errors: validationResult.error.issues.map(issue => issue.message)
-            //     // errors: validationResult.error.issues.map(issue => ({
-            //     //     [issue.path.join(".")]: issue.message
-            //     // }))
-            //     errors: z.flattenError(validationResult.error)
-            // });
-            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
-        }
-
-        // Get user from DB
-        const checkUserExistInDB = async (): Promise<boolean | null> => {
-            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: email }).select("_id").lean();
-            return userExistResponse !== null;
-        }
-        const userExistance: boolean | null = await checkUserExistInDB();
-
-        // Check user exist in DB
-        if (userExistance) {
-            const destroySessionResponse = await destroySession(req.session, res);
-            throw new ForbiddenError("User already exists");
-        }
-
-        // HashPassword
-        const salt = genSaltSync(10);
-        const hashedPassword = hashSync(userPassword as string, salt);
-
-        // Remove password from aesDecryptedBodyData
-        const { password, agent_code, subagent_code, program_id, business_id, client_id, ...restBody } = aesDecryptedBodyData;
-
-        // Format document by adding the agent_code and subagent_code from session
-        const document: object = {
-            ...restBody,
-            password: hashedPassword,
-            agent_code: aesDecryptedBodyData?.agent_code || req.session?.sessiondata?.agentCode,
-            subagent_code: aesDecryptedBodyData?.subagent_code || req.session?.sessiondata?.subAgentCode,
-            program_id: aesDecryptedBodyData?.program_id || req.session?.sessiondata?.programId,
-            business_id: aesDecryptedBodyData?.business_id || req.session?.sessiondata?.businessId,
-            client_id: aesDecryptedBodyData?.client_id || req.session?.sessiondata?.clientId,
-            // kyc_status: "PENDING",
-            // is_admin: "N",
-            // is_master_admin: "N",
-            // "status": "DISABLED",
-            // "is_active": "N",
-            // "is_email_verified": "N",
-            // "is_phone_verified": "N",
-            // "is_2fa_enabled": "N",
-            // "last_login_at": null
-        };
-
-        // Insert document in collection
-        const insertedDocument = await user_details.create(document);
 
         // console.log("Document inserted: ", insertedDocument);
-        return { status: "SUCCESS", message: "Document inserted successfully", data: insertedDocument }
+        return { status: "SUCCESS", message: "Document inserted successfully", data: frontendUserDetails }
     }
     catch (err) {
         const error = err as any;
@@ -229,12 +184,6 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             throw new ServiceError("Invalid credentials")
         }
 
-        // Check user configuration
-        if (userDetails.agent_code !== req.session?.sessiondata?.agentCode || userDetails.subagent_code !== req.session?.sessiondata?.subAgentCode || userDetails.program_id !== req.session?.sessiondata?.programId || userDetails.business_id !== req.session?.sessiondata?.businessId || userDetails.client_id !== req.session?.sessiondata?.clientId) {
-            const destroySessionResponse = await destroySession(req.session, res);
-            throw new ServiceError("User configuration does not match")
-        }
-
         const isCollectionPresent2 = await checkMongoDbCollectionExist("user_meta_details");
         if (isCollectionPresent2.status !== "SUCCESS") {
             throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
@@ -278,7 +227,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Check if session is already valid, if yes then delete the old session and create a new session
         if (req.session.valid && req.session.userId === userDetails._id.toString()) {
             // Get sessiondata from session before destroying the session
-            const sessionData: sessionDataTypes = req.session.sessiondata;
+            const sessionData: sessionDataTypes = req.session?.sessiondata as sessionDataTypes;
             const encryptionKey = req.session.encryptionKey
             const headerKeys = {
                 publicKey: req.session.headerKeys?.publicKey as string,
@@ -317,7 +266,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         req.session.userEmail = userDetails.email;
         req.session.userName = userDetails.full_name;
         req.session.userId = userDetails._id.toString();
-        req.session.userType = userDetails.is_master_admin === "Y" ? "SUPERADMIN" : userDetails.is_admin === "Y" ? "ADMIN" : "USER";
+        req.session.userType = userDetails.is_master_admin === "Y" ? "MASTER_ADMIN" : userDetails.is_admin === "Y" ? "ADMIN" : "USER";
         req.session.cardholderId = userDetails.cardholder_id ?? null
 
         // Update the session validity
@@ -357,6 +306,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         const frontendUserDetails = {
+            userId: userDetails?._id,
             fullName: userDetails?.full_name,
             userEmail: userDetails?.email,
             mobileCountryCode: userDetails?.mobile_country_code,

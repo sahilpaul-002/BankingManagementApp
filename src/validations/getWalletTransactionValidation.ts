@@ -24,12 +24,14 @@ const getWalletTransactionsValidationSchema = z.object({
         }
     ).optional(),
 
-    transaction_status: z.enum(
-        ["PENDING", "SUCCESS", "FAILED", "REVERSED"],
-        {
-            error: "Invalid transaction status - transaction status must be ['PENDING', 'SUCCESS', 'FAILED', 'REVERSED']",
-        }
-    ).optional(),
+    transaction_status: z
+        .enum(
+            ["PENDING", "SUCCESS", "FAILED", "REVERSED"],
+            {
+                error: "Invalid transaction status - transaction status must be ['PENDING', 'SUCCESS', 'FAILED', 'REVERSED']",
+            }
+        )
+        .optional(),
 
     from_date: z.iso.date({
         error: "Date must be in YYYY-MM-DD format (e.g. 2026-07-03)",
