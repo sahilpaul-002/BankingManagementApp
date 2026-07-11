@@ -37,6 +37,7 @@ import configRoutes from "../routes/configRoutes.js";
 import userRoutes from "../routes/userRoutes.js";
 import twoFaRoutes from "../routes/twoFaRoutes.js";
 import kycRoutes from "../routes/kycRoutes.js";
+import cardholderRoutes from "../routes/cardholderRoutes.js";
 import walletRoutes from "../routes/walletRoutes.js";
 import publicRoutes from "../routes/publicRoutes.js";
 import cardRoutes from "../routes/cardRoutes.js";
@@ -171,6 +172,7 @@ app.use("/api/v1/config", checkTimeout(5), configRoutes);
 app.use("/api/v1/user", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
 app.use("/api/v1/twoFa", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaRoutes);
 app.use("/api/v1/kyc", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), kycRoutes);
+app.use("/api/v1/cardholder", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), cardholderRoutes);
 app.use("/api/v1/wallet", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletRoutes);
 app.use("/api/v1/card", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), cardRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\

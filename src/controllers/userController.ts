@@ -1,9 +1,10 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
-import { AppErrorClass, BadRequestError, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestQueryError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import { sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
+import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 
 // ------------------------------ FUNCTION TO SET USERCONTROLLER HEADERS ------------------------------ \\
 const userControllerHeader = (req: Request) => {
@@ -127,6 +128,12 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
 export const onboarding = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email")
+        if (!email) {
+            throw new InvalidRequestQueryError("Email not present in query params")
+        }
 
         const requestSession: Request["session"] | undefined = getRequestSession();
         if (!requestSession) {
@@ -137,7 +144,7 @@ export const onboarding = async (req: Request, res: Response): Promise<Response<
             return res.fail("SERVICE_ERROR", "User onboarding is facing issue", 400);
         }
 
-        const sendBankVerificationMailServiceResponse = await sendBankVerificationMailService(requestSession, aesDecryptedBodyData)
+        const sendBankVerificationMailServiceResponse = await sendBankVerificationMailService(requestSession, {email})
         if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
             return res.success("User onboarding successfull but failed to sent user bank verification mail.", userOnboardingServiceResponse?.data, 200)
         }

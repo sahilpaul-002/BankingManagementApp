@@ -59,7 +59,7 @@ const userWithdrawWalletTransaction = async (walletId: string, userWalletActionD
 
         // Prepare transaction payload
         const transactionPayload = {
-            transaction_type: "LOAD",
+            transaction_type: "WITHDRAW",
             transaction_status: "SUCCESS",
             wallet_details: {
                 wallet_type: userWalletActionData.data.wallet_type,

@@ -15,7 +15,15 @@ export const getWallet = async (req: Request, res: Response): Promise<Response<s
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const getWalletServiceResponse = await getWalletService(requestSession, aesDecryptedQueryData)
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const getWalletServiceResponse = await getWalletService(requestSession, aesDecryptedQueryData, userConfigurations)
         if (getWalletServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to fetch user wallet details", 400);
         }
@@ -60,7 +68,15 @@ export const createWallet = async (req: Request, res: Response): Promise<Respons
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const createWalletServiceResponse = await createWalletService(requestSession, aesDecryptedBodyData);
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const createWalletServiceResponse = await createWalletService(requestSession, aesDecryptedBodyData, userConfigurations);
 
         if (createWalletServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Create wallet service is facing issue", 400);
@@ -101,7 +117,15 @@ export const loadWallet = async (req: Request, res: Response): Promise<Response<
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const loadWalletServiceResponse = await loadWalletService(requestSession, aesDecryptedBodyData);
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const loadWalletServiceResponse = await loadWalletService(requestSession, aesDecryptedBodyData, userConfigurations);
 
         if (loadWalletServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Load wallet service is facing issue", 400);
@@ -142,7 +166,15 @@ export const withdrAawWallet = async (req: Request, res: Response): Promise<Resp
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const loadWalletServiceResponse = await withdrawWalletService(requestSession, aesDecryptedBodyData);
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const loadWalletServiceResponse = await withdrawWalletService(requestSession, aesDecryptedBodyData, userConfigurations);
 
         if (loadWalletServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Withdraw wallet service is facing issue", 400);
@@ -181,7 +213,15 @@ export const getWalletTransactions = async (req: Request, res: Response): Promis
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const getWalletTransactionServiceResponse = await getWalletTransactionsService(requestSession, aesDecryptedQueryData)
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const getWalletTransactionServiceResponse = await getWalletTransactionsService(requestSession, aesDecryptedQueryData, userConfigurations)
         if (getWalletTransactionServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to fetch user wallet transactions", 400);
         }
@@ -225,7 +265,15 @@ export const getWalletTransactionDetails = async (req: Request<{ id?: string }>,
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const getWalletTransactionDetailsServiceResponse = await getWalletTransactionDetailsService(requestSession, aesDecryptedQueryData, req.params.id)
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const getWalletTransactionDetailsServiceResponse = await getWalletTransactionDetailsService(requestSession, aesDecryptedQueryData, userConfigurations, req.params.id)
         if (getWalletTransactionDetailsServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to fetch user wallet transaction details", 400);
         }
