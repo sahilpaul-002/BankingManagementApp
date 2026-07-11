@@ -34,17 +34,13 @@ export const sendVerificationEmailService = async (req: Request, res: Response, 
             throw new NotFoundError("User_details collection does not exist in MongoDB");
         }
 
+        // Validate email
         if (!userMail) {
             throw new BadRequestError("Email not found in the request")
         }
 
         // Get user from DB
-        const checkUserExistInDB = async (): Promise<userDetailsSchemaTypes | null> => {
-            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: userMail });
-            return userExistResponse;
-        }
-        const userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB();
-
+        const userDetails = await user_details.findOne({ email: userMail }).select("_id full_name").lean();
         // Check user exist in DB
         if (!userDetails) {
             const destroySessionResponse = await destroySession(req.session, res);

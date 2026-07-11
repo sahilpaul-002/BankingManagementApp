@@ -154,19 +154,19 @@ export const userBankDetailsValidationSchema = z.object({
         .regex(/^\d{8,20}$/, "Account number must be between 8 to 20 digits"),
 
     swift_code: z
-        .string("IFSC code is required and must be a string")
+        .string("SWIFT code is required and must be a string")
         .trim()
         .regex(
             /^[A-Z]{4}0[A-Z0-9]{6}$/,
-            "Invalid IFSC code format"
+            "Invalid IFSC code format. Expected format: 4 uppercase letters, '0', followed by 6 alphanumeric characters."
         ),
 
     iban_code: z
-        .string("IFSC code is required and must be a string")
+        .string("IBAN code is required and must be a string")
         .trim()
         .regex(
             /^[A-Z]{4}0[A-Z0-9]{6}$/,
-            "Invalid IFSC code format"
+            "Invalid IBAN code format. Expected format: 4 uppercase letters, '0', followed by 6 alphanumeric characters."
         ),
 
     bank_name: z

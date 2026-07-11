@@ -72,25 +72,8 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         }
         const insertedData = signUpTransaciotnResponse?.data;
 
-        const frontendUserDetails = {
-            userId: insertedData?._id,
-            fullName: insertedData?.full_name,
-            userEmail: insertedData?.email,
-            mobileCountryCode: insertedData?.mobile_country_code,
-            mobileCountryName: insertedData?.mobile_country_name,
-            gender: insertedData?.gender,
-            dob: insertedData?.date_of_birth,
-            isAdmin: insertedData?.is_admin,
-            isMasterAdmin: insertedData?.is_master_admin,
-            isEmailVerified: insertedData?.is_email_verified,
-            is2FaEnabled: insertedData?.is_2fa_enabled,
-            twoFaType: insertedData?.two_fa_type,
-            cardholderId: insertedData?.cardholder_id,
-            authenticatorSecret: insertedData?.authenticator_secret
-        }
-
         // console.log("Document inserted: ", insertedDocument);
-        return { status: "SUCCESS", message: "Document inserted successfully", data: frontendUserDetails }
+        return { status: "SUCCESS", message: "Document inserted successfully", data: {} }
     }
     catch (err) {
         const error = err as any;
@@ -164,12 +147,8 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
 
-        // Get user from DB
-        const checkUserExistInDB = async (): Promise<userDetailsSchemaTypes | null> => {
-            const userExistResponse: userDetailsSchemaTypes | null = await user_details.findOne({ email: email }).lean();
-            return userExistResponse;
-        }
-        let userDetails: userDetailsSchemaTypes | null = await checkUserExistInDB();
+        // Check User Exist
+        let userDetails: userDetailsSchemaTypes | null = await user_details.findOne({ email: email }).lean();
 
         // Check user exist in DB
         if (!userDetails) {
@@ -264,6 +243,14 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 
         // Update session with userId and email
         req.session.userEmail = userDetails.email;
+        req.session.userConfiguration = {
+            businessName: userDetails.business_name,
+            programType: userDetails.program_type,
+            programId: userDetails.program_id,
+            businessId: userDetails.business_id,
+            agentCode: userDetails.agent_code,
+            subAgentCode: userDetails.subagent_code
+        }
         req.session.userName = userDetails.full_name;
         req.session.userId = userDetails._id.toString();
         req.session.userType = userDetails.is_master_admin === "Y" ? "MASTER_ADMIN" : userDetails.is_admin === "Y" ? "ADMIN" : "USER";
@@ -298,7 +285,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         }
 
         // Create Auth Token
-        const jwtRefreshToken = await generateJwtToken({ accessToken: accessToken, clientId: req?.session?.sessiondata?.clientId as string, businessId: req?.session?.sessiondata?.businessId as string }, "30m", jwtSecretKey);
+        const jwtRefreshToken = await generateJwtToken({ accessToken: accessToken, clientId: req?.session?.userConfiguration?.programId as string, businessId: req?.session?.userConfiguration?.businessId as string }, "30m", jwtSecretKey);
         // Set Refresh Token Cookie
         const setResponseRefreshCookieResult: successResponseJson = await setResponseCookie(res, "refreshToken", jwtRefreshToken, 1000 * 60 * 60);
         if (setResponseRefreshCookieResult.status.toUpperCase() !== "SUCCESS") {
@@ -309,6 +296,10 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             userId: userDetails?._id,
             fullName: userDetails?.full_name,
             userEmail: userDetails?.email,
+            businessId: userDetails?.business_id,
+            programId: userDetails?.program_id,
+            agentCode: userDetails?.agent_code,
+            subagentCode: userDetails?.subagent_code,
             mobileCountryCode: userDetails?.mobile_country_code,
             mobileCountryName: userDetails?.mobile_country_name,
             gender: userDetails?.gender,
@@ -390,6 +381,9 @@ export const userOnboardingService = async (requestSession: Request["session"], 
         }
 
         const userId: unknown = requestSession?.userId
+        if (!userId) {
+            throw new UnauthenticatedError("Unauthenticated session detected");
+        }
 
         // =========================================
         // ADDRESS DETAILS
@@ -433,7 +427,7 @@ export const userOnboardingService = async (requestSession: Request["session"], 
         };
 
         // Perform user onboarding mongodb transactioon
-        const userOnboardingTransactionResult = await userOnboardingTransaction(requestSession?.userId as string, addressDocument, bankDocument)
+        const userOnboardingTransactionResult = await userOnboardingTransaction(userId as string, addressDocument, bankDocument)
 
         if (userOnboardingTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("User onboarding service facing issue -  failed to onboard user")
@@ -493,22 +487,39 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
         if (!dashboardName) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
-        const adminEmail = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
-        if (!adminEmail) {
-            throw new UnauthenticatedError("Unauthenticated session detected");
-        }
 
         // Get user details
-        const userDetailsDoc = await user_details.findOne({
+        const userDetails = await user_details.findOne({
             _id: userId as Schema.Types.ObjectId
-        }).select("_id").lean();
-        if (!userDetailsDoc) {
+        }).select(" business_id program_id agent_code subagent_code").lean();
+        if (!userDetails) {
             throw new NotFoundError("User details not found");
         }
+        // Check user admin
+        let adminEmail: string
+        if (userDetails?.subagent_code !== "01") {
+            const adminUser = await user_details.findOne({
+                business_id: userDetails?.business_id,
+                program_id: userDetails?.program_id,
+                agent_code: "01",
+                subagent_code: "01"
+            }).select("email").lean()
+            if (!adminUser) {
+                throw new ServiceError("Admin user not found or issue in user configuration - please contact support")
+            }
+            adminEmail = adminUser?.email
+        }
+        else {
+            adminEmail = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
+            if (!adminEmail) {
+                throw new UnauthenticatedError("Unauthenticated session detected");
+            }
+        }
+
         // Get user kyc details
         const userBankDetailsDoc = await user_bank_details.findOne({
             user_id: userId as Schema.Types.ObjectId
-        }).select("_id user_bank_request_id account_holder_name account_number bank_name").lean();;
+        }).select("_id user_bank_request_id account_holder_name account_number bank_name").lean();
         if (!userBankDetailsDoc) {
             throw new NotFoundError("User bank details not found")
         }
@@ -563,7 +574,7 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
             }
         );
 
-        const toEmail: string = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
+        const toEmail: string = adminEmail
         const sendEmail: string = fromEmail
         const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
         // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)

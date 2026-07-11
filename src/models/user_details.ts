@@ -46,6 +46,7 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     business_id: {
         type: String,
         required: true,
+        index: true,
         trim: true
     },
     email: {
@@ -162,20 +163,7 @@ userDetailsSchema.index(
 
 userDetailsSchema.index(
     {
-        email: 1,
-        program_type: 1,
-        business_name: 1
-    },
-    {
-        unique: true,
-        name: "idx_email_business_program"
-    }
-);
-
-userDetailsSchema.index(
-    {
         business_name: 1,
-        program_type: 1,
         agent_code: 1,
         subagent_code: 1
     },

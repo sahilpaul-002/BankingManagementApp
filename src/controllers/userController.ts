@@ -27,6 +27,12 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
         // Transform payload
         const transformedPayload = {
             full_name: aesDecryptedBodyData?.fullName,
+
+            business_name: aesDecryptedBodyData?.businessName,
+            business_type: aesDecryptedBodyData?.businessType,
+
+            program_type: aesDecryptedBodyData?.programType,
+
             email: aesDecryptedBodyData?.email,
             password: aesDecryptedBodyData?.password,
 
@@ -127,12 +133,17 @@ export const onboarding = async (req: Request, res: Response): Promise<Response<
             throw new UnauthenticatedError("Unauthenticated session");
         }
         const userOnboardingServiceResponse = await userOnboardingService(requestSession, aesDecryptedBodyData);
-
         if (userOnboardingServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "User onboarding is facing issue", 400);
         }
 
-        return res.success("User onboarding successfull.", userOnboardingServiceResponse?.data, 200)
+        const sendBankVerificationMailServiceResponse = await sendBankVerificationMailService(requestSession, aesDecryptedBodyData)
+        if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
+            return res.success("User onboarding successfull but failed to sent user bank verification mail.", userOnboardingServiceResponse?.data, 200)
+        }
+        else {
+            return res.success("User onboarding successfull and bank verification mail sent to admin", userOnboardingServiceResponse?.data, 200)
+        }
     }
     catch (err) {
         const error = err as any;

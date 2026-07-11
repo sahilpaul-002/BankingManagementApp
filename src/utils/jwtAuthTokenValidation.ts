@@ -27,11 +27,11 @@ const jwtAuthTokenValidation = async (
   const jwtRefreshToken: string = req.signedCookies?.refreshToken
   const sessionAccessToken: string | undefined = req.session?.sessiondata?.accessToken
   const sessionUserType: string | undefined = req.session?.userType
-  const sessionClientId: string | undefined = req.session?.sessiondata?.clientId;
-  const sessionBusinessId: string | undefined = req.session?.sessiondata?.businessId;
+  const sessionProgramId: string | undefined = req.session?.userConfiguration?.programId;
+  const sessionBusinessId: string | undefined = req.session?.userConfiguration?.businessId;
 
   try {
-    if (!sessionAccessToken || !sessionUserType || !sessionClientId || !sessionBusinessId) {
+    if (!sessionAccessToken || !sessionUserType || !sessionProgramId || !sessionBusinessId) {
       throw new UnauthenticatedError("Session not authenticated")
     }
 

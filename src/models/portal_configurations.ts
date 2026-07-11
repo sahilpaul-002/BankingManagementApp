@@ -10,34 +10,9 @@ const portalConfigurationsSchema = new Schema<portalConfigurationSchemaTypes>({
         index: true
     },
 
-    agent_code: {
-        type: String,
-        required: true,
-    },
-
-    subagent_code: {
-        type: String,
-        required: true,
-    },
-
-    business_id: {
-        type: String,
-        required: true,
-    },
-
     dashboard_name: {
         type: String,
         required: true
-    },
-
-    program_id: {
-        type: String,
-        required: true,
-    },
-
-    client_id: {
-        type: String,
-        required: true,
     },
 
     x_api_key: {

@@ -40,12 +40,8 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             }
 
             let userDetails: userDetailsSchemaTypes | null
-            // Get user from DB
-            const checkUserExistInDB = async (req: Request): Promise<userDetailsSchemaTypes | null> => {
-                const userExistResponse: userDetailsSchemaTypes | null = await user_details.findById(req.session.userId).lean();
-                return userExistResponse;
-            }
-            userDetails = await checkUserExistInDB(req);
+            // Check Session User Id Exist
+            userDetails = await user_details.findById(req.session.userId).select("_id email is_active").lean();
 
             // Check user exist in DB
             if (!userDetails || (userDetails?.email !== req.session.userEmail)) {
@@ -119,7 +115,7 @@ const sessionValidation = async (req: Request, res: Response, next: NextFunction
             }
             else {
                 if (!req.session.is2faVerified) {
-                    throw new UnauthorizedError("Unauthorised session - session validation faliure")
+                    throw new UnauthorizedError("Unauthorised session - session validation faliure, 2fa not verified")
                 }
             }
 

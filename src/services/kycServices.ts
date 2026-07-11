@@ -52,7 +52,7 @@ export const getKycService = async (requestSession: Request["session"], aesDecry
         // Get user kyc details
         const userKycDetailsDoc = await user_kyc_details.findOne({
             user_id: userId as Schema.Types.ObjectId
-        }, {_id: 0, kyc_status: 1, poi_document: 1, poa_document: 1, kyc_request_id: 1}).lean();
+        }, { _id: 0, kyc_status: 1, poi_document: 1, poa_document: 1, kyc_request_id: 1 }).lean();
 
         if (!userKycDetailsDoc) {
             throw new NotFoundError("User kyc details not found")
@@ -97,18 +97,18 @@ const uploadKycDocuments = async (poiDocumentFile: Express.Multer.File, poaDocum
     const [poiUploadResponse, poaUploadResponse] = await Promise.all([
         uploadOnCloudinary(
             poiDocumentFile,
-            session?.sessiondata?.businessId as string,
-            session?.sessiondata?.clientId as string,
-            session?.sessiondata?.agentCode as string,
-            session?.sessiondata?.subAgentCode as string,
+            session?.userConfiguration?.businessId as string,
+            session?.userConfiguration?.programId as string,
+            session?.userConfiguration?.agentCode as string,
+            session?.userConfiguration?.subAgentCode as string,
             userId as string
         ),
         uploadOnCloudinary(
             poaDocumentFile,
-            session?.sessiondata?.businessId as string,
-            session?.sessiondata?.clientId as string,
-            session?.sessiondata?.agentCode as string,
-            session?.sessiondata?.subAgentCode as string,
+            session?.userConfiguration?.businessId as string,
+            session?.userConfiguration?.programId as string,
+            session?.userConfiguration?.agentCode as string,
+            session?.userConfiguration?.subAgentCode as string,
             userId as string
         )
     ]);
@@ -305,18 +305,35 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         if (!dashboardName) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
-        const adminEmail = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
-        if (!adminEmail) {
-            throw new UnauthenticatedError("Unauthenticated session detected");
-        }
 
         // Get user details
-        const userDetailsDoc = await user_details.findOne({
+        const userDetails = await user_details.findOne({
             _id: userId as Schema.Types.ObjectId
-        }).select("_id email").lean();
-        if (!userDetailsDoc) {
+        }).select(" business_id program_id agent_code subagent_code");
+        if (!userDetails) {
             throw new NotFoundError("User details not found");
         }
+        // Check user admin
+        let adminEmail: string
+        if (userDetails?.subagent_code !== "01") {
+            const adminUser = await user_details.findOne({
+                business_id: userDetails?.business_id,
+                program_id: userDetails?.program_id,
+                agent_code: "01",
+                subagent_code: "01"
+            }).select("email").lean()
+            if (!adminUser) {
+                throw new ServiceError("Admin user not found or issue in user configuration - please contact support")
+            }
+            adminEmail = adminUser?.email
+        }
+        else {
+            adminEmail = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
+            if (!adminEmail) {
+                throw new UnauthenticatedError("Unauthenticated session detected");
+            }
+        }
+
         // Get user kyc details
         const userKycDetailsDoc = await user_kyc_details.findOne({
             user_id: userId as Schema.Types.ObjectId
@@ -376,7 +393,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
             }
         );
 
-        const toEmail: string = requestSession?.sessiondata?.adminEmail || bmaNotificationMail
+        const toEmail: string = adminEmail
         const sendEmail: string = fromEmail
         const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
         // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)

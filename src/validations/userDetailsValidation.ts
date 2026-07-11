@@ -31,6 +31,14 @@ const userDetailsValidationSchema = z.object({
             "Business name can only contain letters, numbers, dots (.), hyphens (-), and underscores (_). Spaces are not allowed."
         ),
 
+    business_type: z
+        .enum(
+            ["NEW", "EXISTING"],
+            {
+                error: "Invalid business type - business type must be ['NEW', 'EXISTING']",
+            }
+        ),
+
     email: z
         .email("Invalid email format")
         .trim()

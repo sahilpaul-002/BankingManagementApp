@@ -17,7 +17,7 @@ const userSignUpTransaction = async (req: Request, res: Response, aesDecryptedBo
     try {
         mongoSession.startTransaction();
 
-        // TO HANDLE THE RACE CONDITION TWO CONCURRENT REQUEST ACTING AS THE PRIMARY USER WHEN CREATED
+        // TO HANDLE THE RACE CONDITION TWO CONCURRENT REQUEST ACTING AS THE PRIMARY USER WHEN CREATED ENTIRE LIGIC IN TRANSACTION
 
         // Check email present in request body
         const email: string | null = checkStringBody(aesDecryptedBodyData, "email")
@@ -55,13 +55,32 @@ const userSignUpTransaction = async (req: Request, res: Response, aesDecryptedBo
             throw new ForbiddenError("User already exists");
         }
 
-        // Check primary user (admin) exist
-        const primaryUser = await user_details.exists({
+        // Check Business Type
+        const businessNameExist = await user_details.exists({
+            business_name: validationResult.data.business_name
+        })
+        if (validationResult?.data?.business_type === "EXISTING" && !businessNameExist) {
+            throw new ForbiddenError(`Business name does not exist for the specified type`)
+        }
+        if (validationResult?.data?.business_type === "NEW") {
+            const businessNameExist = await user_details.exists({
+                business_name: validationResult.data.business_name
+            })
+            if (businessNameExist) {
+                throw new ForbiddenError(`Business name already exist, use ${validationResult?.data?.business_type} type`)
+            }
+        }
+
+        // Check primary user (admin) exist and program type
+        const primaryUser = await user_details.findOne({
             business_name: validationResult.data.business_name,
-            program_type: validationResult.data.program_type,
             agent_code: "01",
             subagent_code: "01"
-        }).lean();
+        }).select("program_type business_id").lean();
+        const primaryUserNetwork = primaryUser?.program_type === "MASTER" ? "Master_Network" : "Visa_Network"
+        if (primaryUser?.program_type && primaryUser?.program_type !== validationResult?.data?.program_type) {
+            throw new ServiceError(`${validationResult?.data?.business_name} is registered for ${primaryUserNetwork}. You can either use ${primaryUserNetwork} or register with different business name`)
+        }
 
         // HashPassword
         const salt = genSaltSync(10);
@@ -85,11 +104,8 @@ const userSignUpTransaction = async (req: Request, res: Response, aesDecryptedBo
             agent_code: "01",
             subagent_code: primaryUser ? "02" : "01",
 
-            business_id: `${validationResult.data.business_name}/01`,
-            program_id:
-                validationResult.data.program_type === "MASTER"
-                    ? "MBMA010"
-                    : "VBMA010",
+            business_id: primaryUser ? primaryUser?.business_id : `${validationResult.data.business_name}/01/${crypto.randomUUID()}`,
+            program_id: validationResult.data.program_type === "MASTER" ? "MBMA010" : "VBMA010",
 
             program_type: validationResult.data.program_type,
 

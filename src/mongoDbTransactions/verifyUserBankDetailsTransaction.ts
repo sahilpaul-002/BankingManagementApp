@@ -27,7 +27,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
                 {
                     session: mongoSession,
                 }
-            ).select("_id").lean();
+            ).select("_id user_bank_request_id").lean();
 
         if (currentBankDoc?.user_bank_request_id !== decoded.userBankRequestId) {
             throw new ServiceError("Expired verification link");

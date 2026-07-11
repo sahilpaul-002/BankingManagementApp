@@ -2,7 +2,7 @@ import jwt, { type JwtPayload } from "jsonwebtoken";
 
 interface jwtRefreshDtaType extends JwtPayload {
     accessToken: string
-    clientId: string
+    programId: string
     businessId: string
 }
 

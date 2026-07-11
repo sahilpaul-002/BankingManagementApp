@@ -5,7 +5,7 @@ import generateJwtAuth from "./generateJwtToken.js"
 // 🔹 Types
 interface jwtAuthDataType extends JwtPayload {
     accessToken: string
-    clientId: string
+    programId: string
     businessId: string
 }
 

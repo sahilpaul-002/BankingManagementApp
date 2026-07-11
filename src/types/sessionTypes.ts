@@ -29,11 +29,20 @@ export type sessionDataTypes = {
 type UserType = "ADMIN" | "USER" | "MASTER_ADMIN";
 
 // Meta information stored in session
-export interface sessionMeta {
+export interface sessionMetaTypes {
     clientIp: string;
     deviceId: string;
     userAgent?: string;
     createdAt?: number;
+}
+
+export type userConfigurationTypes = {
+    businessName: string;
+    programType: string;
+    businessId: string;
+    programId: string;
+    agentCode: string;
+    subAgentCode: string;
 }
 
 // Encryption keys for headers
@@ -51,6 +60,7 @@ export interface sessionItemsTypes {
     privateKey: string;
     encryptionKey: string;
     userEmail: string;
+    userConfiguration: userConfigurationTypes;
     userName: string
     userId?: string;
     passwordHash: string;
@@ -60,7 +70,7 @@ export interface sessionItemsTypes {
     cardholderId?: string | null;
     walletId?: string;
     sessiondata: sessionDataTypes;
-    meta?: sessionMeta;
+    meta?: sessionMetaTypes;
 }
 
 // // Augment express-session to include custom session fields

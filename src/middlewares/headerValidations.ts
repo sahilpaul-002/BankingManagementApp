@@ -57,32 +57,26 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
 
         // Validate Agent Code header
         const agentCode: string = req.headers["agent-code"] as string;
-        if (agentCode !== req.session?.sessiondata?.agentCode) {
+        if (agentCode !== req.session?.userConfiguration?.agentCode) {
             throw new UnauthorizedError("INVALID 'agent-code'")
         }
 
         // Validate Subagent Code header
         const subAgentCode: string = req.headers["subagent-code"] as string;
-        if (subAgentCode !== req.session?.sessiondata?.subAgentCode) {
+        if (subAgentCode !== req.session?.userConfiguration?.subAgentCode) {
             throw new UnauthorizedError("INVALID 'subagent-code'")
         }
 
         // Validate Program Id header
         const programId: string = req.headers["program-id"] as string;
-        if (programId !== req.session?.sessiondata?.programId) {
+        if (programId !== req.session?.userConfiguration?.programId) {
             throw new UnauthorizedError("INVALID 'program-id'")
         }
 
         // Validate Business Id header
         const businessId: string = req.headers["business-id"] as string;
-        if (businessId !== req.session?.sessiondata?.businessId) {
+        if (businessId !== req.session?.userConfiguration?.businessId) {
             throw new UnauthorizedError("INVALID 'business-id'")
-        }
-
-        // Validate Client Id header
-        const clientId: string = req.headers["client-id"] as string;
-        if (clientId !== req.session?.sessiondata?.clientId) {
-            throw new UnauthorizedError("INVALID 'client-id'")
         }
 
         // Check user details
