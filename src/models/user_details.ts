@@ -106,6 +106,8 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     },
     cardholder_id: {
         type: String,
+        unique: true,
+        index: true,
         default: null
     },
     status: {

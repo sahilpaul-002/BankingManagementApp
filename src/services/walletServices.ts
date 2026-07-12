@@ -153,7 +153,7 @@ export const createWalletService = async (requestSession: Request["session"], ae
         else {
             const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
-                throw new ServiceError("Cardholder Id provided is invalid or does not exist")
+                throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
             userId = cardholderDetails?._id.toString();
         }
@@ -319,7 +319,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         else {
             const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
-                throw new ServiceError("Cardholder Id provided is invalid or does not exist")
+                throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
             userId = cardholderDetails?._id.toString();
         }
@@ -460,7 +460,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         else {
             const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
-                throw new ServiceError("Cardholder Id provided is invalid or does not exist")
+                throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
             userId = cardholderDetails?._id.toString();
         }
@@ -586,7 +586,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
         else {
             const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
-                throw new ServiceError("Cardholder Id provided is invalid or does not exist")
+                throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
             userId = cardholderDetails?._id.toString();
         }
@@ -769,7 +769,7 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
         else {
             const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
-                throw new ServiceError("Cardholder Id provided is invalid or does not exist")
+                throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
             userId = cardholderDetails?._id.toString();
         }

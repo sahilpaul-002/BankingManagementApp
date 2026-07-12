@@ -66,13 +66,15 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
 
         let updatedBankDoc = null;
         let updatedUserDoc = null;
-
         if (decoded.action === "APPROVE") {
+            const cardholderId = crypto.randomUUID();
+            
             updatedBankDoc = await user_bank_details.findOneAndUpdate(
                 {
                     user_id: decoded.userId,
                 },
                 {
+                    cardholder_id: cardholderId,
                     is_verified: true,
                 },
                 {
@@ -88,7 +90,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
             updatedUserDoc = await user_details.findByIdAndUpdate(
                 decoded.userId,
                 {
-                    cardholder_id: crypto.randomUUID(),
+                    cardholder_id: cardholderId,
                 },
                 {
                     new: true,

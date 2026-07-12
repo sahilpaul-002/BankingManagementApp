@@ -8,6 +8,12 @@ const userBankDetailsSchema = new Schema<userBankDetailsSchemaTypes>({
         required: true,
         index: true
     },
+    cardholder_id: {
+        type: String,
+        unique: true,
+        index: true,
+        default: null
+    },
     account_holder_name: {
         type: String,
         required: true

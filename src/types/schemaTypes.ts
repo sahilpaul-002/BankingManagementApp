@@ -64,6 +64,7 @@ export interface userMetaDetailsSchemaTypes extends Document {
 // Type for User Bank Details Model Schema
 export interface userBankDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
+    cardholder_id?: string;
     account_holder_name: string;
     account_number: string;
     swift_code: string;
