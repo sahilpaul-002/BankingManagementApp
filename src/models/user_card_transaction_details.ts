@@ -1,12 +1,21 @@
 import mongoose, { Schema } from "mongoose";
-import type { userWalletTransactionsTypes } from "../types/schemaTypes.js";
+import type { userCardTransactionsTypes } from "../types/schemaTypes.js";
+import { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 
-const userCardTransactionSchema = new Schema<userWalletTransactionsTypes>(
+const userCardTransactionsSchema = new Schema<userCardTransactionsTypes>(
     {
-        wallet_id: {
+        cardholder_id: {
             type: String,
             required: true,
             index: true,
+            trim: true,
+        },
+
+        card_id: {
+            type: String,
+            required: true,
+            index: true,
+            trim: true,
         },
 
         transaction_id: {
@@ -14,12 +23,13 @@ const userCardTransactionSchema = new Schema<userWalletTransactionsTypes>(
             required: true,
             unique: true,
             index: true,
+            trim: true,
         },
 
         transaction_type: {
             type: String,
             required: true,
-            enum: ["LOAD", "WITHDRAW", "TRANSFER", "HOLD", "RELEASE", "REFUND"],
+            enum: ["PURCHASE", "REFUND", "WITHDRAWAL", "REVERSAL", "FEE"],
         },
 
         transaction_status: {
@@ -29,18 +39,22 @@ const userCardTransactionSchema = new Schema<userWalletTransactionsTypes>(
             enum: ["PENDING", "SUCCESS", "FAILED", "REVERSED"],
         },
 
-        wallet_details: {
-            wallet_type: {
-                type: String,
-                required: true,
-                enum: ["FIAT", "CRYPTO"],
-            },
+        card_number: {
+            type: String,
+            required: true,
+            trim: true,
+        },
 
-            wallet_currency: {
-                type: String,
-                required: true,
-                enum: ["USD", "EUR", "SGD", "USDC", "USDT"],
-            },
+        currency: {
+            type: String,
+            required: true,
+            enum: ["USD"], // or ["USD", "EUR", "SGD"] if supported
+        },
+
+        name_on_card: {
+            type: String,
+            required: true,
+            trim: true,
         },
 
         amount: {
@@ -49,49 +63,67 @@ const userCardTransactionSchema = new Schema<userWalletTransactionsTypes>(
             min: 0,
         },
 
-        balance_before: {
-            type: Number,
+        card_type: {
+            type: String,
             required: true,
-            min: 0,
+            enum: ["VIRTUAL", "PHYSICAL"],
         },
 
-        balance_after: {
-            type: Number,
+        merchant_name: {
+            type: String,
             required: true,
-            min: 0,
+            trim: true,
+        },
+
+        merchant_category: {
+            type: String,
+            required: true,
+            enum: MERCHANT_CATEGORIES,
+        },
+
+        merchant_country: {
+            type: String,
+            required: true,
+            trim: true,
+            uppercase: true,
         },
 
         reference_id: {
             type: String,
-            trim: true,
-            required: true,
             default: null,
+            trim: true,
         },
 
         remarks: {
             type: String,
-            trim: true,
-            required: true,
             default: null,
-        }
+            trim: true,
+        },
     },
     {
         timestamps: true,
     }
 );
 
-userCardTransactionSchema.index({
-    wallet_id: 1,
-    "wallet_details.wallet_type": 1,
-    "wallet_details.wallet_currency": 1,
-    transaction_type: 1,
+userCardTransactionsSchema.index({
+    cardholder_id: 1,
+    card_id: 1,
     createdAt: -1,
 });
 
-const userCardTransactionsModel = mongoose.model<userWalletTransactionsTypes>(
-        "CardTransactions",
-        userCardTransactionSchema,
-        "user_card_transactions"
-    );
+userCardTransactionsSchema.index({
+    transaction_id: 1,
+});
+
+userCardTransactionsSchema.index({
+    transaction_status: 1,
+    createdAt: -1,
+});
+
+const userCardTransactionsModel = mongoose.model<userCardTransactionsTypes>(
+    "CardTransactions",
+    userCardTransactionsSchema,
+    "user_card_transactions"
+);
 
 export { userCardTransactionsModel };

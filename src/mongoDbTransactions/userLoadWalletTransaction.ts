@@ -12,12 +12,50 @@ import type { SafeParseResult } from "../types/zodTypes.js";
 
 type userWalletActionValidationType = SafeParseSuccess<z.infer<typeof userWalletActionValidationSchema>>;
 
-const userLoadWalletTransaction = async (walletId: string, userWalletActionData: userWalletActionValidationType, selectedWallet: walletDetailsType) => {
+const userLoadWalletTransaction = async (cardholderId: string, walletId: string, userWalletActionData: userWalletActionValidationType, selectedWallet: walletDetailsType) => {
     const mongoSession =
         await mongoose.startSession();
 
     try {
         mongoSession.startTransaction();
+
+        // Configure updated wallet balance and dates
+        const loadAmount = userWalletActionData.data.amount;
+        const now = new Date();
+        const updateInc: Record<string, number> = {"wallets_details.$.account_balance": loadAmount};
+        const updateSet: Record<string, any> = {};
+        // Daily
+        const daily = selectedWallet.daily_transaction;
+        if (!daily?.date || daily.date.toDateString() !== now.toDateString()) {
+            updateSet["wallets_details.$.daily_transaction.credit"] = loadAmount;
+            updateSet["wallets_details.$.daily_transaction.date"] = now;
+        } 
+        else {
+            updateInc["wallets_details.$.daily_transaction.credit"] = loadAmount;
+        }
+        // Monthly
+        const isSameMonth = selectedWallet.monthly_transaction?.month === now.getMonth() + 1 &&
+            selectedWallet.monthly_transaction?.year === now.getFullYear();
+
+        if (isSameMonth) {
+            updateInc["wallets_details.$.monthly_transaction.credit"] = loadAmount;
+        } 
+        else {
+            updateSet["wallets_details.$.monthly_transaction.credit"] = loadAmount;
+            updateSet["wallets_details.$.monthly_transaction.month"] = now.getMonth() + 1;
+            updateSet["wallets_details.$.monthly_transaction.year"] = now.getFullYear();
+        }
+
+        // Yearly
+        const isSameYear = selectedWallet.yearly_transaction?.year === now.getFullYear();
+
+        if (isSameYear) {
+            updateInc["wallets_details.$.yearly_transaction.credit"] = loadAmount;
+        } 
+        else {
+            updateSet["wallets_details.$.yearly_transaction.credit"] = loadAmount;
+            updateSet["wallets_details.$.yearly_transaction.year"] = now.getFullYear();
+        }
 
         // Update wallet
         const updatedWallet = await user_wallet_details.findOneAndUpdate(
@@ -32,11 +70,12 @@ const userLoadWalletTransaction = async (walletId: string, userWalletActionData:
                     },
                 },
             },
+
             {
-                $inc: {
-                    "wallets_details.$.account_balance": userWalletActionData.data.amount,
-                },
+                $inc: updateInc,
+                $set: updateSet,
             },
+
             {
                 new: true,
                 session: mongoSession,
@@ -81,6 +120,7 @@ const userLoadWalletTransaction = async (walletId: string, userWalletActionData:
         await user_wallet_transactions.create(
             [
                 {
+                    cardholder_id: cardholderId,
                     wallet_id: walletId,
                     transaction_id: crypto.randomUUID(),
                     transaction_type: validationResult?.data?.transaction_type,

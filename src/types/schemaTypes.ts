@@ -1,4 +1,5 @@
 import { Document, Types } from "mongoose";
+import type { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 
 // Type for Portal Configuration Model Schema
 export interface portalConfigurationSchemaTypes extends Document {
@@ -124,29 +125,36 @@ export type walletDetailsType = {
     holding_amount?: number;
     wallet_type: "FIAT" | "CRYPTO";
     wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
+    daily_transaction?: {
+        credit: number;
+        debit: number;
+        date: Date;
+    };
+    monthly_transaction?: {
+        credit: number;
+        debit: number;
+        month: number;
+        year: number;
+    };
+    yearly_transaction?: {
+        credit: number;
+        debit: number;
+        year: number;
+    };
 };
 export interface userWalletDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     cardholder_id: string;
     wallet_id: string;
-    // wallets_details: [
-    //     {
-    //         wallet_status?: "ACTIVE" | "INACTIVE";
-    //         account_balance?: number;
-    //         holding_amount?: number;
-    //         wallet_type: "FIAT" | "CRYPTO";
-    //         wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
-    //     }
-    // ]
-    wallets_details: walletDetailsType[]
+    wallets_details: walletDetailsType[],
 }
 
 // Types for User Wallet Transactions Model Schema
 export interface userWalletTransactionsTypes extends Document {
-    user_id: Types.ObjectId;
+    cardholder_id: string;
     wallet_id: string;
     transaction_id: string;
-    transaction_type: "LOAD" | "WITHDRAW" | "TRANSFER" | "HOLD" | "RELEASE" | "REFUND";
+    transaction_type: "LOAD" | "WITHDRAW" | "TRANSFER" | "HOLD" | "RELEASE" | "REFUND" | "CARD";
     transaction_status: "PENDING" | "SUCCESS" | "FAILED" | "REVERSED";
     wallet_details: {
         wallet_type: "FIAT" | "CRYPTO";
@@ -157,8 +165,6 @@ export interface userWalletTransactionsTypes extends Document {
     balance_after: number;
     reference_id: string | null;
     remarks: string | null;
-    created_at?: Date;
-    updated_at?: Date;
 }
 
 // Type for Beneficiaries Bank Details Model Schema
@@ -187,28 +193,44 @@ export interface userCardDetailsSchemaTypes extends Document {
     valid_date: Date;
     name_on_card: string;
     card_type: "VIRTUAL" | "PHYSICAL";
-    card_currency: "USD" | "EUR" | "SGD";
-    card_limits: cardLimitsTypes
+    card_currency: "USD";
+    card_limits?: cardLimitsTypes,
+    valid_merchant_categories: typeof MERCHANT_CATEGORIES, 
+    daily_transaction?: {
+        credit: number;
+        debit: number;
+        date: Date;
+    };
+    monthly_transaction?: {
+        credit: number;
+        debit: number;
+        month: number;
+        year: number;
+    };
+    yearly_transaction?: {
+        credit: number;
+        debit: number;
+        year: number;
+    };
 }
 
 // Types for User Card Transactions Model Schema
-export interface userWalletTransactionsTypes extends Document {
-    user_id: Types.ObjectId;
-    wallet_id: string;
+export interface userCardTransactionsTypes extends Document {
+    cardholder_id: string;
+    card_id: string;
     transaction_id: string;
-    transaction_type: "LOAD" | "WITHDRAW" | "TRANSFER" | "HOLD" | "RELEASE" | "REFUND";
+    transaction_type: "PURCHASE" | "REFUND" | "WITHDRAWAL" | "REVERSAL" | "FEE";
     transaction_status: "PENDING" | "SUCCESS" | "FAILED" | "REVERSED";
-    wallet_details: {
-        wallet_type: "FIAT" | "CRYPTO";
-        wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
-    };
+    card_number: string;
+    currency: "USD";
+    name_on_card: string;
     amount: number;
-    balance_before: number;
-    balance_after: number;
+    card_type: "VIRTUAL" | "PHYSICAL";
+    merchant_name: string;
+    merchant_category: string;
+    merchant_country: string;
     reference_id: string | null;
     remarks: string | null;
-    created_at?: Date;
-    updated_at?: Date;
 }
 
 // Types for Fee Details Model Schema

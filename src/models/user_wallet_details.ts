@@ -56,8 +56,63 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
                     required: true,
                     enum: ["USD", "EUR", "SGD", "USDC", "USDT"],
                 },
+
+                daily_transaction: {
+                    credit: {
+                        type: Number,
+                        default: 0,
+                        min: 0,
+                    },
+                    debit: {
+                        type: Number,
+                        default: 0,
+                        min: 0,
+                    },
+                    date: {
+                        type: Date,
+                        default: Date.now,
+                    },
+                },
+
+                monthly_transaction: {
+                    credit: {
+                        type: Number,
+                        default: 0,
+                        min: 0,
+                    },
+                    debit: {
+                        type: Number,
+                        default: 0,
+                        min: 0,
+                    },
+                    month: {
+                        type: Number,
+                        default: () => new Date().getMonth() + 1,
+                    },
+                    year: {
+                        type: Number,
+                        default: () => new Date().getFullYear(),
+                    },
+                },
+
+                yearly_transaction: {
+                    credit: {
+                        type: Number,
+                        default: 0,
+                        min: 0,
+                    },
+                    debit: {
+                        type: Number,
+                        default: 0,
+                        min: 0,
+                    },
+                    year: {
+                        type: Number,
+                        default: () => new Date().getFullYear(),
+                    },
+                },
             }
-        ]
+        ],
     },
     { timestamps: true }
 );

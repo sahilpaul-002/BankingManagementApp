@@ -12,7 +12,7 @@ import userWalletTransactionsValidationSchema from "../validations/userWalletTra
 
 type userWalletActionValidationType = SafeParseSuccess<z.infer<typeof userWalletActionValidationSchema>>;
 
-const userWithdrawWalletTransaction = async (walletId: string, userWalletActionData: userWalletActionValidationType, selectedWallet: walletDetailsType) => {
+const userWithdrawWalletTransaction = async (cardholderId: string, walletId: string, userWalletActionData: userWalletActionValidationType, selectedWallet: walletDetailsType) => {
     const mongoSession = await mongoose.startSession();
     try {
         mongoSession.startTransaction();
@@ -24,6 +24,43 @@ const userWithdrawWalletTransaction = async (walletId: string, userWalletActionD
         // Check balance
         if (withdrawAmount > currentBalance) {
             throw new BadRequestError("Insufficient wallet balance");
+        }
+
+        // Configure updated wallet balance and dates
+        const now = new Date();
+        const updateInc: Record<string, number> = {
+            "wallets_details.$.account_balance": -withdrawAmount,
+        };
+        const updateSet: Record<string, any> = {};
+        // Daily Check (For Reset)
+        const daily = selectedWallet.daily_transaction;
+        if (!daily || daily.date.toDateString() !== now.toDateString()
+        ) {
+            updateSet["wallets_details.$.daily_transaction.debit"] = withdrawAmount;
+            updateSet["wallets_details.$.daily_transaction.date"] = now;
+        } else {
+            updateInc["wallets_details.$.daily_transaction.debit"] = withdrawAmount;
+        }
+        // Monthly Check (For Reset)
+        const isSameMonth =
+            selectedWallet?.monthly_transaction?.month === now.getMonth() + 1 &&
+            selectedWallet?.monthly_transaction?.year === now.getFullYear();
+
+        if (isSameMonth) {
+            updateInc["wallets_details.$.monthly_transaction.debit"] = withdrawAmount;
+        } else {
+            updateSet["wallets_details.$.monthly_transaction.debit"] = withdrawAmount;
+            updateSet["wallets_details.$.monthly_transaction.month"] = now.getMonth() + 1;
+            updateSet["wallets_details.$.monthly_transaction.year"] = now.getFullYear();
+        }
+        // Yearly Check (For Reset)
+        const isSameYear = selectedWallet?.yearly_transaction?.year === now.getFullYear();
+
+        if (isSameYear) {
+            updateInc["wallets_details.$.yearly_transaction.debit"] = withdrawAmount;
+        } else {
+            updateSet["wallets_details.$.yearly_transaction.debit"] = withdrawAmount;
+            updateSet["wallets_details.$.yearly_transaction.year"] = now.getFullYear();
         }
 
         // Update wallet
@@ -41,10 +78,8 @@ const userWithdrawWalletTransaction = async (walletId: string, userWalletActionD
             },
 
             {
-                $inc:
-                {
-                    "wallets_details.$.account_balance": -withdrawAmount,
-                },
+                $inc: updateInc,
+                $set: updateSet,
             },
 
             {
@@ -91,6 +126,7 @@ const userWithdrawWalletTransaction = async (walletId: string, userWalletActionD
         await user_wallet_transactions.create(
             [
                 {
+                    cardholder_id: cardholderId,
                     wallet_id: walletId,
                     transaction_id: crypto.randomUUID(),
                     transaction_type: validationResult?.data?.transaction_type,

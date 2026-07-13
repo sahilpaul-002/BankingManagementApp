@@ -15,7 +15,15 @@ export const createCard = async (req: Request, res: Response): Promise<Response<
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const createCardResponse = await createCardService(requestSession, aesDecryptedBodyData)
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const createCardResponse = await createCardService(requestSession, aesDecryptedBodyData, userConfigurations)
         if (createCardResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Create card service faled to create card", 400);
         }
@@ -59,7 +67,15 @@ export const getCardsList = async (req: Request, res: Response): Promise<Respons
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const getCardsListResponse = await getCardsListService(requestSession, aesDecryptedQueryData)
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const getCardsListResponse = await getCardsListService(requestSession, aesDecryptedQueryData, userConfigurations)
         if (getCardsListResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to get cards list", 400);
         }
@@ -103,7 +119,15 @@ export const getCardDetails = async (req: Request<{ id?: string }>, res: Respons
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const getCardDetailsResponse = await getCardDetailsService(requestSession, aesDecryptedQueryData, req.params.id)
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const getCardDetailsResponse = await getCardDetailsService(requestSession, aesDecryptedQueryData, userConfigurations, req.params.id)
         if (getCardDetailsResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to fetch card details", 400);
         }
@@ -147,7 +171,15 @@ export const updateCardStatus = async (req: Request<{ id?: string }>, res: Respo
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const updateCardDetailsResponse = await updateCardStatusService(requestSession, aesDecryptedBodyData, req.params.id)
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const updateCardDetailsResponse = await updateCardStatusService(requestSession, aesDecryptedBodyData, userConfigurations, req.params.id)
         if (updateCardDetailsResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to update card status", 400);
         }
@@ -190,8 +222,15 @@ export const updateCardLimits = async (req: Request<{ id?: string }>, res: Respo
         if (!requestSession) {
             throw new UnauthenticatedError("Unauthenticated session");
         }
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
 
-        const updateCardDetailsResponse = await updateCardLimitsService(requestSession, aesDecryptedBodyData, req.params.id)
+        const updateCardDetailsResponse = await updateCardLimitsService(requestSession, aesDecryptedBodyData, userConfigurations, req.params.id)
         if (updateCardDetailsResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to update card limits", 400);
         }
@@ -225,8 +264,48 @@ export const updateCardLimits = async (req: Request<{ id?: string }>, res: Respo
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
 
 
-// -------------------------------------- FUNCTION TO CREATE CARD TRANSACTIONS -------------------------------------- \\
-export const createCardTransaction = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
+// // -------------------------------------- FUNCTION TO CREATE CARD TRANSACTIONS -------------------------------------- \\
+// export const createCardTransaction = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
+//     try {
+//         let aesDecryptedBodyData = req.body
+//         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+
+//         const createCardTransactionResponse = await updateCardLimitsService(req.params.id)
+//         if (createCardTransactionResponse?.status !== "SUCCESS") {
+//             return res.fail("SERVICE_ERROR", "Failed to create card transaction", 400);
+//         }
+//         return res.success("Card transaction created successfully", createCardTransactionResponse?.data, 200)
+//     }
+//     catch (err) {
+//         const error = err as any;
+//         const url = req?.path || "UNKNOWN_URL";
+//         const errorStatus = error?.status || "UnknownErrorStatus";
+
+//         logger.error(error, {
+//             serviceName: "CreateCardTransactionController",
+//             // url: req.path,
+//             // method: req.method
+//         });
+
+//         if (error instanceof AppErrorClass) {
+//             if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+//                 throw error
+//             }
+//             else {
+//                 throw new ServiceError(
+//                     `[${errorStatus}] ${error.message}`,
+//                     error?.error ? error.error : error
+//                 );
+//             }
+//         }
+//         throw new ServiceUnavailableError("CreateCardTransactionController is facing unknown issue.", error)
+//     }
+// }
+// // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// ------------------------------------------ FUNCTION TO GET CARD TRANSACTIONS ------------------------------------------ \\
+export const getWalletTransactions = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         let aesDecryptedBodyData = req.body
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
@@ -235,11 +314,19 @@ export const createCardTransaction = async (req: Request<{ id?: string }>, res: 
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const createCardTransactionResponse = await updateCardLimitsService(requestSession, aesDecryptedBodyData, req.params.id)
-        if (createCardTransactionResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "Failed to create card transaction", 400);
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
         }
-        return res.success("Card transaction created successfully", createCardTransactionResponse?.data, 200)
+
+        const getCardTransactionServiceResponse = await getWalletTransactionsService(requestSession, aesDecryptedQueryData, userConfigurations req.params?.id)
+        if (getCardTransactionServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to fetch user wallet transactions", 400);
+        }
+        return res.success("User wallet transactions fetched successfully", getCardTransactionServiceResponse?.data || {}, 200)
     }
     catch (err) {
         const error = err as any;
@@ -247,7 +334,7 @@ export const createCardTransaction = async (req: Request<{ id?: string }>, res: 
         const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
-            serviceName: "CreateCardTransactionController",
+            serviceName: "GetCardTransactionsController",
             // url: req.path,
             // method: req.method
         });
@@ -263,7 +350,7 @@ export const createCardTransaction = async (req: Request<{ id?: string }>, res: 
                 );
             }
         }
-        throw new ServiceUnavailableError("CreateCardTransactionController is facing unknown issue.", error)
+        throw new ServiceUnavailableError("GetCardTransactionsController is facing unknown issue.", error)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

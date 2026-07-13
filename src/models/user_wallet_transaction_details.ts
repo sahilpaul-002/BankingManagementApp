@@ -3,6 +3,12 @@ import type { userWalletTransactionsTypes } from "../types/schemaTypes.js";
 
 const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
     {
+        cardholder_id: {
+            type: String,
+            required: true,
+            index: true,
+        },
+
         wallet_id: {
             type: String,
             required: true,
@@ -19,7 +25,7 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
         transaction_type: {
             type: String,
             required: true,
-            enum: ["LOAD", "WITHDRAW", "TRANSFER", "HOLD", "RELEASE", "REFUND"],
+            enum: ["LOAD", "WITHDRAW", "TRANSFER", "HOLD", "RELEASE", "REFUND", "CARD"],
         },
 
         transaction_status: {
@@ -80,11 +86,31 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
     }
 );
 
+// Default listing (wallet_id + latest transactions)
+userWalletTransactionSchema.index({
+    wallet_id: 1,
+    createdAt: -1,
+});
+
+// Filter by wallet type + wallet currency
 userWalletTransactionSchema.index({
     wallet_id: 1,
     "wallet_details.wallet_type": 1,
     "wallet_details.wallet_currency": 1,
+    createdAt: -1,
+});
+
+// Filter by transaction type
+userWalletTransactionSchema.index({
+    wallet_id: 1,
     transaction_type: 1,
+    createdAt: -1,
+});
+
+// Filter by transaction status
+userWalletTransactionSchema.index({
+    wallet_id: 1,
+    transaction_status: 1,
     createdAt: -1,
 });
 

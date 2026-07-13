@@ -11,7 +11,7 @@ import userWalletTransactionsValidationSchema from "../validations/userWalletTra
 import type { SafeParseResult } from "../types/zodTypes.js";
 import { config } from "dotenv";
 import { FEE_DETAILS } from "../configs/configConstants.js";
-import crypto from "crypto"
+import crypto, { type OneShotDigestOptionsWithBufferEncoding } from "crypto"
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import userCardCreationValidationSchema from "../validations/userCardCreationValidation.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
@@ -38,7 +38,7 @@ const generateCardNumber = (): string => {
 
 type userCardDataValidationType = SafeParseSuccess<z.infer<typeof userCardCreationValidationSchema>>;
 
-const userCreateCardTransaction = async (userId: string, userUsdWalletDetails: walletDetailsType, cardholderId: string, userCardData: userCardDataValidationType, walletId?: string) => {
+const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType, cardholderId: string, userCardData: userCardDataValidationType, walletId?: string) => {
     // Start transaction
     const mongoSession = await mongoose.startSession();
 
@@ -65,7 +65,7 @@ const userCreateCardTransaction = async (userId: string, userUsdWalletDetails: w
         // Deduct wallet balance
         const updatedWallet = await user_wallet_details.findOneAndUpdate(
             {
-                user_id: userId,
+                cardholder_id: cardholderId,
                 "wallets_details.wallet_currency": "USD",
                 "wallets_details.account_balance": { $gte: deductionAmount }
             },
@@ -94,11 +94,21 @@ const userCreateCardTransaction = async (userId: string, userUsdWalletDetails: w
         const validDate = new Date();
         validDate.setFullYear(validDate.getFullYear() + 5);
 
+        const cardLimits = userCardData.data?.card_limits
+        let dailyLimit: string
+        let monthlyLimit: string
+        let yearlyLimit: string
+        if (cardLimits) {
+            dailyLimit = cardLimits?.daily_limit as string;
+            monthlyLimit = cardLimits?.monthly_limit as string;
+            yearlyLimit = cardLimits?.yearly_limit as string;
+        }
+
         // Create card
         const createdCard = await user_card_details.create(
             [
                 {
-                    cardholder_id: cardholderId,
+                    cardholder_id: cardholderId as string,
                     card_id: cardId,
                     card_number: cardNumber,
                     card_status: "INACTIVE",
@@ -108,7 +118,8 @@ const userCreateCardTransaction = async (userId: string, userUsdWalletDetails: w
                     name_on_card: userCardData.data?.name_on_card,
                     card_type: userCardData.data?.card_type,
                     card_currency: userCardData.data?.card_currency,
-                    card_limits: userCardData.data?.card_limits,
+                    ...(userCardData.data.card_limits && {card_limits: {
+                        daily_limit: dailyLimit!, monthly_limit: monthlyLimit!, yearly_limit: yearlyLimit!}}),
                 }
             ],
             {

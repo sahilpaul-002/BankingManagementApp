@@ -61,6 +61,12 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
         if (!cardholderId) {
             throw new InvalidRequestBodyError("User Id not found in request request body")
         }
+        // Check user type for non-user's cardholder id
+        if (cardholderId !== requestSession?.cardholderId) {
+            if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+                throw new ForbiddenError("Not authorized to create wallet")
+            }
+        }
         const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
         if (!cardHolderExist) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
@@ -370,7 +376,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         const finalAmount: number = deductFeeSrive(validationResult.data.amount, validationResult.data.wallet_type === "FIAT" ? "load_fiat_wallet_percent" : "load_crypto_wallet_percent");
         validationResult.data.amount = finalAmount
         // Load wallet transaction
-        const loadWalletTransactionResult = await userLoadWalletTransaction(walletId, validationResult, selectedWallet)
+        const loadWalletTransactionResult = await userLoadWalletTransaction(cardholderId, walletId, validationResult, selectedWallet)
 
         if (loadWalletTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("Load wallet service failed to load wallet")
@@ -509,7 +515,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         }
 
         // Load wallet transaction
-        const withdrawWalletTransactionResult = await userWithdrawWalletTransaction(walletId, validationResult, selectedWallet)
+        const withdrawWalletTransactionResult = await userWithdrawWalletTransaction(cardholderId, walletId, validationResult, selectedWallet)
 
         if (withdrawWalletTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("Widthraw wallet service failed to load wallet")
@@ -571,6 +577,12 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
         if (!cardholderId) {
             throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        }
+        // Check user type for non-user's cardholder id
+        if (cardholderId !== requestSession?.cardholderId) {
+            if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+                throw new ForbiddenError("Not authorized to create wallet")
+            }
         }
         const walletId: string | null = checkStringQueryParams(aesDecryptedQueryData, "wallet_id")
         if (!walletId) {
@@ -754,6 +766,12 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
         if (!cardholderId) {
             throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        }
+        // Check user type for non-user's cardholder id
+        if (cardholderId !== requestSession?.cardholderId) {
+            if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+                throw new ForbiddenError("Not authorized to create wallet")
+            }
         }
         const walletId: string | null = checkStringQueryParams(aesDecryptedQueryData, "wallet_id")
         if (!walletId) {

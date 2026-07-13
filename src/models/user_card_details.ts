@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import type { userCardDetailsSchemaTypes } from "../types/schemaTypes.js";
+import { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 
 const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
     {
@@ -89,6 +90,32 @@ const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
                 required: true,
             },
         },
+
+        valid_merchant_categories: {
+            type: [{
+                type: String,
+                enum: MERCHANT_CATEGORIES,
+            }],
+            required: true,
+        },
+
+        daily_transaction: {
+            type: Number,
+            required: true,
+            defaullt: 0
+        },
+
+        monthly_transaction: {
+            type: Number,
+            required: true,
+            defaullt: 0
+        },
+
+        yearly_transaction: {
+            type: Number,
+            required: true,
+            defaullt: 0
+        }
     },
     { timestamps: true }
 );
