@@ -40,7 +40,7 @@ export type userConfigurationTypes = {
     businessName: string;
     programType: string;
     businessId: string;
-    programId: string;
+    programId: "MBMA010" | "VBMA010";
     agentCode: string;
     subAgentCode: string;
 }

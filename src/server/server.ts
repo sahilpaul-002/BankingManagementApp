@@ -1,3 +1,6 @@
+// IMPORT NODE DNS CONFIGURATION
+import "../configs/nodeDnsConfiguration.js";
+
 import app from "./app.js";
 import dbConnection from "../configs/dbConnection.js";
 import dotenv from "dotenv";

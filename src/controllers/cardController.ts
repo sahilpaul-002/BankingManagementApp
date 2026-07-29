@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createCardService, getCardDetailsService, getCardsListService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
+import { createCardService, getCardDetailsService, getCardsListService, getWalletTransactionsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
 
 // ------------------------------------------ FUNCTION TO CREATE CARD ------------------------------------------ \\
 export const createCard = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -305,7 +305,7 @@ export const updateCardLimits = async (req: Request<{ id?: string }>, res: Respo
 
 
 // ------------------------------------------ FUNCTION TO GET CARD TRANSACTIONS ------------------------------------------ \\
-export const getWalletTransactions = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
+export const getCardTransactions = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         let aesDecryptedBodyData = req.body
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
@@ -322,11 +322,11 @@ export const getWalletTransactions = async (req: Request<{ id?: string }>, res: 
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const getCardTransactionServiceResponse = await getWalletTransactionsService(requestSession, aesDecryptedQueryData, userConfigurations req.params?.id)
+        const getCardTransactionServiceResponse = await getWalletTransactionsService(requestSession, aesDecryptedQueryData, userConfigurations, req.params?.id)
         if (getCardTransactionServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "Failed to fetch user wallet transactions", 400);
+            return res.fail("SERVICE_ERROR", "Failed to fetch user card transactions", 400);
         }
-        return res.success("User wallet transactions fetched successfully", getCardTransactionServiceResponse?.data || {}, 200)
+        return res.success("User card transactions fetched successfully", getCardTransactionServiceResponse?.data || {}, 200)
     }
     catch (err) {
         const error = err as any;

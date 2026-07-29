@@ -62,7 +62,7 @@ export const redisConfig = async (): Promise<RedisClientType> => {
 export const getRedisClient = (): failedResponseJson | successResponseJsonRedisCLient => {
     // console.log("Getting Redis client from getRedisClient function...", redisClient);
     if (!redisClient) {
-        return ({status: "FAILED", message: "Redis client is not initialized."});
+        return ({status: "SERVICE_ERROR", message: "Redis client is not initialized."});
     } 
     else {
         return ({status: "SUCCESS", message: "Redis client is initialized.", client: redisClient});

@@ -52,7 +52,7 @@ export const createCardService = async (requestSession: Request["session"], aesD
             throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
         }
         if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
-            throw new ForbiddenError("Not authorized to create wallet")
+            throw new ForbiddenError("Not authorized to create card")
         }
         // Validation M2P is allowed
         if (!requestSession?.sessiondata?.m2pAllowed) {
@@ -63,7 +63,7 @@ export const createCardService = async (requestSession: Request["session"], aesD
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
         if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
-            throw new ForbiddenError("User configuration is not valid to access cardholder list")
+            throw new ForbiddenError("User configuration is not valid to access to create card")
         }
         const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
         if (!cardholderId) {
@@ -182,7 +182,7 @@ export const getCardsListService = async (requestSession: Request["session"], ae
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
         if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
-            throw new ForbiddenError("User configuration is not valid to access cardholder list")
+            throw new ForbiddenError("User configuration is not valid to access card list")
         }
         const cardholderId = checkStringBody(aesDecryptedQueryData, "cardholder_id");
         if (!cardholderId) {
@@ -656,7 +656,7 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
 
 
 // ----------------------------------- GET WALLET TRANSACTIONS ----------------------------------- \\
-export const getWalletTransactionsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType, id?: string): Promise<successResponseJson | failedResponseJson> => {
+export const getCardTransactionsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType, id?: string): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");

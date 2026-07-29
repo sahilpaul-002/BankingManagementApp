@@ -12,7 +12,8 @@ if (!dbUsername || !dbPassword) {
     throw new Error("❌ Database credentials are missing in environment variables");
 }
 
-const dbUrl: string = `mongodb+srv://${dbUsername}:${dbPassword}@bankingmanagementcluster.ydiokc3.mongodb.net/Banking_Management?retryWrites=true&w=majority&appName=BankingManagementCluster`
+// const dbUrl: string = `mongodb+srv://${dbUsername}:${dbPassword}@bankingmanagementcluste.ydiokc3.mongodb.net/Banking_Management?retryWrites=true&w=majority&appName=BankingManagementCluster`
+const dbUrl = `mongodb+srv://${encodeURIComponent(dbUsername)}:${encodeURIComponent(dbPassword)}@bankingmanagementcluste.ydiokc3.mongodb.net/Banking_Management?retryWrites=true&w=majority&appName=BankingManagementCluster`;
 
 const dbConnection = async (): Promise<void> => {
     try {
