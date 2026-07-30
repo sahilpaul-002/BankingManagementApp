@@ -55,7 +55,7 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
         if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
-            throw new ForbiddenError("User configuration is not valid to access cardholder list")
+            throw new ForbiddenError("User configuration is not valid to access wallet details")
         }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
         if (!cardholderId) {
@@ -64,7 +64,7 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
-                throw new ForbiddenError("Not authorized to create wallet")
+                throw new ForbiddenError("Not authorized to access wallet details")
             }
         }
         const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
@@ -143,7 +143,7 @@ export const createWalletService = async (requestSession: Request["session"], ae
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
         if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
-            throw new ForbiddenError("User configuration is not valid to access cardholder list")
+            throw new ForbiddenError("User configuration is not valid to create wallet")
         }
         const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
         if (!cardholderId) {
@@ -304,7 +304,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
         if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
-            throw new ForbiddenError("User configuration is not valid to access cardholder list")
+            throw new ForbiddenError("User configuration is not valid to load wallet")
         }
         const cardholderId = checkStringBody(walletDetails, "cardholder_id");
         if (!cardholderId) {
@@ -445,7 +445,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
         if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
-            throw new ForbiddenError("User configuration is not valid to access cardholder list")
+            throw new ForbiddenError("User configuration is not valid to withdraw amount from wallet")
         }
         const cardholderId = checkStringBody(walletDetails, "cardholder_id");
         if (!cardholderId) {
@@ -572,7 +572,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
         if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
-            throw new ForbiddenError("User configuration is not valid to access cardholder list")
+            throw new ForbiddenError("User configuration is not valid to access wallet transactions")
         }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
         if (!cardholderId) {
@@ -761,7 +761,7 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
         if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
-            throw new ForbiddenError("User configuration is not valid to access cardholder list")
+            throw new ForbiddenError("User configuration is not valid to access wallet transaction details")
         }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
         if (!cardholderId) {

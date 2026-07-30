@@ -120,6 +120,11 @@ const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
     { timestamps: true }
 );
 
+userCardDetailsSchema.index({
+    cardholder_id: 1,
+    card_id: 1,
+});
+
 const userCardDetailsModel = mongoose.model<userCardDetailsSchemaTypes>(
     "CardDetails",
     userCardDetailsSchema,

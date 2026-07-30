@@ -117,6 +117,11 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
     { timestamps: true }
 );
 
+userWalletDetailsSchema.index({
+    cardholder_id: 1,
+    wallet_id: 1,
+});
+
 const userWalletDetailsModel = mongoose.model<userWalletDetailsSchemaTypes>(
     "WalletDetails",
     userWalletDetailsSchema,

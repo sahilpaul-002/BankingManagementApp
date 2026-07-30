@@ -3,7 +3,7 @@ import { userWalletDetailsModel as user_wallet_details } from "../models/user_wa
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidRequestParamsError, InvalidRequestQueryError, NotFoundError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import type { userCardTransactionsTypes, userDetailsSchemaTypes, walletDetailsType, } from "../types/schemaTypes.js";
+import type { userCardDetailsSchemaTypes, userCardTransactionsTypes, userDetailsSchemaTypes, walletDetailsType, } from "../types/schemaTypes.js";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import type { ParsedQs } from "qs";
@@ -655,8 +655,8 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
 // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
 
-// ----------------------------------- GET WALLET TRANSACTIONS ----------------------------------- \\
-export const getCardTransactionsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType, id?: string): Promise<successResponseJson | failedResponseJson> => {
+// ----------------------------------- GET CARD TRANSACTIONS ----------------------------------- \\
+export const getCardTransactionsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");
@@ -711,6 +711,12 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
             userId = cardholderDetails?._id.toString();
+        }
+
+        // Verify card
+        const cardExists = await user_card_details.exists({ card_id: cardId, cardholder_id: cardholderId });
+        if (!cardExists) {
+            throw new NotFoundError("Card not found");
         }
 
         // Check Validations
@@ -835,3 +841,110 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
 
 };
 // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+
+// ----------------------------------- GET CARD TRANSACTION DETAILS ----------------------------------- \\
+export const getCardTransactionDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType, transactionId?: string): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_wallet_transactions");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist");
+        }
+
+        // Validate transaction id
+        if (!transactionId) {
+            throw new InvalidRequestQueryError("Transaction id not provided");
+        }
+
+        // Validate Email & Wallet Id
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request request body")
+        }
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId
+        const sessionProgramId = requestSession?.userConfiguration?.programId
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
+        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
+            throw new ForbiddenError("User configuration is not valid to access card transaction details")
+        }
+        const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
+        if (!cardholderId) {
+            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        }
+        // Check user type for non-user's cardholder id
+        if (cardholderId !== requestSession?.cardholderId) {
+            if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+                throw new ForbiddenError("Not authorized to create wallet")
+            }
+        }
+        const cardId: string | null = checkStringQueryParams(aesDecryptedQueryData, "card_id")
+        if (!cardId) {
+            throw new InvalidRequestBodyError("Wallet-id not present in the request body");
+        }
+        let userId;
+        if (cardholderId === requestSession?.cardholderId) {
+            userId = requestSession?.userId;
+            if (!userId) {
+                throw new UnauthenticatedError("Unauthenticated access detected");
+            }
+        }
+        else {
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            if (!cardholderDetails) {
+                throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
+            }
+            userId = cardholderDetails?._id.toString();
+        }
+
+        // Verify card
+        const cardExists = await user_card_details.exists({ card_id: cardId, cardholder_id: cardholderId });
+        if (!cardExists) {
+            throw new NotFoundError("Card not found");
+        }
+
+        // Get Wallet Transaction Details
+        const transaction = await user_card_transactions.findOne({
+            card_id: cardId,
+            transaction_id: transactionId,
+        }).select(`transaction_id
+            transaction_type
+            transaction_status
+            amount
+            currency
+            card_type
+            merchant_name
+            merchant_category
+            merchant_country
+            reference_id
+            remarks
+            createdAt`).lean();
+
+        if (!transaction) {
+            throw new NotFoundError("Card transaction not found")
+        }
+
+        return { status: "SUCCESS", message: "Card transaction fetched successfully", data: { cardId, transaction } };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, { serviceName: "GetCardTransactionDetailsService" });
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`GetCardTransactionDetailsService facing issue: ${error.message}`, error);
+    }
+
+};
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\ 
