@@ -17,12 +17,13 @@ ADD EMAIL SENDING WEBHOOK LATER IN PRODUCTION
 3. After successfull login update the session item (valid) to make the session the valid
 4. The user configuration sent from login api will be saved in redux and attached to next request headers to pass header validations
 
-Add requestTenantContext - include req.session - done
 complete sign up - refine the return data with only needed data
 Add global session logout in frontend
 Check lru cache for required apis
 benificiaries bank details to have foreign key as user id
 utilize m2p and p2p check in required services
 creat card transaction api and card transactions list api
-card transaction will check if balance in wallet and cards limit
+create card transaction will check if balance in wallet and cards limit
 check all the apis import for wallet and cards
+check if all database calls are efficiently called
+add beneficiary, verify beneficiary (directly without user involvement), payout, currency conversion.
