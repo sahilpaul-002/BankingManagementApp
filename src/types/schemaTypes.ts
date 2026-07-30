@@ -1,4 +1,4 @@
-import { Document, Types } from "mongoose";
+import mongoose, { Document, Types } from "mongoose";
 import type { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 
 // Type for Portal Configuration Model Schema
@@ -224,7 +224,7 @@ export interface userCardTransactionsTypes extends Document {
     card_number: string;
     currency: "USD";
     name_on_card: string;
-    amount: number;
+    amount: mongoose.Types.Decimal128;
     card_type: "VIRTUAL" | "PHYSICAL";
     merchant_name: string;
     merchant_category: string;

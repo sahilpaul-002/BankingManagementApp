@@ -58,7 +58,7 @@ const userCardTransactionsSchema = new Schema<userCardTransactionsTypes>(
         },
 
         amount: {
-            type: Number,
+            type: mongoose.Schema.Types.Decimal128,
             required: true,
             min: 0,
         },

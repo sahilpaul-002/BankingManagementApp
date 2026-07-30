@@ -3,7 +3,7 @@ import { userWalletDetailsModel as user_wallet_details } from "../models/user_wa
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidRequestParamsError, InvalidRequestQueryError, NotFoundError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import type { userDetailsSchemaTypes, walletDetailsType, } from "../types/schemaTypes.js";
+import type { userCardTransactionsTypes, userDetailsSchemaTypes, walletDetailsType, } from "../types/schemaTypes.js";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import type { ParsedQs } from "qs";
@@ -15,8 +15,8 @@ import z from "zod";
 import userCreateCardTransaction from "../mongoDbTransactions/userCreateCardTransaction.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import userCardUpdateValidationSchema from "../validations/userCardUpdateValidation.js";
-import getWalletTransactionsValidationSchema from "../validations/getWalletTransactionValidation.js";
-
+import { userCardTransactionsModel as user_card_transactions } from "../models/user_card_transaction_details.js";
+import getCardTransactionsValidationSchema from "../validations/getCardTransactionsValidation.js";
 type userConfigurationsType = {
     businessId: string;
     programId: string;
@@ -191,7 +191,7 @@ export const getCardsListService = async (requestSession: Request["session"], ae
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
-                throw new ForbiddenError("Not authorized to create wallet")
+                throw new ForbiddenError("Not authorized to get card list")
             }
         }
         const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
@@ -329,7 +329,7 @@ export const getCardDetailsService = async (requestSession: Request["session"], 
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
-                throw new ForbiddenError("Not authorized to create wallet")
+                throw new ForbiddenError("Not authorized to get card details")
             }
         }
         const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
@@ -421,7 +421,7 @@ export const updateCardStatusService = async (requestSession: Request["session"]
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
-                throw new ForbiddenError("Not authorized to create wallet")
+                throw new ForbiddenError("Not authorized to update card status")
             }
         }
         const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
@@ -538,7 +538,7 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
-                throw new ForbiddenError("Not authorized to create wallet")
+                throw new ForbiddenError("Not authorized to update card limits")
             }
         }
         const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
@@ -691,12 +691,12 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
-                throw new ForbiddenError("Not authorized to create wallet")
+                throw new ForbiddenError("Not authorized to get card transactions")
             }
         }
-        const walletId: string | null = checkStringQueryParams(aesDecryptedQueryData, "wallet_id")
-        if (!walletId) {
-            throw new InvalidRequestBodyError("Wallet-id not present in the request body");
+        const cardId: string | null = checkStringQueryParams(aesDecryptedQueryData, "card_id")
+        if (!cardId) {
+            throw new InvalidRequestBodyError("Card-id not present in the request body");
         }
         let userId;
         if (cardholderId === requestSession?.cardholderId) {
@@ -714,7 +714,7 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
         }
 
         // Check Validations
-        const validationResult: SafeParseResult<z.infer<typeof getWalletTransactionsValidationSchema>> = getWalletTransactionsValidationSchema.safeParse(aesDecryptedQueryData);
+        const validationResult: SafeParseResult<z.infer<typeof getCardTransactionsValidationSchema>> = getCardTransactionsValidationSchema.safeParse(aesDecryptedQueryData);
         if (!validationResult.success) {
             // return res.status(400).json({
             //     status: "SERVICE_ERROR",
@@ -726,13 +726,6 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
             //     errors: z.flattenError(validationResult.error)
             // });
             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
-        }
-
-        // Verify wallet
-        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ wallet_id: walletId, cardholder_id: cardholderId }).lean();
-
-        if (!wallet) {
-            throw new NotFoundError("Wallet not found");
         }
 
         // Date range filter
@@ -767,16 +760,19 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
 
         // Query filters
         const query = {
-            wallet_id: walletId,
-            ...(validationResult?.data?.wallet_type && { "wallet_details.wallet_type": validationResult?.data?.wallet_type }),
-            ...(validationResult?.data?.wallet_currency && { "wallet_details.wallet_currency": validationResult?.data?.wallet_currency }),
-            ...(validationResult?.data?.transaction_type && { transaction_type: validationResult?.data?.transaction_type }),
-            ...(validationResult?.data?.transaction_status && { transaction_status: validationResult?.data?.transaction_status }),
+            cardholder_id: cardholderId,
+            card_id: cardId,
+            ...(validationResult.data.transaction_type && { transaction_type: validationResult.data.transaction_type }),
+            ...(validationResult.data.transaction_status && { transaction_status: validationResult.data.transaction_status }),
+            ...(validationResult.data.card_type && { card_type: validationResult.data.card_type }),
+            ...(validationResult.data.currency && { currency: validationResult.data.currency }),
+            ...(validationResult.data.merchant_category && { merchant_category: validationResult.data.merchant_category }),
+            ...(validationResult.data.merchant_country && { merchant_country: validationResult.data.merchant_country }),
             ...(Object.keys(dateFilter).length > 0 && { createdAt: dateFilter }),
         };
 
         // Get total matching transactions
-        const totalTransactions = await user_wallet_transactions.countDocuments(query);
+        const totalTransactions = await user_card_transactions.countDocuments(query);
         // Calculate total pages
         const totalPages = Math.max(1, Math.ceil(totalTransactions / pageSize));
         // Calculate current page
@@ -790,39 +786,40 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
             transaction_type: 1,
             transaction_status: 1,
             amount: 1,
-            balance_after: 1,
+            currency: 1,
+            merchant_name: 1,
+            merchant_category: 1,
+            merchant_country: 1,
+            card_type: 1,
             createdAt: 1,
-            ...(
-                !aesDecryptedQueryData.wallet_type &&
-                !aesDecryptedQueryData.wallet_currency && {
-                    wallet_details: 1,
-                }
-            ),
         };
 
         // Fetch transactions
-        const transactions = await user_wallet_transactions.find(query).sort({ createdAt: -1 }).skip(skip).limit(pageSize).select(querySelect).lean();
+        const transactions = await user_card_transactions.find(query).sort({ createdAt: -1 }).skip(skip).limit(pageSize).select(querySelect).lean();
 
         if (!Array.isArray(transactions) || transactions.length === 0) {
-            throw new NotFoundError("Wallet transactions not found")
+            throw new NotFoundError("card transactions not found")
         }
 
         return {
             status: "SUCCESS",
-            message: "Wallet transactions fetched successfully",
+            message: "Card transactions fetched successfully",
             data: {
-                walletId,
+                cardholder_id: cardholderId,
+                card_id: cardId,
+
                 pagination: {
                     current_page: currentPage,
                     page_size: pageSize,
                     total_records: totalTransactions,
-                    total_pages: Math.ceil(totalTransactions / pageSize),
-                    has_next_page: currentPage * pageSize < totalTransactions,
+                    total_pages: totalPages,
+                    has_next_page: currentPage < totalPages,
                     has_previous_page: currentPage > 1,
                 },
+
                 transactions,
             },
-        };
+        }
     }
     catch (err) {
         const error = err as any;
