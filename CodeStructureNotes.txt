@@ -22,8 +22,8 @@ Add global session logout in frontend
 Check lru cache for required apis
 benificiaries bank details to have foreign key as user id
 utilize m2p and p2p check in required services
-creat card transaction api and card transactions list api
-create card transaction will check if balance in wallet and cards limit
+Create card transaction api , card transaction request comes with amount, transaction pending and amount holding and ot send, verify otp then transaction successfull and deduct amount from wallet else transaction fail and return amount to wallet
+Create card transaction will check if balance in wallet and cards limit
 check all the apis import for wallet and cards
 check if all database calls are efficiently called
 add beneficiary, verify beneficiary (directly without user involvement), payout, currency conversion.

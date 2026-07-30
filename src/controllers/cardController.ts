@@ -368,41 +368,41 @@ export const getCardTransactionDetails = async (req: Request<{ id?: string }>, r
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
 
 
-// // -------------------------------------- FUNCTION TO CREATE CARD TRANSACTIONS -------------------------------------- \\
-// export const createCardTransaction = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
-//     try {
-//         let aesDecryptedBodyData = req.body
-//         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+// -------------------------------------- FUNCTION TO CREATE CARD TRANSACTIONS -------------------------------------- \\
+export const createCardTransaction = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
 
-//         const createCardTransactionResponse = await updateCardLimitsService(req.params.id)
-//         if (createCardTransactionResponse?.status !== "SUCCESS") {
-//             return res.fail("SERVICE_ERROR", "Failed to create card transaction", 400);
-//         }
-//         return res.success("Card transaction created successfully", createCardTransactionResponse?.data, 200)
-//     }
-//     catch (err) {
-//         const error = err as any;
-//         const url = req?.path || "UNKNOWN_URL";
-//         const errorStatus = error?.status || "UnknownErrorStatus";
+        const createCardTransactionResponse = await updateCardLimitsService(req.params.id)
+        if (createCardTransactionResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to create card transaction", 400);
+        }
+        return res.success("Card transaction created successfully", createCardTransactionResponse?.data, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
-//         logger.error(error, {
-//             serviceName: "CreateCardTransactionController",
-//             // url: req.path,
-//             // method: req.method
-//         });
+        logger.error(error, {
+            serviceName: "CreateCardTransactionController",
+            // url: req.path,
+            // method: req.method
+        });
 
-//         if (error instanceof AppErrorClass) {
-//             if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-//                 throw error
-//             }
-//             else {
-//                 throw new ServiceError(
-//                     `[${errorStatus}] ${error.message}`,
-//                     error?.error ? error.error : error
-//                 );
-//             }
-//         }
-//         throw new ServiceUnavailableError("CreateCardTransactionController is facing unknown issue.", error)
-//     }
-// }
-// // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("CreateCardTransactionController is facing unknown issue.", error)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
