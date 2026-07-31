@@ -34,13 +34,13 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
                 },
 
                 account_balance: {
-                    type: Number,
+                    type: mongoose.Schema.Types.Decimal128,
                     default: 0,
                     min: 0,
                 },
 
                 holding_amount: {
-                    type: Number,
+                    type: mongoose.Schema.Types.Decimal128,
                     default: 0,
                     min: 0,
                 },

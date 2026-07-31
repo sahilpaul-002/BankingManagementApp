@@ -84,7 +84,7 @@ const userCardCreationValidationSchema = z.object({
 
     card_type: z.enum(["VIRTUAL", "PHYSICAL"]),
 
-    card_currency: z.enum(["USD", "EUR", "SGD"], {
+    card_currency: z.enum(["USD"], {
         error: "Invalid card currency",
     }),
 

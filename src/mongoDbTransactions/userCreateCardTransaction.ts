@@ -10,7 +10,7 @@ import type { SafeParseSuccess } from "zod/v3";
 import userWalletTransactionsValidationSchema from "../validations/userWalletTransactionsValidation.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import { config } from "dotenv";
-import { FEE_DETAILS } from "../configs/configConstants.js";
+import { FEE_DETAILS, MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 import crypto, { type OneShotDigestOptionsWithBufferEncoding } from "crypto"
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import userCardCreationValidationSchema from "../validations/userCardCreationValidation.js";
@@ -118,8 +118,14 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
                     name_on_card: userCardData.data?.name_on_card,
                     card_type: userCardData.data?.card_type,
                     card_currency: userCardData.data?.card_currency,
-                    ...(userCardData.data.card_limits && {card_limits: {
-                        daily_limit: dailyLimit!, monthly_limit: monthlyLimit!, yearly_limit: yearlyLimit!}}),
+                    ...(userCardData.data.card_limits && {
+                        card_limits: {
+                            daily_limit: dailyLimit!, monthly_limit: monthlyLimit!, yearly_limit: yearlyLimit!
+                        }
+                    }),
+                    ...(userCardData.data.merchant_categories && {
+                        valid_merchant_categories: [...(userCardData.data.merchant_categories ?? MERCHANT_CATEGORIES)],
+                    }),
                 }
             ],
             {

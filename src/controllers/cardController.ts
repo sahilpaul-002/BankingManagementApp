@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createCardService, getCardDetailsService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
+import { createCardService, createCardTransactionService, getCardDetailsService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
 
 // ------------------------------------------ FUNCTION TO CREATE CARD ------------------------------------------ \\
 export const createCard = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -373,8 +373,12 @@ export const createCardTransaction = async (req: Request<{ id?: string }>, res: 
     try {
         let aesDecryptedBodyData = req.body
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
 
-        const createCardTransactionResponse = await updateCardLimitsService(req.params.id)
+        const createCardTransactionResponse = await createCardTransactionService(requestSession, aesDecryptedBodyData)
         if (createCardTransactionResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to create card transaction", 400);
         }

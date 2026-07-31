@@ -17,6 +17,7 @@ import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import userCardUpdateValidationSchema from "../validations/userCardUpdateValidation.js";
 import { userCardTransactionsModel as user_card_transactions } from "../models/user_card_transaction_details.js";
 import getCardTransactionsValidationSchema from "../validations/getCardTransactionsValidation.js";
+import initiateCardTransaction from "../mongoDbTransactions/initiateCardTransaction.js";
 type userConfigurationsType = {
     businessId: string;
     programId: string;
@@ -851,7 +852,7 @@ export const getCardTransactionDetailsService = async (requestSession: Request["
         }
 
         // Check collection
-        const isCollectionPresent = await checkMongoDbCollectionExist("user_wallet_transactions");
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_card_transactions");
         if (isCollectionPresent.status !== "SUCCESS") {
             throw new NotFoundError("Required collection does not exist");
         }
@@ -911,7 +912,7 @@ export const getCardTransactionDetailsService = async (requestSession: Request["
             throw new NotFoundError("Card not found");
         }
 
-        // Get Wallet Transaction Details
+        // Get Card Transaction Details
         const transaction = await user_card_transactions.findOne({
             card_id: cardId,
             transaction_id: transactionId,
@@ -944,6 +945,235 @@ export const getCardTransactionDetailsService = async (requestSession: Request["
         }
 
         throw new ServiceError(`GetCardTransactionDetailsService facing issue: ${error.message}`, error);
+    }
+
+};
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\ 
+
+
+// ----------------------------------- CREATE CARD TRANSACTION ----------------------------------- \\
+const validateCardDetails = (cardDetails: Record<string, any>, cvvNumber: string, validThru: string, amount: string, currency: string, merchantName: string, merchantCategory: string, merchantCountry: string) => {
+    // 1. Verify CVV
+    if (cardDetails.cvv !== cvvNumber) {
+        throw new ServiceError("Transaction failed - Invalid card details");
+    }
+
+    // 2. Verify expiry date
+    const [expMonth, expYear] = validThru.split("/");
+
+    if (!expMonth || !expYear) {
+        throw new ServiceError("Transaction failed - Invalid Valid-Thru format");
+    }
+
+    const cardExpiry = new Date(cardDetails.valid_date);
+
+    const storedMonth = String(cardExpiry.getMonth() + 1).padStart(2, "0");
+    const storedYear = String(cardExpiry.getFullYear()).slice(-2);
+
+    if (storedMonth !== expMonth || storedYear !== expYear) {
+        throw new ServiceError("Transaction failed - Invalid card details");
+    }
+
+    // 3. Check card status
+    if (cardDetails.card_status !== "ACTIVE") {
+        throw new ServiceError(
+            `Transaction failed - Card cannot be used because it is ${cardDetails.card_status} status`
+        );
+    }
+
+    // 4. Check card expiry
+    const today = new Date();
+
+    if (cardExpiry < today) {
+        throw new ServiceError("Transaction failed - Card has expired");
+    }
+
+    // 5. Verify currency
+    if (cardDetails.card_currency !== currency) {
+        throw new ServiceError("Transaction failed - Card currency does not match transaction currency");
+    }
+
+    // 6. Verify merchant category
+    if (
+        !cardDetails.valid_merchant_categories.includes(merchantCategory)
+    ) {
+        throw new ServiceError(
+            "Transaction failed - Transactions are not allowed for this merchant category"
+        );
+    }
+
+    // Verify Limits
+    const amountNumber = Number(amount);
+    const now = new Date();
+
+    // 7. Verify daily limit
+    let dailySpent = 0;
+    if (cardDetails.daily_transaction && cardDetails.daily_transaction.date.toDateString() === now.toDateString()) {
+        dailySpent = Number(cardDetails.daily_transaction.debit.toString());
+    }
+    const dailyLimit = Number(cardDetails.card_limits.daily_limit.toString());
+    if (dailySpent + amountNumber > dailyLimit) {
+        throw new ServiceError("Daily card limit exceeded");
+    }
+
+    // 8. Verify monthly limit
+    let monthlySpent = 0;
+    const monthly = cardDetails.monthly_transaction;
+    if (monthly.month === now.getMonth() + 1 && monthly.year === now.getFullYear()) {
+        monthlySpent = Number(monthly.debit.toString());
+    }
+    const monthlyLimit = Number(cardDetails.card_limits.monthly_limit.toString());
+    if (monthlySpent + amountNumber > monthlyLimit) {
+        throw new ServiceError("Monthly card limit exceeded");
+    }
+
+    // 9. Verify yearly limit
+    let yearlySpent = 0;
+    const yearly = cardDetails.yearly_transaction;
+    if (yearly.year === now.getFullYear()) {
+        yearlySpent = Number(yearly.debit.toString());
+    }
+    const yearlyLimit = Number(cardDetails.card_limits.yearly_limit.toString());
+    if (yearlySpent + amountNumber > yearlyLimit) {
+        throw new ServiceError("Yearly card limit exceeded");
+    }
+
+    return true;
+}
+export const createCardTransactionService = async (aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_card_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist");
+        }
+
+        // Get card details from request
+        const cardNumber = checkStringBody(aesDecryptedBodyData, "card_number")
+        if (!cardNumber) {
+            throw new InvalidRequestBodyError("Card-Number is not present in the request")
+        }
+        const validThru = checkStringBody(aesDecryptedBodyData, "valid_thru")
+        if (!validThru) {
+            throw new InvalidRequestBodyError("Valid-Thru date is not present in the request")
+        }
+        const cvvNumber = checkStringBody(aesDecryptedBodyData, "cvv")
+        if (!cvvNumber) {
+            throw new InvalidRequestBodyError("CVV number is not present in the request")
+        }
+        const amount = checkStringBody(aesDecryptedBodyData, "amount")
+        if (!amount) {
+            throw new InvalidRequestBodyError("Amount is not present in the request")
+        }
+        const currency = checkStringBody(aesDecryptedBodyData, "currency")
+        if (!currency) {
+            throw new InvalidRequestBodyError("Currency is not present in the request")
+        }
+        const merchantName = checkStringBody(aesDecryptedBodyData, "merchant_name")
+        if (!merchantName) {
+            throw new InvalidRequestBodyError("Merchant-Name is not present in the request")
+        }
+        const merchantCategory = checkStringBody(aesDecryptedBodyData, "merchant_category")
+        if (!merchantCategory) {
+            throw new InvalidRequestBodyError("Merchant-Category is not present in the request")
+        }
+        const merchantCountry = checkStringBody(aesDecryptedBodyData, "merchant_country")
+        if (!merchantCountry) {
+            throw new InvalidRequestBodyError("Merchant-Country is not present in the request")
+        }
+        const transactionType = checkStringBody(aesDecryptedBodyData, "transaction_type")
+        if (!transactionType || !["PURCHASE", "WITHDRAWAL", "REFUND"].includes(transactionType)) {
+            throw new InvalidRequestBodyError("Transaction-Type is not valid, must be [PURCHASE | WITHDRAWAL | REFUND]")
+        }
+        const authorizationType = checkStringBody(aesDecryptedBodyData, "authorization_type")
+        if (!authorizationType || !["HOLD", "IMMEDIATE"]?.includes(authorizationType)) {
+            throw new InvalidRequestBodyError("Authorization-Type is not valid, must be [HOLD | IMMEDIATE]")
+        }
+
+        // Verify card
+        const cardDetails = await user_card_details.findOne({ card_number: cardNumber }).lean();
+        if (!cardDetails) {
+            throw new NotFoundError("Card not found");
+        }
+
+        const cardDetailsValidation = validateCardDetails(cardDetails, cvvNumber, validThru, amount, currency, merchantName, merchantCategory, merchantCountry)
+        if (!cardDetailsValidation) {
+            throw new ServiceError("Transaction failed - Invalid card details")
+        }
+
+        // Validate USD Wallet Balance \\
+        const wallet = await user_wallet_details.findOne(
+            {
+                cardholder_id: cardDetails.cardholder_id,
+            },
+            {
+                wallet_id: 1,
+                cardholder_id: 1,
+                wallets_details: {
+                    $elemMatch: {
+                        wallet_currency: "USD",
+                    },
+                },
+            }
+        ).lean();
+        if (!wallet || wallet.wallets_details.length === 0) {
+            throw new BadRequestError("USD wallet not found");
+        }
+        const selectedWallet = wallet.wallets_details[0];
+        if (selectedWallet.wallet_status !== "ACTIVE") {
+            throw new BadRequestError("USD wallet is inactive");
+        }
+        const accountBalance = Number(
+            selectedWallet.account_balance.toString()
+        );
+        const holdingAmount = Number(
+            selectedWallet.holding_amount.toString()
+        );
+        const availableBalance = accountBalance - holdingAmount;
+        const transactionAmount = Number(amount);
+        if (availableBalance < transactionAmount) {
+            throw new BadRequestError("Insufficient available balance");
+        }
+        // xxxxxxxxxxxxxxxxxxxxxxxxxx \\
+
+        // Initiate Card Transaction
+        const initiateCardTransactionResult = await initiateCardTransaction(wallet.wallet_id, selectedWallet, cardDetails,
+            {
+                transaction_type: transactionType as
+                    | "PURCHASE"
+                    | "WITHDRAWAL"
+                    | "REFUND",
+                authorization_type: authorizationType as
+                    | "HOLD"
+                    | "IMMEDIATE",
+                amount: Number(amount),
+                merchant_name: merchantName,
+                merchant_category: merchantCategory,
+                merchant_country: merchantCountry,
+                remarks: null,
+            }
+        );
+
+        if (initiateCardTransactionResult?.status !== "SUCCESS") {
+            throw new ServiceError("Card transaction service failed")
+        }
+
+        return { status: "SUCCESS", message: "Card transaction successful", data: initiateCardTransactionResult?.data }
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, { serviceName: "CreateCardTransactionService" });
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`CreateCardTransactionService facing issue: ${error.message}`, error);
     }
 
 };

@@ -179,9 +179,9 @@ export interface beneficiariesBankDetailsSchemaTypes extends Document {
 
 // Types for Cardholder Card Details Model Schema
 export interface cardLimitsTypes {
-    daily_limit: string;
-    monthly_limit: string;
-    yearly_limit: string;
+    daily_limit: mongoose.Types.Decimal128;
+    monthly_limit: mongoose.Types.Decimal128;
+    yearly_limit: mongoose.Types.Decimal128;
 }
 export interface userCardDetailsSchemaTypes extends Document {
     cardholder_id: string;
@@ -194,22 +194,22 @@ export interface userCardDetailsSchemaTypes extends Document {
     name_on_card: string;
     card_type: "VIRTUAL" | "PHYSICAL";
     card_currency: "USD";
-    card_limits?: cardLimitsTypes,
-    valid_merchant_categories: typeof MERCHANT_CATEGORIES, 
+    card_limits?: cardLimitsTypes;
+    valid_merchant_categories: typeof MERCHANT_CATEGORIES;
     daily_transaction?: {
-        credit: number;
-        debit: number;
+        credit: mongoose.Types.Decimal128;
+        debit: mongoose.Types.Decimal128;
         date: Date;
     };
     monthly_transaction?: {
-        credit: number;
-        debit: number;
+        credit: mongoose.Types.Decimal128;
+        debit: mongoose.Types.Decimal128;
         month: number;
         year: number;
     };
     yearly_transaction?: {
-        credit: number;
-        debit: number;
+        credit: mongoose.Types.Decimal128;
+        debit: mongoose.Types.Decimal128;
         year: number;
     };
 }

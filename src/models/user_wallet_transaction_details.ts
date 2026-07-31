@@ -50,7 +50,7 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
         },
 
         amount: {
-            type: Number,
+            type: mongoose.Schema.Types.Decimal128,
             required: true,
             min: 0,
         },

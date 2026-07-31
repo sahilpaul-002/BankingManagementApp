@@ -1,6 +1,18 @@
 import mongoose, { Schema } from "mongoose";
-import type { userCardDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
+import type { userCardDetailsSchemaTypes } from "../types/schemaTypes.js";
+
+const decimalField = (defaultValue: string) => ({
+    type: Schema.Types.Decimal128,
+    required: true,
+    default: () => mongoose.Types.Decimal128.fromString(defaultValue),
+    validate: {
+        validator(value: mongoose.Types.Decimal128) {
+            return parseFloat(value.toString()) >= 10;
+        },
+        message: "Value must be at least 10."
+    }
+});
 
 const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
     {
@@ -28,35 +40,34 @@ const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
 
         card_status: {
             type: String,
-            required: true,
             enum: ["ACTIVE", "INACTIVE", "FROZEN", "BLOCKED"],
             default: "INACTIVE",
+            required: true,
         },
 
         cvv: {
             type: String,
-            required: true,
-            default: "000",
             minlength: 3,
             maxlength: 3,
-            trim: true,
+            default: "000",
+            required: true,
         },
 
         issued_date: {
             type: Date,
-            required: true,
             default: Date.now,
+            required: true,
         },
 
         valid_date: {
             type: Date,
             required: true,
-            default: Date.now,
         },
 
         name_on_card: {
             type: String,
-            required: true
+            required: true,
+            trim: true,
         },
 
         card_type: {
@@ -67,28 +78,16 @@ const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
 
         card_currency: {
             type: String,
-            enum: ["USD", "EUR", "SGD"],
+            enum: ["USD"],
+            default: "USD",
             required: true,
+            immutable: true, // Optional: prevent changing after creation
         },
 
         card_limits: {
-            daily_limit: {
-                type: String,
-                default: "1000",
-                required: true,
-            },
-
-            monthly_limit: {
-                type: String,
-                default: "2000",
-                required: true,
-            },
-
-            yearly_limit: {
-                type: String,
-                default: "5000",
-                required: true,
-            },
+            daily_limit: decimalField("1000"),
+            monthly_limit: decimalField("2000"),
+            yearly_limit: decimalField("5000"),
         },
 
         valid_merchant_categories: {
@@ -96,28 +95,72 @@ const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
                 type: String,
                 enum: MERCHANT_CATEGORIES,
             }],
+            default: () => [...MERCHANT_CATEGORIES],
             required: true,
         },
 
         daily_transaction: {
-            type: Number,
-            required: true,
-            defaullt: 0
+            credit: {
+                type: Schema.Types.Decimal128,
+                default: () => mongoose.Types.Decimal128.fromString("0"),
+                required: true,
+            },
+            debit: {
+                type: Schema.Types.Decimal128,
+                default: () => mongoose.Types.Decimal128.fromString("0"),
+                required: true,
+            },
+            date: {
+                type: Date,
+                default: Date.now,
+                required: true,
+            },
         },
 
         monthly_transaction: {
-            type: Number,
-            required: true,
-            defaullt: 0
+            credit: {
+                type: Schema.Types.Decimal128,
+                default: () => mongoose.Types.Decimal128.fromString("0"),
+                required: true,
+            },
+            debit: {
+                type: Schema.Types.Decimal128,
+                default: () => mongoose.Types.Decimal128.fromString("0"),
+                required: true,
+            },
+            month: {
+                type: Number,
+                default: () => new Date().getMonth() + 1,
+                required: true,
+            },
+            year: {
+                type: Number,
+                default: () => new Date().getFullYear(),
+                required: true,
+            },
         },
 
         yearly_transaction: {
-            type: Number,
-            required: true,
-            defaullt: 0
-        }
+            credit: {
+                type: Schema.Types.Decimal128,
+                default: () => mongoose.Types.Decimal128.fromString("0"),
+                required: true,
+            },
+            debit: {
+                type: Schema.Types.Decimal128,
+                default: () => mongoose.Types.Decimal128.fromString("0"),
+                required: true,
+            },
+            year: {
+                type: Number,
+                default: () => new Date().getFullYear(),
+                required: true,
+            },
+        },
     },
-    { timestamps: true }
+    {
+        timestamps: true,
+    }
 );
 
 userCardDetailsSchema.index({
