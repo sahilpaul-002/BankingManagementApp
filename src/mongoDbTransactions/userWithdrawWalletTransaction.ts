@@ -17,9 +17,9 @@ const userWithdrawWalletTransaction = async (cardholderId: string, walletId: str
     try {
         mongoSession.startTransaction();
 
-        const currentBalance = selectedWallet.account_balance ?? 0;
+        const currentBalance = Number(selectedWallet?.account_balance?.toString()) ?? 0;
 
-        const withdrawAmount = userWalletActionData?.data?.amount;
+        const withdrawAmount = Number(userWalletActionData?.data?.amount?.toString());
 
         // Check balance
         if (withdrawAmount > currentBalance) {

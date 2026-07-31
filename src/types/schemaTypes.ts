@@ -121,24 +121,24 @@ export interface userKycDetailsSchemaTypes extends Document {
 // Types for User Wallet Details Model Schema
 export type walletDetailsType = {
     wallet_status?: "ACTIVE" | "INACTIVE";
-    account_balance?: number;
-    holding_amount?: number;
+    account_balance?: mongoose.Types.Decimal128;
+    holding_amount?: mongoose.Types.Decimal128;
     wallet_type: "FIAT" | "CRYPTO";
     wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
     daily_transaction?: {
-        credit: number;
-        debit: number;
+        credit: mongoose.Types.Decimal128;
+        debit: mongoose.Types.Decimal128;
         date: Date;
     };
     monthly_transaction?: {
-        credit: number;
-        debit: number;
+        credit: mongoose.Types.Decimal128;
+        debit: mongoose.Types.Decimal128;
         month: number;
         year: number;
     };
     yearly_transaction?: {
-        credit: number;
-        debit: number;
+        credit: mongoose.Types.Decimal128;
+        debit: mongoose.Types.Decimal128;
         year: number;
     };
 };
@@ -160,21 +160,11 @@ export interface userWalletTransactionsTypes extends Document {
         wallet_type: "FIAT" | "CRYPTO";
         wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
     };
-    amount: number;
-    balance_before: number;
-    balance_after: number;
+    amount: mongoose.Types.Decimal128;
+    balance_before: mongoose.Types.Decimal128;
+    balance_after: mongoose.Types.Decimal128;
     reference_id: string | null;
     remarks: string | null;
-}
-
-// Type for Beneficiaries Bank Details Model Schema
-export interface beneficiariesBankDetailsSchemaTypes extends Document {
-    account_number: string;
-    account_holder_name: string;
-    swift_code: string;
-    iban_code: string;
-    bank_name: string;
-    is_verified?: boolean;
 }
 
 // Types for Cardholder Card Details Model Schema
@@ -231,6 +221,16 @@ export interface userCardTransactionsTypes extends Document {
     merchant_country: string;
     reference_id: string | null;
     remarks: string | null;
+}
+
+// Type for Beneficiaries Bank Details Model Schema
+export interface beneficiariesBankDetailsSchemaTypes extends Document {
+    account_number: string;
+    account_holder_name: string;
+    swift_code: string;
+    iban_code: string;
+    bank_name: string;
+    is_verified?: boolean;
 }
 
 // Types for Fee Details Model Schema

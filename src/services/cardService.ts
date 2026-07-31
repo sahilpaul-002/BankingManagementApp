@@ -97,7 +97,7 @@ export const createCardService = async (requestSession: Request["session"], aesD
         const userUsdWallet: walletDetailsType = userUsdWalletDetailsDoc.wallets_details[0];
 
         // Check usd wallet amount
-        if ((userUsdWallet?.account_balance ?? 0) <= 5) {
+        if ((Number(userUsdWallet?.account_balance!.toString()) ?? 0) <= 5) {
             throw new BadRequestError("Issuficient balance in USD wallet");
         }
 
@@ -1124,15 +1124,11 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             throw new BadRequestError("USD wallet not found");
         }
         const selectedWallet = wallet.wallets_details[0];
-        if (selectedWallet.wallet_status !== "ACTIVE") {
+        if (selectedWallet?.wallet_status !== "ACTIVE") {
             throw new BadRequestError("USD wallet is inactive");
         }
-        const accountBalance = Number(
-            selectedWallet.account_balance.toString()
-        );
-        const holdingAmount = Number(
-            selectedWallet.holding_amount.toString()
-        );
+        const accountBalance = Number(selectedWallet?.account_balance!.toString());
+        const holdingAmount = Number(selectedWallet?.holding_amount!.toString());
         const availableBalance = accountBalance - holdingAmount;
         const transactionAmount = Number(amount);
         if (availableBalance < transactionAmount) {

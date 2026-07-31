@@ -59,15 +59,16 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
 
         const deductionAmount = FEE_DETAILS.create_card;
 
-        const balanceBefore = userUsdWalletDetails.account_balance ?? 0;
+        const balanceBefore = Number(userUsdWalletDetails?.account_balance?.toString()) ?? 0;
         const balanceAfter = balanceBefore - deductionAmount;
 
         // Deduct wallet balance
+        const deductionAmountDecimal = mongoose.Types.Decimal128.fromString(deductionAmount.toString());
         const updatedWallet = await user_wallet_details.findOneAndUpdate(
             {
                 cardholder_id: cardholderId,
                 "wallets_details.wallet_currency": "USD",
-                "wallets_details.account_balance": { $gte: deductionAmount }
+                "wallets_details.account_balance": {$gte: deductionAmountDecimal,},
             },
             {
                 $inc: {

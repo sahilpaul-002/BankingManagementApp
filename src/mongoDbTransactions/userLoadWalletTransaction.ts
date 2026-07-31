@@ -96,7 +96,7 @@ const userLoadWalletTransaction = async (cardholderId: string, walletId: string,
             },
             amount: userWalletActionData.data.amount,
             balance_before: selectedWallet.account_balance ?? 0,
-            balance_after: (selectedWallet.account_balance ?? 0) + userWalletActionData.data.amount,
+            balance_after: (Number(selectedWallet?.account_balance?.toString()) ?? 0) + userWalletActionData.data.amount,
             reference_id: crypto.randomUUID(),
             remarks: "Wallet loaded",
         };

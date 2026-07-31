@@ -378,7 +378,7 @@ export const createCardTransaction = async (req: Request<{ id?: string }>, res: 
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const createCardTransactionResponse = await createCardTransactionService(requestSession, aesDecryptedBodyData)
+        const createCardTransactionResponse = await createCardTransactionService(aesDecryptedBodyData)
         if (createCardTransactionResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to create card transaction", 400);
         }

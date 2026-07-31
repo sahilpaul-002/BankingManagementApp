@@ -5,7 +5,7 @@ import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import checkStringBody from "../utils/checkStringBody.js";
 import logger from "../utils/logger.js";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import type { ParsedQs } from "qs";
 import type { userWalletDetailsSchemaTypes, walletDetailsType } from "../types/schemaTypes.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
@@ -199,8 +199,8 @@ export const createWalletService = async (requestSession: Request["session"], ae
         // New wallet object
         const newWallet: walletDetailsType = {
             wallet_status: "ACTIVE",
-            account_balance: 0,
-            holding_amount: 0,
+            account_balance: mongoose.Types.Decimal128.fromString("0"),
+            holding_amount: mongoose.Types.Decimal128.fromString("0"),
             wallet_type: validationResult.data.wallet_type,
             wallet_currency: validationResult.data.wallet_currency,
         };

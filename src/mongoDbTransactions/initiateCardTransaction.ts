@@ -31,8 +31,8 @@ const initiateCardTransaction = async (
         const referenceId = crypto.randomUUID();
 
         // Validate wallet balance
-        const currentBalance = Number(selectedWallet.account_balance.toString());
-        const currentHolding = Number(selectedWallet.holding_amount.toString());
+        const currentBalance = Number(selectedWallet?.account_balance!.toString());
+        const currentHolding = Number(selectedWallet?.holding_amount!.toString());
         const holdAmount = transactionData.amount;
         const availableBalance = currentBalance - currentHolding;
         if (holdAmount > availableBalance) {
@@ -68,7 +68,7 @@ const initiateCardTransaction = async (
             }
 
             // Monthly Limits Update
-            const isSameMonth = selectedWallet.monthly_transaction.month === now.getMonth() + 1 && selectedWallet.monthly_transaction.year === now.getFullYear();
+            const isSameMonth = selectedWallet?.monthly_transaction?.month === now.getMonth() + 1 && selectedWallet.monthly_transaction.year === now.getFullYear();
 
             if (isSameMonth) {
                 updateInc["wallets_details.$.monthly_transaction.debit"] = holdAmount;
@@ -80,7 +80,7 @@ const initiateCardTransaction = async (
             }
 
             // Yearly Limits Update
-            const isSameYear = selectedWallet.yearly_transaction.year === now.getFullYear();
+            const isSameYear = selectedWallet?.yearly_transaction?.year === now.getFullYear();
             if (isSameYear) {
                 updateInc["wallets_details.$.yearly_transaction.debit"] = holdAmount;
             }
