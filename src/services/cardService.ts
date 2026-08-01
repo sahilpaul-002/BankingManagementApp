@@ -1275,3 +1275,86 @@ export const createCardTransactionService = async (requestSession: Request["sess
 
 };
 // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\ 
+
+
+// --------------------------------- Card Transaction Settlement Webhook --------------------------------- \\
+interface CardAuthorizationJwtPayload {
+    userId: string;
+    userName: string;
+    cardholderEmail: string;
+    action: "APPROVE" | "REJECT";
+    transactionId: string;
+    maskedCardNumber: string;
+    iat: number;
+    exp: number;
+}
+export const cardTransactionAuthorizationWebhookService = async (aesDecryptedQueryData: Record<string, string> | undefined) => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid request");
+        }
+
+        // Verify JWT
+        const token = aesDecryptedQueryData.token;
+        if (!token) {
+            throw new BadRequestError("Authorization token missing");
+        }
+
+        const jwtSecret = process.env.JWT_SECRET_KEY as string;
+
+        const decoded = jwt.verify(
+            token,
+            jwtSecret
+        ) as CardAuthorizationJwtPayload;
+
+        // Validate Action
+        if (!["APPROVE", "REJECT"].includes(decoded.action)) {
+            throw new BadRequestError("Invalid authorization action");
+        }
+
+        // Find Transaction
+        const transaction = await user_card_transactions.findOne({transaction_id: decoded.transactionId}).lean();
+
+        if (!transaction) {
+            throw new NotFoundError("Card transaction not found");
+        }
+
+        // Check if the transaction is already processed
+        if (transaction.authorization_status !== "PENDING") {
+            throw new ServiceError(`Transaction already ${transaction.authorization_status.toLowerCase()}`            );
+        }
+
+        // Check if the transaction authorization is expired
+        if (transaction.authorization_expires_at && new Date() > transaction.authorization_expires_at) {
+            throw new ServiceError("Authorization request has expired");
+        }
+
+        // Card Transaction Settlement Mongodb Transaction
+        const cardTransactionSettlementResult = await cardTransactionAuthorizationUpdateTransaction(
+                decoded,
+                transaction
+            );
+
+        if (cardTransactionSettlementResult.status !== "SUCCESS") {
+            throw new ServiceError(
+                "Failed to authorize transaction"
+            );
+        }
+
+        return {
+            status: "SUCCESS",
+            message: decoded.action === "APPROVE" ? "Transaction approved successfully" : "Transaction rejected successfully",
+            data: cardTransactionSettlementResult.data,
+        };
+    } catch (err) {
+        const error = err as any;
+        logger.error(error, {serviceName: "CardTransactionAuthorizationWebhookService",});
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`CardTransactionAuthorizationWebhookService failed: ${error.message}`);
+    }
+};
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

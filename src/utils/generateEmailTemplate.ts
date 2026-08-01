@@ -1321,8 +1321,14 @@ const generateEmailTemplate = (
                                     <tr>
                                         <td><strong>Transaction Amount</strong></td>
                                         <td>
-                                            ${transactionPayload.transactionCurrency}
-                                            ${transactionPayload.transactionAmount}
+                                            <span style="
+                                                font-size:18px;
+                                                font-weight:bold;
+                                                color:#16A34A;
+                                            ">
+                                                ${transactionPayload.transactionCurrency}
+                                                ${transactionPayload.transactionAmount}
+                                            </span>
                                         </td>
                                     </tr>
 
@@ -1437,6 +1443,26 @@ const generateEmailTemplate = (
                                         Reject Transaction
                                     </a>
 
+                                </div>
+
+                                <div style="
+                                    margin-top:30px;
+                                    padding:16px;
+                                    background:#FEF3C7;
+                                    border-left:4px solid #F59E0B;
+                                    border-radius:6px;
+                                ">
+                                    <p style="
+                                        margin:0;
+                                        color:#92400E;
+                                        font-size:14px;
+                                        line-height:1.6;
+                                    ">
+                                        <strong>Important:</strong>
+                                        If the buttons above do not work, simply ignore this email.
+                                        The authorization request will automatically expire after
+                                        <strong>2 minutes</strong>.
+                                    </p>
                                 </div>
 
                                 <!-- SECURITY NOTICE -->
