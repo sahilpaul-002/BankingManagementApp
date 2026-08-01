@@ -211,6 +211,11 @@ export interface userCardTransactionsTypes extends Document {
     transaction_id: string;
     transaction_type: "PURCHASE" | "REFUND" | "WITHDRAWAL" | "REVERSAL" | "FEE";
     transaction_status: "PENDING" | "SUCCESS" | "FAILED" | "REVERSED";
+    authorization_type: "HOLD" | "IMMEDIATE";
+    authorization_status: "PENDING" | "AUTHORIZED" | "REJECTED" | "EXPIRED"
+    authorization_expires_at: Date;
+    authorized_at: Date | null;
+    authorized_by: string | null;
     card_number: string;
     currency: "USD";
     name_on_card: string;

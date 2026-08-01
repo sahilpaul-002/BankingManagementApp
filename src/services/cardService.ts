@@ -3,7 +3,7 @@ import { userWalletDetailsModel as user_wallet_details } from "../models/user_wa
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidRequestParamsError, InvalidRequestQueryError, NotFoundError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import type { userCardDetailsSchemaTypes, userCardTransactionsTypes, userDetailsSchemaTypes, walletDetailsType, } from "../types/schemaTypes.js";
+import type { walletDetailsType, } from "../types/schemaTypes.js";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import type { ParsedQs } from "qs";
@@ -18,6 +18,13 @@ import userCardUpdateValidationSchema from "../validations/userCardUpdateValidat
 import { userCardTransactionsModel as user_card_transactions } from "../models/user_card_transaction_details.js";
 import getCardTransactionsValidationSchema from "../validations/getCardTransactionsValidation.js";
 import initiateCardTransaction from "../mongoDbTransactions/initiateCardTransaction.js";
+import jwt, { type JwtPayload } from "jsonwebtoken";
+import generateEmailTemplate from "../utils/generateEmailTemplate.js";
+import { gmailSendService } from "./gmailSendService.js";
+
+const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
+const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
+
 type userConfigurationsType = {
     businessId: string;
     programId: string;
@@ -1040,7 +1047,7 @@ const validateCardDetails = (cardDetails: Record<string, any>, cvvNumber: string
 
     return true;
 }
-export const createCardTransactionService = async (aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson | failedResponseJson> => {
+export const createCardTransactionService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid query data");
@@ -1158,7 +1165,101 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             throw new ServiceError("Card transaction service failed")
         }
 
-        return { status: "SUCCESS", message: "Card transaction successful", data: initiateCardTransactionResult?.data }
+        if (authorizationType === "HOLD") {
+            const maskCardNumber = (cardNumber: string): string => {
+                return `**** **** **** ${cardNumber.slice(-4)}`;
+            };
+            const maskedCardNumber = maskCardNumber(initiateCardTransactionResult?.data?.cardNumber)
+
+            // Get Cardholder Email
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardDetails.cardholder_id }).select("email full_name business_id program_id subagent_code").lean();
+            if (!cardholderDetails?.email) {
+                throw new NotFoundError("Cardholder email not found");
+            }
+
+            // Get Dashboard
+            const dashboardName = requestSession?.sessiondata?.dashboardName || "BMA"
+            if (!dashboardName) {
+                throw new UnauthenticatedError("Unauthenticated session detected");
+            }
+
+            const jwtSecretKey = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
+            // Create Card Transaction Auth Token
+            const approveToken = jwt.sign(
+                {
+                    userId: cardDetails?.cardholder_id,
+                    userName: cardholderDetails?.full_name || "Cardholder",
+                    cardholderEmail: cardholderDetails?.email,
+                    action: "APPROVE",
+                    transactionId: initiateCardTransactionResult?.data?.transactionId,
+                    maskedCardNumber: maskedCardNumber
+                },
+                jwtSecretKey,
+                {
+                    expiresIn: "2m",
+                }
+            );
+            const rejectToken = jwt.sign(
+                {
+                    userId: cardDetails?.cardholder_id,
+                    userName: cardholderDetails?.full_name || "Cardholder",
+                    cardholderEmail: cardholderDetails?.email,
+                    action: "REJECT",
+                    transactionId: initiateCardTransactionResult?.data?.transactionId,
+                    maskedCardNumber: maskedCardNumber
+                },
+                jwtSecretKey,
+                {
+                    expiresIn: "2m",
+                }
+            );
+
+            // Backend webhook URLs
+            const approveUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/card/cardTransactionAuthorizationWebhook?token=${encodeURIComponent(approveToken)}`;
+            const rejectUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/card/cardTransactionAuthorizationWebhook?token=${encodeURIComponent(rejectToken)}`;
+
+            // Format authorization expiry date
+            const formattedExpiry = initiateCardTransactionResult?.data?.authorizationExpiresAt.toLocaleString("en-IN", {
+                dateStyle: "medium",
+                timeStyle: "medium",
+                timeZone: "Asia/Kolkata",
+            });
+
+            // Generate email template
+            const emailTemplate = generateEmailTemplate(
+                "CARD_TRANSACTION_AUTHORIZATION",
+                {
+                    userId: cardDetails?.cardholder_id,
+                    userName: cardholderDetails?.full_name || "Cardholder",
+                    dashboardName: dashboardName,
+                    cardholderEmail: cardholderDetails?.email,
+                    transactionId: initiateCardTransactionResult?.data?.transactionId,
+                    maskedCardNumber: maskedCardNumber,
+                    authorizationExpiresAt: formattedExpiry,
+                    merchantName: initiateCardTransactionResult?.data?.merchantName,
+                    transactionCurrency: "USD",
+                    transactionAmount: amount,
+                    approveUrl,
+                    rejectUrl
+                }
+            );
+
+            const toEmail: string = cardholderDetails?.email
+            const sendEmail: string = fromEmail
+            const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
+            // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+            const gmailMailServiceResponse = await gmailSendService(mainConfig)
+
+            if (gmailMailServiceResponse?.status !== "SUCCESS") {
+                return { status: "SUCCESS", message: "Card transaction successful - but failed to send authorization email", data: initiateCardTransactionResult?.data }
+            }
+            else {
+                return { status: "SUCCESS", message: "Card transaction successful - authorization email sent to cardholder email", data: initiateCardTransactionResult?.data }
+            }
+        }
+        else {
+            return { status: "SUCCESS", message: "Card transaction successful", data: initiateCardTransactionResult?.data }
+        }
     }
     catch (err) {
         const error = err as any;

@@ -35,8 +35,37 @@ const userCardTransactionsSchema = new Schema<userCardTransactionsTypes>(
         transaction_status: {
             type: String,
             required: true,
-            default: "SUCCESS",
+            default: "PENDING",
             enum: ["PENDING", "SUCCESS", "FAILED", "REVERSED"],
+        },
+
+        authorization_type: {
+            type: String,
+            required: true,
+            enum: ["HOLD", "IMMEDIATE"],
+        },
+
+        authorization_status: {
+            type: String,
+            required: true,
+            default: "PENDING",
+            enum: ["PENDING", "AUTHORIZED", "REJECTED", "EXPIRED"],
+        },
+
+        authorization_expires_at: {
+            type: Date,
+            required: true,
+        },
+
+        authorized_at: {
+            type: Date,
+            default: null,
+        },
+
+        authorized_by: {
+            type: String,
+            default: null,
+            trim: true,
         },
 
         card_number: {
@@ -118,6 +147,11 @@ userCardTransactionsSchema.index({
 userCardTransactionsSchema.index({
     transaction_status: 1,
     createdAt: -1,
+});
+
+userCardTransactionsSchema.index({
+    authorization_status: 1,
+    authorization_expires_at: 1,
 });
 
 const userCardTransactionsModel = mongoose.model<userCardTransactionsTypes>(

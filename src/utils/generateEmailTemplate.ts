@@ -10,6 +10,7 @@ type emailTemplateType =
     | "BANK_VERIFICATION_REJECTED"
     | "BANK_VERIFICATION_ACCEPTED"
     | "BANK_VERIFICATION_ACCEPTED_ADMIN"
+    | "CARD_TRANSACTION_AUTHORIZATION"
 
 interface verificationCodePayloadType {
     verificationCode: string;
@@ -70,6 +71,21 @@ interface userBankAccountVerificationAcceptedAdminPayloadType {
     dashboardName?: string;
 }
 
+interface cardTransactionAuthorizationPayload {
+    userId: string,
+    userName: string,
+    dashboardName: string,
+    cardholderEmail: string,
+    transactionId: string,
+    maskedCardNumber: string,
+    authorizationExpiresAt: string,
+    merchantName: string;
+    transactionCurrency: string;
+    transactionAmount: string;
+    approveUrl: string,
+    rejectUrl: string
+}
+
 interface templateResponseType {
     subject: string;
     html: string;
@@ -84,13 +100,14 @@ type emailTemplatePayloadType =
     | userBankAccountVerificationRejectedPayloadType
     | userBankAccountVerificationAcceptedPayloadType
     | userBankAccountVerificationAcceptedAdminPayloadType
+    | cardTransactionAuthorizationPayload
 
 const generateEmailTemplate = (
     templateType: emailTemplateType,
     payload: emailTemplatePayloadType
 ): templateResponseType => {
 
-    const dashboardTitle = payload.dashboardName || "BMA";
+    const dashboardTitle = payload?.dashboardName ?? "BMA";
 
     switch (templateType) {
 
@@ -267,9 +284,9 @@ const generateEmailTemplate = (
                                     line-height: 1.6;
                                 ">
                                     ${verificationPayload.userName
-                                    ? `Hello ${verificationPayload.userName},`
-                                    : "Hello,"
-                                }
+                        ? `Hello ${verificationPayload.userName},`
+                        : "Hello,"
+                    }
                                 </p>
 
                                 <p style="
@@ -1180,6 +1197,296 @@ const generateEmailTemplate = (
                     </div>
                 </div>
                 `
+            };
+        }
+
+
+
+        // =========================================================
+        // CARD TRANSACTION AUTHORIZATION
+        // =========================================================
+        case "CARD_TRANSACTION_AUTHORIZATION": {
+
+            const transactionPayload =
+                payload as cardTransactionAuthorizationPayload;
+
+            return {
+                subject: "Card Transaction Authorization Required",
+
+                html: `
+                    <div style="
+                        font-family: Arial, Helvetica, sans-serif;
+                        background-color:#f4f4f4;
+                        padding:40px 20px;
+                    ">
+
+                        <div style="
+                            max-width:700px;
+                            margin:auto;
+                            background:#ffffff;
+                            border-radius:10px;
+                            overflow:hidden;
+                            box-shadow:0 2px 10px rgba(0,0,0,0.1);
+                        ">
+
+                            <!-- HEADER -->
+                            <div style="
+                                background:#111827;
+                                padding:22px;
+                                text-align:center;
+                            ">
+                                <h1 style="
+                                    margin:0;
+                                    color:#ffffff;
+                                    font-size:24px;
+                                ">
+                                    ${dashboardTitle} Transaction Authorization
+                                </h1>
+                            </div>
+
+                            <!-- BODY -->
+                            <div style="padding:40px 32px;">
+
+                                <h2 style="
+                                    margin-top:0;
+                                    color:#111827;
+                                ">
+                                    Authorization Required
+                                </h2>
+
+                                <p style="
+                                    color:#374151;
+                                    font-size:16px;
+                                    line-height:1.7;
+                                ">
+                                    Hello <strong>${transactionPayload.userName}</strong>,
+                                </p>
+
+                                <p style="
+                                    color:#374151;
+                                    font-size:16px;
+                                    line-height:1.7;
+                                ">
+                                    A card transaction has been initiated using your card.
+                                    Before the payment can be processed, you must authorize
+                                    this transaction.
+                                </p>
+
+                                <!-- STATUS BOX -->
+                                <div style="
+                                    margin:30px 0;
+                                    padding:18px;
+                                    border-radius:8px;
+                                    background:#FEF3C7;
+                                    border-left:5px solid #F59E0B;
+                                ">
+
+                                    <div style="
+                                        font-size:18px;
+                                        font-weight:bold;
+                                        color:#92400E;
+                                        margin-bottom:10px;
+                                    ">
+                                        ⏳ Pending Authorization
+                                    </div>
+
+                                    <p style="
+                                        margin:0;
+                                        color:#78350F;
+                                        line-height:1.6;
+                                    ">
+                                        This transaction is currently on hold and is waiting
+                                        for your approval or rejection.
+                                    </p>
+
+                                </div>
+
+                                <!-- TRANSACTION DETAILS -->
+                                <table
+                                    cellpadding="10"
+                                    cellspacing="0"
+                                    width="100%"
+                                    style="
+                                        border-collapse:collapse;
+                                        margin-top:20px;
+                                        border:1px solid #E5E7EB;
+                                    "
+                                >
+
+                                    <tr style="background:#F9FAFB;">
+                                        <td><strong>Merchant</strong></td>
+                                        <td>${transactionPayload.merchantName}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td><strong>Transaction Amount</strong></td>
+                                        <td>
+                                            ${transactionPayload.transactionCurrency}
+                                            ${transactionPayload.transactionAmount}
+                                        </td>
+                                    </tr>
+
+                                    <tr style="background:#F9FAFB;">
+                                        <td><strong>Card Number</strong></td>
+                                        <td>${transactionPayload.maskedCardNumber}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td><strong>Transaction ID</strong></td>
+                                        <td>${transactionPayload.transactionId}</td>
+                                    </tr>
+
+                                    <tr style="background:#F9FAFB;">
+                                        <td><strong>User ID</strong></td>
+                                        <td>${transactionPayload.userId}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td><strong>Cardholder Email</strong></td>
+                                        <td>${transactionPayload.cardholderEmail}</td>
+                                    </tr>
+
+                                </table>
+
+                                <!-- EXPIRY BOX -->
+                                <div style="
+                                    margin-top:28px;
+                                    padding:18px;
+                                    background:#EFF6FF;
+                                    border-left:5px solid #2563EB;
+                                    border-radius:8px;
+                                ">
+
+                                    <p style="
+                                        margin:0;
+                                        font-size:16px;
+                                        color:#1E3A8A;
+                                        font-weight:bold;
+                                    ">
+                                        ⏱ Authorization Validity
+                                    </p>
+
+                                    <p style="
+                                        margin-top:12px;
+                                        margin-bottom:0;
+                                        color:#374151;
+                                        line-height:1.8;
+                                    ">
+                                        This authorization request is valid for
+                                        <strong>2 minutes</strong>.
+                                    </p>
+
+                                    <p style="
+                                        margin-top:8px;
+                                        margin-bottom:0;
+                                        color:#374151;
+                                    ">
+                                        <strong>Expires At:</strong>
+                                        ${transactionPayload.authorizationExpiresAt}
+                                    </p>
+
+                                    <p style="
+                                        margin-top:12px;
+                                        margin-bottom:0;
+                                        color:#6B7280;
+                                        font-size:14px;
+                                    ">
+                                        If no action is taken before the expiry time,
+                                        this authorization request will automatically
+                                        expire and the transaction will be declined.
+                                    </p>
+
+                                </div>
+
+                                <!-- BUTTONS -->
+                                <div style="
+                                    margin-top:40px;
+                                    text-align:center;
+                                ">
+
+                                    <a
+                                        href="${transactionPayload.approveUrl}"
+                                        target="_blank"
+                                        style="
+                                            display:inline-block;
+                                            background:#16A34A;
+                                            color:#ffffff;
+                                            text-decoration:none;
+                                            padding:14px 30px;
+                                            border-radius:6px;
+                                            font-weight:bold;
+                                            margin-right:12px;
+                                        "
+                                    >
+                                        Approve Transaction
+                                    </a>
+
+                                    <a
+                                        href="${transactionPayload.rejectUrl}"
+                                        target="_blank"
+                                        style="
+                                            display:inline-block;
+                                            background:#DC2626;
+                                            color:#ffffff;
+                                            text-decoration:none;
+                                            padding:14px 30px;
+                                            border-radius:6px;
+                                            font-weight:bold;
+                                        "
+                                    >
+                                        Reject Transaction
+                                    </a>
+
+                                </div>
+
+                                <!-- SECURITY NOTICE -->
+                                <div style="
+                                    margin-top:40px;
+                                    padding:18px;
+                                    background:#F9FAFB;
+                                    border-left:4px solid #111827;
+                                    border-radius:8px;
+                                ">
+
+                                    <p style="
+                                        margin-top:0;
+                                        font-weight:bold;
+                                        color:#111827;
+                                    ">
+                                        Security Notice
+                                    </p>
+
+                                    <ul style="
+                                        color:#4B5563;
+                                        line-height:1.8;
+                                        padding-left:20px;
+                                        margin-bottom:0;
+                                    ">
+                                        <li>Approve this transaction only if you recognize it.</li>
+                                        <li>If you did not initiate this payment, click <strong>Reject Transaction</strong> immediately.</li>
+                                        <li>Never share these authorization links with anyone.</li>
+                                        <li>Once approved, the transaction will be processed immediately.</li>
+                                    </ul>
+
+                                </div>
+
+                            </div>
+
+                            <!-- FOOTER -->
+                            <div style="
+                                background:#F9FAFB;
+                                padding:20px;
+                                text-align:center;
+                                font-size:13px;
+                                color:#6B7280;
+                            ">
+                                © ${new Date().getFullYear()} ${dashboardTitle}. All rights reserved.
+                            </div>
+
+                        </div>
+
+                    </div>
+                    `
             };
         }
 

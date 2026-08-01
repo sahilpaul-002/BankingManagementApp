@@ -158,12 +158,21 @@ const initiateCardTransaction = async (
             }
         );
 
+        const authorizationExpiresAt = new Date(
+            Date.now() + 2 * 60 * 1000 // 2 minutes
+        );
+
         const cardTransactionPayload = {
             cardholder_id: cardDetails.cardholder_id,
             card_id: cardDetails.card_id,
             transaction_id: transactionId,
             transaction_type: transactionData.transaction_type,
             transaction_status: transactionData.authorization_type === "HOLD" ? "PENDING" : "SUCCESS",
+            authorization_type: transactionData.authorization_type,
+            authorization_status: transactionData.authorization_type === "HOLD" ? "PENDING" : "AUTHORIZED",
+            authorization_expires_at: transactionData.authorization_type === "HOLD" ? authorizationExpiresAt : new Date(),
+            authorized_at: transactionData.authorization_type === "HOLD" ? null : new Date(),
+            authorized_by: transactionData.authorization_type === "HOLD" ? null : cardDetails.cardholder_id,
             card_number: cardDetails.card_number,
             currency: cardDetails.card_currency,
             name_on_card: cardDetails.name_on_card,
@@ -179,7 +188,8 @@ const initiateCardTransaction = async (
         const cardValidation = userCardTransactionValidationSchema.safeParse(cardTransactionPayload);
 
         if (!cardValidation.success) {
-            throw new ServiceError("Invalid card transaction",z.flattenError(cardValidation.error));}
+            throw new ServiceError("Invalid card transaction", z.flattenError(cardValidation.error));
+        }
 
         await user_card_transactions.create(
             [
@@ -206,8 +216,11 @@ const initiateCardTransaction = async (
             data: {
                 walletId: updatedWallet.wallet_id,
                 cardId: cardDetails.card_id,
+                cardNumber: cardDetails.card_number,
                 transactionId: transactionId,
                 referenceId,
+                merchantName: transactionData?.merchant_name,
+                authorizationExpiresAt
             },
         };
     }

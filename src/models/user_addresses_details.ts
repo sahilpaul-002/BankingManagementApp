@@ -70,7 +70,7 @@ const deliveryAddressSchema = new Schema({
 // USER ADDRESS SCHEMA
 const userAddressDetailsSchema = new Schema<userAddressDetailsSchemaTypes>({
     user_id: {
-        type: Types.ObjectId,
+        type: Schema.Types.ObjectId,
         unique: true,
         required: true,
         index: true

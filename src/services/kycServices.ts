@@ -51,7 +51,7 @@ export const getKycService = async (requestSession: Request["session"], aesDecry
 
         // Get user kyc details
         const userKycDetailsDoc = await user_kyc_details.findOne({
-            user_id: userId as Schema.Types.ObjectId
+            user_id: userId as Types.ObjectId
         }, { _id: 0, kyc_status: 1, poi_document: 1, poa_document: 1, kyc_request_id: 1 }).lean();
 
         if (!userKycDetailsDoc) {
@@ -181,7 +181,7 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
 
         // Check Existing KYC
         const existingKycDoc = await user_kyc_details.findOne({
-            user_id: userId as Schema.Types.ObjectId,
+            user_id: userId as Types.ObjectId,
         }).select("_id kyc_status").lean();
 
         // Check KYC upload allowance
@@ -308,7 +308,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
 
         // Get user details
         const userDetails = await user_details.findOne({
-            _id: userId as Schema.Types.ObjectId
+            _id: userId as Types.ObjectId
         }).select(" business_id program_id agent_code subagent_code");
         if (!userDetails) {
             throw new NotFoundError("User details not found");
@@ -336,7 +336,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
 
         // Get user kyc details
         const userKycDetailsDoc = await user_kyc_details.findOne({
-            user_id: userId as Schema.Types.ObjectId
+            user_id: userId as Types.ObjectId
         }).select("kyc_status poi_document poa_document kyc_request_id").lean();
         if (!userKycDetailsDoc) {
             throw new NotFoundError("User kyc details not found")

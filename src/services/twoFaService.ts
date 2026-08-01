@@ -10,7 +10,7 @@ import type { userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_details.js";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
-import type { Schema } from "mongoose";
+import type { Schema, Types } from "mongoose";
 import { generateVerificationCodeService } from "./generateVerificationCodeService.js";
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import speakeasy, { type TotpVerifyOptions } from "speakeasy";
@@ -157,7 +157,7 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
         const userId: unknown = requestSession?.userId;
         // Get verification code and expiry from the user meta details data base
         const verificationDataDoc = await user_meta_details.findOne(
-            { user_id: userId as Schema.Types.ObjectId }
+            { user_id: userId as Types.ObjectId }
         ).select("verification_code verification_code_expires_at").lean();
 
         if (!verificationDataDoc?.verification_code || !verificationDataDoc?.verification_code_expires_at) {
@@ -173,7 +173,7 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
         if (currentTime > verificationCodeExpiryTime) {
             // Optional: clear expired verification data
             await user_meta_details.updateOne(
-                { user_id: userId as Schema.Types.ObjectId },
+                { user_id: userId as Types.ObjectId },
                 {
                     $unset: {
                         verification_code: "",
@@ -202,7 +202,7 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
 
         // Optional: clear verification code after successful verification
         await user_meta_details.updateOne(
-            { user_id: userId as Schema.Types.ObjectId },
+            { user_id: userId as Types.ObjectId },
             {
                 $unset: {
                     verification_code: "",
@@ -437,7 +437,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
 
         const userId: unknown = requestSession?.userId;
         // Get user details
-        const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ _id: userId as Schema.Types.ObjectId }).select("two_fa_type is_2fa_enabled authenticator_secret").lean();
+        const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ _id: userId as Types.ObjectId }).select("two_fa_type is_2fa_enabled authenticator_secret").lean();
         // Check 2FA type
         // if (userDetailsDoc?.two_fa_type !== "EMAIL-OTP" && userDetailsDoc?.two_fa_type !== "TOTP" && userDetailsDoc?.two_fa_type !== "SMS-OTP") {
         if (userDetailsDoc?.two_fa_type !== "EMAIL-OTP" && userDetailsDoc?.two_fa_type !== "TOTP") {
@@ -474,7 +474,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
         else if (codeType === "EMAIL-OTP") {
             // Get verification code and expiry from the user meta details data base
             const twoFaVerificationDataDoc = await user_meta_details.findOne(
-                { user_id: userId as Schema.Types.ObjectId }
+                { user_id: userId as Types.ObjectId }
             ).select("verification_code verification_code_expires_at").lean();
             if (!twoFaVerificationDataDoc?.verification_code || !twoFaVerificationDataDoc?.verification_code_expires_at) {
                 throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for two factor auth verification, 2fa configuration not found")
@@ -489,7 +489,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
             if (currentTime > verificationCodeExpiryTime) {
                 // Optional: clear expired verification data
                 await user_meta_details.updateOne(
-                    { user_id: userId as Schema.Types.ObjectId },
+                    { user_id: userId as Types.ObjectId },
                     {
                         $unset: {
                             verification_code: "",
@@ -519,7 +519,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
 
         // Optional: clear verification code after successful verification
         await user_meta_details.updateOne(
-            { user_id: userId as Schema.Types.ObjectId },
+            { user_id: userId as Types.ObjectId },
             {
                 $unset: {
                     verification_code: "",
@@ -631,7 +631,7 @@ export const sendResetPasswordCodeService = async (requestSession: Request["sess
 
         // Insert user meta details
         const userMetaDetailsDoc = await user_meta_details.findOneAndUpdate(
-            { user_id: userId as Schema.Types.ObjectId },
+            { user_id: userId as Types.ObjectId },
             { verification_code: hashedVerificationCode, verification_code_expires_at: verificationData.expiresAt },
             { upsert: true, new: true }
         ).select("_id").lean();
@@ -716,7 +716,7 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
         const userId: unknown = userDetails._id;
         // Get verification code and expiry from the user meta details data base
         const twoFaVerificationDataDoc = await user_meta_details.findOne(
-            { user_id: userId as Schema.Types.ObjectId }
+            { user_id: userId as Types.ObjectId }
         ).select("verification_code verification_code_expires_at").lean();
         if (!twoFaVerificationDataDoc?.verification_code || !twoFaVerificationDataDoc?.verification_code_expires_at) {
             throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for reset password code verification")
@@ -731,7 +731,7 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
         if (currentTime > verificationCodeExpiryTime) {
             // Optional: clear expired verification data
             await user_meta_details.updateOne(
-                { user_id: userId as Schema.Types.ObjectId },
+                { user_id: userId as Types.ObjectId },
                 {
                     $unset: {
                         verification_code: "",
@@ -760,7 +760,7 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
 
         // Optional: clear verification code after successful verification
         await user_meta_details.updateOne(
-            { user_id: userId as Schema.Types.ObjectId },
+            { user_id: userId as Types.ObjectId },
             {
                 $unset: {
                     verification_code: "",

@@ -1,0 +1,8 @@
+2 Options node-cron and BullMQ - This is for the scenerio if no authorization is received by the system from the user
+
+Node-Cron (library) :-
+It uses a node library to create cron jobs which will scan database for pending authorization status in cards transaction, check authorization_expires_at and terminates and rejects the transaction if authorization expired. And move the amount from holding to account balance.
+Reason for choosing this is so that the server and mongodb and redis data base is up all the terminates
+
+BullMQ (library) :-
+It is a job queue library for Node.js that lets you run work later, in the background, or on another server. It uses Redis to store jobs reliably. It stores the transaction details, and after decided time the function executes scaning the database for that transaction and performing the required action for that transaction. Although this is the better approach , i am choosing node-cron to make the server up with out any effort

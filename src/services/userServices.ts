@@ -490,7 +490,7 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
 
         // Get user details
         const userDetails = await user_details.findOne({
-            _id: userId as Schema.Types.ObjectId
+            _id: userId as Types.ObjectId
         }).select(" business_id program_id agent_code subagent_code").lean();
         if (!userDetails) {
             throw new NotFoundError("User details not found");
@@ -518,7 +518,7 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
 
         // Get user kyc details
         const userBankDetailsDoc = await user_bank_details.findOne({
-            user_id: userId as Schema.Types.ObjectId
+            user_id: userId as Types.ObjectId
         }).select("_id user_bank_request_id account_holder_name account_number bank_name").lean();
         if (!userBankDetailsDoc) {
             throw new NotFoundError("User bank details not found")

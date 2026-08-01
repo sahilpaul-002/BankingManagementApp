@@ -5,7 +5,7 @@ import crypto from "crypto";
 const userKycDetailsSchema = new Schema<userKycDetailsSchemaTypes>(
     {
         user_id: {
-            type: Types.ObjectId,
+            type: Schema.Types.ObjectId,
             unique: true,
             required: true,
             index: true,
