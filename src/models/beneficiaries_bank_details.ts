@@ -8,6 +8,10 @@ const beneficiariesBankDetailsSchema = new Schema<beneficiariesBankDetailsSchema
         unique: true,
         index: true
     },
+    account_currency: {
+
+    },
+
     account_holder_name: {
         type: String,
         required: true
