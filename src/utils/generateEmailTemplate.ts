@@ -1321,8 +1321,19 @@ const generateEmailTemplate = (
                                     <tr>
                                         <td><strong>Transaction Amount</strong></td>
                                         <td>
+<<<<<<< Updated upstream
                                             ${transactionPayload.transactionCurrency}
                                             ${transactionPayload.transactionAmount}
+=======
+                                            <span style="
+                                                font-size:18px;
+                                                font-weight:bold;
+                                                color:#16A34A;
+                                            ">
+                                                ${transactionPayload.transactionCurrency}
+                                                ${transactionPayload.transactionAmount}
+                                            </span>
+>>>>>>> Stashed changes
                                         </td>
                                     </tr>
 
@@ -1439,6 +1450,29 @@ const generateEmailTemplate = (
 
                                 </div>
 
+<<<<<<< Updated upstream
+=======
+                                <div style="
+                                    margin-top:30px;
+                                    padding:16px;
+                                    background:#FEF3C7;
+                                    border-left:4px solid #F59E0B;
+                                    border-radius:6px;
+                                ">
+                                    <p style="
+                                        margin:0;
+                                        color:#92400E;
+                                        font-size:14px;
+                                        line-height:1.6;
+                                    ">
+                                        <strong>Important:</strong>
+                                        If the buttons above do not work, simply ignore this email.
+                                        The authorization request will automatically expire after
+                                        <strong>2 minutes</strong>.
+                                    </p>
+                                </div>
+
+>>>>>>> Stashed changes
                                 <!-- SECURITY NOTICE -->
                                 <div style="
                                     margin-top:40px;

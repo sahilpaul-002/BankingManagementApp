@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createCardService, createCardTransactionService, getCardDetailsService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
+import { cardTransactionSettelmentWebhookService, createCardService, createCardTransactionService, getCardDetailsService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
 
 // ------------------------------------------ FUNCTION TO CREATE CARD ------------------------------------------ \\
 export const createCard = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -378,7 +378,7 @@ export const createCardTransaction = async (req: Request<{ id?: string }>, res: 
             throw new UnauthenticatedError("Unauthenticated session");
         }
 
-        const createCardTransactionResponse = await createCardTransactionService(aesDecryptedBodyData)
+        const createCardTransactionResponse = await createCardTransactionService(requestSession, aesDecryptedBodyData)
         if (createCardTransactionResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to create card transaction", 400);
         }
@@ -410,3 +410,99 @@ export const createCardTransaction = async (req: Request<{ id?: string }>, res: 
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// ------------------------------------- FUNCTION TO GET CARD TRANSACTION SETTLEMENT WEBHOOK ------------------------------------- \\
+export const cardTransactionSettlementWebhook = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+
+        const cardTransactionSettlementServiceResponse = await cardTransactionSettelmentWebhookService(aesDecryptedQueryData)
+        if (cardTransactionSettlementServiceResponse?.status !== "SUCCESS") {
+            if (cardTransactionSettlementServiceResponse?.message === "Authorization request has expired") {
+                return res.status(200).send(`
+            <html>
+                <body style="
+                    font-family: Arial;
+                    text-align: center;
+                    padding-top: 100px;
+                ">
+                    <h2>KYC Verification Expired</h2>
+                    <p>
+                        This card transaction authorization has been expired.
+                    </p>
+                    <p>
+                        You can now close this tab.
+                    </p>
+                </body>
+            </html>
+        `
+                );
+            }
+            else {
+                throw new ServiceError("Failed to authorize card transaction mail webhook")
+            }
+        }
+
+        if (cardTransactionSettlementServiceResponse?.message === "Transaction approved successfully") {
+            return res.status(200).send(`
+            <html>
+                <body style="
+                    font-family: Arial;
+                    text-align: center;
+                    padding-top: 100px;
+                ">
+                    <h2>KYC Approved Successfully</h2>
+                    <p>
+                        The card transaction authorization request has been processed.
+                    </p>
+                    <p>
+                        You can now close this tab.
+                    </p>
+                </body>
+            </html>
+        `
+            );
+        }
+        else if (cardTransactionSettlementServiceResponse?.message === "Transaction rejected successfully") {
+            return res.status(200).send(`
+            <html>
+                <body style="
+                    font-family: Arial;
+                    text-align: center;
+                    padding-top: 100px;
+                ">
+                    <h2>KYC Rejected Successfully</h2>
+                    <p>
+                        The card transaction authorization request has been processed.
+                    </p>
+                    <p>
+                        You can now close this tab.
+                    </p>
+                </body>
+            </html>
+        `
+            );
+        }
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "CardTransactionSettlementWebhookController",
+            url: req.path,
+            method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(
+            `CardTransactionSettlementWebhookController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
