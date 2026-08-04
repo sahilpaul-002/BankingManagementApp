@@ -1321,10 +1321,6 @@ const generateEmailTemplate = (
                                     <tr>
                                         <td><strong>Transaction Amount</strong></td>
                                         <td>
-<<<<<<< Updated upstream
-                                            ${transactionPayload.transactionCurrency}
-                                            ${transactionPayload.transactionAmount}
-=======
                                             <span style="
                                                 font-size:18px;
                                                 font-weight:bold;
@@ -1333,7 +1329,6 @@ const generateEmailTemplate = (
                                                 ${transactionPayload.transactionCurrency}
                                                 ${transactionPayload.transactionAmount}
                                             </span>
->>>>>>> Stashed changes
                                         </td>
                                     </tr>
 
@@ -1450,8 +1445,6 @@ const generateEmailTemplate = (
 
                                 </div>
 
-<<<<<<< Updated upstream
-=======
                                 <div style="
                                     margin-top:30px;
                                     padding:16px;
@@ -1472,7 +1465,6 @@ const generateEmailTemplate = (
                                     </p>
                                 </div>
 
->>>>>>> Stashed changes
                                 <!-- SECURITY NOTICE -->
                                 <div style="
                                     margin-top:40px;

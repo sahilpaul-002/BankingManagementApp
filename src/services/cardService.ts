@@ -1289,7 +1289,7 @@ interface CardAuthorizationJwtPayload {
     iat: number;
     exp: number;
 }
-export const cardTransactionSettelmentWebhookService = async (aesDecryptedQueryData: Record<string, string> | undefined) => {
+export const cardTransactionAuthorizationWebhookService = async (aesDecryptedQueryData: Record<string, string> | undefined) => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid request");
@@ -1327,12 +1327,11 @@ export const cardTransactionSettelmentWebhookService = async (aesDecryptedQueryD
 
         // Check if the transaction authorization is expired
         if (transaction.authorization_expires_at && new Date() > transaction.authorization_expires_at) {
-            // throw new ServiceError("Authorization request has expired");
-            return { status: "SERVICE_ERROR", message: "Authorization request has expired" }
+            throw new ServiceError("Authorization request has expired");
         }
 
         // Card Transaction Settlement Mongodb Transaction
-        const cardTransactionSettlementResult = await cardTransactionSettlementTransaction(
+        const cardTransactionSettlementResult = await cardTransactionAuthorizationUpdateTransaction(
                 decoded,
                 transaction
             );
