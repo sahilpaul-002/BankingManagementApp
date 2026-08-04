@@ -157,16 +157,16 @@ export const userBankDetailsValidationSchema = z.object({
         .string("SWIFT code is required and must be a string")
         .trim()
         .regex(
-            /^[A-Z]{4}0[A-Z0-9]{6}$/,
-            "Invalid IFSC code format. Expected format: 4 uppercase letters, '0', followed by 6 alphanumeric characters."
+            /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/,
+            "Invalid SWIFT/BIC code. It must be 8 or 11 uppercase alphanumeric characters."
         ),
 
     iban_code: z
         .string("IBAN code is required and must be a string")
         .trim()
         .regex(
-            /^[A-Z]{4}0[A-Z0-9]{6}$/,
-            "Invalid IBAN code format. Expected format: 4 uppercase letters, '0', followed by 6 alphanumeric characters."
+            /^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/,
+            "Invalid IBAN format."
         ),
 
     bank_name: z
