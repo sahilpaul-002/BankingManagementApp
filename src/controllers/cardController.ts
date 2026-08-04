@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { cardTransactionSettelmentWebhookService, createCardService, createCardTransactionService, getCardDetailsService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
+import { cardTransactionAuthorizationWebhookService, createCardService, createCardTransactionService, getCardDetailsService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
 
 // ------------------------------------------ FUNCTION TO CREATE CARD ------------------------------------------ \\
 export const createCard = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -417,7 +417,7 @@ export const cardTransactionSettlementWebhook = async (req: Request, res: Respon
     try {
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
 
-        const cardTransactionSettlementServiceResponse = await cardTransactionSettelmentWebhookService(aesDecryptedQueryData)
+        const cardTransactionSettlementServiceResponse = await cardTransactionAuthorizationWebhookService(aesDecryptedQueryData)
         if (cardTransactionSettlementServiceResponse?.status !== "SUCCESS") {
             if (cardTransactionSettlementServiceResponse?.message === "Authorization request has expired") {
                 return res.status(200).send(`

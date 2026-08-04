@@ -1331,7 +1331,7 @@ export const cardTransactionAuthorizationWebhookService = async (aesDecryptedQue
         }
 
         // Card Transaction Settlement Mongodb Transaction
-        const cardTransactionSettlementResult = await cardTransactionAuthorizationUpdateTransaction(
+        const cardTransactionSettlementResult = await cardTransactionSettlementTransaction(
                 decoded,
                 transaction
             );
