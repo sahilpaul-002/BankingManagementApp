@@ -3,10 +3,16 @@ import type { beneficiariesBankDetailsSchemaTypes } from "../types/schemaTypes.j
 import { BENEFICIARIES_FIAT_CURRENCIES } from "../types/beneficiariesFiatCurrency.js";
 
 const beneficiariesBankDetailsSchema = new Schema<beneficiariesBankDetailsSchemaTypes>({
+    user_id: {
+        type: String,
+        ref: "UserDetails",
+        required: true,
+        index: true,
+    },
+
     account_number: {
         type: String,
         required: true,
-        unique: true,
         index: true
     },
 
@@ -39,6 +45,17 @@ const beneficiariesBankDetailsSchema = new Schema<beneficiariesBankDetailsSchema
         default: false
     }
 }, { timestamps: true }
+);
+
+// Same account can exist for different users, but don't allow the same user to add it twice.
+beneficiariesBankDetailsSchema.index(
+    {
+        user_id: 1,
+        account_number: 1,
+    },
+    {
+        unique: true,
+    }
 );
 
 const beneficiariesBankDetailsModel = mongoose.model("BeneficiariesBankDetails", beneficiariesBankDetailsSchema, "beneficiaries_bank_details");

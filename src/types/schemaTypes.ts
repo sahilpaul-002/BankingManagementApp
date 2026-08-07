@@ -231,6 +231,7 @@ export interface userCardTransactionsTypes extends Document {
 
 // Type for Beneficiaries Bank Details Model Schema
 export interface beneficiariesBankDetailsSchemaTypes extends Document {
+    user_id: string;
     account_number: string;
     account_currency: BeneficieriesFiatCurrencyType;
     account_holder_name: string;
@@ -238,6 +239,22 @@ export interface beneficiariesBankDetailsSchemaTypes extends Document {
     iban_code: string;
     bank_name: string;
     is_verified?: boolean;
+}
+
+// Type for Fiat Payout Transactions Model Schema
+export interface fiatPayoutTransactionsSchemaTypes extends Document {
+    user_id: string;
+    wallet_id: string;
+    beneficiary_id: string;
+    source_currency: string;
+    source_amount: Types.Decimal128;
+    destination_currency: string;
+    destination_amount: Types.Decimal128;
+    exchange_rate: Types.Decimal128;
+    fee_amount: Types.Decimal128;
+    status: "PENDING" | "PROCESSING" | "SUCCESS" | "FAILED" | "CANCELLED";
+    provider_reference?: string | null;
+    remarks?: string | null;
 }
 
 // Types for Fee Details Model Schema

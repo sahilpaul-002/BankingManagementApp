@@ -249,17 +249,24 @@ export const addBeneficiaryService = async (requestSession: Request["session"], 
             throw new ForbiddenError("User configuration is not valid to access beneficiary details");
         }
 
+        // Check user id
+        const userId = requestSession?.userId;
+        if (!userId) {
+            throw new UnauthorizedError("Unauthorized session detected - user ID not found.");
+        }
+
         // Check duplicate account number
         const existingBeneficiary = await beneficiaries_bank_details.exists({
+            user_id: userId,
             account_number: validatedData.account_number
         });
-
         if (existingBeneficiary) {
             throw new ServiceError("Beneficiary with this account number already exists");
         }
 
         // Create beneficiary
         const beneficiary = await beneficiaries_bank_details.create({
+            user_id: userId,
             account_holder_name: validatedData.account_holder_name,
             account_number: validatedData.account_number,
             account_currency: validatedData.account_currency,
@@ -269,7 +276,7 @@ export const addBeneficiaryService = async (requestSession: Request["session"], 
             is_verified: validatedData.is_verified ?? false
         });
 
-        return {status: "SUCCESS", data: beneficiary, message: "Beneficiary added successfully"};
+        return { status: "SUCCESS", data: beneficiary, message: "Beneficiary added successfully" };
 
     } catch (err) {
 
