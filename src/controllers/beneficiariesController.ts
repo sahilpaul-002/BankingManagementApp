@@ -4,7 +4,7 @@ import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 import { getCardholderDetailsService, getCardholderListService } from "../services/cardholderService.js";
-import { getBeneficiariesListService, getBeneficiaryDetailsService } from "../services/beneficiariesService.js";
+import { addBeneficiaryService, getBeneficiariesListService, getBeneficiaryDetailsService } from "../services/beneficiariesService.js";
 
 // ------------------------------------------ FUNCTION TO GET CARDHOLDER LIST ------------------------------------------ \\
 export const getBeneficiariesList = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -128,7 +128,7 @@ export const addBeneficiary = async (req: Request<{ id?: string }>, res: Respons
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const addBeneficiaryServiceResponse = await getCardholderDetailsService(requestSession, aesDecryptedQueryData, userConfigurations, req.params.id)
+        const addBeneficiaryServiceResponse = await addBeneficiaryService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
         if (addBeneficiaryServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to add beneficiary", 400);
         }

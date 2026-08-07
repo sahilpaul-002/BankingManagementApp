@@ -1,5 +1,6 @@
 import mongoose, { Document, Types } from "mongoose";
 import type { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
+import type { BeneficieriesFiatCurrencyType } from "./beneficiariesFiatCurrency.js";
 
 // Type for Portal Configuration Model Schema
 export interface portalConfigurationSchemaTypes extends Document {
@@ -231,6 +232,7 @@ export interface userCardTransactionsTypes extends Document {
 // Type for Beneficiaries Bank Details Model Schema
 export interface beneficiariesBankDetailsSchemaTypes extends Document {
     account_number: string;
+    account_currency: BeneficieriesFiatCurrencyType;
     account_holder_name: string;
     swift_code: string;
     iban_code: string;

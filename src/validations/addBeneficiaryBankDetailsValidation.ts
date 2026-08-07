@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BENEFICIARIES_FIAT_CURRENCIES } from "../types/beneficiariesFiatCurrency.js";
 
 const addBeneficiaryBankDetailsValidationSchema = z.object({
 
@@ -8,6 +9,15 @@ const addBeneficiaryBankDetailsValidationSchema = z.object({
         .regex(
             /^\d{8,20}$/,
             "Account number must be between 8 and 20 digits"
+        ),
+
+    account_currency: z
+        .string("Account currency is required and must be a string")
+        .trim()
+        .toUpperCase()
+        .refine(
+            (currency) => BENEFICIARIES_FIAT_CURRENCIES.includes(currency as typeof BENEFICIARIES_FIAT_CURRENCIES[number]),
+            "Unsupported account currency"
         ),
 
     account_holder_name: z

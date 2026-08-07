@@ -262,6 +262,7 @@ export const addBeneficiaryService = async (requestSession: Request["session"], 
         const beneficiary = await beneficiaries_bank_details.create({
             account_holder_name: validatedData.account_holder_name,
             account_number: validatedData.account_number,
+            account_currency: validatedData.account_currency,
             bank_name: validatedData.bank_name,
             swift_code: validatedData.swift_code,
             iban_code: validatedData.iban_code,

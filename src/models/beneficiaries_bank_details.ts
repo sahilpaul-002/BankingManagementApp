@@ -1,5 +1,6 @@
 import mongoose, { Schema, Types } from "mongoose";
 import type { beneficiariesBankDetailsSchemaTypes } from "../types/schemaTypes.js";
+import { BENEFICIARIES_FIAT_CURRENCIES } from "../types/beneficiariesFiatCurrency.js";
 
 const beneficiariesBankDetailsSchema = new Schema<beneficiariesBankDetailsSchemaTypes>({
     account_number: {
@@ -8,8 +9,13 @@ const beneficiariesBankDetailsSchema = new Schema<beneficiariesBankDetailsSchema
         unique: true,
         index: true
     },
-    account_currency: {
 
+    account_currency: {
+        type: String,
+        required: true,
+        enum: BENEFICIARIES_FIAT_CURRENCIES,
+        trim: true,
+        uppercase: true
     },
 
     account_holder_name: {
