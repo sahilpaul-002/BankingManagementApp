@@ -39,10 +39,6 @@ const beneficiariesBankDetailsSchema = new Schema<beneficiariesBankDetailsSchema
     bank_name: {
         type: String,
         required: true
-    },
-    is_verified: {
-        type: Boolean,
-        default: false
     }
 }, { timestamps: true }
 );

@@ -58,10 +58,6 @@ const addBeneficiaryBankDetailsValidationSchema = z.object({
             "Bank name contains invalid characters"
         ),
 
-    is_verified: z
-        .boolean("is_verified must be a boolean")
-        .optional()
-
 }).strict();
 
 export default addBeneficiaryBankDetailsValidationSchema

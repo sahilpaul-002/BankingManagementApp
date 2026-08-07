@@ -273,7 +273,6 @@ export const addBeneficiaryService = async (requestSession: Request["session"], 
             bank_name: validatedData.bank_name,
             swift_code: validatedData.swift_code,
             iban_code: validatedData.iban_code,
-            is_verified: validatedData.is_verified ?? false
         });
 
         return { status: "SUCCESS", data: beneficiary, message: "Beneficiary added successfully" };
