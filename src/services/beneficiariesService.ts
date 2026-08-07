@@ -10,13 +10,14 @@ import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import addBeneficiaryBankDetailsValidationSchema from "../validations/addBeneficiaryBankDetailsValidation.js";
 
-// ------------------------------------- GET BENEFICIERIES LIST SERVICE -------------------------------------  \\
 type userConfigurationsType = {
     businessId: string;
     programId: string;
     agentCode: string;
     subAgentCode: string;
 }
+
+// ------------------------------------- GET BENEFICIERIES LIST SERVICE -------------------------------------  \\
 export const getBeneficiariesListService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
     try {
 
@@ -269,7 +270,7 @@ export const addBeneficiaryService = async (requestSession: Request["session"], 
             user_id: userId,
             account_holder_name: validatedData.account_holder_name,
             account_number: validatedData.account_number,
-            account_currency: validatedData.account_currency,
+            account_currency: validatedData.account_currency as any,
             bank_name: validatedData.bank_name,
             swift_code: validatedData.swift_code,
             iban_code: validatedData.iban_code,

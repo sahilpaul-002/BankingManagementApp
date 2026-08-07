@@ -51,6 +51,12 @@ const fiatPayoutQuoteSchema = new Schema<fiatPayoutQuoteSchemaTypes>({
         min: 0,
     },
 
+    gross_destination_amount: {
+        type: Schema.Types.Decimal128,
+        required: true,
+        min: 0,
+    },
+
     // ---------------- FX ----------------
 
     exchange_rate: {
@@ -123,4 +129,4 @@ fiatPayoutQuoteSchema.index({
 
 const fiatPayoutQuoteModel = mongoose.model("FiatPayoutQuote", fiatPayoutQuoteSchema, "fiat_payout_quotes");
 
-export default fiatPayoutQuoteModel;
+export { fiatPayoutQuoteModel };

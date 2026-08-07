@@ -13,6 +13,6 @@ export const FEE_DETAILS: feeDetailsSchemaTypes = {
     'load_card_percent': 2,
     'card_transaction_percent': 0.5,
     'create_card': 5,
-    'm2p_percent': 1.4,
-    'p2P_percent': 1
+    'm2p_percent': 6,
+    'p2P_percent': 8
 }

@@ -4,7 +4,7 @@ import type { userWalletDetailsSchemaTypes } from "../types/schemaTypes.js";
 const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
     {
         user_id: {
-            type: Schema.Types.ObjectId,
+            type: String,
             required: true,
             unique: true,
             index: true,

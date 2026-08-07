@@ -144,7 +144,7 @@ export type walletDetailsType = {
     };
 };
 export interface userWalletDetailsSchemaTypes extends Document {
-    user_id: Types.ObjectId;
+    user_id: string;
     cardholder_id: string;
     wallet_id: string;
     wallets_details: walletDetailsType[],
@@ -248,6 +248,7 @@ export interface fiatPayoutQuoteSchemaTypes extends Document {
     source_amount: Types.Decimal128;
     destination_currency: string;
     destination_amount: Types.Decimal128;
+    gross_destination_amount: Types.Decimal128;
     exchange_rate: Types.Decimal128;
     fee_currency: "USD";
     fee_amount: Types.Decimal128;

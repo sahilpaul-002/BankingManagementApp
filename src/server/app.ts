@@ -42,6 +42,7 @@ import walletRoutes from "../routes/walletRoutes.js";
 import publicRoutes from "../routes/publicRoutes.js";
 import cardRoutes from "../routes/cardRoutes.js";
 import beneficiariesRoutes from "../routes/beneficiariesRoutes.js"
+import transferRoutes from "../routes/transferRoutes.js"
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -177,6 +178,7 @@ app.use("/api/v1/cardholder", headerTypeValidation, headerValidations, sessionVa
 app.use("/api/v1/wallet", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletRoutes);
 app.use("/api/v1/card", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), cardRoutes);
 app.use("/api/v1/beneficiaries", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), beneficiariesRoutes);
+app.use("/api/v1/transfer", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), transferRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\
