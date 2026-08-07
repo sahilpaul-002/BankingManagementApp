@@ -1,4 +1,4 @@
-import { FX_RATES_USD } from "../types/fxRatesUsd.js";
+import { USD_BASE_FX_RATES } from "../types/usdBasedFaxRates.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 
@@ -8,10 +8,7 @@ interface FxRateResponse {
     exchange_rate: number;
 }
 
-export const getFxRate = async (
-    sourceCurrency: string,
-    destinationCurrency: string
-): Promise<FxRateResponse> => {
+export const getFxRate = async (sourceCurrency: string, destinationCurrency: string): Promise<FxRateResponse> => {
 
     try {
 
@@ -29,8 +26,8 @@ export const getFxRate = async (
         }
 
 
-        const sourceRate = FX_RATES_USD[source as keyof typeof FX_RATES_USD];
-        const destinationRate = FX_RATES_USD[destination as keyof typeof FX_RATES_USD];
+        const sourceRate = USD_BASE_FX_RATES[source as keyof typeof USD_BASE_FX_RATES];
+        const destinationRate = USD_BASE_FX_RATES[destination as keyof typeof USD_BASE_FX_RATES];
 
 
         if (sourceRate === undefined) {

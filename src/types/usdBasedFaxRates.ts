@@ -1,6 +1,6 @@
 import type { BeneficieriesFiatCurrencyType } from "./beneficiariesFiatCurrency.js";
 
-export const FX_RATES_USD: Record<
+export const USD_BASE_FX_RATES: Record<
     BeneficieriesFiatCurrencyType,
     number
 > = {
