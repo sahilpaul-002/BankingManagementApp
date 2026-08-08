@@ -12,12 +12,8 @@ const createFiatPayoutQuoteValidationSchema = z.object({
         .string("Source wallet currency is required")
         .trim()
         .toUpperCase()
-        .refine(
-            (currency) =>
-                SOURCE_WALLET_CURRENCIES.includes(
-                    currency as typeof SOURCE_WALLET_CURRENCIES[number]
-                ),
-            "Unsupported source wallet currency"
+        .pipe(
+            z.enum(SOURCE_WALLET_CURRENCIES)
         ),
 
     source_amount: z

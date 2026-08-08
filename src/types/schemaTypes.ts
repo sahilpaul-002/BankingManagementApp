@@ -244,7 +244,7 @@ export interface fiatPayoutQuoteSchemaTypes extends Document {
     user_id: string;
     wallet_id: string;
     beneficiary_id: string;
-    source_currency: string;
+    source_currency: "USD" | "EUR" | "SGD";
     source_amount: Types.Decimal128;
     destination_currency: string;
     destination_amount: Types.Decimal128;
@@ -253,16 +253,17 @@ export interface fiatPayoutQuoteSchemaTypes extends Document {
     fee_currency: "USD";
     fee_amount: Types.Decimal128;
     total_debit: Types.Decimal128;
-    quote_status: "ACTIVE" | "USED" | "EXPIRED" | "CANCELLED";
+    quote_status: "ACTIVE" | "EXECUTED" | "EXPIRED" | "CANCELLED";
     expires_at: Date;
 }
 
 // Type for Fiat Payout Transactions Model Schema
 export interface fiatPayoutTransactionsSchemaTypes extends Document {
+    quote_id: string;
     user_id: string;
     wallet_id: string;
     beneficiary_id: string;
-    source_currency: string;
+    source_currency: "USD" | "EUR" | "SGD";
     source_amount: Types.Decimal128;
     destination_currency: string;
     destination_amount: Types.Decimal128;

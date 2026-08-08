@@ -95,7 +95,7 @@ const fiatPayoutQuoteSchema = new Schema<fiatPayoutQuoteSchemaTypes>({
         type: String,
         enum: [
             "ACTIVE",
-            "USED",
+            "EXECUTED",
             "EXPIRED",
             "CANCELLED",
         ],

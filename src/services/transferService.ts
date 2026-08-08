@@ -12,7 +12,8 @@ import { userWalletDetailsModel as user_wallet_details } from "../models/user_wa
 import { Decimal } from "decimal.js";
 import { getFxRate } from "./fxRateService.js";
 import { FEE_DETAILS } from "../configs/configConstants.js";
-import {fiatPayoutQuoteModel as fiat_payout_quote} from "../models/fiat_payout_quote.js";
+import { fiatPayoutQuoteModel as fiat_payout_quote } from "../models/fiat_payout_quote.js";
+import executeFiatPayoutTransaction from "../mongoDbTransactions/executePayoutQuoteTransaction.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -225,7 +226,7 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
         const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
-            serviceName: "GetPayoutQuoteService"
+            serviceName: "CreatePayoutQuoteService"
         });
 
         if (error instanceof AppErrorClass) {
@@ -233,7 +234,170 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
         }
 
         throw new ServiceError(
-            `GetPayoutQuoteService facing issue: [${errorStatus}] ${error.message}`,
+            `CreatePayoutQuoteService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// ------------------------------------- CREATE PAYOUT QUOTE SERVICE -------------------------------------  \\
+export const executePayoutQuoteService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
+    try {
+
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid body data");
+        }
+
+        // Check if collection exists
+        const isCollectionPresent = await checkMongoDbCollectionExist("fiat_payout_quote");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Payout quotes collection does not exist in MongoDB");
+        }
+
+        // Validate User Configuration
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request query");
+        }
+
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email");
+        }
+
+        if (
+            requestSession?.userType !== "ADMIN" &&
+            requestSession?.userType !== "MASTER_ADMIN"
+        ) {
+            throw new ForbiddenError("Not authorized to access beneficiaries list");
+        }
+
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
+        const sessionProgramId = requestSession?.userConfiguration?.programId;
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
+
+        if (
+            userConfiguration?.businessId !== sessionBusinessId ||
+            userConfiguration?.programId !== sessionProgramId ||
+            userConfiguration?.agentCode !== sessionAgentCode ||
+            userConfiguration?.subAgentCode !== sessionSubAgentCode
+        ) {
+            throw new ForbiddenError("User configuration is not valid to access payout quotes");
+        }
+
+        // Check quote id
+        const quoteId = aesDecryptedBodyData?.quote_id;
+        if (!quoteId) {
+            throw new InvalidRequestBodyError("Quote ID not found in request body");
+        }
+
+        // Get user id
+        const userId = requestSession?.userId;
+        if (!userId) {
+            throw new UnauthorizedError("Unauthorized session detected - user id not found in session");
+        }
+
+        // Get payout quote details
+        const payoutQuote = await fiat_payout_quote.findOne({
+            _id: quoteId,
+            user_id: userId,
+        });
+        if (!payoutQuote) {
+            throw new NotFoundError("Payout quote not found");
+        }
+        // Check quote status
+        if (payoutQuote.quote_status !== "ACTIVE") {
+            throw new ServiceError(`Payout quote cannot be executed because its status is ${payoutQuote.quote_status}`);
+        }
+        // Check quote expiry
+        if (payoutQuote.expires_at.getTime() <= Date.now()) {
+            // Update the quote status to EXPIRED
+            await fiat_payout_quote.updateOne(
+                {
+                    _id: payoutQuote._id,
+                    quote_status: "ACTIVE",
+                },
+                {
+                    $set: {
+                        quote_status: "EXPIRED",
+                    },
+                }
+            );
+
+            throw new ServiceError("Payout quote has expired");
+        }
+
+        // Check beneficiary
+        const beneficiaryDetails = await beneficiaries_bank_details.findOne({
+            _id: payoutQuote.beneficiary_id,
+            user_id: userId,
+        }).lean();
+        if (!beneficiaryDetails) {
+            throw new NotFoundError("Beneficiary details not found - unable to execute payout");
+        }
+
+        // Get user wallet details
+        const userWalletDetails = await user_wallet_details.findOne(
+            {
+                user_id: userId,
+            },
+            {
+                wallet_id: 1,
+                wallets_details: 1,
+            }
+        ).lean();
+        if (!userWalletDetails) {
+            throw new NotFoundError("User wallet details not found");
+        }
+        // Get source wallet details
+        const sourceWallet = userWalletDetails.wallets_details.find(
+            (wallet) =>
+                wallet.wallet_type === "FIAT" &&
+                wallet.wallet_currency === payoutQuote?.source_currency &&
+                wallet.wallet_status === "ACTIVE"
+        );
+        if (!sourceWallet) {
+            throw new NotFoundError(`Active ${payoutQuote?.source_currency} fiat wallet not found`);
+        }
+        // Validate source wallet balance using Decimal.js for accurate decimal arithmetic
+        const accountBalance = new Decimal(sourceWallet.account_balance?.toString() ?? "0");
+        const holdingAmount = new Decimal(sourceWallet.holding_amount?.toString() ?? "0");
+        const availableBalance = accountBalance.minus(holdingAmount);
+        const payoutSourceAmount = new Decimal(payoutQuote.source_amount?.toString() ?? "0");
+        if (availableBalance.lessThan(payoutSourceAmount)) {
+            throw new ServiceError("Insufficient wallet balance");
+        }
+
+        // Execute payout mongo db transaction
+        const transactionResult = await executeFiatPayoutTransaction({ payoutQuote, sourceWallet, cardholderId: userWalletDetails.cardholder_id, });
+
+        return {
+            status: "SUCCESS",
+            data: transactionResult.data,
+            message: "Payout initiated successfully",
+        };
+
+    } catch (err) {
+
+        const error = err as any;
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "ExecutePayoutQuoteService"
+        });
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(
+            `ExecutePayoutQuoteService facing issue: [${errorStatus}] ${error.message}`,
             error?.error ? error.error : error
         );
     }

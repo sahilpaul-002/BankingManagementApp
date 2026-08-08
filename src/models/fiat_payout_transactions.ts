@@ -2,6 +2,12 @@ import mongoose, { Schema, Types } from "mongoose";
 import type { fiatPayoutTransactionsSchemaTypes } from "../types/schemaTypes.js";
 
 const fiatPayoutTransactionsSchema = new Schema<fiatPayoutTransactionsSchemaTypes>({
+        quote_id: {
+            type: String,
+            required: true,
+            index: true,
+        },
+
         user_id: {
             type: String,
             required: true,
