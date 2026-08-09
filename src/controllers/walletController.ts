@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createWalletService, getWalletService, getWalletTransactionDetailsService, getWalletTransactionsService, loadWalletService, withdrawWalletService } from "../services/walletServices.js";
+import { createWalletCurrencyConversionQuoteService, createWalletService, executeWalletCurrencyConversionQuoteService, getWalletService, getWalletTransactionDetailsService, getWalletTransactionsService, loadWalletService, withdrawWalletService } from "../services/walletServices.js";
 
 // ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
 export const getWallet = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -302,6 +302,110 @@ export const getWalletTransactionDetails = async (req: Request<{ id?: string }>,
             }
         }
         throw new ServiceUnavailableError("GetWalletTransactionDetailsController is facing unknown issue.", error)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// ---------------------------- FUNCTION TO CREATE WALLET CURRENCU CONVERSIONPAYOUT QUOTE ---------------------------- \\
+export const createWalletCurrencyConversionPayoutQuote = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const createPayoutQuoteServiceResponse = await createWalletCurrencyConversionQuoteService(requestSession, aesDecryptedBodyData, aesDecryptedBodyData, userConfigurations)
+        if (createPayoutQuoteServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to create wallet currency conversion payout quote", 400);
+        }
+        return res.success("Payout quote for wallet currency conversion created successfully", createPayoutQuoteServiceResponse?.data || {}, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "CreateWalletCurrencyCOnversionPayoutQuoteController",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("CreateWalletCurrencyCOnversionPayoutQuoteController is facing unknown issue.", error)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// ------------------------------------------ FUNCTION TO EXECUTE WALLET CURRENCY CONVERSION PAYOUT QUOTE ------------------------------------------ \\
+export const executeWalletCurrencyConversionPayoutQuote = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const executePayoutQuoteServiceResponse = await executeWalletCurrencyConversionQuoteService(requestSession, aesDecryptedBodyData, aesDecryptedBodyData, userConfigurations)
+        if (executePayoutQuoteServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to execute wallet currency conversion payout quote", 400);
+        }
+        return res.success("Wallet currency conversion payout quote executed successfully", executePayoutQuoteServiceResponse?.data || {}, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "ExecuteWalletCurrencyConversionPayoutQuoteController",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("ExecuteWalletCurrencyConversionPayoutQuoteController is facing unknown issue.", error)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

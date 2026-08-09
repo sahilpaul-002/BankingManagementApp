@@ -120,6 +120,7 @@ export interface userKycDetailsSchemaTypes extends Document {
 }
 
 // Types for User Wallet Details Model Schema
+export type walletCurrencyType = "USD" | "EUR" | "SGD" | "USDC" | "USDT";
 export type walletDetailsType = {
     wallet_status?: "ACTIVE" | "INACTIVE";
     account_balance?: mongoose.Types.Decimal128;
@@ -166,6 +167,22 @@ export interface userWalletTransactionsTypes extends Document {
     balance_after: mongoose.Types.Decimal128;
     reference_id: string | null;
     remarks: string | null;
+}
+
+// Type for User Wallet Currency Conversion Quote Model Schema
+export interface walletCurrencyConversionQuoteSchemaTypes extends Document {
+    user_id: string;
+    cardholder_id: string;
+    wallet_id: string;
+    source_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
+    source_amount: mongoose.Types.Decimal128;
+    destination_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
+    destination_amount: mongoose.Types.Decimal128;
+    exchange_rate: mongoose.Types.Decimal128;
+    fee_percentage: mongoose.Types.Decimal128;
+    fee_amount: mongoose.Types.Decimal128;
+    quote_status: "ACTIVE" | "EXECUTED" | "EXPIRED" | "FAILED";
+    expires_at: Date;
 }
 
 // Types for Cardholder Card Details Model Schema
@@ -286,4 +303,5 @@ export interface feeDetailsSchemaTypes {
     create_card: number
     m2p_percent: number;
     p2P_percent: number;
+    currency_conversion: number;
 }

@@ -4,6 +4,9 @@ import "../configs/nodeDnsConfiguration.js";
 import app from "./app.js";
 import dbConnection from "../configs/dbConnection.js";
 import dotenv from "dotenv";
+import { startBankPayoutProcessingCronJob } from "../services/cronJobs/bankPayoutProcessingService.js";
+import { startPayoutQuoteExpiryCronJob } from "../services/cronJobs/payoutQuoteExpiryService.js";
+import { startCardExpiredAuthorizationTransactionCronJob } from "../services/cronJobs/cardExpiredAuthorizationTransactionService.js";
 
 // --------------------------------------- Load Environment Variable --------------------------------------- \\
 dotenv.config();
@@ -24,6 +27,11 @@ async function startServer(): Promise<void> {
         console.error("❌ Server failed to start:", error);
         process.exit(1);
     }
+
+    // Start the cron jobs after the server has started
+    startBankPayoutProcessingCronJob();
+    startPayoutQuoteExpiryCronJob();
+    startCardExpiredAuthorizationTransactionCronJob()
 }
 
 startServer();

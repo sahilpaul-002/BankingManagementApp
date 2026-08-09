@@ -1,4 +1,5 @@
 import type { BeneficieriesFiatCurrencyType } from "./beneficiariesFiatCurrency.js";
+import type { walletCurrencyType } from "./schemaTypes.js";
 
 export const USD_BASE_FX_RATES: Record<
     BeneficieriesFiatCurrencyType,
@@ -158,4 +159,16 @@ export const USD_BASE_FX_RATES: Record<
     ZAR: 17.00,
     ZMW: 23.00,
     ZWG: 25.00,
+};
+
+
+export const USD_BASE_WALLET_FX_RATES: Record<
+    walletCurrencyType,
+    number
+> = {
+    USD: 1.00,
+    EUR: 0.86,
+    SGD: 1.28,
+    USDC: 1.00,
+    USDT: 1.00,
 };

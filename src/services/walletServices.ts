@@ -12,7 +12,6 @@ import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import userWalletCreationValidationSchema from "../validations/userWalletCreationValidation.js"
-import type { Schema } from "mongoose";
 import userLoadWalletTransaction from "../mongoDbTransactions/userLoadWalletTransaction.js";
 import userWithdrawWalletTransaction from "../mongoDbTransactions/userWithdrawWalletTransaction.js";
 import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
@@ -21,6 +20,12 @@ import { userWalletTransactionsModel as user_wallet_transactions } from "../mode
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
 import getWalletTransactionsValidationSchema from "../validations/getWalletTransactionValidation.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
+import { Decimal } from "decimal.js";
+import walletCurrencyConversionValidationSchema from "../validations/walletCurrencyConversionValidation.js";
+import { FEE_DETAILS } from "../configs/configConstants.js";
+import { walletCurrencyConversionQuoteModel as wallet_currency_conversion_quote } from "../models/wallet_currency_conversion_quote.js";
+import getWalletFxRate from "./walletFxRateService.js";
+import executeWalletCurrencyConversionTransaction from "../mongoDbTransactions/walletCurrencyConversionTransaction.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -373,8 +378,8 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
             throw new NotFoundError("Requested wallet does not exist");
         }
 
-        const finalAmount: number = deductFeeSrive(validationResult.data.amount, validationResult.data.wallet_type === "FIAT" ? "load_fiat_wallet_percent" : "load_crypto_wallet_percent");
-        validationResult.data.amount = finalAmount
+        const finalAmount: Decimal = deductFeeSrive(new Decimal(validationResult.data.amount), validationResult.data.wallet_type === "FIAT" ? "load_fiat_wallet_percent" : "load_crypto_wallet_percent");
+        validationResult.data.amount = Number(finalAmount)
         // Load wallet transaction
         const loadWalletTransactionResult = await userLoadWalletTransaction(cardholderId, walletId, validationResult, selectedWallet)
 
@@ -824,4 +829,803 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
     }
 
 };
-// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\ 
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+
+
+// ------------------------------------- CREATE WALLET CURRENCY CONVERSION QUOTE ------------------------------------- //
+export const createWalletCurrencyConversionQuoteService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined,
+    userConfiguration: userConfigurationsType): Promise<any> => {
+
+    try {
+
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid body data");
+        }
+
+
+        // --------------------------------------------------
+        // Check collection
+        // --------------------------------------------------
+
+        const isCollectionPresent =
+            await checkMongoDbCollectionExist(
+                "wallet_currency_conversion_quotes"
+            );
+
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError(
+                "Currency conversion quotes collection does not exist in MongoDB"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Validate email
+        // --------------------------------------------------
+
+        const email = checkStringQueryParams(
+            aesDecryptedQueryData,
+            "email"
+        );
+
+        if (!email) {
+            throw new InvalidRequestBodyError(
+                "Email not found in request query"
+            );
+        }
+
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError(
+                "Unauthorized access detected - invalid email"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Validate user type
+        // --------------------------------------------------
+
+        if (
+            requestSession?.userType !== "ADMIN" &&
+            requestSession?.userType !== "MASTER_ADMIN"
+        ) {
+            throw new ForbiddenError(
+                "Not authorized to create currency conversion quote"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Validate configuration
+        // --------------------------------------------------
+
+        const sessionBusinessId =
+            requestSession?.userConfiguration?.businessId;
+
+        const sessionProgramId =
+            requestSession?.userConfiguration?.programId;
+
+        const sessionAgentCode =
+            requestSession?.userConfiguration?.agentCode;
+
+        const sessionSubAgentCode =
+            requestSession?.userConfiguration?.subAgentCode;
+
+
+        if (
+            userConfiguration?.businessId !== sessionBusinessId ||
+            userConfiguration?.programId !== sessionProgramId ||
+            userConfiguration?.agentCode !== sessionAgentCode ||
+            userConfiguration?.subAgentCode !== sessionSubAgentCode
+        ) {
+            throw new ForbiddenError(
+                "User configuration is not valid to create currency conversion quote"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Validate request body
+        // --------------------------------------------------
+
+        const validationResult = walletCurrencyConversionValidationSchema.safeParse(aesDecryptedBodyData);
+        if (!validationResult.success) {
+            throw new ServiceError(
+                "Invalid request",
+                z.flattenError(validationResult.error)
+            );
+        }
+
+        const validatedData = validationResult.data;
+
+
+        // --------------------------------------------------
+        // Get user ID
+        // --------------------------------------------------
+
+        const userId = requestSession?.userId;
+
+        if (!userId) {
+            throw new UnauthorizedError(
+                "Unauthorized session detected - user id not found in session"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Get wallet details
+        // --------------------------------------------------
+
+        const userWalletDetails =
+            await user_wallet_details.findOne(
+                {
+                    user_id: userId,
+                    cardholder_id: validatedData.cardholder_id,
+                },
+                {
+                    wallet_id: 1,
+                    cardholder_id: 1,
+                    wallets_details: 1,
+                }
+            ).lean();
+
+
+        if (!userWalletDetails) {
+            throw new NotFoundError(
+                "User wallet details not found"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Find source wallet
+        // --------------------------------------------------
+        const sourceWallet = userWalletDetails.wallets_details.find(
+            (wallet) =>
+                wallet.wallet_currency ===
+                validatedData.source_wallet_currency &&
+                wallet.wallet_status === "ACTIVE"
+        );
+
+
+        if (!sourceWallet) {
+            throw new NotFoundError(
+                `Active ${validatedData.source_wallet_currency} wallet not found`
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Find destination wallet
+        // --------------------------------------------------
+
+        const destinationWallet =
+            userWalletDetails.wallets_details.find(
+                (wallet) =>
+                    wallet.wallet_currency ===
+                    validatedData.destination_wallet_currency &&
+                    wallet.wallet_status === "ACTIVE"
+            );
+
+
+        if (!destinationWallet) {
+            throw new NotFoundError(
+                `Active ${validatedData.destination_wallet_currency} wallet not found`
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Check source wallet balance
+        // --------------------------------------------------
+
+        const accountBalance = new Decimal(
+            sourceWallet.account_balance?.toString() ?? "0"
+        );
+
+        const holdingAmount = new Decimal(
+            sourceWallet.holding_amount?.toString() ?? "0"
+        );
+
+        const availableBalance =
+            accountBalance.minus(holdingAmount);
+
+
+        const sourceAmount =
+            new Decimal(validatedData.amount.toString());
+
+
+        if (availableBalance.lessThan(sourceAmount)) {
+            throw new BadRequestError(
+                "Insufficient wallet balance"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Get FX rate
+        // --------------------------------------------------
+
+        const fxRateDetails = await getWalletFxRate(
+            validatedData.source_wallet_currency,
+            validatedData.destination_wallet_currency
+        );
+
+
+        const exchangeRate = new Decimal(
+            fxRateDetails.exchange_rate.toString()
+        );
+
+
+        if (exchangeRate.lessThanOrEqualTo(0)) {
+            throw new ServiceError(
+                "Invalid FX rate received"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Calculate gross destination amount
+        // --------------------------------------------------
+
+        const grossDestinationAmount =
+            sourceAmount
+                .mul(exchangeRate)
+                .toDecimalPlaces(2);
+
+
+        // --------------------------------------------------
+        // Calculate conversion fee
+        // --------------------------------------------------
+
+        const feePercentage = new Decimal(
+            FEE_DETAILS.currency_conversion.toString()
+        );
+
+
+        const feeAmount = sourceAmount
+            .mul(feePercentage)
+            .div(100)
+            .toDecimalPlaces(2);
+
+
+        // --------------------------------------------------
+        // Calculate amount after fee
+        // --------------------------------------------------
+
+        const sourceAmountAfterFee =
+            sourceAmount
+                .minus(feeAmount)
+                .toDecimalPlaces(2);
+
+
+        // --------------------------------------------------
+        // Calculate destination amount
+        // --------------------------------------------------
+
+        const destinationAmount =
+            sourceAmountAfterFee
+                .mul(exchangeRate)
+                .toDecimalPlaces(2);
+
+
+        // --------------------------------------------------
+        // Quote expiry
+        // --------------------------------------------------
+
+        const expiresAt = new Date(
+            Date.now() + 2 * 60 * 1000
+        );
+
+
+        // --------------------------------------------------
+        // Create quote
+        // --------------------------------------------------
+        const conversionQuote = await wallet_currency_conversion_quote.create({
+
+            user_id: userId,
+
+            cardholder_id:
+                validatedData.cardholder_id,
+
+            wallet_id:
+                userWalletDetails.wallet_id,
+
+            source_currency: validatedData.source_wallet_currency,
+
+            source_amount:
+                sourceAmount.toFixed(2),
+
+            destination_currency: validatedData.destination_wallet_currency,
+
+            destination_amount:
+                destinationAmount.toFixed(2),
+
+            exchange_rate:
+                exchangeRate.toFixed(8),
+
+            fee_percentage:
+                feePercentage.toFixed(2),
+
+            fee_amount:
+                feeAmount.toFixed(2),
+
+            quote_status: "ACTIVE",
+
+            expires_at: expiresAt,
+        });
+
+
+        // --------------------------------------------------
+        // Response
+        // --------------------------------------------------
+
+        return {
+
+            status: "SUCCESS",
+
+            data: {
+
+                quote_id:
+                    conversionQuote._id.toString(),
+
+                source: {
+                    currency:
+                        validatedData.source_wallet_currency,
+
+                    amount:
+                        sourceAmount.toFixed(2),
+                },
+
+                destination: {
+                    currency:
+                        validatedData.destination_wallet_currency,
+
+                    amount:
+                        destinationAmount.toFixed(2),
+                },
+
+                exchange_rate:
+                    exchangeRate.toFixed(8),
+
+                fee: {
+                    currency:
+                        validatedData.source_wallet_currency,
+
+                    percentage:
+                        feePercentage.toFixed(2),
+
+                    amount:
+                        feeAmount.toFixed(2),
+                },
+
+                total_debit: {
+                    currency:
+                        validatedData.source_wallet_currency,
+
+                    amount:
+                        sourceAmount.toFixed(2),
+                },
+
+                quote_status:
+                    conversionQuote.quote_status,
+
+                expires_at:
+                    conversionQuote.expires_at,
+            },
+
+            message:
+                "Currency conversion quote created successfully",
+        };
+
+    }
+    catch (err) {
+
+        const error = err as any;
+
+        const errorStatus =
+            error?.status || "UnknownErrorStatus";
+
+
+        logger.error(error, {
+            serviceName:
+                "CreateWalletCurrencyConversionQuoteService"
+        });
+
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+
+        throw new ServiceError(
+            `CreateWalletCurrencyConversionQuoteService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+};
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// --------------------------------- EXECUTE WALLET CURRENCY CONVERSION QUOTE SERVICE --------------------------------- //
+export const executeWalletCurrencyConversionQuoteService = async (
+    requestSession: Request["session"],
+    aesDecryptedQueryData:
+        Record<string, string> | ParsedQs | undefined,
+    aesDecryptedBodyData:
+        Record<string, string> | undefined,
+    userConfiguration: userConfigurationsType
+): Promise<any> => {
+
+    try {
+
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError(
+                "Invalid query data"
+            );
+        }
+
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError(
+                "Invalid body data"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Check quote collection
+        // --------------------------------------------------
+
+        const isCollectionPresent =
+            await checkMongoDbCollectionExist(
+                "wallet_currency_conversion_quotes"
+            );
+
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError(
+                "Currency conversion quotes collection does not exist in MongoDB"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Validate email
+        // --------------------------------------------------
+
+        const email = checkStringQueryParams(
+            aesDecryptedQueryData,
+            "email"
+        );
+
+        if (!email) {
+            throw new InvalidRequestBodyError(
+                "Email not found in request query"
+            );
+        }
+
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError(
+                "Unauthorized access detected - invalid email"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Validate user type
+        // --------------------------------------------------
+
+        if (
+            requestSession?.userType !== "ADMIN" &&
+            requestSession?.userType !== "MASTER_ADMIN"
+        ) {
+            throw new ForbiddenError(
+                "Not authorized to execute currency conversion"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Validate configuration
+        // --------------------------------------------------
+
+        const sessionBusinessId =
+            requestSession?.userConfiguration?.businessId;
+
+        const sessionProgramId =
+            requestSession?.userConfiguration?.programId;
+
+        const sessionAgentCode =
+            requestSession?.userConfiguration?.agentCode;
+
+        const sessionSubAgentCode =
+            requestSession?.userConfiguration?.subAgentCode;
+
+
+        if (
+            userConfiguration?.businessId !== sessionBusinessId ||
+            userConfiguration?.programId !== sessionProgramId ||
+            userConfiguration?.agentCode !== sessionAgentCode ||
+            userConfiguration?.subAgentCode !== sessionSubAgentCode
+        ) {
+            throw new ForbiddenError(
+                "User configuration is not valid to execute currency conversion"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Validate quote ID
+        // --------------------------------------------------
+
+        const quoteId = aesDecryptedBodyData.quote_id;
+
+        if (!quoteId) {
+            throw new InvalidRequestBodyError(
+                "Quote ID not found in request body"
+            );
+        }
+
+        // --------------------------------------------------
+        // Validate quote ID
+        // --------------------------------------------------
+        const cardholderId = aesDecryptedBodyData.cardholder_id;
+
+        if (!cardholderId) {
+            throw new InvalidRequestBodyError(
+                "Cardholder ID not found in request body"
+            );
+        }
+
+
+
+
+        // --------------------------------------------------
+        // Get user ID
+        // --------------------------------------------------
+
+        const userId = requestSession?.userId;
+
+        if (!userId) {
+            throw new UnauthorizedError(
+                "Unauthorized session detected - user id not found in session"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Get quote
+        // --------------------------------------------------
+        const conversionQuote = await wallet_currency_conversion_quote.findOne({
+            _id: quoteId,
+            user_id: userId,
+            cardholder_id: cardholderId
+        });
+
+
+        if (!conversionQuote) {
+            throw new NotFoundError(
+                "Currency conversion quote not found"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Check quote status
+        // --------------------------------------------------
+
+        if (
+            conversionQuote.quote_status !==
+            "ACTIVE"
+        ) {
+
+            throw new ServiceError(
+                `Currency conversion quote cannot be executed because its status is ${conversionQuote.quote_status}`
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Check quote expiry
+        // --------------------------------------------------
+
+        if (
+            conversionQuote.expires_at.getTime() <=
+            Date.now()
+        ) {
+
+            await wallet_currency_conversion_quote.updateOne(
+                {
+                    _id: conversionQuote._id,
+                    quote_status: "ACTIVE",
+                },
+                {
+                    $set: {
+                        quote_status: "EXPIRED",
+                    },
+                }
+            );
+
+            throw new ServiceError(
+                "Currency conversion quote has expired"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Get wallet
+        // --------------------------------------------------
+
+        const userWalletDetails =
+            await user_wallet_details.findOne(
+                {
+                    user_id: userId,
+                    cardholder_id:
+                        conversionQuote.cardholder_id,
+                },
+                {
+                    wallet_id: 1,
+                    cardholder_id: 1,
+                    wallets_details: 1,
+                }
+            ).lean();
+
+
+        if (!userWalletDetails) {
+            throw new NotFoundError(
+                "User wallet details not found"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Validate wallet ID
+        // --------------------------------------------------
+
+        if (
+            userWalletDetails.wallet_id !==
+            conversionQuote.wallet_id
+        ) {
+            throw new BadRequestError(
+                "Invalid wallet associated with conversion quote"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Source wallet
+        // --------------------------------------------------
+
+        const sourceWallet =
+            userWalletDetails.wallets_details.find(
+                (wallet) =>
+                    wallet.wallet_currency ===
+                    conversionQuote.source_currency &&
+                    wallet.wallet_status === "ACTIVE"
+            );
+
+
+        if (!sourceWallet) {
+            throw new NotFoundError(
+                `Active ${conversionQuote.source_currency} wallet not found`
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Destination wallet
+        // --------------------------------------------------
+
+        const destinationWallet =
+            userWalletDetails.wallets_details.find(
+                (wallet) =>
+                    wallet.wallet_currency ===
+                    conversionQuote.destination_currency &&
+                    wallet.wallet_status === "ACTIVE"
+            );
+
+
+        if (!destinationWallet) {
+            throw new NotFoundError(
+                `Active ${conversionQuote.destination_currency} wallet not found`
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Check balance again
+        // --------------------------------------------------
+
+        const accountBalance =
+            new Decimal(
+                sourceWallet.account_balance?.toString()
+                ?? "0"
+            );
+
+        const holdingAmount =
+            new Decimal(
+                sourceWallet.holding_amount?.toString()
+                ?? "0"
+            );
+
+        const availableBalance =
+            accountBalance.minus(
+                holdingAmount
+            );
+
+
+        const sourceAmount =
+            new Decimal(
+                conversionQuote.source_amount
+                    .toString()
+            );
+
+
+        if (
+            availableBalance.lessThan(
+                sourceAmount
+            )
+        ) {
+
+            throw new ServiceError(
+                "Insufficient wallet balance"
+            );
+        }
+
+
+        // --------------------------------------------------
+        // Execute MongoDB transaction
+        // --------------------------------------------------
+
+        const transactionResult =
+            await executeWalletCurrencyConversionTransaction({
+                conversionQuote,
+                sourceWallet,
+                destinationWallet,
+                cardholderId:
+                    userWalletDetails.cardholder_id,
+            });
+
+
+        return {
+
+            status: "SUCCESS",
+
+            data:
+                transactionResult.data,
+
+            message:
+                "Currency conversion executed successfully",
+        };
+
+    }
+    catch (err) {
+
+        const error = err as any;
+
+        const errorStatus =
+            error?.status ||
+            "UnknownErrorStatus";
+
+
+        logger.error(error, {
+            serviceName:
+                "ExecuteWalletCurrencyConversionQuoteService"
+        });
+
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+
+        throw new ServiceError(
+            `ExecuteWalletCurrencyConversionQuoteService facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+};

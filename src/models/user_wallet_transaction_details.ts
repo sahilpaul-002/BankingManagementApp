@@ -56,13 +56,13 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
         },
 
         balance_before: {
-            type: Number,
+            type: mongoose.Schema.Types.Decimal128,
             required: true,
             min: 0,
         },
 
         balance_after: {
-            type: Number,
+            type: mongoose.Schema.Types.Decimal128,
             required: true,
             min: 0,
         },

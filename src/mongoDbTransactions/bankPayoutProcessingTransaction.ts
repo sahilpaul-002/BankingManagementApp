@@ -6,18 +6,15 @@ import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import { Decimal } from "decimal.js";
 
-type CompletePayoutBankSettlementTransactionData = {
+type bankPayoutProcessingTransactionData = {
     payoutTransactionId: string;
 };
 
-const completePayoutBankSettlementTransaction = async (
-    transactionData: CompletePayoutBankSettlementTransactionData
-) => {
+const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProcessingTransactionData) => {
 
     const mongoSession = await mongoose.startSession();
 
     try {
-
         mongoSession.startTransaction();
 
         const { payoutTransactionId } = transactionData;
@@ -25,9 +22,7 @@ const completePayoutBankSettlementTransaction = async (
         // --------------------------------------------------
         // Get payout transaction
         // --------------------------------------------------
-
-        const payoutTransaction =
-            await fiat_payout_transactions.findOne(
+        const payoutTransaction = await fiat_payout_transactions.findOne(
                 {
                     _id: payoutTransactionId,
                     status: "PROCESSING",
@@ -35,29 +30,21 @@ const completePayoutBankSettlementTransaction = async (
             ).session(mongoSession);
 
         if (!payoutTransaction) {
-            throw new ServiceError(
-                "Payout transaction not found or is no longer processing"
-            );
+            throw new ServiceError("Payout transaction not found or is no longer processing");
         }
 
         // --------------------------------------------------
         // Prepare payout amount
         // --------------------------------------------------
-
-        const payoutAmount = new Decimal(
-            payoutTransaction.source_amount?.toString() ?? "0"
-        );
+        const payoutAmount = new Decimal(payoutTransaction.source_amount?.toString() ?? "0");
 
         if (payoutAmount.lessThanOrEqualTo(0)) {
-            throw new ServiceError(
-                "Invalid payout source amount"
-            );
+            throw new ServiceError("Invalid payout source amount");
         }
 
         // --------------------------------------------------
         // Get wallet
         // --------------------------------------------------
-
         const walletDetails = await user_wallet_details.findOne(
             {
                 user_id: payoutTransaction.user_id,
@@ -66,15 +53,12 @@ const completePayoutBankSettlementTransaction = async (
         ).session(mongoSession);
 
         if (!walletDetails) {
-            throw new ServiceError(
-                "User wallet details not found"
-            );
+            throw new ServiceError("User wallet details not found");
         }
 
         // --------------------------------------------------
         // Find source wallet
         // --------------------------------------------------
-
         const sourceWalletIndex =
             walletDetails.wallets_details.findIndex(
                 (wallet) =>
@@ -89,51 +73,39 @@ const completePayoutBankSettlementTransaction = async (
             );
         }
 
-        const sourceWallet =
-            walletDetails.wallets_details[sourceWalletIndex];
+        const sourceWallet = walletDetails.wallets_details[sourceWalletIndex];
+        if (!sourceWallet) {
+            throw new ServiceError(`Source wallet details not found for ${payoutTransaction.source_currency}`);
+        }
 
         // --------------------------------------------------
         // Current wallet balances
         // --------------------------------------------------
+        const currentAccountBalance = new Decimal(sourceWallet.account_balance?.toString() ?? "0");
 
-        const currentAccountBalance = new Decimal(
-            sourceWallet.account_balance?.toString() ?? "0"
-        );
-
-        const currentHoldingAmount = new Decimal(
-            sourceWallet.holding_amount?.toString() ?? "0"
-        );
+        const currentHoldingAmount = new Decimal(sourceWallet.holding_amount?.toString() ?? "0");
 
         // --------------------------------------------------
         // Validate held amount
         // --------------------------------------------------
-
         if (currentHoldingAmount.lessThan(payoutAmount)) {
-            throw new ServiceError(
-                "Insufficient holding amount to complete payout"
-            );
+            throw new ServiceError("Insufficient holding amount to complete payout");
         }
 
         // --------------------------------------------------
         // Calculate final balances
         // --------------------------------------------------
+        const newAccountBalance = currentAccountBalance.minus(payoutAmount);
 
-        const newAccountBalance =
-            currentAccountBalance.minus(payoutAmount);
-
-        const newHoldingAmount =
-            currentHoldingAmount.minus(payoutAmount);
+        const newHoldingAmount = currentHoldingAmount.minus(payoutAmount);
 
         if (newAccountBalance.lessThan(0)) {
-            throw new ServiceError(
-                "Account balance cannot become negative"
-            );
+            throw new ServiceError("Account balance cannot become negative");
         }
 
         // --------------------------------------------------
         // Calculate transaction totals
         // --------------------------------------------------
-
         const now = new Date();
 
         const updateInc: Record<string, number> = {
@@ -149,14 +121,9 @@ const completePayoutBankSettlementTransaction = async (
         // --------------------------------------------------
         // Daily transaction
         // --------------------------------------------------
-
         const daily = sourceWallet.daily_transaction;
 
-        if (
-            !daily ||
-            daily.date.toDateString() !== now.toDateString()
-        ) {
-
+        if (!daily || daily.date.toDateString() !== now.toDateString()) {
             updateSet[
                 `wallets_details.${sourceWalletIndex}.daily_transaction.debit`
             ] = payoutAmount.toFixed(2);
@@ -166,7 +133,6 @@ const completePayoutBankSettlementTransaction = async (
             ] = now;
 
         } else {
-
             updateInc[
                 `wallets_details.${sourceWalletIndex}.daily_transaction.debit`
             ] = Number(payoutAmount.toFixed(2));
@@ -175,21 +141,13 @@ const completePayoutBankSettlementTransaction = async (
         // --------------------------------------------------
         // Monthly transaction
         // --------------------------------------------------
-
-        const isSameMonth =
-            sourceWallet.monthly_transaction?.month ===
-            now.getMonth() + 1 &&
-            sourceWallet.monthly_transaction?.year ===
-            now.getFullYear();
-
+        const isSameMonth = sourceWallet.monthly_transaction?.month === now.getMonth() + 1 && sourceWallet.monthly_transaction?.year === now.getFullYear();
         if (isSameMonth) {
-
             updateInc[
                 `wallets_details.${sourceWalletIndex}.monthly_transaction.debit`
             ] = Number(payoutAmount.toFixed(2));
 
         } else {
-
             updateSet[
                 `wallets_details.${sourceWalletIndex}.monthly_transaction.debit`
             ] = payoutAmount.toFixed(2);
@@ -206,13 +164,8 @@ const completePayoutBankSettlementTransaction = async (
         // --------------------------------------------------
         // Yearly transaction
         // --------------------------------------------------
-
-        const isSameYear =
-            sourceWallet.yearly_transaction?.year ===
-            now.getFullYear();
-
+        const isSameYear = sourceWallet.yearly_transaction?.year === now.getFullYear();
         if (isSameYear) {
-
             updateInc[
                 `wallets_details.${sourceWalletIndex}.yearly_transaction.debit`
             ] = Number(payoutAmount.toFixed(2));
@@ -231,9 +184,7 @@ const completePayoutBankSettlementTransaction = async (
         // --------------------------------------------------
         // Update wallet
         // --------------------------------------------------
-
-        const walletUpdateResult =
-            await user_wallet_details.updateOne(
+        const walletUpdateResult = await user_wallet_details.updateOne(
                 {
                     _id: walletDetails._id,
                 },
@@ -255,16 +206,12 @@ const completePayoutBankSettlementTransaction = async (
         // --------------------------------------------------
         // Generate provider reference
         // --------------------------------------------------
-
-        const providerReference =
-            `MOCK-BANK-${crypto.randomUUID()}`;
+        const providerReference = `MOCK-BANK-${crypto.randomUUID()}`;
 
         // --------------------------------------------------
         // Update payout transaction
         // --------------------------------------------------
-
-        const payoutUpdateResult =
-            await fiat_payout_transactions.updateOne(
+        const payoutUpdateResult = await fiat_payout_transactions.updateOne(
                 {
                     _id: payoutTransaction._id,
                     status: "PROCESSING",
@@ -281,19 +228,14 @@ const completePayoutBankSettlementTransaction = async (
                     session: mongoSession,
                 }
             );
-
         if (payoutUpdateResult.modifiedCount !== 1) {
-            throw new ServiceError(
-                "Failed to update payout transaction status"
-            );
+            throw new ServiceError("Failed to update payout transaction status");
         }
 
         // --------------------------------------------------
         // Update wallet transaction
         // --------------------------------------------------
-
-        const walletTransaction =
-            await user_wallet_transactions.findOne(
+        const walletTransaction = await user_wallet_transactions.findOne(
                 {
                     wallet_id: payoutTransaction.wallet_id,
                     reference_id: payoutTransaction._id.toString(),
@@ -301,11 +243,8 @@ const completePayoutBankSettlementTransaction = async (
                     transaction_status: "PENDING",
                 }
             ).session(mongoSession);
-
         if (!walletTransaction) {
-            throw new ServiceError(
-                "Pending wallet HOLD transaction not found"
-            );
+            throw new ServiceError("Pending wallet HOLD transaction not found");
         }
 
         const walletTransactionUpdateResult =
@@ -328,19 +267,13 @@ const completePayoutBankSettlementTransaction = async (
                     session: mongoSession,
                 }
             );
-
-        if (
-            walletTransactionUpdateResult.modifiedCount !== 1
-        ) {
-            throw new ServiceError(
-                "Failed to update wallet HOLD transaction"
-            );
+        if (walletTransactionUpdateResult.modifiedCount !== 1) {
+            throw new ServiceError("Failed to update wallet HOLD transaction");
         }
 
         // --------------------------------------------------
         // Commit
         // --------------------------------------------------
-
         await mongoSession.commitTransaction();
 
         return {
@@ -376,10 +309,7 @@ const completePayoutBankSettlementTransaction = async (
             throw error;
         }
 
-        throw new ServiceError(
-            `CompletePayoutTransaction facing issue: ${error.message}`
-        );
-
+        throw new ServiceError(`CompletePayoutTransaction facing issue: ${error.message}`);
     } finally {
 
         await mongoSession.endSession();
@@ -387,4 +317,4 @@ const completePayoutBankSettlementTransaction = async (
     }
 };
 
-export default completePayoutBankSettlementTransaction;
+export default bankPayoutProcessingTransaction;

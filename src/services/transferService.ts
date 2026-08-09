@@ -242,7 +242,7 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 
-// ------------------------------------- CREATE PAYOUT QUOTE SERVICE -------------------------------------  \\
+// ------------------------------------- EXECUTE PAYOUT QUOTE SERVICE -------------------------------------  \\
 export const executePayoutQuoteService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
     try {
 
