@@ -26,11 +26,7 @@ const executeFiatPayoutTransaction = async (transactionData: ExecuteFiatPayoutTr
 
         mongoSession.startTransaction();
 
-        const {
-            payoutQuote,
-            sourceWallet,
-            cardholderId,
-        } = transactionData;
+        const {payoutQuote, sourceWallet, cardholderId} = transactionData;
 
 
         // --------------------------------------------------

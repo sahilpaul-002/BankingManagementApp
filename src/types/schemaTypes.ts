@@ -270,6 +270,8 @@ export interface fiatPayoutTransactionsSchemaTypes extends Document {
     exchange_rate: Types.Decimal128;
     fee_amount: Types.Decimal128;
     status: "PENDING" | "PROCESSING" | "SUCCESS" | "FAILED" | "CANCELLED";
+    processing_started_at?: Date | null;
+    completed_at?: Date | null;
     provider_reference?: string | null;
     remarks?: string | null;
 }
