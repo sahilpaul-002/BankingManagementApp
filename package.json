@@ -5,12 +5,12 @@
   "license": "ISC",
   "author": "Paul",
   "type": "module",
-  "main": "dist/server.js",
+  "main": "dist/server/server.js",
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "start": "node dist/server.js",
-    "jsDev": "nodemon dist/server.js",
+    "start": "node dist/server/server.js",
+    "jsDev": "nodemon dist/server/server.js",
     "tsDev": "nodemon --exec tsx src/server/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -43,6 +43,7 @@
     "resend": "^6.12.2",
     "speakeasy": "^2.0.0",
     "streamifier": "^0.1.1",
+    "swagger-ui-express": "^5.0.1",
     "winston": "^3.19.0",
     "zod": "^4.3.6"
   },
@@ -67,6 +68,7 @@
     "@types/redis": "^4.0.10",
     "@types/speakeasy": "^2.0.10",
     "@types/streamifier": "^0.1.2",
+    "swagger-jsdoc": "^6.3.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

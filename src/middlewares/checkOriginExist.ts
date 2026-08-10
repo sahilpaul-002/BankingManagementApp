@@ -9,10 +9,7 @@ const checkOriginExist = (req: Request, res: Response, next: NextFunction): Resp
         return next();
     }
 
-    const allowedOrigins: string[] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-    ]
+    const allowedOrigins: string[] = ["http://localhost:3000", "http://localhost:5173", "https://business.banking.management.com"]
 
     const origin: string | undefined = req.headers["origin"];
 
