@@ -242,7 +242,7 @@ const setupInterceptors = (instance: AxiosInstance) => {
 };
 
 // BASE URL CONFIGURATION
-const API_BASE = window.location.hostname.includes("localhost") ? `${window.location.protocol}//${window.location.hostname}:3000` : "";
+const API_BASE = window.location.hostname.includes("localhost") ? `${window.location.protocol}//${window.location.hostname}:3000` : "https://bankingmanagementapp.onrender.com";
 
 let axiosInstance: AxiosInstance | null = null;
 

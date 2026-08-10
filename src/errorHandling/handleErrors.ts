@@ -70,7 +70,7 @@ const handleErrors = (error: unknown, dispatch: any): never => {
                 throw error
 
             case 406:
-                console.error("INVALID_HEADER / INVALID_REQUEST_BODY_PARAMETER / INVALID_REQUEST_QUERY_PARAMETER", err);
+                console.error("INVALID_HEADER / INVALID_REQUEST_BODY_PARAMETER / INVALID_REQUEST_QUERY_PARAMETER / INVALID_REQUEST_PARAMS_PARAMETER", err);
                 // toast.error("Request parameter error")
                 dispatch(setShowInfoBanner("Application facing issue , please check the network"))
                 throw error
