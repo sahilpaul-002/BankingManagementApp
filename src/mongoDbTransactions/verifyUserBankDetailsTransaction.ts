@@ -4,6 +4,7 @@ import { userDetailsModel as user_details } from "../models/user_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError, BadRequestError, NotFoundError } from "../utils/AppErrorClass.js";
 import type { JwtPayload } from "jsonwebtoken";
+import crypto from "crypto";
 
 interface userBankVerificationJwtPayloadType extends JwtPayload {
     userId: string;

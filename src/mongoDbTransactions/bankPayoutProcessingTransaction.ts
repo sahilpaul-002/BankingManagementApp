@@ -5,6 +5,7 @@ import { fiatPayoutTransactionsModel as fiat_payout_transactions } from "../mode
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import { Decimal } from "decimal.js";
+import crypto from "crypto";
 
 type bankPayoutProcessingTransactionData = {
     payoutTransactionId: string;

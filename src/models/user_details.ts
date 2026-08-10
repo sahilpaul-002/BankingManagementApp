@@ -106,9 +106,8 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     },
     cardholder_id: {
         type: String,
-        unique: true,
-        index: true,
-        default: null
+        default: null,
+        trim: true,
     },
     status: {
         type: String,
@@ -148,6 +147,18 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
         type: Date
     }
 }, { timestamps: true, minimize: false }
+);
+
+// Unique Cardholder Id Index
+userDetailsSchema.index(
+    { cardholder_id: 1 },
+    {
+        unique: true,
+        partialFilterExpression: {
+            cardholder_id: { $exists: true, $ne: null },
+        },
+        name: "unique_cardholder_id",
+    }
 );
 
 // Compound index

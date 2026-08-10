@@ -17,9 +17,9 @@ const checkOriginExist = (req: Request, res: Response, next: NextFunction): Resp
         throw new ForbiddenError("'origin' HEADER IS MISSING");
     }
 
-    if (!allowedOrigins.includes(origin)) {
-        throw new ForbiddenError("ORIGIN NOT ALLOWED");
-    }
+    // if (!allowedOrigins.includes(origin)) {
+    //     throw new ForbiddenError("ORIGIN NOT ALLOWED");
+    // }
     next();
 }
 

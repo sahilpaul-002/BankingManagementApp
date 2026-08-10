@@ -6,6 +6,7 @@ import {walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes,
 import logger from "../utils/logger.js";
 import {AppErrorClass, BadRequestError, ServiceError} from "../utils/AppErrorClass.js";
 import type { walletDetailsType } from "../types/schemaTypes.js";
+import crypto from "crypto";
 
 interface ExecuteWalletCurrencyConversionTransactionParams {
     conversionQuote: any;

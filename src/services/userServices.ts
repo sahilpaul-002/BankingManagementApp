@@ -35,6 +35,7 @@ import userOnboardingTransaction from "../mongoDbTransactions/userOnboardingTran
 import userLoginTransaction from "../mongoDbTransactions/userLoginTransaction.js";
 import UserBankVerifyTransaction from "../mongoDbTransactions/verifyUserBankDetailsTransaction.js";
 import userSignUpTransaction from "../mongoDbTransactions/userSignUpTransaction.js";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -102,7 +103,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
             throw new ForbiddenError("User already exists");
         }
 
-        // Check Business Type
+        // Check Business Nmae / Type
         const businessNameExist = await user_details.exists({
             business_name: validationResult.data.business_name
         })
@@ -114,7 +115,7 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
                 business_name: validationResult.data.business_name
             })
             if (businessNameExist) {
-                throw new ForbiddenError(`Business name already exist, use ${validationResult?.data?.business_type} type`)
+                throw new ForbiddenError(`Business name already exist, use 'EXISTING' type`)
             }
         }
 

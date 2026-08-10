@@ -26,6 +26,7 @@ import { FEE_DETAILS } from "../configs/configConstants.js";
 import { walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes } from "../models/wallet_currency_conversion_quotes.js";
 import getWalletFxRate from "./walletFxRateService.js";
 import executeWalletCurrencyConversionTransaction from "../mongoDbTransactions/walletCurrencyConversionTransaction.js";
+import crypto from "crypto";
 
 type userConfigurationsType = {
     businessId: string;

@@ -2,7 +2,7 @@ import cron from "node-cron";
 import { fiatPayoutTransactionsModel as fiat_payout_transactions } from "../../models/fiat_payout_transactions.js";
 import bankPayoutProcessingTransaction from "../../mongoDbTransactions/bankPayoutProcessingTransaction.js";
 import logger from "../../utils/logger.js";
-
+import crypto from "crypto";
 
 const processPayoutTransactions = async (): Promise<void> => {
 

@@ -1,0 +1,4 @@
+1. Insert mapping document for domain and x-api-key
+2. Insert dns configuration document in data base
+3. Call get dns config api to load the dns configuration based on the specified domin in the session. Session gets destroyed every 12 mins so this api must be called every 12 mins or before other apis if other apis called after 12 min
+4. 

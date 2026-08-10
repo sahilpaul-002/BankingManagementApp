@@ -9,6 +9,7 @@ import z from "zod";
 import type { SafeParseSuccess } from "zod/v3";
 import userWalletTransactionsValidationSchema from "../validations/userWalletTransactionsValidation.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
+import crypto from "crypto";
 
 type userWalletActionValidationType = SafeParseSuccess<z.infer<typeof userWalletActionValidationSchema>>;
 

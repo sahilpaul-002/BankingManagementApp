@@ -16,6 +16,7 @@ import { userDetailsModel as user_details } from "../models/user_details.js";
 import type { ParsedQs } from "qs";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import UserKycVerifyUpdateTransaction from "../mongoDbTransactions/verifyUserKycDetailsTransaction.js";
+import crypto from "crypto";
 
 dotenv.config();
 

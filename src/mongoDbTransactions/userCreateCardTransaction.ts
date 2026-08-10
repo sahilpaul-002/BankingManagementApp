@@ -11,7 +11,7 @@ import userWalletTransactionsValidationSchema from "../validations/userWalletTra
 import type { SafeParseResult } from "../types/zodTypes.js";
 import { config } from "dotenv";
 import { FEE_DETAILS, MERCHANT_CATEGORIES } from "../configs/configConstants.js";
-import crypto, { type OneShotDigestOptionsWithBufferEncoding } from "crypto"
+import crypto from "crypto"
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import userCardCreationValidationSchema from "../validations/userCardCreationValidation.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";

@@ -7,6 +7,7 @@ import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError, } from "../utils/AppErrorClass.js";
 import type { fiatPayoutQuoteSchemaTypes, walletDetailsType } from "../types/schemaTypes.js";
 import { Decimal } from "decimal.js";
+import crypto from "crypto";
 
 
 type ExecuteFiatPayoutTransactionData = {

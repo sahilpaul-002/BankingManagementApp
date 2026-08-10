@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import type { Request, RequestHandler } from "express";
 import type { sessionConfig, sessionError } from "../types/sessionTypes.js";
 import type { RedisStore } from "connect-redis";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -33,7 +34,7 @@ const buildSession = (req: Request, store: RedisStore | undefined): sessionConfi
                 secure: process.env.NODE_ENV === "production",
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 
-                maxAge: 1000 * 60 * 20, // 12 minutes
+                maxAge: 1000 * 60 * 12, // 12 minutes
             }
         },
         adminSession: {
@@ -54,7 +55,7 @@ const buildSession = (req: Request, store: RedisStore | undefined): sessionConfi
                 secure: process.env.NODE_ENV === "production",
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 
-                maxAge: 1000 * 60 * 20, // 12 minutes
+                maxAge: 1000 * 60 * 12, // 12 minutes
             }
         },
         userSession: {
@@ -75,7 +76,7 @@ const buildSession = (req: Request, store: RedisStore | undefined): sessionConfi
                 secure: process.env.NODE_ENV === "production",
                 sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
 
-                maxAge: 1000 * 60 * 20, // 12 minutes
+                maxAge: 1000 * 60 * 12, // 12 minutes
             }
         }
     }
