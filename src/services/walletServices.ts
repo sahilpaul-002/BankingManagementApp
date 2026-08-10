@@ -23,7 +23,7 @@ import { userDetailsModel as user_details } from "../models/user_details.js";
 import { Decimal } from "decimal.js";
 import walletCurrencyConversionValidationSchema from "../validations/walletCurrencyConversionValidation.js";
 import { FEE_DETAILS } from "../configs/configConstants.js";
-import { walletCurrencyConversionQuoteModel as wallet_currency_conversion_quote } from "../models/wallet_currency_conversion_quote.js";
+import { walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes } from "../models/wallet_currency_conversion_quotes.js";
 import getWalletFxRate from "./walletFxRateService.js";
 import executeWalletCurrencyConversionTransaction from "../mongoDbTransactions/walletCurrencyConversionTransaction.js";
 
@@ -854,7 +854,7 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
 
         const isCollectionPresent =
             await checkMongoDbCollectionExist(
-                "wallet_currency_conversion_quotes"
+                "wallet_currency_conversion_quotess"
             );
 
         if (isCollectionPresent.status !== "SUCCESS") {
@@ -1126,7 +1126,7 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
         // --------------------------------------------------
         // Create quote
         // --------------------------------------------------
-        const conversionQuote = await wallet_currency_conversion_quote.create({
+        const conversionQuote = await wallet_currency_conversion_quotes.create({
 
             user_id: userId,
 
@@ -1283,7 +1283,7 @@ export const executeWalletCurrencyConversionQuoteService = async (
 
         const isCollectionPresent =
             await checkMongoDbCollectionExist(
-                "wallet_currency_conversion_quotes"
+                "wallet_currency_conversion_quotess"
             );
 
         if (isCollectionPresent.status !== "SUCCESS") {
@@ -1400,7 +1400,7 @@ export const executeWalletCurrencyConversionQuoteService = async (
         // --------------------------------------------------
         // Get quote
         // --------------------------------------------------
-        const conversionQuote = await wallet_currency_conversion_quote.findOne({
+        const conversionQuote = await wallet_currency_conversion_quotes.findOne({
             _id: quoteId,
             user_id: userId,
             cardholder_id: cardholderId
@@ -1438,7 +1438,7 @@ export const executeWalletCurrencyConversionQuoteService = async (
             Date.now()
         ) {
 
-            await wallet_currency_conversion_quote.updateOne(
+            await wallet_currency_conversion_quotes.updateOne(
                 {
                     _id: conversionQuote._id,
                     quote_status: "ACTIVE",

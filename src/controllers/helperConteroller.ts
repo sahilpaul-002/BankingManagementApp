@@ -9,6 +9,17 @@ import { userBankDetailsModel } from "../models/user_bank_details.js";
 import { portalConfigurationsModel } from "../models/portal_configurations.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
+import { dnsXApiKeyModel } from "../models/dns_x_api_key.js";
+import { userKycDetailsModel } from "../models/user_kyc_details.js";
+import { userMetaDetailsModel } from "../models/user_meta_details.js";
+import { userCardDetailsModel } from "../models/user_card_details.js";
+import { userWalletDetailsModel } from "../models/user_wallet_details.js";
+import { userWalletTransactionsModel } from "../models/user_wallet_transaction_details.js";
+import { walletCurrencyConversionQuoteModel } from "../models/wallet_currency_conversion_quotes.js";
+import { userCardTransactionsModel } from "../models/user_card_transaction_details.js";
+import { beneficiariesBankDetailsModel } from "../models/beneficiaries_bank_details.js";
+import { fiatPayoutTransactionsModel } from "../models/fiat_payout_transactions.js";
+import { fiatPayoutQuoteModel } from "../models/fiat_payout_quotes.js";
 
 // Health Check
 export const healthCheck = (req: Request, res: Response): Response<successResponseJson> | void => {
@@ -147,10 +158,21 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
 
         // All DB Models mapped
         const modelsMap: Record<string, any> = {
+            dns_x_api_keys: dnsXApiKeyModel,
             portal_configurations: portalConfigurationsModel,
             user_details: userDetailsModel,
+            user_meta_details: userMetaDetailsModel,
             user_address_details: userAddressDetailsModel,
-            user_bank_details: userBankDetailsModel
+            user_bank_details: userBankDetailsModel,
+            user_kyc_details: userKycDetailsModel,
+            user_wallet_details: userWalletDetailsModel,
+            user_wallet_transaction_details: userWalletTransactionsModel,
+            wallet_currency_conversion_quotes: walletCurrencyConversionQuoteModel,
+            beneficiaries_bank_details: beneficiariesBankDetailsModel,
+            fiat_payout_quotes: fiatPayoutQuoteModel,
+            fiat_payout_transactions: fiatPayoutTransactionsModel,
+            user_card_details: userCardDetailsModel,
+            user_card_transaction_details: userCardTransactionsModel,
         };
         // Get Model
         const Model = modelsMap[collectionNameString];

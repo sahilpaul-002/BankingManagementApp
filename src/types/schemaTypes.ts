@@ -2,6 +2,12 @@ import mongoose, { Document, Types } from "mongoose";
 import type { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 import type { BeneficieriesFiatCurrencyType } from "./beneficiariesFiatCurrency.js";
 
+// Type for Domain API Key Model Schema
+export interface dnsXApiKeySchemaTypes {
+    domain_name: string;
+    x_api_key: string;
+}
+
 // Type for Portal Configuration Model Schema
 export interface portalConfigurationSchemaTypes extends Document {
     domain_name: string;

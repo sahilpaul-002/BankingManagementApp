@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { Decimal } from "decimal.js";
 import {userWalletDetailsModel as user_wallet_details,} from "../models/user_wallet_details.js";
 import {userWalletTransactionsModel as user_wallet_transactions,} from "../models/user_wallet_transaction_details.js";
-import {walletCurrencyConversionQuoteModel as wallet_currency_conversion_quote,} from "../models/wallet_currency_conversion_quote.js";
+import {walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes,} from "../models/wallet_currency_conversion_quotes.js";
 import logger from "../utils/logger.js";
 import {AppErrorClass, BadRequestError, ServiceError} from "../utils/AppErrorClass.js";
 import type { walletDetailsType } from "../types/schemaTypes.js";
@@ -564,7 +564,7 @@ const executeWalletCurrencyConversionTransaction = async ({
         // --------------------------------------------------
 
         const quoteUpdateResult =
-            await wallet_currency_conversion_quote.updateOne(
+            await wallet_currency_conversion_quotes.updateOne(
                 {
                     _id: conversionQuote._id,
 

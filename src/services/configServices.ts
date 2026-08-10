@@ -15,7 +15,7 @@ import { getAsymmetricKeyPair } from "../utils/asymmetricEncryptionDecryption.js
 import listCountryMobileCodes from "../utils/listCountryMobileCodes.js";
 import { getHeaderAsymmetricKeyPair } from "../utils/asymmetricHeaderEncryptionDecryption.js";
 import dotenv from "dotenv"
-import { DNS_CONFIG_X_API_KEYS } from "../configs/configConstants.js";
+import { dnsXApiKeyModel as dns_x_api_key } from "../models/dns_x_api_key.js";
 import logger from "../utils/logger.js";
 
 dotenv.config();
@@ -62,15 +62,21 @@ export const getDnsConfigService = async (req: Request, aesDecryptedQueryData: R
         const domainName = resolveDomain(frontendDomain);
 
         // Validate X-API-Key header
-        // const xApiKey: string | null = checkStringHeader(req.headers, "dns-x-api-key");
-        const xApiKey: string | undefined = DNS_CONFIG_X_API_KEYS[domainName];
-        if (!xApiKey) {
-            throw new AppErrorClass(
-                400,
-                "INVALID_HEADER",
-                "'dns-x-api-key MISSING OR NOT STRING"
-            );
+        const dnsXApiKeyData = await dns_x_api_key.findOne(
+                {
+                    domain_name: domainName,
+                },
+                {
+                    _id: 0,
+                    domain_name: 1,
+                    x_api_key: 1,
+                }
+            )
+            .lean();
+        if (!dnsXApiKeyData) {
+            throw new NotFoundError("DNS X-API key configuration not found");
         }
+        const xApiKey = dnsXApiKeyData.x_api_key;
 
         // Check cached DNS configuration data
         const cachedDnsConfigData: portalConfigurationDataType | undefined = dnsConfigCache.get(domainName);

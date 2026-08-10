@@ -12,7 +12,7 @@ import { userWalletDetailsModel as user_wallet_details } from "../models/user_wa
 import { Decimal } from "decimal.js";
 import { getFxRate } from "./fxRateService.js";
 import { FEE_DETAILS } from "../configs/configConstants.js";
-import { fiatPayoutQuoteModel as fiat_payout_quote } from "../models/fiat_payout_quote.js";
+import { fiatPayoutQuoteModel as fiat_payout_quotes } from "../models/fiat_payout_quotes.js";
 import executeFiatPayoutTransaction from "../mongoDbTransactions/executePayoutQuoteTransaction.js";
 
 type userConfigurationsType = {
@@ -34,7 +34,7 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
         }
 
         // Check if collection exists
-        const isCollectionPresent = await checkMongoDbCollectionExist("fiat_payout_quote");
+        const isCollectionPresent = await checkMongoDbCollectionExist("fiat_payout_quotes");
         if (isCollectionPresent.status !== "SUCCESS") {
             throw new NotFoundError("Payout quotes collection does not exist in MongoDB");
         }
@@ -162,7 +162,7 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
         const expiresAt = new Date(
             Date.now() + 2 * 60 * 1000
         );
-        const payoutQuote = await fiat_payout_quote.create({
+        const payoutQuote = await fiat_payout_quotes.create({
             user_id: userId,
             wallet_id: userWalletDetails.wallet_id,
             beneficiary_id: validatedData.beneficiary_id,
@@ -254,7 +254,7 @@ export const executePayoutQuoteService = async (requestSession: Request["session
         }
 
         // Check if collection exists
-        const isCollectionPresent = await checkMongoDbCollectionExist("fiat_payout_quote");
+        const isCollectionPresent = await checkMongoDbCollectionExist("fiat_payout_quotes");
         if (isCollectionPresent.status !== "SUCCESS") {
             throw new NotFoundError("Payout quotes collection does not exist in MongoDB");
         }
@@ -304,7 +304,7 @@ export const executePayoutQuoteService = async (requestSession: Request["session
         }
 
         // Get payout quote details
-        const payoutQuote = await fiat_payout_quote.findOne({
+        const payoutQuote = await fiat_payout_quotes.findOne({
             _id: quoteId,
             user_id: userId,
         });
@@ -318,7 +318,7 @@ export const executePayoutQuoteService = async (requestSession: Request["session
         // Check quote expiry
         if (payoutQuote.expires_at.getTime() <= Date.now()) {
             // Update the quote status to EXPIRED
-            await fiat_payout_quote.updateOne(
+            await fiat_payout_quotes.updateOne(
                 {
                     _id: payoutQuote._id,
                     quote_status: "ACTIVE",

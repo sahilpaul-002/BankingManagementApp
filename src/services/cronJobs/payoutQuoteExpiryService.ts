@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { fiatPayoutQuoteModel as fiat_payout_quote } from "../../models/fiat_payout_quote.js";
+import { fiatPayoutQuoteModel as fiat_payout_quotes } from "../../models/fiat_payout_quotes.js";
 import logger from "../../utils/logger.js";
 
 
@@ -11,7 +11,7 @@ export const expirePayoutQuotesService = async (): Promise<void> => {
 
         // Find all ACTIVE payout quotes whose expiry time has passed
         // and update them to EXPIRED.
-        const result = await fiat_payout_quote.updateMany(
+        const result = await fiat_payout_quotes.updateMany(
             {
                 quote_status: "ACTIVE",
                 expires_at: {

@@ -30,6 +30,8 @@ import decryptRequestPayload from "../middlewares/decryptRequestPayload.js";
 import encryptResponseData from "../middlewares/encryptedResponseData.js";
 import jwtAuthTokenValidation from "../utils/jwtAuthTokenValidation.js";
 import { checkDatabaseConnection } from "../middlewares/databaseConnectionCheck.js";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "../configs/swagger.js";
 
 // IMPORTS ROUTES
 import helperRoutes from "../routes/helperRoutes.js";
@@ -119,6 +121,13 @@ app.use((req, res, next) => {
     next()
 })
 app.use("/api/v1/public", publicRoutes);
+
+// // SWAGGER DOCUMENTATION ENDPOINT
+// app.use(
+//     "/api-docs",
+//     swaggerUi.serve,
+//     swaggerUi.setup(swaggerSpec)
+// );
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
 
 // ---------------------------------------- Custom Middlewares ---------------------------------------- \\

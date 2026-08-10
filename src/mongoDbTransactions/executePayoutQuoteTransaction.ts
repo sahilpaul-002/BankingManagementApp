@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
 import { fiatPayoutTransactionsModel as fiat_payout_transactions } from "../models/fiat_payout_transactions.js";
-import { fiatPayoutQuoteModel as fiat_payout_quote } from "../models/fiat_payout_quote.js";
+import { fiatPayoutQuoteModel as fiat_payout_quotes } from "../models/fiat_payout_quotes.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError, } from "../utils/AppErrorClass.js";
 import type { fiatPayoutQuoteSchemaTypes, walletDetailsType } from "../types/schemaTypes.js";
@@ -53,7 +53,7 @@ const executeFiatPayoutTransaction = async (transactionData: ExecuteFiatPayoutTr
         // to execute the same quote simultaneously.
         // --------------------------------------------------
 
-        const quoteUpdateResult = await fiat_payout_quote.updateOne(
+        const quoteUpdateResult = await fiat_payout_quotes.updateOne(
             {
                 _id: payoutQuote._id,
                 user_id: payoutQuote.user_id,
