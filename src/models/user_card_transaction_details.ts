@@ -141,10 +141,6 @@ userCardTransactionsSchema.index({
 });
 
 userCardTransactionsSchema.index({
-    transaction_id: 1,
-});
-
-userCardTransactionsSchema.index({
     transaction_status: 1,
     createdAt: -1,
 });

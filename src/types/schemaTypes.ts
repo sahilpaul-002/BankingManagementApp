@@ -52,6 +52,37 @@ export interface userDetailsSchemaTypes extends Document {
     last_login_at?: Date;
 }
 
+// Type for creating User Details document
+export interface userDetailsDocumentType {
+    full_name: string;
+    program_type: "MASTER" | "VISA";
+    business_name: string;
+    agent_code: string;
+    subagent_code: string;
+    program_id: "MBMA010" | "VBMA010";
+    business_id: string;
+    email: string;
+    password: string;
+    mobile_country_code: string;
+    mobile_country_name: string;
+    phone_number: string;
+    date_of_birth: Date;
+    gender: "MALE" | "FEMALE" | "OTHER";
+    kyc_status?: "PENDING" | "IN-PROGRESS" | "COMPLETED";
+    risk_category?: "LOW" | "MEDIUM" | "HIGH";
+    cardholder_id?: string | null;
+    status?: "DISABLED" | "PRE-VERIFIED" | "VERIFIED" | "ACTIVE";
+    is_admin?: "Y" | "N";
+    is_master_admin?: "Y" | "N";
+    is_active?: "Y" | "N";
+    is_email_verified?: "Y" | "N";
+    is_phone_verified?: "Y" | "N";
+    is_2fa_enabled?: "Y" | "N";
+    two_fa_type?: "SMS-OTP" | "EMAIL-OTP" | "TOTP" | null;
+    authenticator_secret?: string | null;
+    last_login_at?: Date;
+}
+
 // Type for User Meta Details Model Schema
 export interface userMetaDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId | string;

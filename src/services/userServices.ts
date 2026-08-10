@@ -4,7 +4,7 @@ import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import userLoginValidationSchema from "../validations/userLoginValidation.js";
-import type { billingAddressTypes, deliveryAddressTypes, userAddressDetailsSchemaTypes, userBankDetailsSchemaTypes, userDetailsSchemaTypes } from "../types/schemaTypes.js";
+import type { billingAddressTypes, deliveryAddressTypes, userAddressDetailsSchemaTypes, userBankDetailsSchemaTypes, userDetailsDocumentType, userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import destroySession from "../utils/destroySession.js";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
@@ -65,8 +65,106 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
             throw new NotFoundError("Required collection does not exist in MongoDB");
         }
 
+        // Check email present in request body
+        const email: string | null = checkStringBody(aesDecryptedBodyData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not present in the request body");
+
+        }
+
+        // Check password present in the request body
+        const userPassword: string | null = checkStringBody(aesDecryptedBodyData, "password");
+        if (!userPassword) {
+            throw new InvalidRequestBodyError("Password not present in the request body");
+        }
+
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof userDetailsValidationSchema>> = userDetailsValidationSchema.safeParse(aesDecryptedBodyData);
+        if (!validationResult.success) {
+            // return res.status(400).json({
+            //     status: "SERVICE_ERROR",
+            //     message: "Invalid request body",
+            //     // errors: validationResult.error.issues.map(issue => issue.message)
+            //     // errors: validationResult.error.issues.map(issue => ({
+            //     //     [issue.path.join(".")]: issue.message
+            //     // }))
+            //     errors: z.flattenError(validationResult.error)
+            // });
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
+
+        // Check User Exist
+        const emailExists = await user_details.exists({
+            email: validationResult.data.email
+        });
+        if (emailExists) {
+            const destroySessionResponse = await destroySession(req.session, res);
+            throw new ForbiddenError("User already exists");
+        }
+
+        // Check Business Type
+        const businessNameExist = await user_details.exists({
+            business_name: validationResult.data.business_name
+        })
+        if (validationResult?.data?.business_type === "EXISTING" && !businessNameExist) {
+            throw new ForbiddenError(`Business name does not exist for the specified type`)
+        }
+        if (validationResult?.data?.business_type === "NEW") {
+            const businessNameExist = await user_details.exists({
+                business_name: validationResult.data.business_name
+            })
+            if (businessNameExist) {
+                throw new ForbiddenError(`Business name already exist, use ${validationResult?.data?.business_type} type`)
+            }
+        }
+
+        // Check primary user (admin) exist and program type
+        const primaryUser = await user_details.findOne({
+            business_name: validationResult.data.business_name,
+            agent_code: "01",
+            subagent_code: "01"
+        }).select("program_type business_id").lean();
+        const primaryUserNetwork = primaryUser?.program_type === "MASTER" ? "Master_Network" : "Visa_Network"
+        // Check program type
+        if (primaryUser?.program_type && primaryUser?.program_type !== validationResult?.data?.program_type) {
+            throw new ServiceError(`${validationResult?.data?.business_name} is registered for ${primaryUserNetwork}. You can either use ${primaryUserNetwork} or register with different business name`)
+        }
+
+        // HashPassword
+        const salt = genSaltSync(10);
+        const hashedPassword = hashSync(userPassword as string, salt);
+
+        // Remove password from aesDecryptedBodyData
+        const { password, ...restBody } = validationResult?.data;
+
+        // Program ID
+        const programId: "MBMA010" | "VBMA010" = validationResult.data.program_type === "MASTER" ? "MBMA010" : "VBMA010";
+
+        const document: userDetailsDocumentType = {
+            full_name: validationResult.data.full_name,
+            business_name: validationResult.data.business_name,
+            email: validationResult.data.email,
+            phone_number: validationResult.data.phone_number,
+            mobile_country_code: validationResult.data.mobile_country_code,
+            mobile_country_name: validationResult.data.mobile_country_name,
+            gender: validationResult.data.gender,
+            date_of_birth: validationResult.data.date_of_birth,
+
+            password: hashedPassword,
+
+            agent_code: "01",
+            subagent_code: primaryUser ? "02" : "01",
+
+            business_id: primaryUser ? primaryUser?.business_id : `${validationResult.data.business_name}/01/${crypto.randomUUID()}`,
+            program_id: programId,
+
+            program_type: validationResult.data.program_type,
+
+            is_admin: primaryUser ? "N" : "Y"
+        }
+
         // Sign Up MongoDb Transaction
-        const signUpTransaciotnResponse = await userSignUpTransaction(req, res, aesDecryptedBodyData);
+        const signUpTransaciotnResponse = await userSignUpTransaction(req, res, document);
         if (signUpTransaciotnResponse?.status?.toUpperCase() !== "SUCCESS") {
             throw new ServiceError("User sign up service facing issue. Sign Up failed")
         }

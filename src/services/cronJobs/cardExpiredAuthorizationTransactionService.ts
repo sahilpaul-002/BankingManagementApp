@@ -13,8 +13,7 @@ const processExpiredCardTransactions = async (): Promise<void> => {
         // Find expired pending authorizations
         // --------------------------------------------------
 
-        const expiredTransactions =
-            await user_card_transactions.find(
+        const expiredTransactions = await user_card_transactions.find(
                 {
                     authorization_status: "PENDING",
 

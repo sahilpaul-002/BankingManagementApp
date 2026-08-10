@@ -1,6 +1,6 @@
 import session from "express-session";
 import type { NextFunction, RequestHandler, Request, Response } from "express";
-import type { SessionConfig, SessionError } from "../types/sessionTypes.js";
+import type { sessionConfig, sessionError } from "../types/sessionTypes.js";
 import type { failedResponseJson, successResponseJsonRedisCLient, successResponseJsonRedisStore } from "../types/responseJson.js";
 import { getRedisClient } from "../configs/redisConfig.js";
 import type { RedisClientType } from "redis";
@@ -12,7 +12,7 @@ const dynamicSession = (): RequestHandler => async (req: Request, res: Response,
 
     // Get Redis Client
     const redisClientResponse: successResponseJsonRedisCLient | failedResponseJson = getRedisClient();
-    if (redisClientResponse.status === "FAILED") {
+    if (redisClientResponse.status === "SERVICE_ERROR") {
         return res.status(500).json({ status: "INTERNAL_SERVER_ERROR", message: "Failed to get Redis client", error: redisClientResponse.error });
     }
     const redisClient: RedisClientType | undefined = redisClientResponse.status === "SUCCESS" ? redisClientResponse.client : undefined;
@@ -20,13 +20,13 @@ const dynamicSession = (): RequestHandler => async (req: Request, res: Response,
     const redisStoreResponse: failedResponseJson | successResponseJsonRedisStore = await getRedisStore(redisClient);
     // console.log("Redis store response from getRedisStore function in dynamicSession middleware:", redisStoreResponse);
 
-    if (redisStoreResponse.status === "FAILED") {
+    if (redisStoreResponse.status === "SERVICE_ERROR") {
         console.error("Failed to create Redis store:", redisStoreResponse.message);
     }
     const redisStore: RedisStore | undefined = redisStoreResponse.status === "SUCCESS" ? redisStoreResponse.store : undefined;
 
     // Get Sessions
-    const sessions: SessionConfig | SessionError | undefined = buildSession(req, redisStore);
+    const sessions: sessionConfig | sessionError | undefined = buildSession(req, redisStore);
     // console.log("Session configuration returned from buildSession function in dynamicSession middleware:", sessions);
 
     // Check Session
