@@ -13,8 +13,6 @@ import { CONFIG_URL } from '@/configs/constants'
 import executeBaseQuery from '../executeBaseQuery'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
-const dnsBaseUrl = import.meta.env.VITE_DNS_BASE_URL
-const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
 
 // ============================
 // GET AXIOS INSTANCE

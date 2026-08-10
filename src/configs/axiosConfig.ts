@@ -10,6 +10,8 @@ import GetDeviceId from '@/utils/GetDeviceId';
 import { rsaEncryption } from '@/utils/rsaEncryption';
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios'
 
+const NODE_BASE_URL = import.meta.env.VITE_NODE_BASE_URL
+
 // Global Dispatch Handling - (To avoid circular store dependencies)
 let globalDispatch: any = null;
 export const setAxiosDispatch = (dispatch: any) => {
@@ -242,7 +244,7 @@ const setupInterceptors = (instance: AxiosInstance) => {
 };
 
 // BASE URL CONFIGURATION
-const API_BASE = window.location.hostname.includes("localhost") ? `${window.location.protocol}//${window.location.hostname}:3000` : "https://bankingmanagementapp.onrender.com";
+const API_BASE = window.location.hostname.includes("localhost") ? `${window.location.protocol}//${window.location.hostname}:3000` : NODE_BASE_URL;
 
 let axiosInstance: AxiosInstance | null = null;
 

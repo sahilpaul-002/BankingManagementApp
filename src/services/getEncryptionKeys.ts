@@ -5,7 +5,6 @@ import { InternalApplicationError } from "@/errorHandling/error";
 import { logError } from "@/errorHandling/errorLogger";
 import axios from "axios";
 
-const baseURL = import.meta.env.VITE_DNS_BASE_URL;
 
 // Utility to safely get from sessionStorage
 const getSessionItem = (key: string): string | null => {
@@ -19,7 +18,6 @@ export const getAesEncryptionKey = async (): Promise<string | null> => {
 
         if (!keyHex) {
             try {
-                // const result = await axios.get(`${baseURL}/getEncryptionKey`);
                 const result = await apiRequest({
                     url: `${CONFIG_URL}/getEncryptionKey`,
                     method: 'GET',
