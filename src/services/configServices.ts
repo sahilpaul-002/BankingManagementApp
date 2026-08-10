@@ -21,16 +21,20 @@ import logger from "../utils/logger.js";
 dotenv.config();
 
 // --------------------------------------- GET DNS CONFIG SERVICE --------------------------------------- \\
-export const resolveDomain = (origin?: string): string => {
-    if (!origin) {
+export const resolveDomain = (domain?: string): string => {
+    if (!domain) {
         return "";
     }
 
-    if (origin.includes("localhost")) {
+    if (domain.includes("localhost")) {
         return "business.banking.management.com";
     }
 
-    return origin.split("//")[1] || origin;
+    try {
+        return new URL(domain).hostname;
+    } catch {
+        return domain;
+    }
 };
 export const getDnsConfigService = async (req: Request, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson> => {
     try {
@@ -63,15 +67,15 @@ export const getDnsConfigService = async (req: Request, aesDecryptedQueryData: R
 
         // Validate X-API-Key header
         const dnsXApiKeyData = await dns_x_api_key.findOne(
-                {
-                    domain_name: domainName,
-                },
-                {
-                    _id: 0,
-                    domain_name: 1,
-                    x_api_key: 1,
-                }
-            )
+            {
+                domain_name: domainName,
+            },
+            {
+                _id: 0,
+                domain_name: 1,
+                x_api_key: 1,
+            }
+        )
             .lean();
         if (!dnsXApiKeyData) {
             throw new NotFoundError("DNS X-API key configuration not found");
