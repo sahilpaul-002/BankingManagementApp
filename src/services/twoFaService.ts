@@ -268,8 +268,10 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
         }
 
         // if (codeType !== "EMAIL-OTP" && codeType !== "TOTP" && codeType !== "SMS_OTP") {
+        //     throw new InvalidRequestBodyError("Invalid 'code_type' parameter or not a string - 'code_type' can be [EMAL-OTP | TOPT | SMS_OTP]")
+        // }
         if (codeType !== "EMAIL-OTP" && codeType !== "TOTP") {
-            throw new InvalidRequestBodyError("Invalid 'code_type' parameter or not a string - 'code_type' can be [EMAL-OTP | TOPT | SMS_OTP]")
+            throw new InvalidRequestBodyError("Invalid 'code_type' parameter or not a string - 'code_type' can be [EMAL-OTP | TOPT]")
         }
 
         // Check if collection exist in MongoDB
