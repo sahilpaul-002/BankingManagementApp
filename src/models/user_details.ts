@@ -105,7 +105,7 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
         default: "LOW"
     },
     cardholder_id: {
-        type: String,
+        type: Schema.Types.ObjectId,
         default: null,
         trim: true,
     },

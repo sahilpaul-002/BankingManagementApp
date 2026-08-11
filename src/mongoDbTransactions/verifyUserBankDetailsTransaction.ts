@@ -19,16 +19,18 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
     try {
         mongoSession.startTransaction();
 
+        const userId = new Types.ObjectId(decoded.userId)
+
         // Verify request id
         const currentBankDoc = await user_bank_details.findOne(
-                {
-                    user_id: decoded.userId,
-                },
-                null,
-                {
-                    session: mongoSession,
-                }
-            ).select("_id user_bank_request_id").lean();
+            {
+                user_id: userId as Types.ObjectId,
+            },
+            null,
+            {
+                session: mongoSession,
+            }
+        ).select("_id user_bank_request_id").lean();
 
         if (currentBankDoc?.user_bank_request_id !== decoded.userBankRequestId) {
             throw new ServiceError("Expired verification link");
@@ -37,7 +39,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
         // Update the user bank request id
         const updatedRequestDoc = await user_bank_details.findOneAndUpdate(
             {
-                user_id: decoded.userId,
+                user_id: userId as Types.ObjectId,
             },
             {
                 user_bank_request_id: crypto.randomUUID(),
@@ -54,7 +56,7 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
         }
 
         const userDoc = await user_details.findById(
-            decoded.userId,
+            userId,
             null,
             {
                 session: mongoSession,
@@ -66,16 +68,16 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
         }
 
         let updatedBankDoc = null;
-        let updatedUserDoc = null;
+        let updatedUserDoc = userDoc;
         if (decoded.action === "APPROVE") {
-            const cardholderId = crypto.randomUUID();
-            
+            const cardholderId = new Types.ObjectId();
+
             updatedBankDoc = await user_bank_details.findOneAndUpdate(
                 {
-                    user_id: decoded.userId,
+                    user_id: userId as Types.ObjectId,
                 },
                 {
-                    cardholder_id: cardholderId,
+                    cardholder_id: cardholderId as Types.ObjectId,
                     is_verified: true,
                 },
                 {
@@ -88,36 +90,38 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
                 throw new ServiceError("VerifyUserBankDetails service facing issue - failed to update the user details for bank account status")
             }
 
-            updatedUserDoc = await user_details.findByIdAndUpdate(
-                decoded.userId,
+            const updatedUser = await user_details.findByIdAndUpdate(
+                userId,
                 {
                     cardholder_id: cardholderId,
                 },
                 {
                     new: true,
+                    runValidators: true,
                     session: mongoSession,
                 }
             ).select("email").lean();
 
-            if (!updatedUserDoc) {
+            if (!updatedUser) {
                 throw new ServiceError("VerifyUserBandDetails service is facing issue - failed to add cardholder-id ");
             }
+
+            updatedUserDoc = updatedUser;
         }
 
         if (decoded.action === "REJECT") {
-            updatedBankDoc =
-                await user_bank_details.findOneAndUpdate(
-                        {
-                            user_id: decoded.userId,
-                        },
-                        {
-                            is_verified: false,
-                        },
-                        {
-                            new: true,
-                            session: mongoSession,
-                        }
-                    ).select("_id").lean();
+            updatedBankDoc = await user_bank_details.findOneAndUpdate(
+                {
+                    user_id: userId as Types.ObjectId,
+                },
+                {
+                    is_verified: false,
+                },
+                {
+                    new: true,
+                    session: mongoSession,
+                }
+            ).select("_id").lean();
 
             if (!updatedBankDoc) {
                 throw new ServiceError("VerifyUserBankDetails service facing issue - failed to update the user details for bank account status")

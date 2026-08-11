@@ -146,10 +146,10 @@ export const onboarding = async (req: Request, res: Response): Promise<Response<
 
         const sendBankVerificationMailServiceResponse = await sendBankVerificationMailService(requestSession, {email})
         if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
-            return res.success("User onboarding successfull but failed to sent user bank verification mail.", userOnboardingServiceResponse?.data, 200)
+            return res.success(`${userOnboardingServiceResponse?.message} - but failed to sent user bank verification mail.`, userOnboardingServiceResponse?.data, 200)
         }
         else {
-            return res.success("User onboarding successfull and bank verification mail sent to admin", userOnboardingServiceResponse?.data, 200)
+            return res.success(`${userOnboardingServiceResponse?.message} - bank verification mail sent to admin`, userOnboardingServiceResponse?.data, 200)
         }
     }
     catch (err) {

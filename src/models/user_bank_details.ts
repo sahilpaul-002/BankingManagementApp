@@ -4,6 +4,7 @@ import type { userBankDetailsSchemaTypes } from "../types/schemaTypes.js";
 const userBankDetailsSchema = new Schema<userBankDetailsSchemaTypes>({
     user_id: {
         type: Schema.Types.ObjectId,
+        ref: "UserDetails",
         unique: true,
         required: true,
         index: true

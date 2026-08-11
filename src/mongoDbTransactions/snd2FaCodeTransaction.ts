@@ -3,10 +3,8 @@ import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_d
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
-import type { JwtPayload } from "jsonwebtoken";
-import type { Schema } from "mongoose";
 
-const Send2FaCodeTransaction = async (userId: string, hashedVerificationCode: string, verificationCodeExpiry: Date) => {
+const Send2FaCodeTransaction = async (userId: Types.ObjectId, hashedVerificationCode: string, verificationCodeExpiry: Date) => {
     const mongoSession = await mongoose.startSession();
     try {
 
@@ -17,7 +15,8 @@ const Send2FaCodeTransaction = async (userId: string, hashedVerificationCode: st
             userId,
             {
                 is_2fa_enabled: "Y",
-                two_fa_type: "EMAIL-OTP"
+                two_fa_type: "EMAIL-OTP",
+                authenticator_secret: null
             },
             {
                 new: true,

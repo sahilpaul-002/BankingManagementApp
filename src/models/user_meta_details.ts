@@ -7,6 +7,7 @@ export type UserMetaDetailsDocument =
 const userMetaDetailsSchema = new Schema<userMetaDetailsSchemaTypes>({
     user_id: {
         type: Schema.Types.ObjectId,
+        ref: "UserDetails",
         required: true,
         index: true,
         upnique: true

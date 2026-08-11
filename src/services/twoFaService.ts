@@ -10,7 +10,7 @@ import type { userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_details.js";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
-import type { Schema, Types } from "mongoose";
+import { Types } from "mongoose";
 import { generateVerificationCodeService } from "./generateVerificationCodeService.js";
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import speakeasy, { type TotpVerifyOptions } from "speakeasy";
@@ -155,7 +155,7 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
             throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
         }
 
-        const userId: unknown = requestSession?.userId;
+        const userId = new Types.ObjectId(requestSession?.userId);
         // Get verification code and expiry from the user meta details data base
         const verificationDataDoc = await user_meta_details.findOne(
             { user_id: userId as Types.ObjectId }
@@ -196,7 +196,7 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
         }
 
         // Update the email verified status in DB
-        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
+        const updatedUserDetails = await user_details.findByIdAndUpdate(userId , { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
         if (!updatedUserDetails) {
             throw new ServiceError("User email verification status update service is facing issue");
         }
@@ -285,7 +285,7 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
         }
 
         // Get user-id from session
-        const userId: unknown = requestSession?.userId;
+        const userId = new Types.ObjectId(requestSession?.userId);
 
         // Generate verificaiton code and its expiry time
         const verificationData = await generateVerificationCodeService();
@@ -312,7 +312,7 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
 
             // Update user details for 2FA email
             const updatedUserDetailsDoc = await user_details.findByIdAndUpdate(
-                userId,
+                userId as Types.ObjectId,
                 {
                     is_2fa_enabled: "Y",
                     two_fa_type: "TOTP",
@@ -333,7 +333,7 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
 
         // ====================================== EMAIL-OTP ====================================== \\
         const send2FaCodeTransactionResponse = await Send2FaCodeTransaction(
-            userId as string,
+            userId,
             hashedVerificationCode,
             verificationData.expiresAt
         );
@@ -438,7 +438,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
             throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
         }
 
-        const userId: unknown = requestSession?.userId;
+        const userId = new Types.ObjectId(requestSession?.userId);
         // Get user details
         const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ _id: userId as Types.ObjectId }).select("two_fa_type is_2fa_enabled authenticator_secret").lean();
         // Check 2FA type
@@ -448,6 +448,11 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
         }
         if (!userDetailsDoc?.is_2fa_enabled) {
             throw new ServiceError("Email not in the valid state for 2 factor authentication using email - 2fa not enabled")
+        }
+
+        // Check 2FA type
+        if (userDetailsDoc?.two_fa_type !== codeType) {
+            throw new ServiceError("CodeType does not match with the user configuration")
         }
 
         // ====================================== TOTP ====================================== \\
@@ -515,7 +520,7 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
         }
 
         // Update the email verified status in DB
-        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
+        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
         if (!updatedUserDetails) {
             throw new ServiceError("User email verification status update service is facing issue");
         }
@@ -603,7 +608,7 @@ export const sendResetPasswordCodeService = async (requestSession: Request["sess
             throw new NotFoundError("User with the provided email does not exist");
         }
 
-        const userId: unknown = userDetails._id;
+        const userId = userDetails._id;
         // Generate verificaiton code and its expiry time
         const verificationData = await generateVerificationCodeService();
         // HashVerification code
@@ -716,7 +721,7 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
             throw new NotFoundError("User with the provided email does not exist");
         }
 
-        const userId: unknown = userDetails._id;
+        const userId = userDetails._id;
         // Get verification code and expiry from the user meta details data base
         const resetPasswordDataDoc = await user_meta_details.findOne(
             { user_id: userId as Types.ObjectId }

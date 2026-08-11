@@ -22,4 +22,5 @@ Add global session logout in frontend
 Check lru cache for required apis
 check if all database calls are efficiently called
 expired wallet currency conversion cron job left
+update address till kyc not completed
 implementation of swagger documentation

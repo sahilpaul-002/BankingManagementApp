@@ -41,65 +41,66 @@ export interface userAddressDetailsPayloadType {
     delivery_address: deliveryAddressTypes;
 }
 
-const userOnboardingTransaction = async (userId: string, addressDocument: userAddressDetailsPayloadType, bankDocument: userBankDetailsPayloadType) => {
+const userOnboardingTransaction = async (userId: Types.ObjectId, addressDocument: userAddressDetailsPayloadType, bankDocument: userBankDetailsPayloadType) => {
     const mongoSession = await mongoose.startSession();
     try {
         mongoSession.startTransaction();
 
-        const existingAddress = await user_address_details.findOne({ user_id: userId }, null, { session: mongoSession }).select("_id").lean();
-
-        const existingBank = await user_bank_details.findOne({ user_id: userId }, null, { session: mongoSession }).select("_id").lean();
-
-        let addressResult = null;
-        let bankResult = null;
-        let message = "";
+        // Check address details existance
+        const existingAddress = await user_address_details.exists(
+            { user_id: userId }
+        );
 
         // ADDRESS UPSERT
-        if (!existingAddress) {
-            addressResult = await user_address_details.create([addressDocument], { session: mongoSession });
-            addressResult = addressResult[0]?.toObject();
-        }
-        else {
-            const { user_id, ...addressUpdate } = addressDocument;
+        const { user_id, ...addressUpdate } = addressDocument;
 
-            addressResult = await user_address_details.findOneAndUpdate({ user_id: userId }, addressUpdate,
-                {
-                    new: true,
-                    runValidators: true,
-                    session: mongoSession
-                }
-            ).lean();
-        }
+        const addressResult = await user_address_details.findOneAndUpdate(
+            { user_id: userId },
+            {
+                $set: addressUpdate,
+                $setOnInsert: {
+                    user_id: userId,
+                },
+            },
+            {
+                new: true,
+                upsert: true,
+                runValidators: true,
+                session: mongoSession,
+            }
+        ).lean();
 
+        // Check bank details existance
+        const existingBank = await user_bank_details.findOne({ user_id: userId }, null, { session: mongoSession }).select("_id is_verified").lean();
+
+        let bankResult;
         // BANK UPSERT
         if (!existingBank) {
             bankResult = await user_bank_details.create([bankDocument], { session: mongoSession });
-
             bankResult = bankResult[0]?.toObject();
         }
         else {
-            if (existingBank.is_verified) {
-                throw new ServiceError("Bank details already verified");
+            if (!existingBank.is_verified) {
+                const { user_id, ...bankUpdate } = bankDocument;
+
+                bankResult = await user_bank_details.findOneAndUpdate(
+                    {
+                        user_id: userId,
+                    },
+                    {
+                        ...bankUpdate,
+                        is_verified: false,
+                    },
+                    {
+                        new: true,
+                        runValidators: true,
+                        session: mongoSession,
+                    }
+                ).lean();
             }
-
-            const { user_id, ...bankUpdate } = bankDocument;
-
-            bankResult = await user_bank_details.findOneAndUpdate(
-                {
-                    user_id: userId,
-                },
-                {
-                    ...bankUpdate,
-                    is_verified: false,
-                },
-                {
-                    new: true,
-                    runValidators: true,
-                    session: mongoSession,
-                }
-            ).lean();
         }
 
+        let message: string;
         if (!existingAddress && !existingBank) {
             message = "User address and bank details added successfully"
         }
@@ -108,6 +109,9 @@ const userOnboardingTransaction = async (userId: string, addressDocument: userAd
         }
         else if (existingAddress && !existingBank) {
             message = "Bank details added and address updated successfully"
+        }
+        else if (existingAddress && existingBank && existingBank?.is_verified) {
+            message = "Address details updated successfully and Bank details already verified - cannot be updated "
         }
         else {
             message = "User onboarding details updated successfully"
@@ -141,8 +145,7 @@ const userOnboardingTransaction = async (userId: string, addressDocument: userAd
         }
 
         throw new ServiceError(
-            `UserOnboardingTransactionService facing issue: ${error.message
-            }`
+            `UserOnboardingTransactionService facing issue: ${error.message}`
         );
 
     }
