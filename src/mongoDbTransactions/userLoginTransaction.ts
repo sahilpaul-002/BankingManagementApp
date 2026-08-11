@@ -48,7 +48,7 @@ const userLoginTransaction = async (userDetails: userDetailsSchemaTypes, deviceI
                     new: true,
                     session: mongoSession,
                 }
-            ).select("_id").lean();
+            ).select("_id verification_code verification_code_expires_at").lean();
 
         if (!metaDoc) {
             throw new ServiceError("User login service facing issue - failed updating meta details");

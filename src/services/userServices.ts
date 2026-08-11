@@ -298,8 +298,6 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Check user email verified
         if (userDetails.is_email_verified === "N") {
             sendEmailResponse = await sendVerificationEmailService(req, res, userDetails.email);
-
-            userMetaDetailsDoc = await user_meta_details.findOne({ user_id: userDetails?._id }).select("verification_code verification_code_expires_at").lean()
         }
 
         // Check if session is already valid, if yes then delete the old session and create a new session
