@@ -20,6 +20,7 @@ import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import destroySession from "../utils/destroySession.js";
 import Send2FaCodeTransaction from "../mongoDbTransactions/snd2FaCodeTransaction.js";
+import resetUserPasswordTransaction from "../mongoDbTransactions/resetUserPasswordTransaction.js";
 
 dotenv.config();
 
@@ -683,16 +684,16 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
             throw new InvalidRequestBodyError("Email not present in the request body");
         }
 
-        // Check Validations
-        const validationResult: SafeParseResult<z.infer<typeof userEmailValidationSchema>> = userEmailValidationSchema.safeParse(userEmail);
-        if (!validationResult.success) {
-            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
-        }
-
         // Check verificationCode present in request body
         const verificationCode: string | null = checkStringBody(aesDecryptedBodyData, "code")
         if (!verificationCode) {
             throw new InvalidRequestBodyError("Email not present in the request body");
+        }
+
+        // Check password present in the request body
+        const userPassword: string | null = checkStringBody(aesDecryptedBodyData, "password");
+        if (!userPassword) {
+            throw new InvalidRequestBodyError("Password not present in the request body");
         }
 
         // Check if collection exist in MongoDB
@@ -715,17 +716,17 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
 
         const userId: unknown = userDetails._id;
         // Get verification code and expiry from the user meta details data base
-        const twoFaVerificationDataDoc = await user_meta_details.findOne(
+        const resetPasswordDataDoc = await user_meta_details.findOne(
             { user_id: userId as Types.ObjectId }
         ).select("verification_code verification_code_expires_at").lean();
-        if (!twoFaVerificationDataDoc?.verification_code || !twoFaVerificationDataDoc?.verification_code_expires_at) {
+        if (!resetPasswordDataDoc?.verification_code || !resetPasswordDataDoc?.verification_code_expires_at) {
             throw new ServiceError("VerifiEmailService is facing issue - email not in the correct state for reset password code verification")
         }
 
         // Check verification code expiry
         const currentTime = new Date();
         const verificationCodeExpiryTime = new Date(
-            twoFaVerificationDataDoc.verification_code_expires_at
+            resetPasswordDataDoc.verification_code_expires_at
         );
 
         if (currentTime > verificationCodeExpiryTime) {
@@ -746,28 +747,22 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
         // Compare verification code with hashed value
         const isVerificationCodeValid = await compareSync(
             verificationCode,
-            twoFaVerificationDataDoc.verification_code
+            resetPasswordDataDoc.verification_code
         );
         if (!isVerificationCodeValid) {
             throw new ServiceError("Invalid verification code");
         }
 
-        // Update the email verified status in DB
-        const updatedUserDetails = await user_details.findByIdAndUpdate(userId as Schema.Types.ObjectId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
-        if (!updatedUserDetails) {
-            throw new ServiceError("User email verification status update service is facing issue");
-        }
+        // Update user password in user details database
+        // HashPassword
+        const salt = genSaltSync(10);
+        const hashedPassword = hashSync(userPassword as string, salt);
 
-        // Optional: clear verification code after successful verification
-        await user_meta_details.updateOne(
-            { user_id: userId as Types.ObjectId },
-            {
-                $unset: {
-                    verification_code: "",
-                    verification_code_expires_at: ""
-                }
-            }
-        );
+        // Reset User Password MongoDB Transaction
+        const resetPasswordTransactionResult = await resetUserPasswordTransaction(userId as Types.ObjectId, hashedPassword);
+        if (resetPasswordTransactionResult.status !== "SUCCESS") {
+            throw new ServiceError("Reset password service facing issue - password reset failed");
+        }
 
         return {
             status: "SUCCESS",

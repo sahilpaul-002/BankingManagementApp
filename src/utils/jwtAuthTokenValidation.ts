@@ -18,7 +18,7 @@ const jwtAuthTokenValidation = async (
   next: NextFunction
 ): Promise<Response<failedResponseJson> | void> => {
   // Skip portal header check for selcted pathes
-  const excludedPaths: string[] = ["/sendResetPasswordCode", "/verifyResetPasswrodCode"];
+  const excludedPaths: string[] = ["/sendResetPasswordCode", "/verifyResetPasswordCode"];
   if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
     return next();
   }

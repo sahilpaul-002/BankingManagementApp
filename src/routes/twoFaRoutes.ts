@@ -5,7 +5,7 @@ import jwtAuthTokenValidation from "../utils/jwtAuthTokenValidation.js";
 
 const router: Router = express.Router();
 
-router.post("/sendVerifyEmailCode", jwtAuthTokenValidation, sendVerifyEmailCode);
+router.post("/sendVerifyEmailCode", sendVerifyEmailCode);
 router.post("/verifyEmail", jwtAuthTokenValidation, verifyEmail);
 router.post("/send2FaCode", jwtAuthTokenValidation, send2FaVerificationCode);
 router.post("/verify2FaCode", jwtAuthTokenValidation, verify2FaCode);

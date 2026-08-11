@@ -155,13 +155,13 @@ app.use(asyncRequestHandler(sessionExpiration));
 app.use(rateLimiter());
 
 // ---------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ---------------------------------------- \\
-app.use((req, res, next) => {
-    console.log("Path:", req.path)
-    console.log("Method:", req.method);
-    console.log("Query:", req.query);
-    console.log("Body:", req.body);
-    next();
-});
+// app.use((req, res, next) => {
+//     console.log("Path:", req.path)
+//     console.log("Method:", req.method);
+//     console.log("Query:", req.query);
+//     console.log("Body:", req.body);
+//     next();
+// });
 // ------------------------- \\
 // Decrypt Request Payload Middleware
 // ------------------------- \\

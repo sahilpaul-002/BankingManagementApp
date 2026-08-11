@@ -9,7 +9,7 @@ import logger from "../utils/logger.js";
 
 const headerTypeValidation = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
     // Skip portal header check for selcted pathes
-    const excludedPaths: string[] = ["/signUp", "/sendResetPasswordCode", "/verifyResetPasswrodCode"];
+    const excludedPaths: string[] = ["/signUp", "/sendVerifyEmailCode" ,"/sendResetPasswordCode", "/verifyResetPasswordCode"];
     if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
         return next();
     }

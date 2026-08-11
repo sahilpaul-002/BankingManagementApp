@@ -10,7 +10,7 @@ const ENVIRONMENT: string = process.env.NODE_ENV || "production";
 
 const checkRequestSource = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
 
-    const excludedPaths1: string[] = ["/api/v1/helper", "/api/v1/config", "/api/v1/user/signUp", "/api/v1/user/login", "/api/v1/twoFa/sendResetPasswordCode", "/api/v1/twoFa/verifyResetPasswrodCode"];
+    const excludedPaths1: string[] = ["/api/v1/helper", "/api/v1/config", "/api/v1/user/signUp", "/api/v1/user/login", "/api/v1/twoFa/sendVerifyEmailCode", "/api/v1/twoFa/sendResetPasswordCode", "/api/v1/twoFa/verifyResetPasswordCode"];
     if (excludedPaths1.some(path => req.path === path || req.path.startsWith(path + "/"))) {
         return next();
     }

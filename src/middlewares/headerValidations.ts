@@ -11,7 +11,7 @@ import logger from "../utils/logger.js";
 const headerValidations = async (req: Request, res: Response, next: NextFunction): Promise<Response<failedResponseJson> | void> => {
     try {
         // Skip portal header check for selcted pathes
-        const excludedPaths: string[] = ["/signUp", "/login", "/sendResetPasswordCode", "/verifyResetPasswordCode"];
+        const excludedPaths: string[] = ["/signUp", "/login", "/sendVerifyEmailCode", "/sendResetPasswordCode", "/verifyResetPasswordCode"];
         if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
