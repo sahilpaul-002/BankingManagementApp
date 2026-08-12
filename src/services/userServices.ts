@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidRequestQueryError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
@@ -35,6 +35,7 @@ import userLoginTransaction from "../mongoDbTransactions/userLoginTransaction.js
 import UserBankVerifyTransaction from "../mongoDbTransactions/verifyUserBankDetailsTransaction.js";
 import userSignUpTransaction from "../mongoDbTransactions/userSignUpTransaction.js";
 import crypto from "crypto";
+import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 
 dotenv.config();
 
@@ -450,10 +451,15 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 // -------------------------------------  XXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
 
 // ------------------------------------- USER ONBOARDING SERVICE -------------------------------------  \\
-export const userOnboardingService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined) => {
+export const userOnboardingService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, any> | undefined) => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid body data");
+        }
+
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email")
+        if (!email) {
+            throw new InvalidRequestQueryError("Email not present in query params")
         }
 
         // Check if collection exist in MongoDB
@@ -536,10 +542,16 @@ export const userOnboardingService = async (requestSession: Request["session"], 
         const userOnboardingTransactionResult = await userOnboardingTransaction(new Types.ObjectId(userId), addressDocument, bankDocument)
 
         if (userOnboardingTransactionResult?.status !== "SUCCESS") {
-            throw new ServiceError("User onboarding service facing issue -  failed to onboard user")
+            throw new ServiceError("User onboarding service facing issue - failed to onboard user")
         }
 
-        return { status: "SUCCESS", message: userOnboardingTransactionResult?.message, data: userOnboardingTransactionResult?.data }
+        const sendBankVerificationMailServiceResponse = await sendBankVerificationMailService(requestSession, { email })
+        if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
+            return { status: "SUCCESS", message: `${userOnboardingTransactionResult?.message} - but failed to sent user bank verification mail.`, data: userOnboardingTransactionResult?.data }
+        }
+        else {
+            return { status: "SUCCESS", message: `${userOnboardingTransactionResult?.message} - bank verification mail sent to admin.`, data: userOnboardingTransactionResult?.data }
+        }
     }
     catch (err) {
         const error = err as any;

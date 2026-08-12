@@ -48,7 +48,7 @@ export const getKycService = async (requestSession: Request["session"], aesDecry
         }
 
         // Get user id from session
-        const userId: unknown = requestSession?.userId
+        const userId = new Types.ObjectId(requestSession?.userId)
 
         // Get user kyc details
         const userKycDetailsDoc = await user_kyc_details.findOne({
@@ -178,7 +178,7 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
         }
 
         // Get user id from session
-        const userId: unknown = req.session?.userId
+        const userId = new Types.ObjectId(req.session?.userId)
 
         // Check Existing KYC
         const existingKycDoc = await user_kyc_details.findOne({
@@ -192,7 +192,7 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
         }
 
         // Upload Kyc Documents
-        const uploadKycDocumentsResponse = await uploadKycDocuments(poiDocumentFile, poaDocumentFile, req.session, userId as string);
+        const uploadKycDocumentsResponse = await uploadKycDocuments(poiDocumentFile, poaDocumentFile, req.session, userId.toString());
         if (uploadKycDocumentsResponse?.status !== "SUCCESS") {
             throw new ServiceError("Failed to upload KYC documents");
         }
@@ -242,7 +242,14 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
                 throw new ServiceError("Failed to add KYC details");
             }
             else {
-                return { status: "SUCCESS", data: kycDetails, message: "User kyc details uploaded" }
+                // Send Kyc Verification Email
+                const sendBankVerificationMailServiceResponse = await sendKycVerificationMailService(req.session, { email })
+                if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
+                    return { status: "SUCCESS", message: "User kyc details uploaded - but failed to sent user kyc verification mail.", data: kycDetails }
+                }
+                else {
+                    return { status: "SUCCESS", message: "User kyc details uploaded - kyc verification mail sent to admin.", data: kycDetails }
+                }
             }
         }
         else {
@@ -250,7 +257,14 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
                 throw new ServiceError("Failed to update RFI KYC details");
             }
             else {
-                return { status: "SUCCESS", data: kycDetailsDoc, message: "User kyc details updated" }
+                // Send Kyc Verification Email
+                const sendBankVerificationMailServiceResponse = await sendKycVerificationMailService(req.session, { email })
+                if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
+                    return { status: "SUCCESS", message: "User kyc details updated - but failed to sent user kyc verification mail.", data: kycDetails }
+                }
+                else {
+                    return { status: "SUCCESS", message: "User kyc details updated - kyc verification mail sent to admin.", data: kycDetails }
+                }
             }
         }
     }
@@ -294,7 +308,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         if (!userEmail || userEmail !== email) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
-        const userId: unknown = requestSession?.userId
+        const userId = new Types.ObjectId(requestSession?.userId)
         if (!userId) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
@@ -310,7 +324,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         // Get user details
         const userDetails = await user_details.findOne({
             _id: userId as Types.ObjectId
-        }).select(" business_id program_id agent_code subagent_code");
+        }).select(" business_id program_id agent_code subagent_code email");
         if (!userDetails) {
             throw new NotFoundError("User details not found");
         }
@@ -384,7 +398,7 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         const emailTemplate = generateEmailTemplate(
             "KYC_VERIFICATION",
             {
-                userId: userId as string,
+                userId: userId.toString(),
                 userName: userName,
                 poiDocumentUrl,
                 poaDocumentUrl,

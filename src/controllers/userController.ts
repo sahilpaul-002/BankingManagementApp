@@ -130,27 +130,16 @@ export const onboarding = async (req: Request, res: Response): Promise<Response<
         const aesDecryptedBodyData = req.body
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
 
-        const email = checkStringQueryParams(aesDecryptedQueryData, "email")
-        if (!email) {
-            throw new InvalidRequestQueryError("Email not present in query params")
-        }
-
         const requestSession: Request["session"] | undefined = getRequestSession();
         if (!requestSession) {
             throw new UnauthenticatedError("Unauthenticated session");
         }
-        const userOnboardingServiceResponse = await userOnboardingService(requestSession, aesDecryptedBodyData);
+        const userOnboardingServiceResponse = await userOnboardingService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData);
         if (userOnboardingServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "User onboarding is facing issue", 400);
         }
 
-        const sendBankVerificationMailServiceResponse = await sendBankVerificationMailService(requestSession, {email})
-        if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
-            return res.success(`${userOnboardingServiceResponse?.message} - but failed to sent user bank verification mail.`, userOnboardingServiceResponse?.data, 200)
-        }
-        else {
-            return res.success(`${userOnboardingServiceResponse?.message} - bank verification mail sent to admin`, userOnboardingServiceResponse?.data, 200)
-        }
+        return res.success(userOnboardingServiceResponse?.message, userOnboardingServiceResponse?.data, 200)
     }
     catch (err) {
         const error = err as any;
