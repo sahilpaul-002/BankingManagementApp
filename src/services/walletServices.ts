@@ -26,7 +26,6 @@ import { FEE_DETAILS } from "../configs/configConstants.js";
 import { walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes } from "../models/wallet_currency_conversion_quotes.js";
 import getWalletFxRate from "./walletFxRateService.js";
 import executeWalletCurrencyConversionTransaction from "../mongoDbTransactions/walletCurrencyConversionTransaction.js";
-import crypto from "crypto";
 
 type userConfigurationsType = {
     businessId: string;
@@ -73,21 +72,21 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
                 throw new ForbiddenError("Not authorized to access wallet details")
             }
         }
-        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
+        const cardHolderExist = await user_details.exists({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
         if (!cardHolderExist) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
 
         // Get user wallet details details
         const userWalletDetails = await user_wallet_details.findOne({
-            cardholder_id: cardholderId
+            cardholder_id: new Types.ObjectId(cardholderId)
         });
         if (!userWalletDetails) {
             throw new NotFoundError("User wallet details not found")
         }
 
         const walletDetails = {
-            walletId: userWalletDetails?.wallet_id,
+            walletId: userWalletDetails?._id,
             wallets_details: userWalletDetails?.wallets_details
         }
 
@@ -157,23 +156,23 @@ export const createWalletService = async (requestSession: Request["session"], ae
         }
         let userId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = requestSession?.userId;
+            userId = new Types.ObjectId(requestSession?.userId);
             if (!userId) {
                 throw new UnauthenticatedError("Unauthenticated access detected");
             }
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
-            userId = cardholderDetails?._id.toString();
+            userId = cardholderDetails?._id;
         }
 
         // Validation user bank details exist and verified
         // Get user bank details details
         const userBankDetailsDoc = await user_bank_details.findOne({
-            user_id: userId
+            user_id: userId as Types.ObjectId
         }).select("_id is_verified").lean();
         if (!userBankDetailsDoc) {
             throw new NotFoundError("User bank details not found");
@@ -212,14 +211,13 @@ export const createWalletService = async (requestSession: Request["session"], ae
         };
 
         // Find existing wallet document
-        const existingWallet = await user_wallet_details.findOne({ user_id: userId, cardholder_id: cardholderId });
+        const existingWallet = await user_wallet_details.findOne({ user_id: userId, cardholder_id: new Types.ObjectId(cardholderId) });
 
         // Existing user → Add wallet
         if (existingWallet) {
             const duplicate = existingWallet.wallets_details.some(
                 (wallet) =>
-                    wallet.wallet_currency ===
-                    newWallet.wallet_currency
+                    wallet.wallet_currency === newWallet.wallet_currency
             );
 
             if (duplicate) {
@@ -230,24 +228,23 @@ export const createWalletService = async (requestSession: Request["session"], ae
 
             await existingWallet.save();
 
-            requestSession.walletId = existingWallet.wallet_id;
+            requestSession.walletId = existingWallet._id.toString();
 
-            return { status: "SUCCESS", message: "Wallet added successfully", data: { walletId: existingWallet.wallet_id, wallets_details: existingWallet.wallets_details, } };
+            return { status: "SUCCESS", message: "Wallet added successfully", data: { walletId: existingWallet._id, wallets_details: existingWallet.wallets_details, } };
         }
 
         // First wallet → Create document
         const insertedDocument: userWalletDetailsSchemaTypes = await user_wallet_details.create({
-            user_id: userId,
-            wallet_id: crypto.randomUUID(),
-            cardholder_id: cardholderId,
+            user_id: userId as Types.ObjectId,
+            cardholder_id: new Types.ObjectId(cardholderId),
             wallets_details: [
                 newWallet,
             ],
         });
 
-        requestSession.walletId = insertedDocument.wallet_id;
+        requestSession.walletId = insertedDocument._id.toString();
 
-        return { status: "SUCCESS", message: "Wallet created successfully", data: { walletId: insertedDocument.wallet_id, wallets_details: insertedDocument.wallets_details, } };
+        return { status: "SUCCESS", message: "Wallet created successfully", data: { walletId: insertedDocument._id, wallets_details: insertedDocument.wallets_details, } };
     }
     catch (err) {
         const error = err as any;
@@ -270,6 +267,7 @@ export const createWalletService = async (requestSession: Request["session"], ae
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
 
 // ------------------------------------- LOAD WALLET SERVICE -------------------------------------  \\
 export const loadWalletService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, any> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
@@ -323,17 +321,17 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         }
         let userId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = requestSession?.userId;
+            userId = new Types.ObjectId(requestSession?.userId);
             if (!userId) {
                 throw new UnauthenticatedError("Unauthenticated access detected");
             }
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
-            userId = cardholderDetails?._id.toString();
+            userId = cardholderDetails?._id;
         }
 
         // Check Validations
@@ -358,7 +356,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         }
 
         // Get wallet details from DB
-        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ wallet_id: walletId, cardholder_id: cardholderId }).lean();
+        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: new Types.ObjectId(walletId), cardholder_id: new Types.ObjectId(cardholderId) }).lean();
 
         // Check user exist in DB
         if (!userWalletDetails) {
@@ -366,7 +364,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         }
 
         // Check wallet authenticity
-        if (userWalletDetails?.user_id.toString() !== userId) {
+        if (userWalletDetails?.user_id !== userId) {
             throw new BadRequestError("Failed to fetch user wallet details - invalid wallet id provided")
         }
 
@@ -382,7 +380,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         const finalAmount: Decimal = deductFeeSrive(new Decimal(validationResult.data.amount), validationResult.data.wallet_type === "FIAT" ? "load_fiat_wallet_percent" : "load_crypto_wallet_percent");
         validationResult.data.amount = Number(finalAmount)
         // Load wallet transaction
-        const loadWalletTransactionResult = await userLoadWalletTransaction(cardholderId, walletId, validationResult, selectedWallet)
+        const loadWalletTransactionResult = await userLoadWalletTransaction(new Types.ObjectId(cardholderId), new Types.ObjectId(walletId), validationResult, selectedWallet)
 
         if (loadWalletTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("Load wallet service failed to load wallet")

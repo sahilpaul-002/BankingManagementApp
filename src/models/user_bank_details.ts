@@ -10,7 +10,7 @@ const userBankDetailsSchema = new Schema<userBankDetailsSchemaTypes>({
         index: true
     },
     cardholder_id: {
-        type: String,
+        type: Schema.Types.ObjectId,
         unique: true,
         index: true,
         default: null

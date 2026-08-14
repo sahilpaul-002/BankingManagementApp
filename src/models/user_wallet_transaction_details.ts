@@ -4,19 +4,19 @@ import type { userWalletTransactionsTypes } from "../types/schemaTypes.js";
 const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
     {
         cardholder_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             index: true,
         },
 
         wallet_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             index: true,
         },
 
         transaction_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             unique: true,
             index: true,

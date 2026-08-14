@@ -10,5 +10,7 @@ const router: Router = express.Router()
 router.get("/kyc/kycVerificationWebhook", getKycVerificationWebhook);
 router.get("/user/bankVerificationWebhook", getUserBankVerificationWebhook);
 router.post("/card/createTransaction", createCardTransaction)
+router.post("/user/prefundFiatAccount")
+router.post("/user/prefundCryptoAccount")
 
 export default router

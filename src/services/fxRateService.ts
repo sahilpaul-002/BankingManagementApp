@@ -68,7 +68,7 @@ export const getFxRate = async (sourceCurrency: string, destinationCurrency: str
         const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
-            serviceName: "AddBeneficiaryService"
+            serviceName: "FxRateService"
         });
 
         if (error instanceof AppErrorClass) {

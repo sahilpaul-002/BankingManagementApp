@@ -1,6 +1,8 @@
 import mongoose, { Types } from "mongoose";
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
+import { userFundingBankAccountDetailsModel as user_funding_bank_account_details } from "../models/user_funding_bank_account_details.js";
+import { userCryptoDepositAccountDetailsModel as user_crypto_deposit_account_details } from "../models/user_crypto_deposit_accout_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError, BadRequestError, NotFoundError } from "../utils/AppErrorClass.js";
 import type { JwtPayload } from "jsonwebtoken";
@@ -14,7 +16,7 @@ interface userBankVerificationJwtPayloadType extends JwtPayload {
     userBankRequestId: string;
 }
 
-const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayloadType) => {
+const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayloadType) => {
     const mongoSession = await mongoose.startSession();
     try {
         mongoSession.startTransaction();
@@ -107,6 +109,53 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
             }
 
             updatedUserDoc = updatedUser;
+
+            // Create application-provided USD funding bank account
+            const fundingAccountNumber = crypto.randomInt(
+                1000000000,
+                9999999999
+            ).toString();
+            const fundingBankAccount = await user_funding_bank_account_details.create([
+                {
+                    user_id: userId,
+                    cardholder_id: cardholderId,
+                    account_holder_name: decoded.userName,
+                    account_number: fundingAccountNumber,
+                    account_currency: "USD",
+                    account_balance: mongoose.Types.Decimal128.fromString("0"),
+                    swift_code: "DEMOUS33XXX",
+                    iban_code: `US${fundingAccountNumber}`,
+                    bank_name: "DBS Financial Bank",
+                    is_active: true
+                }
+            ],
+                {
+                    session: mongoSession
+                }
+            );
+            if (!fundingBankAccount?.length) {
+                throw new ServiceError("Failed to create user funding bank account");
+            }
+
+            // Create application-provided crypto deposit account
+            const generateCryptoDepositAddress = (): string => {return `0x${crypto.randomBytes(20).toString("hex")}`;};
+            const cryptoDepositAccount = await user_crypto_deposit_account_details.create(
+                [
+                    {
+                        user_id: userId,
+                        cardholder_id: cardholderId,
+                        network: "ETHEREUM",
+                        wallet_address: generateCryptoDepositAddress(),
+                        is_active: true,
+                    }
+                ],
+                {
+                    session: mongoSession
+                }
+            );
+            if (!cryptoDepositAccount?.length) {
+                throw new ServiceError("Failed to create user crypto deposit account");
+            }
         }
 
         if (decoded.action === "REJECT") {
@@ -167,4 +216,4 @@ const UserBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
 
 };
 
-export default UserBankVerifyTransaction;
+export default userBankVerifyTransaction;

@@ -4,25 +4,18 @@ import type { userWalletDetailsSchemaTypes } from "../types/schemaTypes.js";
 const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
     {
         user_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
+            ref: "UserDetails",
             required: true,
             unique: true,
             index: true,
         },
 
         cardholder_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             unique: true,
             index: true,
-        },
-
-        wallet_id: {
-            type: String,
-            required: true,
-            unique: true,
-            index: true,
-            trim: true,
         },
 
         wallets_details: [
@@ -119,7 +112,7 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
 
 userWalletDetailsSchema.index({
     cardholder_id: 1,
-    wallet_id: 1,
+    _id: 1,
 });
 
 const userWalletDetailsModel = mongoose.model<userWalletDetailsSchemaTypes>(

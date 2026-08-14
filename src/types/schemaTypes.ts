@@ -45,7 +45,7 @@ export interface userDetailsSchemaTypes extends Document {
     gender: "MALE" | "FEMALE" | "OTHER";
     kyc_status: "PENDING" | "IN-PROGRESS" | "COMPLETED";
     risk_category?: "LOW" | "MEDIUM" | "HIGH";
-    cardholder_id?: string | null;
+    cardholder_id?: Types.ObjectId | null;
     status?: "DISABLED" | "PRE-VERIFIED" | "VERIFIED" | "ACTIVE";
     is_admin?: "Y" | "N";
     is_master_admin?: "Y" | "N";
@@ -138,6 +138,29 @@ export interface userAddressDetailsSchemaTypes extends Document {
     delivery_address: deliveryAddressTypes;
 }
 
+// Types for user funding bank details
+export interface userFundingBankAccountDetailsSchemaTypes extends Document {
+    user_id: Types.ObjectId;
+    cardholder_id: Types.ObjectId;
+    account_holder_name: string;
+    account_number: string;
+    account_currency: "USD";
+    account_balance: Types.Decimal128;
+    swift_code: string;
+    iban_code: string;
+    bank_name: string;
+    is_active: boolean;
+}
+
+// Types for user crypto deposit account details
+export interface userCryptoDepositAccountDetailsSchemaTypes extends Document {
+    user_id: Types.ObjectId;
+    cardholder_id: Types.ObjectId;
+    network: "ETHEREUM" | "TRON" | "POLYGON" | "BSC";
+    wallet_address: string;
+    is_active: boolean;
+}
+
 // Types for User Kyc Details Model Schema
 export interface userKycDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
@@ -182,17 +205,16 @@ export type walletDetailsType = {
     };
 };
 export interface userWalletDetailsSchemaTypes extends Document {
-    user_id: string;
-    cardholder_id: string;
-    wallet_id: string;
+    user_id: Types.ObjectId;
+    cardholder_id: Types.ObjectId;
     wallets_details: walletDetailsType[],
 }
 
 // Types for User Wallet Transactions Model Schema
 export interface userWalletTransactionsTypes extends Document {
-    cardholder_id: string;
-    wallet_id: string;
-    transaction_id: string;
+    cardholder_id: Types.ObjectId;
+    wallet_id: Types.ObjectId;
+    transaction_id: Types.ObjectId;
     transaction_type: "LOAD" | "WITHDRAW" | "TRANSFER" | "HOLD" | "RELEASE" | "REFUND" | "CARD";
     transaction_status: "PENDING" | "SUCCESS" | "FAILED" | "REVERSED";
     wallet_details: {

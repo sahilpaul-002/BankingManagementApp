@@ -4,19 +4,19 @@ import type { walletCurrencyConversionQuoteSchemaTypes } from "../types/schemaTy
 const walletCurrencyConversionQuoteSchema = new Schema<walletCurrencyConversionQuoteSchemaTypes>(
     {
         user_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             index: true,
         },
 
         cardholder_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             index: true,
         },
 
         wallet_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             index: true,
         },

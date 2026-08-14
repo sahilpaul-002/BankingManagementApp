@@ -32,7 +32,7 @@ import dotenv from "dotenv"
 import { gmailSendService } from "./gmailSendService.js";
 import userOnboardingTransaction from "../mongoDbTransactions/userOnboardingTransaction.js";
 import userLoginTransaction from "../mongoDbTransactions/userLoginTransaction.js";
-import UserBankVerifyTransaction from "../mongoDbTransactions/verifyUserBankDetailsTransaction.js";
+import userBankVerifyTransaction from "../mongoDbTransactions/verifyUserBankDetailsTransaction.js";
 import userSignUpTransaction from "../mongoDbTransactions/userSignUpTransaction.js";
 import crypto from "crypto";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
@@ -351,7 +351,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         req.session.userName = userDetails.full_name;
         req.session.userId = userDetails._id.toString();
         req.session.userType = userDetails.is_master_admin === "Y" ? "MASTER_ADMIN" : userDetails.is_admin === "Y" ? "ADMIN" : "USER";
-        req.session.cardholderId = userDetails.cardholder_id ?? null
+        req.session.cardholderId = userDetails.cardholder_id?.toString() ?? null
 
         // Update the session validity
         req.session.valid = true;
@@ -406,7 +406,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             isEmailVerified: userDetails?.is_email_verified,
             is2FaEnabled: userDetails?.is_2fa_enabled,
             twoFaType: userDetails?.two_fa_type,
-            cardholderId: userDetails?.cardholder_id,
+            cardholderId: userDetails?.cardholder_id?.toString(),
             authenticatorSecret: userDetails?.authenticator_secret
         }
 
@@ -753,7 +753,7 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
         const userId: unknown = decoded.userId;
 
         // Perform user onboarding mongodb transactioon
-        const userBankVerificationTransactionResult = await UserBankVerifyTransaction(decoded)
+        const userBankVerificationTransactionResult = await userBankVerifyTransaction(decoded)
         if (userBankVerificationTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("UserBankVerify service is facing issue - failed to verify user bank details")
         }
