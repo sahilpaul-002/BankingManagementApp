@@ -1,7 +1,7 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestQueryError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService } from "../services/userServices.js";
+import { sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userPrefundFiatAccountWebhookService, userSignUpService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
@@ -289,6 +289,40 @@ export const getUserBankVerificationWebhook = async (req: Request, res: Response
         }
         throw new ServiceError(
             `GetUserBankAccountVerificationWebhookController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// ------------------------------------- FUNCTION PREFUND FIAT ACCOUNT WEBHOOK ------------------------------------- \\
+export const userPrefundFiatAccountWebhook = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+
+        const userPrefundFiatAccountWebhookServiceResponse = await userPrefundFiatAccountWebhookService(aesDecryptedBodyData)
+        if (userPrefundFiatAccountWebhookServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to load prefund user fiat account", 400);
+        }
+        return res.success("User fiat account prefund loaded successfully", {}, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "UserPrefundFiatAccountWebhookController",
+            url: req.path,
+            method: req.method
+        });
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(
+            `UserPrefundFiatAccountWebhookController facing issue: [${errorStatus}] ${error.message}`,
             error?.error ? error.error : error
         );
     }

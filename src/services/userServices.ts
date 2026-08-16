@@ -4,13 +4,12 @@ import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import userLoginValidationSchema from "../validations/userLoginValidation.js";
-import type { billingAddressTypes, deliveryAddressTypes, userAddressDetailsSchemaTypes, userBankDetailsSchemaTypes, userDetailsDocumentType, userDetailsSchemaTypes } from "../types/schemaTypes.js";
+import type { billingAddressTypes, deliveryAddressTypes, userDetailsDocumentType, userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import destroySession from "../utils/destroySession.js";
 import { compareSync, genSaltSync, hashSync } from "bcrypt-ts";
 import normalizeIp from "../utils/normalizeIp.js";
-import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_details.js";
-import type { sessionDataTypes, sessionItemsTypes } from "../types/sessionTypes.js";
+import type { sessionDataTypes } from "../types/sessionTypes.js";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
 import generateJwtToken from "../utils/generateJwtToken.js";
@@ -23,10 +22,9 @@ import logger from "../utils/logger.js";
 import { generateVerificationCodeService } from "./generateVerificationCodeService.js";
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import { sendVerificationEmailService } from "./twoFaService.js";
-import { userAddressDetailsModel as user_address_details } from "../models/user_addresses_details.js";
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
 import { userOnboardingDetailsValidationSchema } from "../validations/userOnboardingDetailsValidation.js";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv"
 import { gmailSendService } from "./gmailSendService.js";
@@ -36,6 +34,7 @@ import userBankVerifyTransaction from "../mongoDbTransactions/verifyUserBankDeta
 import userSignUpTransaction from "../mongoDbTransactions/userSignUpTransaction.js";
 import crypto from "crypto";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
+import { userFundingBankAccountDetailsModel as user_funding_bank_account_details } from "../models/user_funding_bank_account_details.js";
 
 dotenv.config();
 
@@ -855,6 +854,116 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
             }
         }
         throw new ServiceUnavailableError("GetUserBankVerificationWebhookService is unavailbale as facing unknown issue.", error)
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+export const userPrefundFiatAccountWebhookService = async (aesDecryptedBodyData: Record<string, any> | undefined): Promise<successResponseJson | failedResponseJson | void> => {
+    try {
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid request query body data");
+        }
+
+        const userId = checkStringBody(aesDecryptedBodyData, "user_Id")
+        if (!userId) {
+            throw new InvalidRequestBodyError("User id is not present in the request body")
+        }
+        const fiatAccountDetails = aesDecryptedBodyData
+        if (!fiatAccountDetails) {
+            throw new InvalidRequestBodyError("Fiat account details not present in the request body")
+        }
+        const bankName = checkStringBody(aesDecryptedBodyData, "bank_name")
+        if (!bankName) {
+            throw new InvalidRequestBodyError("Bank name is not present in the fiat account details")
+        }
+        const accountholderName = checkStringBody(aesDecryptedBodyData, "accountholder_name")
+        if (!accountholderName) {
+            throw new InvalidRequestBodyError("Accountholder name is not present in the fiat account details")
+        }
+        const accountNumber = checkStringBody(aesDecryptedBodyData, "account_number")
+        if (!accountNumber) {
+            throw new InvalidRequestBodyError("Account number is not present in the fiat account details")
+        }
+        const swiftCode = checkStringBody(aesDecryptedBodyData, "swift_code")
+        if (!swiftCode) {
+            throw new InvalidRequestBodyError("Swift code is not present in the fiat account details")
+        }
+        const ibanCode = checkStringBody(aesDecryptedBodyData, "iban_code")
+        if (!ibanCode) {
+            throw new InvalidRequestBodyError("Iban code is not present in the fiat account details")
+        }
+        const amount = checkStringBody(aesDecryptedBodyData, "amount");
+        if (!amount) {
+            throw new InvalidRequestBodyError("Amount is not present in the request body");
+        }
+
+        // Validate Amount
+        const prefundAmountNumber = Number(amount);
+        if (!Number.isFinite(prefundAmountNumber) || prefundAmountNumber <= 0) {
+            throw new InvalidRequestBodyError("Prefund amount must be a valid number greater than zero");
+        }
+        const prefundAmount = mongoose.Types.Decimal128.fromString(amount);
+
+        // Find fiat account and update fiat account
+        const updatedFiatAccount = await user_funding_bank_account_details.findOneAndUpdate(
+            {
+                user_id: new Types.ObjectId(userId),
+                bank_name: bankName,
+                account_holder_name: accountholderName,
+                account_number: accountNumber,
+                swift_code: swiftCode,
+                iban_code: ibanCode,
+                is_active: true
+            },
+            {
+                $inc: {
+                    account_balance: amount
+                }
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        ).select("_id user_id cardholder_id account_holder_name account_number account_currency account_balance bank_name swift_code iban_code is_active"
+        ).lean();
+        if (!updatedFiatAccount) {
+            throw new NotFoundError("Active prefunding fiat account not found");
+        }
+
+
+        return {
+            status: "SUCCESS",
+            data: {
+                fiatAccount: updatedFiatAccount,
+                prefundedAmount: amount.toString()
+            },
+            message: "Fiat prefunding account loaded successfully"
+        };
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "UserPrefundFiatAccountWebhookService",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+        throw new ServiceUnavailableError("UserPrefundFiatAccountWebhookService is unavailbale as facing unknown issue.", error)
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
