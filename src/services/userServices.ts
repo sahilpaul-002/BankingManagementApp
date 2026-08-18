@@ -35,6 +35,7 @@ import userSignUpTransaction from "../mongoDbTransactions/userSignUpTransaction.
 import crypto from "crypto";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import { userFundingBankAccountDetailsModel as user_funding_bank_account_details } from "../models/user_funding_bank_account_details.js";
+import { userCryptoDepositAccountDetailsModel as user_crypto_deposit_account_details } from "../models/user_crypto_deposit_accout_details.js";
 
 dotenv.config();
 
@@ -859,7 +860,8 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 
-export const userPrefundFiatAccountWebhookService = async (aesDecryptedBodyData: Record<string, any> | undefined): Promise<successResponseJson | failedResponseJson | void> => {
+// ------------------------------------- USER PREFUND FIAT FUNDING ACCOUNT ------------------------------------- \\
+export const prefundUserFiatFundingAccountService = async (aesDecryptedBodyData: Record<string, any> | undefined): Promise<successResponseJson | void> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request query body data");
@@ -869,30 +871,30 @@ export const userPrefundFiatAccountWebhookService = async (aesDecryptedBodyData:
         if (!userId) {
             throw new InvalidRequestBodyError("User id is not present in the request body")
         }
-        const fiatAccountDetails = aesDecryptedBodyData
-        if (!fiatAccountDetails) {
-            throw new InvalidRequestBodyError("Fiat account details not present in the request body")
-        }
-        const bankName = checkStringBody(aesDecryptedBodyData, "bank_name")
-        if (!bankName) {
-            throw new InvalidRequestBodyError("Bank name is not present in the fiat account details")
-        }
-        const accountholderName = checkStringBody(aesDecryptedBodyData, "accountholder_name")
-        if (!accountholderName) {
-            throw new InvalidRequestBodyError("Accountholder name is not present in the fiat account details")
-        }
-        const accountNumber = checkStringBody(aesDecryptedBodyData, "account_number")
-        if (!accountNumber) {
-            throw new InvalidRequestBodyError("Account number is not present in the fiat account details")
-        }
-        const swiftCode = checkStringBody(aesDecryptedBodyData, "swift_code")
-        if (!swiftCode) {
-            throw new InvalidRequestBodyError("Swift code is not present in the fiat account details")
-        }
-        const ibanCode = checkStringBody(aesDecryptedBodyData, "iban_code")
-        if (!ibanCode) {
-            throw new InvalidRequestBodyError("Iban code is not present in the fiat account details")
-        }
+        // const fiatAccountDetails = aesDecryptedBodyData
+        // if (!fiatAccountDetails) {
+        //     throw new InvalidRequestBodyError("Fiat account details not present in the request body")
+        // }
+        // const bankName = checkStringBody(aesDecryptedBodyData, "bank_name")
+        // if (!bankName) {
+        //     throw new InvalidRequestBodyError("Bank name is not present in the fiat account details")
+        // }
+        // const accountholderName = checkStringBody(aesDecryptedBodyData, "accountholder_name")
+        // if (!accountholderName) {
+        //     throw new InvalidRequestBodyError("Accountholder name is not present in the fiat account details")
+        // }
+        // const accountNumber = checkStringBody(aesDecryptedBodyData, "account_number")
+        // if (!accountNumber) {
+        //     throw new InvalidRequestBodyError("Account number is not present in the fiat account details")
+        // }
+        // const swiftCode = checkStringBody(aesDecryptedBodyData, "swift_code")
+        // if (!swiftCode) {
+        //     throw new InvalidRequestBodyError("Swift code is not present in the fiat account details")
+        // }
+        // const ibanCode = checkStringBody(aesDecryptedBodyData, "iban_code")
+        // if (!ibanCode) {
+        //     throw new InvalidRequestBodyError("Iban code is not present in the fiat account details")
+        // }
         const amount = checkStringBody(aesDecryptedBodyData, "amount");
         if (!amount) {
             throw new InvalidRequestBodyError("Amount is not present in the request body");
@@ -909,16 +911,16 @@ export const userPrefundFiatAccountWebhookService = async (aesDecryptedBodyData:
         const updatedFiatAccount = await user_funding_bank_account_details.findOneAndUpdate(
             {
                 user_id: new Types.ObjectId(userId),
-                bank_name: bankName,
-                account_holder_name: accountholderName,
-                account_number: accountNumber,
-                swift_code: swiftCode,
-                iban_code: ibanCode,
+                // bank_name: bankName,
+                // account_holder_name: accountholderName,
+                // account_number: accountNumber,
+                // swift_code: swiftCode,
+                // iban_code: ibanCode,
                 is_active: true
             },
             {
                 $inc: {
-                    account_balance: amount
+                    account_balance: prefundAmount
                 }
             },
             {
@@ -964,6 +966,130 @@ export const userPrefundFiatAccountWebhookService = async (aesDecryptedBodyData:
             }
         }
         throw new ServiceUnavailableError("UserPrefundFiatAccountWebhookService is unavailbale as facing unknown issue.", error)
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// ------------------------------------- USER PREFUND CRYPTO FUNDING ACCOUNT ------------------------------------- \\
+export const prefundUserCryptoFundingAccountService = async (aesDecryptedBodyData: Record<string, any> | undefined): Promise<successResponseJson | void> => {
+    try {
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid request query body data");
+        }
+
+        const userId = checkStringBody(aesDecryptedBodyData, "user_Id");
+        if (!userId) {
+            throw new InvalidRequestBodyError("User id is not present in the request body");
+        }
+
+        const network = checkStringBody(aesDecryptedBodyData, "network");
+        if (!network) {
+            throw new InvalidRequestBodyError("Network is not present in the request body");
+        }
+
+        const asset = checkStringBody(aesDecryptedBodyData, "asset");
+        if (!asset) {
+            throw new InvalidRequestBodyError("Asset is not present in the request body");
+        }
+
+        const amount = checkStringBody(aesDecryptedBodyData, "amount");
+        if (!amount) {
+            throw new InvalidRequestBodyError("Amount is not present in the request body");
+        }
+
+        // Validate Network
+        const supportedNetworks = [
+            "ETHEREUM",
+            "POLYGON",
+        ];
+
+        if (!supportedNetworks.includes(network)) {
+            throw new InvalidRequestBodyError("Invalid crypto network");
+        }
+
+        // Validate Asset
+        const supportedAssets = [
+            "USDT",
+            "USDC"
+        ];
+
+        if (!supportedAssets.includes(asset)) {
+            throw new InvalidRequestBodyError("Invalid crypto asset");
+        }
+
+        // Validate Amount
+        const cryptoAmountNumber = Number(amount);
+
+        if (!Number.isFinite(cryptoAmountNumber) || cryptoAmountNumber <= 0) {
+            throw new InvalidRequestBodyError("Crypto funding amount must be a valid number greater than zero");
+        }
+
+        const cryptoAmount = mongoose.Types.Decimal128.fromString(amount);
+
+        const cryptoModel = user_crypto_deposit_account_details;
+
+        // Find crypto funding account and update crypto funding account
+        // const updatedCryptoFundingAccount = await (user_crypto_deposit_account_details as any).findOneAndUpdate(
+        const updatedCryptoFundingAccount = await user_crypto_deposit_account_details.findOneAndUpdate(
+            {
+                user_id: new Types.ObjectId(userId),
+                network: network as "ETHEREUM" | "POLYGON",
+                asset: asset as "USDT" | "USDC",
+                is_active: true
+            },
+            {
+                $inc: {
+                    account_balance: cryptoAmount
+                }
+            },
+            {
+                new: true,
+                runValidators: true
+            }
+        ).select("_id user_id cardholder_id network asset deposit_address account_balance is_active").lean();
+
+        if (!updatedCryptoFundingAccount) {
+            throw new NotFoundError("Active crypto funding account not found");
+        }
+
+
+        return {
+            status: "SUCCESS",
+            data: {
+                cryptoFundingAccount: updatedCryptoFundingAccount,
+                fundedAmount: amount.toString()
+            },
+            message: "Crypto funding account loaded successfully"
+        };
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "UserCryptoFundingAccountService",
+            // url: req.path,
+            // method: req.method
+        });
+
+        if (error instanceof AppErrorClass) {
+            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
+                throw error
+            }
+            else {
+                throw new ServiceError(
+                    `[${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
+            }
+        }
+
+        throw new ServiceUnavailableError(
+            "UserCryptoFundingAccountService is unavailable as facing unknown issue.",
+            error
+        );
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

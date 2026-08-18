@@ -156,8 +156,10 @@ export interface userFundingBankAccountDetailsSchemaTypes extends Document {
 export interface userCryptoDepositAccountDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     cardholder_id: Types.ObjectId;
-    network: "ETHEREUM" | "TRON" | "POLYGON" | "BSC";
-    wallet_address: string;
+    network: "ETHEREUM" | "POLYGON";
+    asset: "USDT" | "USDC";
+    deposit_address: string;
+    account_balance: Types.Decimal128;
     is_active: boolean;
 }
 

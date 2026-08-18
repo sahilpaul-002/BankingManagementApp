@@ -16,6 +16,16 @@ interface userBankVerificationJwtPayloadType extends JwtPayload {
     userBankRequestId: string;
 }
 
+interface userCryptoDepositAccountDetailsTypes {
+    user_id: Types.ObjectId;
+    cardholder_id: Types.ObjectId;
+    network: "ETHEREUM" | "POLYGON";
+    asset: "USDT" | "USDC";
+    deposit_address: string;
+    account_balance: Types.Decimal128;
+    is_active: boolean;
+}
+
 const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayloadType) => {
     const mongoSession = await mongoose.startSession();
     try {
@@ -33,12 +43,15 @@ const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
                 session: mongoSession,
             }
         ).select("_id user_bank_request_id").lean();
+        if (!currentBankDoc) {
+            throw new NotFoundError("User bank details not found");
+        }
 
         if (currentBankDoc?.user_bank_request_id !== decoded.userBankRequestId) {
             throw new ServiceError("Expired verification link");
         }
 
-        // Update the user bank request id
+        // Invalidate and update the user bank request id
         const updatedRequestDoc = await user_bank_details.findOneAndUpdate(
             {
                 user_id: userId as Types.ObjectId,
@@ -138,23 +151,54 @@ const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
             }
 
             // Create application-provided crypto deposit account
-            const generateCryptoDepositAddress = (): string => {return `0x${crypto.randomBytes(20).toString("hex")}`;};
-            const cryptoDepositAccount = await user_crypto_deposit_account_details.create(
-                [
-                    {
-                        user_id: userId,
-                        cardholder_id: cardholderId,
-                        network: "ETHEREUM",
-                        wallet_address: generateCryptoDepositAddress(),
-                        is_active: true,
-                    }
-                ],
+            const generateCryptoDepositAddress = (): string => { return `0x${crypto.randomBytes(20).toString("hex")}`; };
+            const cryptoDepositAccounts: userCryptoDepositAccountDetailsTypes[] = [
                 {
-                    session: mongoSession
+                    user_id: userId,
+                    cardholder_id: cardholderId,
+                    network: "ETHEREUM",
+                    asset: "USDT",
+                    deposit_address: generateCryptoDepositAddress(),
+                    account_balance: mongoose.Types.Decimal128.fromString("0"),
+                    is_active: true
+                },
+                {
+                    user_id: userId,
+                    cardholder_id: cardholderId,
+                    network: "ETHEREUM",
+                    asset: "USDC",
+                    deposit_address: generateCryptoDepositAddress(),
+                    account_balance: mongoose.Types.Decimal128.fromString("0"),
+                    is_active: true
+                },
+                {
+                    user_id: userId,
+                    cardholder_id: cardholderId,
+                    network: "POLYGON",
+                    asset: "USDT",
+                    deposit_address: generateCryptoDepositAddress(),
+                    account_balance: mongoose.Types.Decimal128.fromString("0"),
+                    is_active: true
+                },
+                {
+                    user_id: userId,
+                    cardholder_id: cardholderId,
+                    network: "POLYGON",
+                    asset: "USDC",
+                    deposit_address: generateCryptoDepositAddress(),
+                    account_balance: mongoose.Types.Decimal128.fromString("0"),
+                    is_active: true
                 }
-            );
-            if (!cryptoDepositAccount?.length) {
-                throw new ServiceError("Failed to create user crypto deposit account");
+            ];
+            const createdCryptoAccounts = await user_crypto_deposit_account_details.create(
+                    cryptoDepositAccounts,
+                    {
+                        session: mongoSession,
+                        ordered: true
+                    }
+                );
+            if (createdCryptoAccounts?.length !== 4) {
+                throw new ServiceError("Failed to create user crypto deposit accounts");
             }
         }
 

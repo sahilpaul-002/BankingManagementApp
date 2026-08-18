@@ -1,7 +1,7 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestQueryError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userPrefundFiatAccountWebhookService, userSignUpService } from "../services/userServices.js";
+import { prefundUserCryptoFundingAccountService, prefundUserFiatFundingAccountService, sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
@@ -296,17 +296,23 @@ export const getUserBankVerificationWebhook = async (req: Request, res: Response
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 
-// ------------------------------------- FUNCTION PREFUND FIAT ACCOUNT WEBHOOK ------------------------------------- \\
-export const userPrefundFiatAccountWebhook = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+// ------------------------------------- FUNCTION PREFUND FIAT FUNDING ACCOUNT ------------------------------------- \\
+export const prefundUserFiatFundingAccount = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
 
-        const userPrefundFiatAccountWebhookServiceResponse = await userPrefundFiatAccountWebhookService(aesDecryptedBodyData)
-        if (userPrefundFiatAccountWebhookServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "Failed to load prefund user fiat account", 400);
+        const prefundUserFiatFundingAccountServiceResponse = await prefundUserFiatFundingAccountService(aesDecryptedBodyData)
+        if (prefundUserFiatFundingAccountServiceResponse?.status !== "SUCCESS") {
+            res.status(400).json({
+                message: "Failed to prefund user fiat funding account"
+            })
         }
-        return res.success("User fiat account prefund loaded successfully", {}, 200)
+
+        return res.status(200).json({
+            message: "User fiat funding account prefund loaded successfully",
+            data: prefundUserFiatFundingAccountServiceResponse?.data ?? {}
+        })
     }
     catch (err) {
         const error = err as any;
@@ -314,7 +320,7 @@ export const userPrefundFiatAccountWebhook = async (req: Request, res: Response)
         const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
-            serviceName: "UserPrefundFiatAccountWebhookController",
+            serviceName: "PrefundUserFiatFundingAccountController",
             url: req.path,
             method: req.method
         });
@@ -322,7 +328,47 @@ export const userPrefundFiatAccountWebhook = async (req: Request, res: Response)
             throw error
         }
         throw new ServiceError(
-            `UserPrefundFiatAccountWebhookController facing issue: [${errorStatus}] ${error.message}`,
+            `PrefundUserFiatFundingAccountController facing issue: [${errorStatus}] ${error.message}`,
+            error?.error ? error.error : error
+        );
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// ------------------------------------- FUNCTION PREFUND CRYPTO FUNDING ACCOUNT ------------------------------------- \\
+export const prefundUserCryptoFundingAccount = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+
+        const prefundUserCryptoFundingAccountServiceResponse = await prefundUserCryptoFundingAccountService(aesDecryptedBodyData)
+        if (prefundUserCryptoFundingAccountServiceResponse?.status !== "SUCCESS") {
+            res.status(400).json({
+                message: "Failed to prefund user crypto funding account"
+            })
+        }
+
+        return res.status(200).json({
+            message: "User crypto funding account prefund loaded successfully",
+            data: prefundUserCryptoFundingAccountServiceResponse?.data ?? {}
+        })
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "PrefundUserCryptoFundingAccountController",
+            url: req.path,
+            method: req.method
+        });
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(
+            `PrefundUserCryptoFundingAccountController facing issue: [${errorStatus}] ${error.message}`,
             error?.error ? error.error : error
         );
     }
