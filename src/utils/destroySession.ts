@@ -2,7 +2,8 @@ import type { Request, Response } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 
 // const destroySession = async (req: Request, res: Response): Promise<successResponseJson | failedResponseJson | void> => {
-const destroySession = async (requestSession: Request["session"] & {destroy: (callback: (err?: any) => void) => void;
+const destroySession = async (requestSession: Request["session"] & {
+    destroy: (callback: (err?: any) => void) => void;
 }, res: Response): Promise<successResponseJson | failedResponseJson | void> => {
     try {
         // if (!req.session) {
@@ -25,11 +26,13 @@ const destroySession = async (requestSession: Request["session"] & {destroy: (ca
                     });
                 }
 
-                res.clearCookie("BMA_Business_Session");
-                res.clearCookie("BMA_Admin_Session");
-                res.clearCookie("BMA_User_Session");
-                res.clearCookie("authToken");
-                res.clearCookie("refreshToken");
+                if (!res.headersSent) {
+                    res.clearCookie("BMA_Business_Session");
+                    res.clearCookie("BMA_Admin_Session");
+                    res.clearCookie("BMA_User_Session");
+                    res.clearCookie("authToken");
+                    res.clearCookie("refreshToken");
+                }
 
                 resolve({
                     status: "SUCCESS",

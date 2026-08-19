@@ -9,39 +9,26 @@ const ENVIRONMENT: string = process.env.NODE_ENV || "PRODUCTION";
 
 const checkTimeout = (seconds: number): RequestHandler => {
     if (ENVIRONMENT?.toUpperCase() !== "PRODUCTION") {
-        return (req: Request, res: Response, next: NextFunction) => {
+        return (_req, _res, next) => {
             next();
         };
     }
 
-    return (req: Request, res: Response, next: NextFunction): void => {
-
+    return (req, res, next) => {
         const timeoutMs = seconds * 1000;
 
-        // ✅ 1. Application-level timeout (for user response)
-        const appTimer = setTimeout(() => {
+        const timer = setTimeout(() => {
             if (!res.headersSent) {
-                throw new ServiceTimeoutError("Service has timed out")
+                next(new ServiceTimeoutError("Service has timed out"));
             }
         }, timeoutMs);
 
-        // ✅ 2. Socket-level timeout (for killing stuck connections)
-        req.setTimeout(timeoutMs + 1000, () => {
-            // slight buffer so app timeout runs first
-            if (!res.headersSent) {
-                req.destroy(); // force close connection
-            }
-        });
-
-        // ✅ Cleanup (VERY IMPORTANT)
         const cleanup = () => {
-            clearTimeout(appTimer);
-            req.setTimeout(0); // remove socket timeout
+            clearTimeout(timer);
         };
 
         res.on("finish", cleanup);
         res.on("close", cleanup);
-        res.on("SERVICE_ERROR", cleanup);
 
         next();
     };

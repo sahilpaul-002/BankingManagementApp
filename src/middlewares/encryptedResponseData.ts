@@ -46,7 +46,10 @@ const encryptResponseData = (
             const encryptRes = symmetricEncryptionMsg(req, responseData, ivHex);
 
             if (encryptRes?.status !== "SUCCESS") {
-                // throw new ServiceError("AES response encryption service caused error");
+                logger.error("AES response encryption failed", {
+                    serviceName: "EncryptResponseDataMiddleware",
+                });
+
                 return originalJson({
                     status: "SERVICE_ERROR",
                     message: "AES response encryption service caused error"
@@ -63,21 +66,14 @@ const encryptResponseData = (
         }
         catch (err) {
             const error = err as any;
-            const url = req.path || "UNKNOWN_URL";
             const errorStatus = error?.status || "UnknownErrorStatus";
 
             logger.error(error, {
                 serviceName: "EncryptResponseDataMiddleware",
-                // url: req.path,
-                // method: req.method
             });
-            if (error instanceof AppErrorClass) {
-                throw error
-            }
-            throw new ServiceError(
-                `EncryptResponseDataMiddleware facing issue: [${errorStatus}] ${error.message}`,
-                error?.error ? error.error : error
-            );
+
+            // Never break the response cycle.
+            return originalJson(body);
         }
     };
 

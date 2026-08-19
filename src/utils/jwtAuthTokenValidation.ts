@@ -23,14 +23,14 @@ const jwtAuthTokenValidation = async (
     return next();
   }
 
-  const jwtAuthToken: string = req.signedCookies?.authToken
-  const jwtRefreshToken: string = req.signedCookies?.refreshToken
-  const sessionAccessToken: string | undefined = req.session?.sessiondata?.accessToken
-  const sessionUserType: string | undefined = req.session?.userType
-  const sessionProgramId: string | undefined = req.session?.userConfiguration?.programId;
-  const sessionBusinessId: string | undefined = req.session?.userConfiguration?.businessId;
-
   try {
+    const jwtAuthToken: string = req.signedCookies?.authToken
+    const jwtRefreshToken: string = req.signedCookies?.refreshToken
+    const sessionAccessToken: string | undefined = req.session?.sessiondata?.accessToken
+    const sessionUserType: string | undefined = req.session?.userType
+    const sessionProgramId: string | undefined = req.session?.userConfiguration?.programId;
+    const sessionBusinessId: string | undefined = req.session?.userConfiguration?.businessId;
+
     if (!sessionAccessToken || !sessionUserType || !sessionProgramId || !sessionBusinessId) {
       throw new UnauthenticatedError("Session not authenticated")
     }
@@ -43,6 +43,9 @@ const jwtAuthTokenValidation = async (
     const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
     const jwtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
 
+    if (!jwtAuthToken) {
+      throw new UnauthenticatedError("Missing authentication token")
+    }
 
     if (!jwtRefreshToken) {
       throw new UnauthenticatedError("Missing authentication token")
@@ -55,6 +58,10 @@ const jwtAuthTokenValidation = async (
       sessionUserType,
       jwtSecretKey
     )
+
+    if (!jwtSecretKey) {
+      throw new ServiceError("JWT secret unavailable");
+    }
 
     if (jwtAuthVerifyResponse?.status === "NEW_TOKEN") {
       const authToken: string = jwtAuthVerifyResponse?.jwtAuthToken;

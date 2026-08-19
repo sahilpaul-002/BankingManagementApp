@@ -1,6 +1,7 @@
 import jwt, { type JwtPayload } from "jsonwebtoken"
 import verifyJwtRefresh from "./verifyJwtRefresh.js"
 import generateJwtAuth from "./generateJwtToken.js"
+import logger from "./logger.js"
 
 // 🔹 Types
 interface jwtAuthDataType extends JwtPayload {
@@ -39,7 +40,7 @@ const verifyJwtAuth = async (
         "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
     try {
         if (!jwtAuthToken || !jwtRefreshToken) {
-            return {status: "UNAUTHORIZED", message: "Missing auth token or refresh token"}
+            return { status: "UNAUTHORIZED", message: "Missing auth token or refresh token" }
         }
 
         // Verify JWT Auth Token
@@ -89,7 +90,9 @@ const verifyJwtAuth = async (
                     jwtAuthToken: generateJwtAuthToken
                 }
             } catch (error: any) {
-                console.log({ status: "SERVICE_ERROR", error })
+                logger.error(error, {
+                    serviceName: "VerifyJwtAuth"
+                });
 
                 if (error.name === "TokenExpiredError") {
                     return {

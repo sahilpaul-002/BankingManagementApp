@@ -9,123 +9,126 @@ import logger from "../utils/logger.js";
 
 const headerTypeValidation = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
     // Skip portal header check for selcted pathes
-    const excludedPaths: string[] = ["/signUp", "/sendVerifyEmailCode" ,"/sendResetPasswordCode", "/verifyResetPasswordCode"];
+    const excludedPaths: string[] = ["/signUp", "/sendVerifyEmailCode", "/sendResetPasswordCode", "/verifyResetPasswordCode"];
     if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
         return next();
     }
 
-    // Get request header "from_portal" to check the sorce the api call
-    const fromPortal: string = (req?.headers["from-portal"] ?? "false") as string;
-    // Check if the api call is not from portal
-    if (fromPortal === "true") {
-        if (!req.session.headerKeys?.publicKey || !req.session.headerKeys.privateKey) {
-            throw new UnauthenticatedError("Unauthenticated session");
-        }
+    try {
+        // Get request header "from_portal" to check the sorce the api call
+        const fromPortal: string = (req?.headers["from-portal"] ?? "false") as string;
+        // // Validate FROM_PORTAL header
+        // const fromPortal: string | null = checkStringHeader(req.headers, "from-portal");
+        // if (!fromPortal) {
+        //     throw new InvalidHeaderError("'from-portal' MISSING OR NOT STRING")
+        // }
+        // Check if the api call is not from portal
+        if (fromPortal === "true") {
+            if (!req.session.headerKeys?.publicKey || !req.session.headerKeys.privateKey) {
+                throw new UnauthenticatedError("Unauthenticated session");
+            }
 
-        // -------------------------------------- Decrypt Header Items -------------------------------------- \\
-        let encryptedHeaderKeys: string[];
-        if (req.path === "/login" || req.path.startsWith("/login/")) {
-            encryptedHeaderKeys = [
-                "x-device-id"
-            ];
-        } else {
-            encryptedHeaderKeys = [
-                'x-api-key',
-                'agent-code',
-                'subagent-code',
-                'program-id',
-                'business-id',
-                'client-id',
-                "x-device-id",
-                'authorization'
-            ];
-        }
+            // -------------------------------------- Decrypt Header Items -------------------------------------- \\
+            let encryptedHeaderKeys: string[];
+            if (req.path === "/login" || req.path.startsWith("/login/")) {
+                encryptedHeaderKeys = [
+                    "x-device-id"
+                ];
+            } else {
+                encryptedHeaderKeys = [
+                    'x-api-key',
+                    'agent-code',
+                    'subagent-code',
+                    'program-id',
+                    'business-id',
+                    'client-id',
+                    "x-device-id",
+                    'authorization'
+                ];
+            }
 
-        try {
+            try {
 
-            for (const headerKey of encryptedHeaderKeys) {
+                for (const headerKey of encryptedHeaderKeys) {
 
-                const encryptedValue = req.headers[headerKey] as string;
+                    const encryptedValue = req.headers[headerKey] as string;
 
-                // Skip if header not present
-                if (!encryptedValue) continue;
+                    // Skip if header not present
+                    if (!encryptedValue) continue;
 
-                // Decrypt header
-                const decryptionResponse = headerAsymmetricDecryptionMsg(req, encryptedValue);
-
-                if (
-                    decryptionResponse &&
-                    decryptionResponse.status.toUpperCase() === "SUCCESS"
-                ) {
-
-                    const successResponse =
-                        decryptionResponse as decryptionSuccessJson;
-
-                    let decryptedValue = successResponse.decryptedText;
-
-                    // Convert JSON string to object
-                    const parsedValue = JSON.parse(decryptedValue);
-
-                    // Populate decrypted value back into req.headers
-                    req.headers[headerKey] = parsedValue.value;
-                }
-
-                else if (
-                    decryptionResponse &&
-                    ["NOT_FOUND", "BAD_REQUEST"].includes(
-                        decryptionResponse.status.toUpperCase()
-                    )
-                ) {
-
-                    const errorResponse =
-                        decryptionResponse as decryptionFailedJson;
+                    // Decrypt header
+                    const decryptionResponse = headerAsymmetricDecryptionMsg(req, encryptedValue);
 
                     if (
-                        errorResponse?.message?.includes(
-                            "Assymetric private key not found in session"
+                        decryptionResponse &&
+                        decryptionResponse.status.toUpperCase() === "SUCCESS"
+                    ) {
+
+                        const successResponse =
+                            decryptionResponse as decryptionSuccessJson;
+
+                        let decryptedValue = successResponse.decryptedText;
+
+                        // Convert JSON string to object
+                        const parsedValue = JSON.parse(decryptedValue);
+
+                        // Populate decrypted value back into req.headers
+                        req.headers[headerKey] = parsedValue.value;
+                    }
+
+                    else if (
+                        decryptionResponse &&
+                        ["NOT_FOUND", "BAD_REQUEST"].includes(
+                            decryptionResponse.status.toUpperCase()
                         )
                     ) {
-                        throw new UnauthenticatedError(
-                            "Unauthenticated Access: Private key not found in session"
+
+                        const errorResponse =
+                            decryptionResponse as decryptionFailedJson;
+
+                        if (
+                            errorResponse?.message?.includes(
+                                "Assymetric private key not found in session"
+                            )
+                        ) {
+                            throw new UnauthenticatedError(
+                                "Unauthenticated Access: Private key not found in session"
+                            );
+                        }
+
+                        throw new ServiceError(
+                            `Header decryption failed for ${headerKey}`
                         );
                     }
 
-                    throw new ServiceError(
-                        `Header decryption failed for ${headerKey}`
-                    );
+                    else {
+                        throw new ServiceUnavailableError(
+                            `Asymmetric header decryption service unavailable for ${headerKey}`
+                        );
+                    }
                 }
 
-                else {
-                    throw new ServiceUnavailableError(
-                        `Asymmetric header decryption service unavailable for ${headerKey}`
-                    );
+            } catch (err) {
+                const error = err as any;
+                const url = req.path || "UNKNOWN_URL";
+                const errorStatus = error?.status || "UnknownErrorStatus";
+
+                logger.error(error, {
+                    serviceName: "AsymmetricHeaderDecryption",
+                    // url: req.path,
+                    // method: req.method
+                });
+                if (error instanceof AppErrorClass) {
+                    throw error
                 }
+                throw new ServiceError(
+                    `AsymmetricHeaderDecryption facing issue: [${errorStatus}] ${error.message}`,
+                    error?.error ? error.error : error
+                );
             }
-
-        } catch (err) {
-            const error = err as any;
-            const url = req.path || "UNKNOWN_URL";
-            const errorStatus = error?.status || "UnknownErrorStatus";
-
-            logger.error(error, {
-                serviceName: "AsymmetricHeaderDecryption",
-                // url: req.path,
-                // method: req.method
-            });
-            if (error instanceof AppErrorClass) {
-                throw error
-            }
-            throw new ServiceError(
-                `AsymmetricHeaderDecryption facing issue: [${errorStatus}] ${error.message}`,
-                error?.error ? error.error : error
-            );
+            // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
         }
-        // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
-    }
-
-    try {
         // Validate Content-Type header for POST, PUT, PATCH requests
-
         if (req.baseUrl === '/api/v1/kyc' && (req.path === "/upload" || req.path.startsWith("upload" + "/"))) {
             const contentType: string | undefined = req.headers["content-type"];
             if (!contentType || !contentType.includes("multipart/form-data")) {
@@ -137,12 +140,6 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
             if (!contentType || !contentType.includes("application/json")) {
                 throw new InvalidHeaderError("'content-type' header must be application/json")
             }
-        }
-
-        // Validate FROM_PORTAL header
-        const fromPortal: string | null = checkStringHeader(req.headers, "from-portal");
-        if (!fromPortal) {
-            throw new InvalidHeaderError("'from-portal' MISSING OR NOT STRING")
         }
 
         // Validate the device-id type header

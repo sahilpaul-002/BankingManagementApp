@@ -20,15 +20,16 @@ const validateUniqueRequests = async (req: Request, res: Response, next: NextFun
         }
         const redisClient = getRedisClientResponse?.client;
 
-        const exists: number = await redisClient.exists(key);
-
-        if (exists) {
-            throw new UnauthorizedError("Unauthorized session")
-        }
-
-        await redisClient.set(key, "used", {
+        // Atomic: create only if the key does NOT already exist
+        const result = await redisClient.set(key, "used", {
             EX: 60 * 12,
+            NX: true,
         });
+
+        // null means the key already existed
+        if (result !== "OK") {
+            throw new UnauthorizedError("Duplicate request");
+        }
 
         next();
     }

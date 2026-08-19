@@ -4,12 +4,13 @@ import { onboarding, sendBankVerificationMail, userLogin, userSignUp } from "../
 import jwtAuthTokenValidation from "../utils/jwtAuthTokenValidation.js";
 import validateUniqueRequests from "../middlewares/validateUniqueRequests.js";
 import sessionValidation from "../middlewares/sessionValidation.js";
+import asyncRequestHandler from "../middlewares/asyncRequestHandler.js";
 
 const router: Router = express.Router();
 
 router.post("/signUp", userSignUp);
 router.post("/login", userLogin);
-router.post("/onboarding", jwtAuthTokenValidation, onboarding);
-router.post("/sendBankVerificationMail", jwtAuthTokenValidation, sendBankVerificationMail);
+router.post("/onboarding", asyncRequestHandler(jwtAuthTokenValidation), onboarding);
+router.post("/sendBankVerificationMail", asyncRequestHandler(jwtAuthTokenValidation), sendBankVerificationMail);
 
 export default router;

@@ -45,6 +45,7 @@ import publicRoutes from "../routes/publicRoutes.js";
 import cardRoutes from "../routes/cardRoutes.js";
 import beneficiariesRoutes from "../routes/beneficiariesRoutes.js"
 import transferRoutes from "../routes/transferRoutes.js"
+import requestLogger from "../middlewares/requestLogger.js";
 
 dotenv.config();
 const ENVIRONMENT: string = process.env.NODE_ENV || "production";
@@ -79,6 +80,9 @@ app.use(rid());
 // Cookie Parser Middleware
 app.use(cookieParser(process.env.COOKIE_SECRET_KEY || "jsev4jdls6sb15h2n5lujfj8b8m8sz5gv1f2d4eg1hfs"));
 
+// Log Request
+app.use(requestLogger);
+
 // Morgon Middleware
 app.use(
     // morgan("combined", {
@@ -87,18 +91,19 @@ app.use(
     //     }
     // })
 
-    morgan((tokens, req, res) => {
-        return JSON.stringify({
-            method: tokens.method?.(req, res) || "",
-            url: tokens.url?.(req, res) || "",
-            status: tokens.status?.(req, res) || "",
-            responseTime: tokens["response-time"]?.(req, res) || "0"
-        });
-    }, {
-        stream: {
-            write: (message) => logger.info(JSON.parse(message))
-        }
-    })
+    morgan((tokens, req, res) =>
+        JSON.stringify({
+            message: "Request cycle ended — HTTP request completed",
+            method: tokens.method?.(req, res),
+            url: tokens.url?.(req, res),
+            status: tokens.status?.(req, res),
+            responseTime: `${tokens["response-time"]?.(req, res)}ms`,
+        })
+        , {
+            stream: {
+                write: (message) => logger.info(JSON.parse(message)),
+            },
+        })
 );
 // --------------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------------- \\
 
@@ -135,7 +140,7 @@ app.use("/api/v1/public", publicRoutes);
 app.use(dynamicSession())
 
 // Check session existance  middleware 
-app.use(sessionExistance);
+// app.use(sessionExistance);
 
 // Check Database Connection
 app.use(checkDatabaseConnection);
@@ -165,29 +170,29 @@ app.use(rateLimiter());
 // ------------------------- \\
 // Decrypt Request Payload Middleware
 // ------------------------- \\
-app.use(decryptRequestPayload);
+app.use(asyncRequestHandler(decryptRequestPayload));
 
 // ------------------------- \\
 // Encrypt Response Data Middleware
 // ------------------------- \\
-app.use(encryptResponseData);
+app.use(asyncRequestHandler(encryptResponseData));
 
 // ------------------------- \\
 // Custom Response Handler
 // ------------------------- \\
-app.use(globalResponseHandler);
+app.use(asyncRequestHandler(globalResponseHandler));
 
 // ---------------------------------------- Routes ---------------------------------------- \\
-app.use("/api/v1/helper", checkTimeout(5), helperRoutes);
-app.use("/api/v1/config", checkTimeout(5), configRoutes);
-app.use("/api/v1/user", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), userRoutes);
-app.use("/api/v1/twoFa", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), twoFaRoutes);
-app.use("/api/v1/kyc", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), kycRoutes);
-app.use("/api/v1/cardholder", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), cardholderRoutes);
-app.use("/api/v1/wallet", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), walletRoutes);
-app.use("/api/v1/card", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), cardRoutes);
-app.use("/api/v1/beneficiaries", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), beneficiariesRoutes);
-app.use("/api/v1/transfer", headerTypeValidation, headerValidations, sessionValidation, validateUniqueRequests, jwtAuthTokenValidation, checkTimeout(5), asyncRequestHandler(requestContextMiddleware), transferRoutes);
+app.use("/api/v1/helper", asyncRequestHandler(checkTimeout(10)), helperRoutes);
+app.use("/api/v1/config", asyncRequestHandler(checkTimeout(10)), configRoutes);
+app.use("/api/v1/user", asyncRequestHandler(headerTypeValidation), asyncRequestHandler(headerValidations), asyncRequestHandler(sessionValidation), asyncRequestHandler(validateUniqueRequests), asyncRequestHandler(checkTimeout(10)), asyncRequestHandler(requestContextMiddleware), userRoutes);
+app.use("/api/v1/twoFa", asyncRequestHandler(headerTypeValidation), asyncRequestHandler(headerValidations), asyncRequestHandler(sessionValidation), asyncRequestHandler(validateUniqueRequests), asyncRequestHandler(checkTimeout(10)), asyncRequestHandler(requestContextMiddleware), twoFaRoutes);
+app.use("/api/v1/kyc", asyncRequestHandler(headerTypeValidation), asyncRequestHandler(headerValidations), asyncRequestHandler(sessionValidation), asyncRequestHandler(validateUniqueRequests), asyncRequestHandler(jwtAuthTokenValidation), asyncRequestHandler(checkTimeout(10)), asyncRequestHandler(requestContextMiddleware), kycRoutes);
+app.use("/api/v1/cardholder", asyncRequestHandler(headerTypeValidation), asyncRequestHandler(headerValidations), asyncRequestHandler(sessionValidation), asyncRequestHandler(validateUniqueRequests), asyncRequestHandler(jwtAuthTokenValidation), asyncRequestHandler(checkTimeout(10)), asyncRequestHandler(requestContextMiddleware), cardholderRoutes);
+app.use("/api/v1/wallet", asyncRequestHandler(headerTypeValidation), asyncRequestHandler(headerValidations), asyncRequestHandler(sessionValidation), asyncRequestHandler(validateUniqueRequests), asyncRequestHandler(jwtAuthTokenValidation), asyncRequestHandler(checkTimeout(10)), asyncRequestHandler(requestContextMiddleware), walletRoutes);
+app.use("/api/v1/card", asyncRequestHandler(headerTypeValidation), asyncRequestHandler(headerValidations), asyncRequestHandler(sessionValidation), asyncRequestHandler(validateUniqueRequests), asyncRequestHandler(jwtAuthTokenValidation), asyncRequestHandler(checkTimeout(10)), asyncRequestHandler(requestContextMiddleware), cardRoutes);
+app.use("/api/v1/beneficiaries", asyncRequestHandler(headerTypeValidation), asyncRequestHandler(headerValidations), asyncRequestHandler(sessionValidation), asyncRequestHandler(validateUniqueRequests), asyncRequestHandler(jwtAuthTokenValidation), asyncRequestHandler(checkTimeout(10)), asyncRequestHandler(requestContextMiddleware), beneficiariesRoutes);
+app.use("/api/v1/transfer", asyncRequestHandler(headerTypeValidation), asyncRequestHandler(headerValidations), asyncRequestHandler(sessionValidation), asyncRequestHandler(validateUniqueRequests), asyncRequestHandler(jwtAuthTokenValidation), asyncRequestHandler(checkTimeout(10)), asyncRequestHandler(requestContextMiddleware), transferRoutes);
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
 // ------------------------- \\
