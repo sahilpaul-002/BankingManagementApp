@@ -15,7 +15,7 @@ import userWalletCreationValidationSchema from "../validations/userWalletCreatio
 import userLoadWalletTransaction from "../mongoDbTransactions/userLoadWalletTransaction.js";
 import userWithdrawWalletTransaction from "../mongoDbTransactions/userWithdrawWalletTransaction.js";
 import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
-import deductFeeSrive from "./deductFeesService.js";
+import deductFeeService from "./deductFeesService.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
 import getWalletTransactionsValidationSchema from "../validations/getWalletTransactionValidation.js";
@@ -377,10 +377,8 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
             throw new NotFoundError("Requested wallet does not exist");
         }
 
-        const finalAmount: Decimal = deductFeeSrive(new Decimal(validationResult.data.amount), validationResult.data.wallet_type === "FIAT" ? "load_fiat_wallet_percent" : "load_crypto_wallet_percent");
-        validationResult.data.amount = Number(finalAmount)
         // Load wallet transaction
-        const loadWalletTransactionResult = await userLoadWalletTransaction(new Types.ObjectId(cardholderId), new Types.ObjectId(walletId), validationResult, selectedWallet)
+        const loadWalletTransactionResult = await userLoadWalletTransaction(userId, new Types.ObjectId(cardholderId), new Types.ObjectId(walletId), validationResult, selectedWallet)
 
         if (loadWalletTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("Load wallet service failed to load wallet")

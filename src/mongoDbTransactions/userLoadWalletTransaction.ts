@@ -196,6 +196,9 @@ import userWalletTransactionsValidationSchema from "../validations/userWalletTra
 import type { SafeParseResult } from "../types/zodTypes.js";
 import crypto from "crypto";
 import { getFxRate } from "../services/fxRateService.js";
+import { Decimal } from "decimal.js";
+import deductFeeService from "../services/deductFeesService.js";
+import { calculateFeeAddedAmountService } from "../services/calculateFeeAddedAmountService.js";
 
 type userWalletActionValidationType =
     SafeParseSuccess<
@@ -217,21 +220,12 @@ const userLoadWalletTransaction = async (
 
         mongoSession.startTransaction();
 
+        const walletType = userWalletActionData.data.wallet_type;
+        const walletCurrency = userWalletActionData.data.wallet_currency.trim().toUpperCase();
+        const loadAmount = userWalletActionData.data.amount;
 
-        // ============================================================
-        // BASIC DATA
-        // ============================================================
-
-        const walletType =
-            userWalletActionData.data.wallet_type;
-
-        const walletCurrency =
-            userWalletActionData.data.wallet_currency
-                .trim()
-                .toUpperCase();
-
-        const loadAmount =
-            userWalletActionData.data.amount;
+        let feeAmount = new Decimal(0);
+        let totalSourceAmount = new Decimal(0);
 
         const now = new Date();
 
@@ -242,16 +236,9 @@ const userLoadWalletTransaction = async (
             );
         }
 
-
-        // ============================================================
-        // DETERMINE WALLET TYPE
-        // ============================================================
-
-        const isFiatWallet =
-            walletType.toLowerCase() === "fiat";
-
-        const isCryptoWallet =
-            walletType.toLowerCase() === "crypto";
+        // Determine wallet type
+        const isFiatWallet = walletType.toUpperCase() === "FIAT";
+        const isCryptoWallet = walletType.toUpperCase() === "CRYPTO";
 
 
         if (!isFiatWallet && !isCryptoWallet) {
@@ -261,10 +248,6 @@ const userLoadWalletTransaction = async (
         }
 
 
-        // ============================================================
-        // VARIABLES
-        // ============================================================
-
         let sourceCurrency = walletCurrency;
         let sourceAmount = loadAmount;
         let exchangeRate = 1;
@@ -272,9 +255,8 @@ const userLoadWalletTransaction = async (
         let remarks = "Wallet loaded successfully";
 
 
-        // ============================================================
+        // ------------------------------------------
         // FIAT WALLET LOAD
-        // ============================================================
         //
         // Example:
         //
@@ -299,26 +281,14 @@ const userLoadWalletTransaction = async (
         // SGD wallet:
         // +100 SGD
         //
-        // ============================================================
+        // ------------------------------------------
 
         if (isFiatWallet) {
-
             sourceCurrency = "USD";
 
-
-            // --------------------------------------------------------
-            // Get USD -> Wallet Currency FX rate
-            // --------------------------------------------------------
-
-            const fxRateResponse = await getFxRate(
-                sourceCurrency,
-                walletCurrency
-            );
-
-            exchangeRate =
-                fxRateResponse.exchange_rate;
-
-
+            // Get fx rate
+            const fxRateResponse = await getFxRate(sourceCurrency, walletCurrency);
+            exchangeRate = fxRateResponse.exchange_rate;
             if (!exchangeRate || exchangeRate <= 0) {
                 throw new ServiceError(
                     `Invalid FX rate for ${sourceCurrency} to ${walletCurrency}`
@@ -328,7 +298,6 @@ const userLoadWalletTransaction = async (
 
             // --------------------------------------------------------
             // Calculate USD amount required
-            // --------------------------------------------------------
             //
             // destination amount / FX rate
             //
@@ -338,68 +307,53 @@ const userLoadWalletTransaction = async (
             // = 78.125 USD
             //
             // --------------------------------------------------------
-
-            sourceAmount =
-                loadAmount / exchangeRate;
-
-
-            // Avoid floating-point precision issues
-            sourceAmount =
-                Number(sourceAmount.toFixed(18));
-
-
-            if (!Number.isFinite(sourceAmount) || sourceAmount <= 0) {
+            const sourceAmountDecimal = new Decimal(loadAmount).div(exchangeRate);
+            if (!sourceAmountDecimal.isFinite() || sourceAmountDecimal.lte(0)) {
                 throw new ServiceError(
                     "Invalid source amount calculated from FX rate"
                 );
             }
+            sourceAmount = Number(sourceAmountDecimal.toDecimalPlaces(18).toString());
 
+            // Calculate fee on the source amount
+            feeAmount = calculateFeeAddedAmountService(
+                sourceAmountDecimal,
+                "load_fiat_wallet_percent"
+            );
 
-            // --------------------------------------------------------
-            // Find and deduct USD funding account
-            // --------------------------------------------------------
-            //
-            // The $gte condition is extremely important.
-            //
-            // It makes sure that the funding account cannot become
-            // negative.
-            //
-            // This update is also atomic.
-            //
-            // --------------------------------------------------------
-
-            const sourceAmountDecimal =
-                mongoose.Types.Decimal128.fromString(
-                    sourceAmount.toFixed(18)
+            // Total amount to deduct from funding account
+            totalSourceAmount = sourceAmountDecimal.plus(feeAmount);
+            if (!totalSourceAmount.isFinite() || totalSourceAmount.lte(0)) {
+                throw new ServiceError(
+                    "Invalid total funding amount calculated"
                 );
+            }
 
+            // Find and deduct from the usd funding account
+            const totalSourceAmountDecimal = mongoose.Types.Decimal128.fromString(totalSourceAmount.toDecimalPlaces(18).toString());
+            const updatedFundingAccount = await user_funding_bank_account_details.findOneAndUpdate(
+                {
+                    user_id: userId,
+                    cardholder_id: cardholderId,
+                    account_currency: "USD",
+                    is_active: true,
 
-            const updatedFundingAccount =
-                await user_funding_bank_account_details.findOneAndUpdate(
-                    {
-                        user_id: userId,
-                        cardholder_id: cardholderId,
-                        account_currency: "USD",
-                        is_active: true,
-
-                        account_balance: {
-                            $gte: sourceAmountDecimal
-                        }
-                    },
-                    {
-                        $inc: {
-                            account_balance: mongoose.Types.Decimal128.fromString(
-                                (-sourceAmount).toFixed(18)
-                            )
-                        }
-                    },
-                    {
-                        new: true,
-                        session: mongoSession
+                    account_balance: {
+                        $gte: totalSourceAmountDecimal
                     }
-                ).lean();
-
-
+                },
+                {
+                    $inc: {
+                        account_balance: mongoose.Types.Decimal128.fromString(
+                            totalSourceAmount.negated().toDecimalPlaces(18).toString()
+                        )
+                    }
+                },
+                {
+                    new: true,
+                    session: mongoSession
+                }
+            ).lean();
             if (!updatedFundingAccount) {
                 throw new ServiceError(
                     "Insufficient USD funding account balance or active funding account not found"
@@ -407,18 +361,11 @@ const userLoadWalletTransaction = async (
             }
 
 
-            remarks =
-                `Wallet loaded from USD funding account. ` +
-                `FX rate: 1 USD = ${exchangeRate} ${walletCurrency}. ` +
-                `USD deducted: ${sourceAmount}.`;
-
-
+            remarks = `Wallet loaded from USD funding account. ` + `FX rate: 1 USD = ${exchangeRate} ${walletCurrency}. ` + `USD amount: ${sourceAmount}. ` + `Fee: ${feeAmount.toString()} USD. ` + `Total USD deducted: ${totalSourceAmount.toString()}.`;
         }
-
 
         // ============================================================
         // CRYPTO WALLET LOAD
-        // ============================================================
         //
         // For the current mock implementation:
         //
@@ -434,16 +381,13 @@ const userLoadWalletTransaction = async (
         // ============================================================
 
         if (isCryptoWallet) {
-
             const supportedCryptoCurrencies = [
                 "USDT",
                 "USDC"
             ];
 
 
-            if (
-                !supportedCryptoCurrencies.includes(walletCurrency)
-            ) {
+            if (!supportedCryptoCurrencies.includes(walletCurrency)) {
                 throw new ServiceError(
                     `Unsupported crypto wallet currency: ${walletCurrency}`
                 );
@@ -454,38 +398,19 @@ const userLoadWalletTransaction = async (
             sourceAmount = loadAmount;
             exchangeRate = 1;
 
-
-            remarks =
-                `${walletCurrency} wallet loaded successfully from crypto deposit.`;
-
-
+            remarks = `${walletCurrency} wallet loaded successfully from crypto deposit.`;
         }
 
-
-        // ============================================================
-        // PREPARE WALLET BALANCE UPDATE
-        // ============================================================
-
+        // Update the wallet balance
         const updateInc: Record<string, number> = {
             "wallets_details.$.account_balance": loadAmount
         };
 
         const updateSet: Record<string, any> = {};
 
-
-        // ============================================================
-        // DAILY TRANSACTION
-        // ============================================================
-
-        const daily =
-            selectedWallet.daily_transaction;
-
-
-        if (
-            !daily?.date ||
-            daily.date.toDateString() !== now.toDateString()
-        ) {
-
+        // Daily transaction
+        const daily = selectedWallet.daily_transaction;
+        if (!daily?.date || daily.date.toDateString() !== now.toDateString()) {
             updateSet[
                 "wallets_details.$.daily_transaction.credit"
             ] = loadAmount;
@@ -493,37 +418,22 @@ const userLoadWalletTransaction = async (
             updateSet[
                 "wallets_details.$.daily_transaction.date"
             ] = now;
-
         }
         else {
-
             updateInc[
                 "wallets_details.$.daily_transaction.credit"
             ] = loadAmount;
 
         }
 
-
-        // ============================================================
-        // MONTHLY TRANSACTION
-        // ============================================================
-
-        const isSameMonth =
-            selectedWallet.monthly_transaction?.month ===
-            now.getMonth() + 1 &&
-            selectedWallet.monthly_transaction?.year ===
-            now.getFullYear();
-
-
+        // Monthly Transaction
+        const isSameMonth = selectedWallet.monthly_transaction?.month === now.getMonth() + 1 && selectedWallet.monthly_transaction?.year === now.getFullYear();
         if (isSameMonth) {
-
             updateInc[
                 "wallets_details.$.monthly_transaction.credit"
             ] = loadAmount;
-
         }
         else {
-
             updateSet[
                 "wallets_details.$.monthly_transaction.credit"
             ] = loadAmount;
@@ -535,28 +445,16 @@ const userLoadWalletTransaction = async (
             updateSet[
                 "wallets_details.$.monthly_transaction.year"
             ] = now.getFullYear();
-
         }
 
-
-        // ============================================================
-        // YEARLY TRANSACTION
-        // ============================================================
-
-        const isSameYear =
-            selectedWallet.yearly_transaction?.year ===
-            now.getFullYear();
-
-
+        // Yearly transaction
+        const isSameYear = selectedWallet.yearly_transaction?.year === now.getFullYear();
         if (isSameYear) {
-
             updateInc[
                 "wallets_details.$.yearly_transaction.credit"
             ] = loadAmount;
-
         }
         else {
-
             updateSet[
                 "wallets_details.$.yearly_transaction.credit"
             ] = loadAmount;
@@ -564,35 +462,29 @@ const userLoadWalletTransaction = async (
             updateSet[
                 "wallets_details.$.yearly_transaction.year"
             ] = now.getFullYear();
-
         }
 
+        // Update user wallet
+        const updatedWallet = await user_wallet_details.findOneAndUpdate(
+            {
+                _id: walletId,
 
-        // ============================================================
-        // UPDATE USER WALLET
-        // ============================================================
-
-        const updatedWallet =
-            await user_wallet_details.findOneAndUpdate(
-                {
-                    _id: walletId,
-
-                    wallets_details: {
-                        $elemMatch: {
-                            wallet_type: walletType,
-                            wallet_currency: walletCurrency
-                        }
+                wallets_details: {
+                    $elemMatch: {
+                        wallet_type: walletType,
+                        wallet_currency: walletCurrency
                     }
-                },
-                {
-                    $inc: updateInc,
-                    $set: updateSet
-                },
-                {
-                    new: true,
-                    session: mongoSession
                 }
-            ).lean();
+            },
+            {
+                $inc: updateInc,
+                $set: updateSet
+            },
+            {
+                new: true,
+                session: mongoSession
+            }
+        ).lean();
 
 
         if (!updatedWallet) {
@@ -601,51 +493,28 @@ const userLoadWalletTransaction = async (
             );
         }
 
-
-        // ============================================================
-        // CALCULATE WALLET BALANCES
-        // ============================================================
-
-        const balanceBefore =
-            Number(
-                selectedWallet.account_balance?.toString() ?? "0"
-            );
-
-        const balanceAfter =
-            balanceBefore + loadAmount;
+        // Calculate wallet balance
+        const balanceBefore = Number(selectedWallet.account_balance?.toString() ?? "0");
+        const balanceAfter = balanceBefore + loadAmount;
 
 
-        // ============================================================
-        // PREPARE TRANSACTION PAYLOAD
-        // ============================================================
-
+        // Transaction payload
         const transactionPayload = {
-
             transaction_type: "LOAD",
-
             transaction_status: "SUCCESS",
-
             wallet_details: {
                 wallet_type: walletType,
                 wallet_currency: walletCurrency
             },
-
             amount: loadAmount,
-
             balance_before: balanceBefore,
-
             balance_after: balanceAfter,
-
             reference_id: crypto.randomUUID(),
-
             remarks: remarks
         };
 
 
-        // ============================================================
-        // VALIDATE TRANSACTION
-        // ============================================================
-
+        // Validate transaction payload
         const validationResult:
             SafeParseResult<
                 z.infer<typeof userWalletTransactionsValidationSchema>
@@ -656,61 +525,33 @@ const userLoadWalletTransaction = async (
 
 
         if (!validationResult.success) {
-
             throw new ServiceError(
                 "Invalid wallet transaction request",
                 z.flattenError(
                     validationResult.error
                 )
             );
-
         }
 
 
-        // ============================================================
-        // CREATE WALLET TRANSACTION
-        // ============================================================
-
+        // Create wallet transaction
         await user_wallet_transactions.create(
             [
                 {
                     cardholder_id: cardholderId,
-
                     wallet_id: walletId,
-
-                    transaction_id:
-                        new Types.ObjectId(),
-
-                    transaction_type:
-                        validationResult.data.transaction_type,
-
-                    transaction_status:
-                        validationResult.data.transaction_status,
-
+                    transaction_id: new Types.ObjectId(),
+                    transaction_type: validationResult.data.transaction_type,
+                    transaction_status: validationResult.data.transaction_status,
                     wallet_details: {
-                        wallet_type:
-                            validationResult.data.wallet_details
-                                ?.wallet_type,
-
-                        wallet_currency:
-                            validationResult.data.wallet_details
-                                ?.wallet_currency
+                        wallet_type: validationResult.data.wallet_details?.wallet_type,
+                        wallet_currency: validationResult.data.wallet_details?.wallet_currency
                     },
-
-                    amount:
-                        validationResult.data.amount,
-
-                    balance_before:
-                        validationResult.data.balance_before,
-
-                    balance_after:
-                        validationResult.data.balance_after,
-
-                    reference_id:
-                        validationResult.data.reference_id,
-
-                    remarks:
-                        validationResult.data.remarks
+                    amount: validationResult.data.amount,
+                    balance_before: validationResult.data.balance_before,
+                    balance_after: validationResult.data.balance_after,
+                    reference_id: validationResult.data.reference_id,
+                    remarks: validationResult.data.remarks
                 }
             ],
             {
@@ -719,51 +560,26 @@ const userLoadWalletTransaction = async (
         );
 
 
-        // ============================================================
-        // COMMIT TRANSACTION
-        // ============================================================
-
+        // Commit Transaction
         await mongoSession.commitTransaction();
 
-
-        // ============================================================
-        // RESPONSE
-        // ============================================================
-
         const walletDetails = {
-
-            walletId:
-                updatedWallet?._id?.toString(),
-
-            wallets_details:
-                updatedWallet?.wallets_details,
-
-            source_currency:
-                sourceCurrency,
-
-            source_amount:
-                sourceAmount,
-
-            destination_currency:
-                walletCurrency,
-
-            destination_amount:
-                loadAmount,
-
-            exchange_rate:
-                exchangeRate
-
+            walletId: updatedWallet?._id?.toString(),
+            wallets_details: updatedWallet?.wallets_details,
+            source_currency: sourceCurrency,
+            source_amount: sourceAmount,
+            fee_amount: feeAmount.toString(),
+            total_source_amount: totalSourceAmount.toString(),
+            destination_currency: walletCurrency,
+            destination_amount: loadAmount,
+            exchange_rate: exchangeRate
         };
 
 
         return {
             status: "SUCCESS",
-
-            message:
-                "Wallet loaded successfully",
-
-            data:
-                walletDetails
+            message: "Wallet loaded successfully",
+            data: walletDetails
         };
 
 
@@ -772,19 +588,14 @@ const userLoadWalletTransaction = async (
 
         await mongoSession.abortTransaction();
 
-
         const error = err as any;
 
-        const errorStatus =
-            error?.status ||
-            "UnknownErrorStatus";
-
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(
             error,
             {
-                serviceName:
-                    "LoadWalletTransactionService"
+                serviceName: "LoadWalletTransactionService"
             }
         );
 
@@ -795,12 +606,7 @@ const userLoadWalletTransaction = async (
 
 
         throw new ServiceError(
-            `LoadWalletTransactionService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error
-                ? error.error
-                : error
-        );
-
+            `LoadWalletTransactionService facing issue: [${errorStatus}] ${error.message}`, error?.error ? error.error : error);
     }
     finally {
 

@@ -844,15 +844,7 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
         throw new ServiceUnavailableError("GetUserBankVerificationWebhookService is unavailbale as facing unknown issue.", error)
     }
@@ -955,15 +947,7 @@ export const prefundUserFiatFundingAccountService = async (aesDecryptedBodyData:
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
         throw new ServiceUnavailableError("UserPrefundFiatAccountWebhookService is unavailbale as facing unknown issue.", error)
     }
@@ -1030,7 +1014,6 @@ export const prefundUserCryptoFundingAccountService = async (aesDecryptedBodyDat
         const cryptoModel = user_crypto_deposit_account_details;
 
         // Find crypto funding account and update crypto funding account
-        // const updatedCryptoFundingAccount = await (user_crypto_deposit_account_details as any).findOneAndUpdate(
         const updatedCryptoFundingAccount = await user_crypto_deposit_account_details.findOneAndUpdate(
             {
                 user_id: new Types.ObjectId(userId),
@@ -1075,17 +1058,8 @@ export const prefundUserCryptoFundingAccountService = async (aesDecryptedBodyDat
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-
         throw new ServiceUnavailableError(
             "UserCryptoFundingAccountService is unavailable as facing unknown issue.",
             error
@@ -1093,3 +1067,102 @@ export const prefundUserCryptoFundingAccountService = async (aesDecryptedBodyDat
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// ------------------------------------- GET USER FUNDING ACCOUNTS BALANCES ------------------------------------- \\
+export const getUserFundingAccountsBalancesService = async (aesDecryptedQueryData: Record<string, any> | ParsedQs | undefined
+): Promise<successResponseJson | void> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid request query data");
+        }
+
+        // Check user id present
+        const userId = checkStringQueryParams(aesDecryptedQueryData, "user_Id");
+        if (!userId) {
+            throw new InvalidRequestQueryError("User id is not present in the request query");
+        }
+
+        const objectUserId = new Types.ObjectId(userId);
+
+        // Check account type (optional)
+        const accountType = checkStringQueryParams(aesDecryptedQueryData, "account_type")?.toUpperCase();
+        if (accountType && accountType !== "FIAT" && accountType !== "CRYPTO") {
+            throw new InvalidRequestQueryError("Invalid account type. Account type must be fiat or crypto");
+        }
+
+
+        const responseData: Record<string, any> = {};
+
+        // Get Fiat Account
+        if (!accountType || accountType === "FIAT") {
+            const fiatFundingAccount = await user_funding_bank_account_details.findOne({
+                        user_id: objectUserId,
+                        is_active: true
+                    })
+                    .select(
+                        "_id user_id cardholder_id account_holder_name account_number account_currency account_balance bank_name swift_code iban_code is_active"
+                    )
+                    .lean();
+            if (!fiatFundingAccount) {
+                throw new NotFoundError(
+                    "Active fiat funding account not found"
+                );
+            }
+
+            responseData.fiat = {
+                account_id: fiatFundingAccount._id,
+                currency: fiatFundingAccount.account_currency,
+                balance: fiatFundingAccount.account_balance
+            };
+        }
+
+        // Get Crypto Account
+        if (!accountType || accountType === "CRYPTO") {
+            const cryptoFundingAccounts = await user_crypto_deposit_account_details
+                    .find({
+                        user_id: objectUserId,
+                        is_active: true
+                    })
+                    .select(
+                        "_id user_id cardholder_id network asset deposit_address account_balance is_active"
+                    )
+                    .lean();
+
+            responseData.crypto = cryptoFundingAccounts.map((account) => ({
+                account_id: account._id,
+                network: account.network,
+                asset: account.asset,
+                deposit_address: account.deposit_address,
+                balance: account.account_balance
+            }));
+        }
+
+
+        return {
+            status: "SUCCESS",
+            data: responseData,
+            message: "Funding account balance fetched successfully"
+        };
+    }
+    catch (err) {
+        const error = err as any;
+        const errorStatus =
+            error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetUserFundingAccountsBalancesService"
+        });
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceUnavailableError(
+            "GetUserFundingAccountsBalancesService is unavailable as facing unknown issue.",
+            error
+        );
+    }
+};
+
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
