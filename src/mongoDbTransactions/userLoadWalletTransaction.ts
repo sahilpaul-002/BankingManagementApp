@@ -186,6 +186,7 @@ import mongoose, { Types } from "mongoose";
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
 import { userFundingBankAccountDetailsModel as user_funding_bank_account_details } from "../models/user_funding_bank_account_details.js";
+import { userCryptoDepositAccountDetailsModel as user_crypto_deposit_account_details } from "../models/user_crypto_deposit_accout_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import type { walletDetailsType } from "../types/schemaTypes.js";
@@ -197,14 +198,9 @@ import type { SafeParseResult } from "../types/zodTypes.js";
 import crypto from "crypto";
 import { getFxRate } from "../services/fxRateService.js";
 import { Decimal } from "decimal.js";
-import deductFeeService from "../services/deductFeesService.js";
 import { calculateFeeAddedAmountService } from "../services/calculateFeeAddedAmountService.js";
 
-type userWalletActionValidationType =
-    SafeParseSuccess<
-        z.infer<typeof userWalletActionValidationSchema>
-    >;
-
+type userWalletActionValidationType = SafeParseSuccess<z.infer<typeof userWalletActionValidationSchema>>;
 
 const userLoadWalletTransaction = async (
     userId: Types.ObjectId,
@@ -379,13 +375,11 @@ const userLoadWalletTransaction = async (
         // actual blockchain deposit.
         //
         // ============================================================
-
         if (isCryptoWallet) {
             const supportedCryptoCurrencies = [
                 "USDT",
                 "USDC"
             ];
-
 
             if (!supportedCryptoCurrencies.includes(walletCurrency)) {
                 throw new ServiceError(
@@ -393,12 +387,81 @@ const userLoadWalletTransaction = async (
                 );
             }
 
-
+            // Crypto wallet receives exactly the amount requested by the user
             sourceCurrency = walletCurrency;
             sourceAmount = loadAmount;
             exchangeRate = 1;
 
-            remarks = `${walletCurrency} wallet loaded successfully from crypto deposit.`;
+            // Calculate crypto funding fee
+            const sourceAmountDecimal = new Decimal(loadAmount);
+
+            if (!sourceAmountDecimal.isFinite() || sourceAmountDecimal.lte(0)) {
+                throw new ServiceError(
+                    "Invalid crypto source amount"
+                );
+            }
+
+            feeAmount = calculateFeeAddedAmountService(
+                sourceAmountDecimal,
+                "load_crypto_wallet_percent"
+            );
+
+            // Total crypto amount to deduct from crypto funding account
+            totalSourceAmount = sourceAmountDecimal.plus(feeAmount);
+
+            if (!totalSourceAmount.isFinite() || totalSourceAmount.lte(0)) {
+                throw new ServiceError(
+                    "Invalid total crypto funding amount calculated"
+                );
+            }
+
+            // Convert total deduction to Mongo Decimal128
+            const totalSourceAmountDecimal = mongoose.Types.Decimal128.fromString(totalSourceAmount.toDecimalPlaces(18).toString());
+
+            // Deduct from user's crypto funding account
+            const updatedCryptoFundingAccount =
+                await user_crypto_deposit_account_details.findOneAndUpdate(
+                    {
+                        user_id: userId,
+                        cardholder_id: cardholderId,
+                        network: userWalletActionData.data.network as "ETHEREUM" | "POLYGON",
+                        asset: walletCurrency as "USDT" | "USDC",
+                        is_active: true,
+
+                        // Make sure the account has enough
+                        // balance for amount + fee
+                        account_balance: {
+                            $gte: totalSourceAmountDecimal
+                        }
+                    },
+                    {
+                        $inc: {
+                            account_balance:
+                                mongoose.Types.Decimal128.fromString(
+                                    totalSourceAmount
+                                        .negated()
+                                        .toDecimalPlaces(18)
+                                        .toString()
+                                )
+                        }
+                    },
+                    {
+                        new: true,
+                        session: mongoSession
+                    }
+                ).lean();
+
+            if (!updatedCryptoFundingAccount) {
+                throw new ServiceError(
+                    `Insufficient ${walletCurrency} crypto funding account balance or active crypto funding account not found`
+                );
+            }
+
+            // ---------------------------------------------
+            // Transaction remarks
+            // ---------------------------------------------
+
+            remarks = `Wallet loaded from ${walletCurrency} ${userWalletActionData.data.network} crypto funding account. ` + `Crypto amount: ${sourceAmount}. ` + `Fee: ${feeAmount.toString()} ${walletCurrency}. ` + `Total ${walletCurrency} deducted: ${totalSourceAmount.toString()}.`;
         }
 
         // Update the wallet balance
@@ -504,7 +567,8 @@ const userLoadWalletTransaction = async (
             transaction_status: "SUCCESS",
             wallet_details: {
                 wallet_type: walletType,
-                wallet_currency: walletCurrency
+                wallet_currency: walletCurrency,
+                network: userWalletActionData.data.network
             },
             amount: loadAmount,
             balance_before: balanceBefore,

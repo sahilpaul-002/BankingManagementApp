@@ -4,10 +4,10 @@ export const MERCHANT_CATEGORIES = ["GROCERY", "RESTAURANT", "CAFE", "GAS_STATIO
 
 export const FEE_DETAILS: feeDetailsSchemaTypes = {
     'fee_unit': "PERCENTAGE",
-    'load_fiat_wallet_percent': 1.2,
-    'load_crypto_wallet_percent': 1.5,
-    'load_card_percent': 2,
-    'card_transaction_percent': 0.5,
+    'load_fiat_wallet_percent': 2,
+    'load_crypto_wallet_percent': 2.5,
+    'load_card_percent': 3,
+    'card_transaction_percent': 1,
     'create_card': 5,
     'm2p_percent': 6,
     'p2P_percent': 8,

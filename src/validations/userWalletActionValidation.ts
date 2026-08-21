@@ -11,7 +11,14 @@ const userWalletActionValidationSchema = z.object({
             error: "Invalid wallet currency"
         }),
 
-     amount: z
+    network: z
+        .enum(["ETHEREUM", "POLYGON"], {
+            error: "Invalid crypto network"
+        })
+        .optional(),
+
+
+    amount: z
         .number({
             error:
                 "Amount must be a number",
@@ -28,10 +35,8 @@ const userWalletActionValidationSchema = z.object({
         const fiatCurrencies = ["USD", "EUR", "SGD"];
         const cryptoCurrencies = ["USDC", "USDT"];
 
-        if (
-            data.wallet_type === "FIAT" &&
-            !fiatCurrencies.includes(data.wallet_currency)
-        ) {
+        // Fiat Wallet Validations
+        if (data.wallet_type === "FIAT" && !fiatCurrencies.includes(data.wallet_currency)) {
             ctx.addIssue({
                 code: "custom",
                 path: ["wallet_currency"],
@@ -39,16 +44,32 @@ const userWalletActionValidationSchema = z.object({
                     "FIAT wallet supports only USD, EUR, SGD"
             });
         }
+        // Network should NOT be provided for FIAT
+        if (data.wallet_type === "FIAT" && data.network) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["network"],
+                message:
+                    "Network is not applicable for FIAT wallet"
+            });
+        }
 
-        if (
-            data.wallet_type === "CRYPTO" &&
-            !cryptoCurrencies.includes(data.wallet_currency)
-        ) {
+        // Crypto Wallet Validation
+        if (data.wallet_type === "CRYPTO" && !cryptoCurrencies.includes(data.wallet_currency)) {
             ctx.addIssue({
                 code: "custom",
                 path: ["wallet_currency"],
                 message:
                     "CRYPTO wallet supports only USDC, USDT"
+            });
+        }
+        // Network is mandatory for CRYPTO
+        if (data.wallet_type === "CRYPTO" && !data.network) {
+            ctx.addIssue({
+                code: "custom",
+                path: ["network"],
+                message:
+                    "Network is required for CRYPTO wallet"
             });
         }
     });

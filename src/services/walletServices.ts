@@ -339,6 +339,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
             {
                 wallet_type: walletDetails?.wallet_type,
                 wallet_currency: walletDetails?.wallet_currency,
+                network: walletDetails?.network,
                 amount: Number(walletDetails?.amount),
             }
         );
@@ -364,7 +365,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         }
 
         // Check wallet authenticity
-        if (userWalletDetails?.user_id !== userId) {
+        if (userWalletDetails?.user_id.toString() !== userId.toString()) {
             throw new BadRequestError("Failed to fetch user wallet details - invalid wallet id provided")
         }
 
