@@ -461,17 +461,17 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         }
         let userId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = requestSession?.userId;
+            userId = new Types.ObjectId(requestSession?.userId);
             if (!userId) {
                 throw new UnauthenticatedError("Unauthenticated access detected");
             }
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
-            userId = cardholderDetails?._id.toString();
+            userId = cardholderDetails?._id;
         }
 
         // Check Validations
@@ -496,7 +496,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         }
 
         // Get wallet details from DB
-        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ wallet_id: walletId, cardholder_id: cardholderId }).lean();
+        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: new Types.ObjectId(walletId), cardholder_id: new Types.ObjectId(cardholderId) }).lean();
 
         // Check user exist in DB
         if (!userWalletDetails) {
@@ -504,7 +504,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         }
 
         // Check wallet authenticity
-        if (userWalletDetails?.user_id.toString() !== userId) {
+        if (userWalletDetails?.user_id.toString() !== userId.toString()) {
             throw new BadRequestError("Failed to fetch user wallet details - invalid wallet id provided")
         }
 
@@ -518,7 +518,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         }
 
         // Load wallet transaction
-        const withdrawWalletTransactionResult = await userWithdrawWalletTransaction(cardholderId, walletId, validationResult, selectedWallet)
+        const withdrawWalletTransactionResult = await userWithdrawWalletTransaction(userId, new Types.ObjectId(cardholderId), new Types.ObjectId(walletId), validationResult, selectedWallet)
 
         if (withdrawWalletTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("Widthraw wallet service failed to load wallet")
@@ -532,7 +532,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
-            serviceName: "LoadWalletService",
+            serviceName: "WithdrawWalletService",
             // url: req.path,
             // method: req.method
         });
@@ -541,7 +541,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
             throw error
         }
         throw new ServiceError(
-            `LoadWalletService facing issue: [${errorStatus}] ${error.message}`,
+            `WithdrawWalletService facing issue: [${errorStatus}] ${error.message}`,
             error?.error ? error.error : error
         );
     }
@@ -584,7 +584,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
-                throw new ForbiddenError("Not authorized to create wallet")
+                throw new ForbiddenError("Not authorized to to access wallet transactions")
             }
         }
         const walletId: string | null = checkStringQueryParams(aesDecryptedQueryData, "wallet_id")
@@ -593,17 +593,17 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
         }
         let userId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = requestSession?.userId;
+            userId = new Types.ObjectId(requestSession?.userId);
             if (!userId) {
                 throw new UnauthenticatedError("Unauthenticated access detected");
             }
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
-            userId = cardholderDetails?._id.toString();
+            userId = cardholderDetails?._id;
         }
 
         // Check Validations
@@ -622,14 +622,17 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
         }
 
         // Verify wallet
-        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ wallet_id: walletId, cardholder_id: cardholderId }).lean();
+        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: new Types.ObjectId(walletId), cardholder_id: new Types.ObjectId(cardholderId) }).lean();
 
         if (!wallet) {
             throw new NotFoundError("Wallet not found");
         }
 
         // Date range filter
-        const dateFilter: Record<string, Date> = {};
+        const dateFilter: {
+            $gte?: Date;
+            $lte?: Date;
+        } = {};
         let fromDate: string | null;
         let toDate: string | null;
 
@@ -660,7 +663,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
 
         // Query filters
         const query = {
-            wallet_id: walletId,
+            wallet_id: new Types.ObjectId(walletId),
             ...(validationResult?.data?.wallet_type && { "wallet_details.wallet_type": validationResult?.data?.wallet_type }),
             ...(validationResult?.data?.wallet_currency && { "wallet_details.wallet_currency": validationResult?.data?.wallet_currency }),
             ...(validationResult?.data?.transaction_type && { transaction_type: validationResult?.data?.transaction_type }),
@@ -709,7 +712,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
                     current_page: currentPage,
                     page_size: pageSize,
                     total_records: totalTransactions,
-                    total_pages: Math.ceil(totalTransactions / pageSize),
+                    total_pages: totalPages,
                     has_next_page: currentPage * pageSize < totalTransactions,
                     has_previous_page: currentPage > 1,
                 },

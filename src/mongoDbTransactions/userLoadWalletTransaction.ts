@@ -1,187 +1,3 @@
-// import mongoose, { Types } from "mongoose";
-// import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
-// import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
-// import logger from "../utils/logger.js";
-// import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
-// import type { walletDetailsType } from "../types/schemaTypes.js";
-// import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
-// import z from "zod";
-// import type { SafeParseSuccess } from "zod/v3";
-// import userWalletTransactionsValidationSchema from "../validations/userWalletTransactionsValidation.js";
-// import type { SafeParseResult } from "../types/zodTypes.js";
-// import crypto from "crypto";
-
-// type userWalletActionValidationType = SafeParseSuccess<z.infer<typeof userWalletActionValidationSchema>>;
-
-// const userLoadWalletTransaction = async (userId: Types.ObjectId, cardholderId: Types.ObjectId, walletId: Types.ObjectId, userWalletActionData: userWalletActionValidationType, selectedWallet: walletDetailsType) => {
-//     const mongoSession =
-//         await mongoose.startSession();
-
-//     try {
-//         mongoSession.startTransaction();
-
-//         // Configure updated wallet balance and dates
-//         const loadAmount = userWalletActionData.data.amount;
-//         const now = new Date();
-//         const updateInc: Record<string, number> = { "wallets_details.$.account_balance": loadAmount };
-//         const updateSet: Record<string, any> = {};
-//         // Daily
-//         const daily = selectedWallet.daily_transaction;
-//         if (!daily?.date || daily.date.toDateString() !== now.toDateString()) {
-//             updateSet["wallets_details.$.daily_transaction.credit"] = loadAmount;
-//             updateSet["wallets_details.$.daily_transaction.date"] = now;
-//         }
-//         else {
-//             updateInc["wallets_details.$.daily_transaction.credit"] = loadAmount;
-//         }
-//         // Monthly
-//         const isSameMonth = selectedWallet.monthly_transaction?.month === now.getMonth() + 1 &&
-//             selectedWallet.monthly_transaction?.year === now.getFullYear();
-
-//         if (isSameMonth) {
-//             updateInc["wallets_details.$.monthly_transaction.credit"] = loadAmount;
-//         }
-//         else {
-//             updateSet["wallets_details.$.monthly_transaction.credit"] = loadAmount;
-//             updateSet["wallets_details.$.monthly_transaction.month"] = now.getMonth() + 1;
-//             updateSet["wallets_details.$.monthly_transaction.year"] = now.getFullYear();
-//         }
-
-//         // Yearly
-//         const isSameYear = selectedWallet.yearly_transaction?.year === now.getFullYear();
-
-//         if (isSameYear) {
-//             updateInc["wallets_details.$.yearly_transaction.credit"] = loadAmount;
-//         }
-//         else {
-//             updateSet["wallets_details.$.yearly_transaction.credit"] = loadAmount;
-//             updateSet["wallets_details.$.yearly_transaction.year"] = now.getFullYear();
-//         }
-
-//         // Update wallet
-//         const updatedWallet = await user_wallet_details.findOneAndUpdate(
-//             {
-//                 _id: walletId,
-//                 wallets_details:
-//                 {
-//                     $elemMatch:
-//                     {
-//                         wallet_type: userWalletActionData.data.wallet_type,
-//                         wallet_currency: userWalletActionData.data.wallet_currency,
-//                     },
-//                 },
-//             },
-
-//             {
-//                 $inc: updateInc,
-//                 $set: updateSet,
-//             },
-
-//             {
-//                 new: true,
-//                 session: mongoSession,
-//             }
-//         ).lean();
-
-//         if (!updatedWallet) {
-//             throw new ServiceError("Wallet update failed");
-//         }
-
-//         // Prepare transaction payload
-//         const transactionPayload = {
-//             transaction_type: "LOAD",
-//             transaction_status: "SUCCESS",
-//             wallet_details: {
-//                 wallet_type: userWalletActionData.data.wallet_type,
-//                 wallet_currency: userWalletActionData.data.wallet_currency
-//             },
-//             amount: userWalletActionData.data.amount,
-//             balance_before: selectedWallet.account_balance ?? 0,
-//             balance_after: (Number(selectedWallet?.account_balance?.toString()) ?? 0) + userWalletActionData.data.amount,
-//             reference_id: crypto.randomUUID(),
-//             remarks: "Wallet loaded",
-//         };
-
-//         // Check Transaction Validations
-//         const validationResult: SafeParseResult<z.infer<typeof userWalletTransactionsValidationSchema>> = userWalletTransactionsValidationSchema.safeParse(transactionPayload);
-//         if (!validationResult.success) {
-//             // return res.status(400).json({
-//             //     status: "SERVICE_ERROR",
-//             //     message: "Invalid request body",
-//             //     // errors: validationResult.error.issues.map(issue => issue.message)
-//             //     // errors: validationResult.error.issues.map(issue => ({
-//             //     //     [issue.path.join(".")]: issue.message
-//             //     // }))
-//             //     errors: z.flattenError(validationResult.error)
-//             // });
-//             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
-//         }
-
-//         // Create load transaction entry
-//         await user_wallet_transactions.create(
-//             [
-//                 {
-//                     cardholder_id: cardholderId,
-//                     wallet_id: walletId,
-//                     transaction_id: new Types.ObjectId(),
-//                     transaction_type: validationResult?.data?.transaction_type,
-//                     transaction_status: validationResult?.data?.transaction_status,
-//                     wallet_details: {
-//                         wallet_type: validationResult?.data?.wallet_details?.wallet_type,
-//                         wallet_currency: validationResult?.data?.wallet_details?.wallet_currency,
-//                     },
-//                     amount: validationResult.data.amount,
-//                     balance_before: validationResult?.data?.balance_before,
-//                     balance_after: validationResult?.data?.balance_after,
-//                     reference_id: validationResult?.data?.reference_id,
-//                     remarks: validationResult?.data?.remarks,
-//                 },
-//             ],
-//             {
-//                 session: mongoSession,
-//             }
-//         );
-
-//         await mongoSession.commitTransaction();
-
-//         const walletDetails = {
-//             walletId: updatedWallet?._id?.toString(),
-//             wallets_details: updatedWallet?.wallets_details
-//         }
-
-//         return { status: "SUCCESS", message: "Wallet loaded successfully", data: walletDetails }
-//     }
-//     catch (err) {
-//         await mongoSession.abortTransaction();
-
-//         const error = err as any;
-//         // const url = req?.path || "UNKNOWN_URL";
-//         const errorStatus = error?.status || "UnknownErrorStatus";
-
-//         logger.error(error, {
-//             serviceName: "LoadWalletTransactionService",
-//             // url: req.path,
-//             // method: req.method
-//         });
-
-//         if (error instanceof AppErrorClass) {
-//             throw error
-//         }
-//         throw new ServiceError(
-//             `LoadWalletTransactionService facing issue: [${errorStatus}] ${error.message}`,
-//             error?.error ? error.error : error
-//         );
-
-//     }
-//     finally {
-//         await mongoSession.endSession();
-//     }
-// }
-
-// export default userLoadWalletTransaction;
-
-
-
 import mongoose, { Types } from "mongoose";
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
@@ -218,19 +34,17 @@ const userLoadWalletTransaction = async (
 
         const walletType = userWalletActionData.data.wallet_type;
         const walletCurrency = userWalletActionData.data.wallet_currency.trim().toUpperCase();
-        const loadAmount = userWalletActionData.data.amount;
+
+        const loadAmount = new Decimal(userWalletActionData.data.amount.toString());
+        if (!loadAmount.isFinite() || loadAmount.lte(0)) {
+            throw new ServiceError("Wallet load amount must be greater than zero");
+        }
+
 
         let feeAmount = new Decimal(0);
         let totalSourceAmount = new Decimal(0);
 
         const now = new Date();
-
-
-        if (loadAmount <= 0) {
-            throw new ServiceError(
-                "Wallet load amount must be greater than zero"
-            );
-        }
 
         // Determine wallet type
         const isFiatWallet = walletType.toUpperCase() === "FIAT";
@@ -309,7 +123,7 @@ const userLoadWalletTransaction = async (
                     "Invalid source amount calculated from FX rate"
                 );
             }
-            sourceAmount = Number(sourceAmountDecimal.toDecimalPlaces(18).toString());
+            sourceAmount = sourceAmountDecimal.toDecimalPlaces(18);
 
             // Calculate fee on the source amount
             feeAmount = calculateFeeAddedAmountService(
@@ -464,9 +278,11 @@ const userLoadWalletTransaction = async (
             remarks = `Wallet loaded from ${walletCurrency} ${userWalletActionData.data.network} crypto funding account. ` + `Crypto amount: ${sourceAmount}. ` + `Fee: ${feeAmount.toString()} ${walletCurrency}. ` + `Total ${walletCurrency} deducted: ${totalSourceAmount.toString()}.`;
         }
 
+        const loadAmountDecimal128 = mongoose.Types.Decimal128.fromString(loadAmount.toDecimalPlaces(18).toString());
+
         // Update the wallet balance
-        const updateInc: Record<string, number> = {
-            "wallets_details.$.account_balance": loadAmount
+        const updateInc: Record<string, mongoose.Types.Decimal128> = {
+            "wallets_details.$.account_balance": loadAmountDecimal128
         };
 
         const updateSet: Record<string, any> = {};
@@ -476,7 +292,7 @@ const userLoadWalletTransaction = async (
         if (!daily?.date || daily.date.toDateString() !== now.toDateString()) {
             updateSet[
                 "wallets_details.$.daily_transaction.credit"
-            ] = loadAmount;
+            ] = loadAmountDecimal128;
 
             updateSet[
                 "wallets_details.$.daily_transaction.date"
@@ -485,7 +301,7 @@ const userLoadWalletTransaction = async (
         else {
             updateInc[
                 "wallets_details.$.daily_transaction.credit"
-            ] = loadAmount;
+            ] = loadAmountDecimal128;
 
         }
 
@@ -494,12 +310,12 @@ const userLoadWalletTransaction = async (
         if (isSameMonth) {
             updateInc[
                 "wallets_details.$.monthly_transaction.credit"
-            ] = loadAmount;
+            ] = loadAmountDecimal128;
         }
         else {
             updateSet[
                 "wallets_details.$.monthly_transaction.credit"
-            ] = loadAmount;
+            ] = loadAmountDecimal128;
 
             updateSet[
                 "wallets_details.$.monthly_transaction.month"
@@ -515,12 +331,12 @@ const userLoadWalletTransaction = async (
         if (isSameYear) {
             updateInc[
                 "wallets_details.$.yearly_transaction.credit"
-            ] = loadAmount;
+            ] = loadAmountDecimal128;
         }
         else {
             updateSet[
                 "wallets_details.$.yearly_transaction.credit"
-            ] = loadAmount;
+            ] = loadAmountDecimal128;
 
             updateSet[
                 "wallets_details.$.yearly_transaction.year"
@@ -531,7 +347,9 @@ const userLoadWalletTransaction = async (
         const updatedWallet = await user_wallet_details.findOneAndUpdate(
             {
                 _id: walletId,
-
+                user_id: userId,
+                cardholder_id: cardholderId,
+                
                 wallets_details: {
                     $elemMatch: {
                         wallet_type: walletType,
@@ -557,9 +375,13 @@ const userLoadWalletTransaction = async (
         }
 
         // Calculate wallet balance
-        const balanceBefore = Number(selectedWallet.account_balance?.toString() ?? "0");
-        const balanceAfter = balanceBefore + loadAmount;
-
+        const balanceBefore = new Decimal(selectedWallet.account_balance?.toString() ?? "0");
+        if (!balanceBefore.isFinite() || balanceBefore.lt(0)) {
+            throw new ServiceError("Invalid wallet balance");
+        }
+        const balanceAfter = balanceBefore.plus(loadAmount).toDecimalPlaces(18);
+        const balanceBeforeDecimal128 = mongoose.Types.Decimal128.fromString(balanceBefore.toDecimalPlaces(18).toString());
+        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(18).toString());
 
         // Transaction payload
         const transactionPayload = {
@@ -570,9 +392,9 @@ const userLoadWalletTransaction = async (
                 wallet_currency: walletCurrency,
                 network: userWalletActionData.data.network
             },
-            amount: loadAmount,
-            balance_before: balanceBefore,
-            balance_after: balanceAfter,
+            amount: Number(loadAmount.toString()),
+            balance_before: Number(balanceBefore.toString()),
+            balance_after: Number(balanceAfter.toString()),
             reference_id: crypto.randomUUID(),
             remarks: remarks
         };
@@ -611,9 +433,9 @@ const userLoadWalletTransaction = async (
                         wallet_type: validationResult.data.wallet_details?.wallet_type,
                         wallet_currency: validationResult.data.wallet_details?.wallet_currency
                     },
-                    amount: validationResult.data.amount,
-                    balance_before: validationResult.data.balance_before,
-                    balance_after: validationResult.data.balance_after,
+                    amount: loadAmountDecimal128,
+                    balance_before: balanceBeforeDecimal128,
+                    balance_after: balanceAfterDecimal128,
                     reference_id: validationResult.data.reference_id,
                     remarks: validationResult.data.remarks
                 }
