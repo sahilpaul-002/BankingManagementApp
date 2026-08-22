@@ -6,7 +6,6 @@ import { userCryptoDepositAccountDetailsModel as user_crypto_deposit_account_det
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import type { walletDetailsType } from "../types/schemaTypes.js";
-import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
 import z from "zod";
 import type { SafeParseSuccess } from "zod/v3";
 import userWalletTransactionsValidationSchema from "../validations/userWalletTransactionsValidation.js";
@@ -15,14 +14,15 @@ import crypto from "crypto";
 import { getFxRate } from "../services/fxRateService.js";
 import { Decimal } from "decimal.js";
 import { calculateFeeAddedAmountService } from "../services/calculateFeeAddedAmountService.js";
+import type { loadWalletValidationSchema } from "../validations/userWalletActionValidation.js";
 
-type userWalletActionValidationType = SafeParseSuccess<z.infer<typeof userWalletActionValidationSchema>>;
+type loadWalletValidationType = SafeParseSuccess<z.infer<typeof loadWalletValidationSchema>>;
 
 const userLoadWalletTransaction = async (
     userId: Types.ObjectId,
     cardholderId: Types.ObjectId,
     walletId: Types.ObjectId,
-    userWalletActionData: userWalletActionValidationType,
+    userWalletActionData: loadWalletValidationType,
     selectedWallet: walletDetailsType
 ) => {
 
@@ -140,7 +140,7 @@ const userLoadWalletTransaction = async (
             }
 
             // Find and deduct from the usd funding account
-            const totalSourceAmountDecimal = mongoose.Types.Decimal128.fromString(totalSourceAmount.toDecimalPlaces(18).toString());
+            const totalSourceAmountDecimal = mongoose.Types.Decimal128.fromString(totalSourceAmount.toDecimalPlaces(2).toString());
             const updatedFundingAccount = await user_funding_bank_account_details.findOneAndUpdate(
                 {
                     user_id: userId,
@@ -155,7 +155,7 @@ const userLoadWalletTransaction = async (
                 {
                     $inc: {
                         account_balance: mongoose.Types.Decimal128.fromString(
-                            totalSourceAmount.negated().toDecimalPlaces(18).toString()
+                            totalSourceAmount.negated().toDecimalPlaces(2).toString()
                         )
                     }
                 },
@@ -278,7 +278,7 @@ const userLoadWalletTransaction = async (
             remarks = `Wallet loaded from ${walletCurrency} ${userWalletActionData.data.network} crypto funding account. ` + `Crypto amount: ${sourceAmount}. ` + `Fee: ${feeAmount.toString()} ${walletCurrency}. ` + `Total ${walletCurrency} deducted: ${totalSourceAmount.toString()}.`;
         }
 
-        const loadAmountDecimal128 = mongoose.Types.Decimal128.fromString(loadAmount.toDecimalPlaces(18).toString());
+        const loadAmountDecimal128 = mongoose.Types.Decimal128.fromString(loadAmount.toDecimalPlaces(2).toString());
 
         // Update the wallet balance
         const updateInc: Record<string, mongoose.Types.Decimal128> = {
@@ -349,7 +349,7 @@ const userLoadWalletTransaction = async (
                 _id: walletId,
                 user_id: userId,
                 cardholder_id: cardholderId,
-                
+
                 wallets_details: {
                     $elemMatch: {
                         wallet_type: walletType,
@@ -380,8 +380,8 @@ const userLoadWalletTransaction = async (
             throw new ServiceError("Invalid wallet balance");
         }
         const balanceAfter = balanceBefore.plus(loadAmount).toDecimalPlaces(18);
-        const balanceBeforeDecimal128 = mongoose.Types.Decimal128.fromString(balanceBefore.toDecimalPlaces(18).toString());
-        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(18).toString());
+        const balanceBeforeDecimal128 = mongoose.Types.Decimal128.fromString(balanceBefore.toDecimalPlaces(2).toString());
+        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(2).toString());
 
         // Transaction payload
         const transactionPayload = {

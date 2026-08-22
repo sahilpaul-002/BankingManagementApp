@@ -4,7 +4,7 @@ import { userWalletTransactionsModel as user_wallet_transactions } from "../mode
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError, BadRequestError } from "../utils/AppErrorClass.js";
 import type { walletDetailsType } from "../types/schemaTypes.js";
-import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
+import { withdrawWalletValidationSchema } from "../validations/userWalletActionValidation.js";
 import z from "zod";
 import type { SafeParseSuccess } from "zod/v3";
 import type { SafeParseResult } from "../types/zodTypes.js";
@@ -12,9 +12,9 @@ import userWalletTransactionsValidationSchema from "../validations/userWalletTra
 import crypto from "crypto";
 import { Decimal } from "decimal.js";
 
-type userWalletActionValidationType = SafeParseSuccess<z.infer<typeof userWalletActionValidationSchema>>;
+type withdrawWalletValidationType = SafeParseSuccess<z.infer<typeof withdrawWalletValidationSchema>>;
 
-const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderId: Types.ObjectId, walletId: Types.ObjectId, userWalletActionData: userWalletActionValidationType, selectedWallet: walletDetailsType) => {
+const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderId: Types.ObjectId, walletId: Types.ObjectId, userWalletActionData: withdrawWalletValidationType, selectedWallet: walletDetailsType) => {
     const mongoSession = await mongoose.startSession();
     try {
         mongoSession.startTransaction();
@@ -34,11 +34,11 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
             throw new BadRequestError("Insufficient wallet balance");
         }
 
-        const balanceAfter = currentBalance.minus(withdrawAmount).toDecimalPlaces(18);
-        const withdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.toDecimalPlaces(18).toString());
-        const negativeWithdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.negated().toDecimalPlaces(18).toString());
-        const currentBalanceDecimal128 = mongoose.Types.Decimal128.fromString(currentBalance.toDecimalPlaces(18).toString());
-        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(18).toString());
+        const balanceAfter = currentBalance.minus(withdrawAmount).toDecimalPlaces(2);
+        const withdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.toDecimalPlaces(2).toString());
+        const negativeWithdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.negated().toDecimalPlaces(2).toString());
+        const currentBalanceDecimal128 = mongoose.Types.Decimal128.fromString(currentBalance.toDecimalPlaces(2).toString());
+        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(2).toString());
 
         const now = new Date();
 

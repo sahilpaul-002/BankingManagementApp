@@ -14,8 +14,6 @@ import z from "zod";
 import userWalletCreationValidationSchema from "../validations/userWalletCreationValidation.js"
 import userLoadWalletTransaction from "../mongoDbTransactions/userLoadWalletTransaction.js";
 import userWithdrawWalletTransaction from "../mongoDbTransactions/userWithdrawWalletTransaction.js";
-import userWalletActionValidationSchema from "../validations/userWalletActionValidation.js";
-import deductFeeService from "./deductFeesService.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
 import getWalletTransactionsValidationSchema from "../validations/getWalletTransactionValidation.js";
@@ -26,6 +24,7 @@ import { FEE_DETAILS } from "../configs/configConstants.js";
 import { walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes } from "../models/wallet_currency_conversion_quotes.js";
 import getWalletFxRate from "./walletFxRateService.js";
 import executeWalletCurrencyConversionTransaction from "../mongoDbTransactions/walletCurrencyConversionTransaction.js";
+import { loadWalletValidationSchema, withdrawWalletValidationSchema } from "../validations/userWalletActionValidation.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -335,7 +334,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         }
 
         // Check Validations
-        const validationResult: SafeParseResult<z.infer<typeof userWalletActionValidationSchema>> = userWalletActionValidationSchema.safeParse(
+        const validationResult: SafeParseResult<z.infer<typeof loadWalletValidationSchema>> = loadWalletValidationSchema.safeParse(
             {
                 wallet_type: walletDetails?.wallet_type,
                 wallet_currency: walletDetails?.wallet_currency,
@@ -475,7 +474,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         }
 
         // Check Validations
-        const validationResult: SafeParseResult<z.infer<typeof userWalletActionValidationSchema>> = userWalletActionValidationSchema.safeParse(
+        const validationResult: SafeParseResult<z.infer<typeof withdrawWalletValidationSchema>> = withdrawWalletValidationSchema.safeParse(
             {
                 wallet_type: walletDetails?.wallet_type,
                 wallet_currency: walletDetails?.wallet_currency,
@@ -785,21 +784,21 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
         }
         let userId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = requestSession?.userId;
+            userId = new Types.ObjectId(requestSession?.userId);
             if (!userId) {
                 throw new UnauthenticatedError("Unauthenticated access detected");
             }
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
-            userId = cardholderDetails?._id.toString();
+            userId = cardholderDetails?._id;
         }
 
         // Verify wallet
-        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ wallet_id: walletId, cardholder_id: cardholderId }).lean();
+        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: new Types.ObjectId(walletId), cardholder_id: new Types.ObjectId(cardholderId) }).lean();
 
         if (!wallet) {
             throw new NotFoundError("Wallet not found");
@@ -807,8 +806,8 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
 
         // Get Wallet Transaction Details
         const transaction = await user_wallet_transactions.findOne({
-            wallet_id: walletId,
-            transaction_id: transactionId,
+            wallet_id: new Types.ObjectId(walletId),
+            transaction_id: new Types.ObjectId(transactionId),
         }).select("transaction_id transaction_type transaction_status wallet_details amount balance_after createdAt").lean();
 
         if (!transaction) {

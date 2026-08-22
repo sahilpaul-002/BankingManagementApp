@@ -195,9 +195,7 @@ const initiateCardTransaction = async (
             [
                 {
                     ...cardValidation.data,
-                    amount: mongoose.Types.Decimal128.fromString(
-                        holdAmount.toString()
-                    ),
+                    amount: mongoose.Types.Decimal128.fromString(holdAmount.toDecimalPlaces(4).toString()),
                 },
             ],
 
