@@ -32,6 +32,12 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
                     min: 0,
                 },
 
+                available_balance: {
+                    type: mongoose.Schema.Types.Decimal128,
+                    default: 0,
+                    min: 0,
+                },
+
                 holding_amount: {
                     type: mongoose.Schema.Types.Decimal128,
                     default: 0,

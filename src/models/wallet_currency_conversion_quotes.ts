@@ -80,6 +80,17 @@ const walletCurrencyConversionQuoteSchema = new Schema<walletCurrencyConversionQ
             required: true,
             index: true,
         },
+
+        executed_at: {
+            type: Date,
+            required: false,
+        },
+
+        conversion_reference_id: {
+            type: String,
+            required: false,
+            index: true,
+        },
     },
     {
         timestamps: true,
@@ -92,4 +103,4 @@ const walletCurrencyConversionQuoteModel = mongoose.model(
     "wallet_currency_conversion_quotes"
 );
 
-    export { walletCurrencyConversionQuoteModel }; 
+export { walletCurrencyConversionQuoteModel }; 

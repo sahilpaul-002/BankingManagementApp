@@ -325,7 +325,7 @@ export const createWalletCurrencyConversionPayoutQuote = async (req: Request, re
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const createPayoutQuoteServiceResponse = await createWalletCurrencyConversionQuoteService(requestSession, aesDecryptedBodyData, aesDecryptedBodyData, userConfigurations)
+        const createPayoutQuoteServiceResponse = await createWalletCurrencyConversionQuoteService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
         if (createPayoutQuoteServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to create wallet currency conversion payout quote", 400);
         }
@@ -377,7 +377,7 @@ export const executeWalletCurrencyConversionPayoutQuote = async (req: Request, r
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const executePayoutQuoteServiceResponse = await executeWalletCurrencyConversionQuoteService(requestSession, aesDecryptedBodyData, aesDecryptedBodyData, userConfigurations)
+        const executePayoutQuoteServiceResponse = await executeWalletCurrencyConversionQuoteService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
         if (executePayoutQuoteServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to execute wallet currency conversion payout quote", 400);
         }

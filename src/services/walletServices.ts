@@ -23,8 +23,9 @@ import walletCurrencyConversionValidationSchema from "../validations/walletCurre
 import { FEE_DETAILS } from "../configs/configConstants.js";
 import { walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes } from "../models/wallet_currency_conversion_quotes.js";
 import getWalletFxRate from "./walletFxRateService.js";
-import executeWalletCurrencyConversionTransaction from "../mongoDbTransactions/walletCurrencyConversionTransaction.js";
+import executeWalletCurrencyConversionTransaction from "../mongoDbTransactions/executeWalletCurrencyConversionTransaction.js";
 import { loadWalletValidationSchema, withdrawWalletValidationSchema } from "../validations/userWalletActionValidation.js";
+import createWalletCurrencyConversionTransaction from "../mongoDbTransactions/createWalletCurrencyConversionTransaction.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -876,7 +877,7 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
         }
 
         // Check collection
-        const isCollectionPresent = await checkMongoDbCollectionExist("wallet_currency_conversion_quotess");
+        const isCollectionPresent = await checkMongoDbCollectionExist("wallet_currency_conversion_quotes");
 
         if (isCollectionPresent.status !== "SUCCESS") {
             throw new NotFoundError("Currency conversion quotes collection does not exist in MongoDB");
@@ -945,48 +946,15 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
                 cardholder_id: cardholderObjectId,
             },
             {
-                cardholder_id: 1,
-                wallets_details: 1,
+                _id: 1,
             }
         ).lean();
         if (!userWalletDetails) {
             throw new NotFoundError("User wallet details not found");
         }
 
-        // Find source wallet
-        const sourceWallet = userWalletDetails.wallets_details.find(
-            (wallet) =>
-                wallet.wallet_currency ===
-                validatedData.source_wallet_currency &&
-                wallet.wallet_status === "ACTIVE"
-        );
-        if (!sourceWallet) {
-            throw new NotFoundError(`Active ${validatedData.source_wallet_currency} wallet not found`);
-        }
-
-        // Find destination wallet
-        const destinationWallet = userWalletDetails.wallets_details.find(
-            (wallet) =>
-                wallet.wallet_currency ===
-                validatedData.destination_wallet_currency &&
-                wallet.wallet_status === "ACTIVE"
-        );
-        if (!destinationWallet) {
-            throw new NotFoundError(`Active ${validatedData.destination_wallet_currency} wallet not found`);
-        }
-
         // Check source wallet balance
-        const accountBalance = new Decimal(sourceWallet.account_balance?.toString() ?? "0");
-        const holdingAmount = new Decimal(sourceWallet.holding_amount?.toString() ?? "0");
-        const availableBalance = accountBalance.minus(holdingAmount);
         const sourceAmount = new Decimal(validatedData.amount.toString());
-        if (availableBalance.lessThan(sourceAmount)) {
-            throw new BadRequestError("Insufficient wallet balance");
-        }
-
-        if (availableBalance.lessThan(sourceAmount)) {
-            throw new BadRequestError("Insufficient wallet balance");
-        }
 
         // Get FX rate
         const fxRateDetails = await getWalletFxRate(
@@ -1020,31 +988,28 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
             Date.now() + 2 * 60 * 1000
         );
 
-        // Create quote
-        const conversionQuote = await wallet_currency_conversion_quotes.create({
-            user_id: userId,
-            cardholder_id: cardholderObjectId,
-            wallet_id: userWalletDetails._id,
-            source_currency: validatedData.source_wallet_currency,
-            source_amount: mongoose.Types.Decimal128.fromString(sourceAmount.toFixed(2)),
-            destination_currency: validatedData.destination_wallet_currency,
-            destination_amount: mongoose.Types.Decimal128.fromString(destinationAmount.toFixed(2)),
-            exchange_rate: mongoose.Types.Decimal128.fromString(exchangeRate.toFixed(8)),
-            fee_percentage: mongoose.Types.Decimal128.fromString(feePercentage.toFixed(2)),
-            fee_amount: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(2)),
-            quote_status: "ACTIVE",
-            expires_at: expiresAt,
+        const transactionResult = await createWalletCurrencyConversionTransaction({
+            userId,
+            cardholderId: cardholderObjectId,
+            walletId: userWalletDetails._id,
+            sourceCurrency: validatedData.source_wallet_currency,
+            destinationCurrency: validatedData.destination_wallet_currency,
+            sourceAmount,
+            destinationAmount,
+            exchangeRate,
+            feePercentage,
+            feeAmount,
+            expiresAt,
         });
 
         return {
             status: "SUCCESS",
             data: {
-                quote_id: conversionQuote._id.toString(),
+                quote_id: transactionResult.conversionQuote._id.toString(),
                 source: {
                     currency: validatedData.source_wallet_currency,
                     amount: sourceAmount.toFixed(2),
                 },
-
                 destination: {
                     currency: validatedData.destination_wallet_currency,
                     amount: destinationAmount.toFixed(2),
@@ -1055,14 +1020,12 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
                     percentage: feePercentage.toFixed(2),
                     amount: feeAmount.toFixed(2),
                 },
-
                 total_debit: {
                     currency: validatedData.source_wallet_currency,
                     amount: sourceAmount.toFixed(2),
                 },
-
-                quote_status: conversionQuote.quote_status,
-                expires_at: conversionQuote.expires_at,
+                quote_status: transactionResult.conversionQuote.quote_status,
+                expires_at: transactionResult.conversionQuote.expires_at,
             },
             message: "Currency conversion quote created successfully",
         };
@@ -1092,59 +1055,25 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
 
 
 // --------------------------------- EXECUTE WALLET CURRENCY CONVERSION QUOTE SERVICE --------------------------------- //
-export const executeWalletCurrencyConversionQuoteService = async (
-    requestSession: Request["session"],
-    aesDecryptedQueryData:
-        Record<string, string> | ParsedQs | undefined,
-    aesDecryptedBodyData:
-        Record<string, string> | undefined,
-    userConfiguration: userConfigurationsType
-): Promise<any> => {
-
+export const executeWalletCurrencyConversionQuoteService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType): Promise<any> => {
     try {
-
         if (!aesDecryptedQueryData) {
-            throw new BadRequestError(
-                "Invalid query data"
-            );
+            throw new BadRequestError("Invalid query data");
         }
-
         if (!aesDecryptedBodyData) {
-            throw new BadRequestError(
-                "Invalid body data"
-            );
+            throw new BadRequestError("Invalid body data");
         }
 
-
-        // --------------------------------------------------
         // Check quote collection
-        // --------------------------------------------------
-
-        const isCollectionPresent =
-            await checkMongoDbCollectionExist(
-                "wallet_currency_conversion_quotes"
-            );
-
+        const isCollectionPresent = await checkMongoDbCollectionExist("wallet_currency_conversion_quotes");
         if (isCollectionPresent.status !== "SUCCESS") {
-            throw new NotFoundError(
-                "Currency conversion quotes collection does not exist in MongoDB"
-            );
+            throw new NotFoundError("Currency conversion quotes collection does not exist in MongoDB");
         }
 
-
-        // --------------------------------------------------
         // Validate email
-        // --------------------------------------------------
-
-        const email = checkStringQueryParams(
-            aesDecryptedQueryData,
-            "email"
-        );
-
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
         if (!email) {
-            throw new InvalidRequestBodyError(
-                "Email not found in request query"
-            );
+            throw new InvalidRequestBodyError("Email not found in request query");
         }
 
         if (email !== requestSession?.userEmail) {
@@ -1153,129 +1082,73 @@ export const executeWalletCurrencyConversionQuoteService = async (
             );
         }
 
-
-        // --------------------------------------------------
         // Validate user type
-        // --------------------------------------------------
-
-        if (
-            requestSession?.userType !== "ADMIN" &&
-            requestSession?.userType !== "MASTER_ADMIN"
-        ) {
-            throw new ForbiddenError(
-                "Not authorized to execute currency conversion"
-            );
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+            throw new ForbiddenError("Not authorized to execute currency conversion");
         }
 
-
-        // --------------------------------------------------
         // Validate configuration
-        // --------------------------------------------------
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
+        const sessionProgramId = requestSession?.userConfiguration?.programId;
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
 
-        const sessionBusinessId =
-            requestSession?.userConfiguration?.businessId;
-
-        const sessionProgramId =
-            requestSession?.userConfiguration?.programId;
-
-        const sessionAgentCode =
-            requestSession?.userConfiguration?.agentCode;
-
-        const sessionSubAgentCode =
-            requestSession?.userConfiguration?.subAgentCode;
-
-
-        if (
-            userConfiguration?.businessId !== sessionBusinessId ||
+        if (userConfiguration?.businessId !== sessionBusinessId ||
             userConfiguration?.programId !== sessionProgramId ||
             userConfiguration?.agentCode !== sessionAgentCode ||
             userConfiguration?.subAgentCode !== sessionSubAgentCode
         ) {
-            throw new ForbiddenError(
-                "User configuration is not valid to execute currency conversion"
-            );
+            throw new ForbiddenError("User configuration is not valid to execute currency conversion");
         }
 
-
-        // --------------------------------------------------
         // Validate quote ID
-        // --------------------------------------------------
-
         const quoteId = aesDecryptedBodyData.quote_id;
-
         if (!quoteId) {
+            throw new InvalidRequestBodyError("Quote ID not found in request body");
+        }
+        if (!Types.ObjectId.isValid(quoteId)) {
             throw new InvalidRequestBodyError(
-                "Quote ID not found in request body"
+                "Invalid quote ID"
             );
         }
+        const quoteObjectId = new Types.ObjectId(quoteId);
 
-        // --------------------------------------------------
-        // Validate quote ID
-        // --------------------------------------------------
+        // Validate Cardholder ID
         const cardholderId = aesDecryptedBodyData.cardholder_id;
-
         if (!cardholderId) {
-            throw new InvalidRequestBodyError(
-                "Cardholder ID not found in request body"
-            );
+            throw new InvalidRequestBodyError("Cardholder ID not found in request body");
         }
+        if (!Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Invalid cardholder ID");
+        }
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
 
-
-
-
-        // --------------------------------------------------
         // Get user ID
-        // --------------------------------------------------
-
-        const userId = requestSession?.userId;
-
-        if (!userId) {
-            throw new UnauthorizedError(
-                "Unauthorized session detected - user id not found in session"
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
             );
         }
+        const userId = new Types.ObjectId(sessionUserId);
 
-
-        // --------------------------------------------------
         // Get quote
-        // --------------------------------------------------
         const conversionQuote = await wallet_currency_conversion_quotes.findOne({
-            _id: quoteId,
+            _id: quoteObjectId,
             user_id: userId,
-            cardholder_id: cardholderId
+            cardholder_id: cardholderObjectId
         });
-
-
         if (!conversionQuote) {
-            throw new NotFoundError(
-                "Currency conversion quote not found"
-            );
+            throw new NotFoundError("Currency conversion quote not found");
         }
 
-
-        // --------------------------------------------------
         // Check quote status
-        // --------------------------------------------------
-
-        if (
-            conversionQuote.quote_status !==
-            "ACTIVE"
-        ) {
-
-            throw new ServiceError(
-                `Currency conversion quote cannot be executed because its status is ${conversionQuote.quote_status}`
-            );
+        if (conversionQuote.quote_status !== "ACTIVE") {
+            throw new ServiceError(`Currency conversion quote cannot be executed because its status is ${conversionQuote.quote_status}`);
         }
 
-
-        // --------------------------------------------------
         // Check quote expiry
-        // --------------------------------------------------
-
-        if (
-            conversionQuote.expires_at.getTime() <=
-            Date.now()
-        ) {
+        if (conversionQuote.expires_at.getTime() <= Date.now()) {
 
             await wallet_currency_conversion_quotes.updateOne(
                 {
@@ -1294,156 +1167,22 @@ export const executeWalletCurrencyConversionQuoteService = async (
             );
         }
 
-
-        // --------------------------------------------------
-        // Get wallet
-        // --------------------------------------------------
-
-        const userWalletDetails =
-            await user_wallet_details.findOne(
-                {
-                    user_id: userId,
-                    cardholder_id:
-                        conversionQuote.cardholder_id,
-                },
-                {
-                    wallet_id: 1,
-                    cardholder_id: 1,
-                    wallets_details: 1,
-                }
-            ).lean();
-
-
-        if (!userWalletDetails) {
-            throw new NotFoundError(
-                "User wallet details not found"
-            );
-        }
-
-
-        // --------------------------------------------------
-        // Validate wallet ID
-        // --------------------------------------------------
-
-        if (
-            userWalletDetails.wallet_id !==
-            conversionQuote.wallet_id
-        ) {
-            throw new BadRequestError(
-                "Invalid wallet associated with conversion quote"
-            );
-        }
-
-
-        // --------------------------------------------------
-        // Source wallet
-        // --------------------------------------------------
-
-        const sourceWallet =
-            userWalletDetails.wallets_details.find(
-                (wallet) =>
-                    wallet.wallet_currency ===
-                    conversionQuote.source_currency &&
-                    wallet.wallet_status === "ACTIVE"
-            );
-
-
-        if (!sourceWallet) {
-            throw new NotFoundError(
-                `Active ${conversionQuote.source_currency} wallet not found`
-            );
-        }
-
-
-        // --------------------------------------------------
-        // Destination wallet
-        // --------------------------------------------------
-
-        const destinationWallet =
-            userWalletDetails.wallets_details.find(
-                (wallet) =>
-                    wallet.wallet_currency ===
-                    conversionQuote.destination_currency &&
-                    wallet.wallet_status === "ACTIVE"
-            );
-
-
-        if (!destinationWallet) {
-            throw new NotFoundError(
-                `Active ${conversionQuote.destination_currency} wallet not found`
-            );
-        }
-
-
-        // --------------------------------------------------
-        // Check balance again
-        // --------------------------------------------------
-
-        const accountBalance =
-            new Decimal(
-                sourceWallet.account_balance?.toString()
-                ?? "0"
-            );
-
-        const holdingAmount =
-            new Decimal(
-                sourceWallet.holding_amount?.toString()
-                ?? "0"
-            );
-
-        const availableBalance =
-            accountBalance.minus(
-                holdingAmount
-            );
-
-
-        const sourceAmount =
-            new Decimal(
-                conversionQuote.source_amount
-                    .toString()
-            );
-
-
-        if (
-            availableBalance.lessThan(
-                sourceAmount
-            )
-        ) {
-
-            throw new ServiceError(
-                "Insufficient wallet balance"
-            );
-        }
-
-
-        // --------------------------------------------------
         // Execute MongoDB transaction
-        // --------------------------------------------------
-
-        const transactionResult =
-            await executeWalletCurrencyConversionTransaction({
+        const transactionResult = await executeWalletCurrencyConversionTransaction({
                 conversionQuote,
-                sourceWallet,
-                destinationWallet,
-                cardholderId:
-                    userWalletDetails.cardholder_id,
+                userId,
+                cardholderId: cardholderObjectId,
+                walletId: conversionQuote.wallet_id,
             });
 
-
         return {
-
             status: "SUCCESS",
-
-            data:
-                transactionResult.data,
-
-            message:
-                "Currency conversion executed successfully",
+            data: transactionResult.data,
+            message: "Currency conversion executed successfully",
         };
 
     }
     catch (err) {
-
         const error = err as any;
 
         const errorStatus =
@@ -1451,11 +1190,7 @@ export const executeWalletCurrencyConversionQuoteService = async (
             "UnknownErrorStatus";
 
 
-        logger.error(error, {
-            serviceName:
-                "ExecuteWalletCurrencyConversionQuoteService"
-        });
-
+        logger.error(error, { serviceName: "ExecuteWalletCurrencyConversionQuoteService" });
 
         if (error instanceof AppErrorClass) {
             throw error;

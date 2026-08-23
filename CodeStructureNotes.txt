@@ -23,4 +23,6 @@ Check lru cache for required apis
 check if all database calls are efficiently called
 expired wallet currency conversion cron job left
 update address till kyc not completed
+wallet api need update as new field availbale_balance added in the schema
+wallet quote clean up cron
 implementation of swagger documentation

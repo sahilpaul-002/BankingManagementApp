@@ -186,6 +186,7 @@ export type walletCurrencyType = "USD" | "EUR" | "SGD" | "USDC" | "USDT";
 export type walletDetailsType = {
     wallet_status?: "ACTIVE" | "INACTIVE";
     account_balance?: mongoose.Types.Decimal128;
+    available_balance?: mongoose.Types.Decimal128;
     holding_amount?: mongoose.Types.Decimal128;
     wallet_type: "FIAT" | "CRYPTO";
     wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
@@ -244,6 +245,8 @@ export interface walletCurrencyConversionQuoteSchemaTypes extends Document {
     fee_amount: mongoose.Types.Decimal128;
     quote_status: "ACTIVE" | "EXECUTED" | "EXPIRED" | "FAILED";
     expires_at: Date;
+    executed_at: Date;
+    conversion_reference_id: String;
 }
 
 // Types for Cardholder Card Details Model Schema
