@@ -63,7 +63,7 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
         const balanceAfter = balanceBefore - deductionAmount;
 
         // Deduct wallet balance
-        const deductionAmountDecimal = mongoose.Types.Decimal128.fromString(deductionAmount.toDecimalPlaces(2).toString());
+        const deductionAmountDecimal = mongoose.Types.Decimal128.fromString(deductionAmount.toDecimalPlaces(4).toString());
         const updatedWallet = await user_wallet_details.findOneAndUpdate(
             {
                 cardholder_id: cardholderId,

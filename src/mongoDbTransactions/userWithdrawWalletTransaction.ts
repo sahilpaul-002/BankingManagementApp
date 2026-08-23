@@ -34,11 +34,11 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
             throw new BadRequestError("Insufficient wallet balance");
         }
 
-        const balanceAfter = currentBalance.minus(withdrawAmount).toDecimalPlaces(2);
-        const withdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.toDecimalPlaces(2).toString());
-        const negativeWithdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.negated().toDecimalPlaces(2).toString());
-        const currentBalanceDecimal128 = mongoose.Types.Decimal128.fromString(currentBalance.toDecimalPlaces(2).toString());
-        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(2).toString());
+        const balanceAfter = currentBalance.minus(withdrawAmount).toDecimalPlaces(4);
+        const withdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.toDecimalPlaces(4).toString());
+        const negativeWithdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.negated().toDecimalPlaces(4).toString());
+        const currentBalanceDecimal128 = mongoose.Types.Decimal128.fromString(currentBalance.toDecimalPlaces(4).toString());
+        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(4).toString());
 
         const now = new Date();
 

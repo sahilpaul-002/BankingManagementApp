@@ -492,10 +492,13 @@ export const userOnboardingService = async (requestSession: Request["session"], 
             throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
         }
 
-        const userId = requestSession?.userId
-        if (!userId) {
-            throw new UnauthenticatedError("Unauthenticated session detected");
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
         }
+        const userId = new Types.ObjectId(sessionUserId)
 
         // =========================================
         // ADDRESS DETAILS
@@ -519,7 +522,7 @@ export const userOnboardingService = async (requestSession: Request["session"], 
             type: "Delivery"
         }
         const addressDocument = {
-            user_id: new Types.ObjectId(userId),
+            user_id: userId,
             billing_address: billingAddress,
 
             delivery_address: deliveryAddress
@@ -529,7 +532,7 @@ export const userOnboardingService = async (requestSession: Request["session"], 
         // BANK DETAILS
         // =========================================
         const bankDocument = {
-            user_id: new Types.ObjectId(userId),
+            user_id: userId,
             bank_name: validatedData.bank_details.bank_name,
             account_holder_name: validatedData.bank_details.account_holder_name,
             account_number: validatedData.bank_details.account_number,
@@ -539,7 +542,7 @@ export const userOnboardingService = async (requestSession: Request["session"], 
         };
 
         // Perform user onboarding mongodb transactioon
-        const userOnboardingTransactionResult = await userOnboardingTransaction(new Types.ObjectId(userId), addressDocument, bankDocument)
+        const userOnboardingTransactionResult = await userOnboardingTransaction(userId, addressDocument, bankDocument)
 
         if (userOnboardingTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("User onboarding service facing issue - failed to onboard user")
@@ -593,10 +596,13 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
         if (!userEmail || userEmail !== email) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
-        const userId = new Types.ObjectId(requestSession?.userId)
-        if (!userId) {
-            throw new UnauthenticatedError("Unauthenticated session detected");
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
         }
+        const userId = new Types.ObjectId(sessionUserId)
         const userName = requestSession?.userName || "User"
         if (!userName) {
             throw new UnauthenticatedError("Unauthenticated session detected");
@@ -1097,13 +1103,13 @@ export const getUserFundingAccountsBalancesService = async (aesDecryptedQueryDat
         // Get Fiat Account
         if (!accountType || accountType === "FIAT") {
             const fiatFundingAccount = await user_funding_bank_account_details.findOne({
-                        user_id: objectUserId,
-                        is_active: true
-                    })
-                    .select(
-                        "_id user_id cardholder_id account_holder_name account_number account_currency account_balance bank_name swift_code iban_code is_active"
-                    )
-                    .lean();
+                user_id: objectUserId,
+                is_active: true
+            })
+                .select(
+                    "_id user_id cardholder_id account_holder_name account_number account_currency account_balance bank_name swift_code iban_code is_active"
+                )
+                .lean();
             if (!fiatFundingAccount) {
                 throw new NotFoundError(
                     "Active fiat funding account not found"
@@ -1120,14 +1126,14 @@ export const getUserFundingAccountsBalancesService = async (aesDecryptedQueryDat
         // Get Crypto Account
         if (!accountType || accountType === "CRYPTO") {
             const cryptoFundingAccounts = await user_crypto_deposit_account_details
-                    .find({
-                        user_id: objectUserId,
-                        is_active: true
-                    })
-                    .select(
-                        "_id user_id cardholder_id network asset deposit_address account_balance is_active"
-                    )
-                    .lean();
+                .find({
+                    user_id: objectUserId,
+                    is_active: true
+                })
+                .select(
+                    "_id user_id cardholder_id network asset deposit_address account_balance is_active"
+                )
+                .lean();
 
             responseData.crypto = cryptoFundingAccounts.map((account) => ({
                 account_id: account._id,

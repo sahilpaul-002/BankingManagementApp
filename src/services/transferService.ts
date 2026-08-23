@@ -148,13 +148,13 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
             throw new ServiceError("Invalid FX rate received");
         }
         // Calculate gross destination amount
-        const grossDestinationAmount = sourceAmount.mul(exchangeRate).toDecimalPlaces(2);
+        const grossDestinationAmount = sourceAmount.mul(exchangeRate).toDecimalPlaces(4);
         // Calculate payout fee in SOURCE currency
-        const feeAmount = sourceAmount.mul(new Decimal(FEE_DETAILS.p2P_percent.toString())).div(100).toDecimalPlaces(2);
+        const feeAmount = sourceAmount.mul(new Decimal(FEE_DETAILS.p2P_percent.toString())).div(100).toDecimalPlaces(4);
         // Convert fee from SOURCE currency to DESTINATION currency
-        const destinationFeeAmount = feeAmount.mul(exchangeRate).toDecimalPlaces(2);
+        const destinationFeeAmount = feeAmount.mul(exchangeRate).toDecimalPlaces(4);
         // Calculate amount actually received by beneficiary
-        const netDestinationAmount = grossDestinationAmount.minus(destinationFeeAmount).toDecimalPlaces(2);
+        const netDestinationAmount = grossDestinationAmount.minus(destinationFeeAmount).toDecimalPlaces(4);
         // Wallet debit is the original source amount
         const totalDebit = sourceAmount;
 

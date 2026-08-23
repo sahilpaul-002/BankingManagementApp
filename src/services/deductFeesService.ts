@@ -28,7 +28,7 @@ export const deductFeeService = (
 
     const finalAmount = amount
         .minus(feeAmount)
-        .toDecimalPlaces(2);
+        .toDecimalPlaces(4);
 
     return finalAmount;
 };

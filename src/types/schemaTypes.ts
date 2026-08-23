@@ -232,9 +232,9 @@ export interface userWalletTransactionsTypes extends Document {
 
 // Type for User Wallet Currency Conversion Quote Model Schema
 export interface walletCurrencyConversionQuoteSchemaTypes extends Document {
-    user_id: string;
-    cardholder_id: string;
-    wallet_id: string;
+    user_id: Types.ObjectId;
+    cardholder_id: Types.ObjectId;
+    wallet_id: Types.ObjectId;
     source_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
     source_amount: mongoose.Types.Decimal128;
     destination_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";

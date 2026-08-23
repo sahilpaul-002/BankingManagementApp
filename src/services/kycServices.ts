@@ -48,7 +48,13 @@ export const getKycService = async (requestSession: Request["session"], aesDecry
         }
 
         // Get user id from session
-        const userId = new Types.ObjectId(requestSession?.userId)
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
+        }
+        const userId = new Types.ObjectId(sessionUserId)
 
         // Get user kyc details
         const userKycDetailsDoc = await user_kyc_details.findOne({
@@ -178,7 +184,13 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
         }
 
         // Get user id from session
-        const userId = new Types.ObjectId(req.session?.userId)
+        const sessionUserId = req.session?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
+        }
+        const userId = new Types.ObjectId(sessionUserId)
 
         // Check Existing KYC
         const existingKycDoc = await user_kyc_details.findOne({
@@ -308,10 +320,13 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
         if (!userEmail || userEmail !== email) {
             throw new UnauthenticatedError("Unauthenticated session detected");
         }
-        const userId = new Types.ObjectId(requestSession?.userId)
-        if (!userId) {
-            throw new UnauthenticatedError("Unauthenticated session detected");
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
         }
+        const userId = new Types.ObjectId(sessionUserId)
         const userName = requestSession?.userName || "User"
         if (!userName) {
             throw new UnauthenticatedError("Unauthenticated session detected");

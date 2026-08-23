@@ -19,11 +19,11 @@ export const deductPayoutFees = (
     const feeAmount = amount
         .mul(feePercentage)
         .div(100)
-        .toDecimalPlaces(2);
+        .toDecimalPlaces(4);
 
     const amountAfterFee = amount
         .minus(feeAmount)
-        .toDecimalPlaces(2);
+        .toDecimalPlaces(4);
 
     return {
         feeAmount,

@@ -155,7 +155,13 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
             throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
         }
 
-        const userId = new Types.ObjectId(requestSession?.userId);
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
+        }
+        const userId = new Types.ObjectId(sessionUserId)
         // Get verification code and expiry from the user meta details data base
         const verificationDataDoc = await user_meta_details.findOne(
             { user_id: userId as Types.ObjectId }
@@ -196,7 +202,7 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
         }
 
         // Update the email verified status in DB
-        const updatedUserDetails = await user_details.findByIdAndUpdate(userId , { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
+        const updatedUserDetails = await user_details.findByIdAndUpdate(userId, { is_email_verified: "Y", status: "VERIFIED" }, { new: true }).select("_id").lean();
         if (!updatedUserDetails) {
             throw new ServiceError("User email verification status update service is facing issue");
         }
@@ -285,7 +291,13 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
         }
 
         // Get user-id from session
-        const userId = new Types.ObjectId(requestSession?.userId);
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
+        }
+        const userId = new Types.ObjectId(sessionUserId)
 
         // Generate verificaiton code and its expiry time
         const verificationData = await generateVerificationCodeService();
@@ -438,7 +450,13 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
             throw new NotFoundError("User_meta_details collection does not exist in MongoDB");
         }
 
-        const userId = new Types.ObjectId(requestSession?.userId);
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
+        }
+        const userId = new Types.ObjectId(sessionUserId)
         // Get user details
         const userDetailsDoc: userDetailsSchemaTypes | null = await user_details.findOne({ _id: userId as Types.ObjectId }).select("two_fa_type is_2fa_enabled authenticator_secret").lean();
         // Check 2FA type

@@ -140,7 +140,7 @@ const userLoadWalletTransaction = async (
             }
 
             // Find and deduct from the usd funding account
-            const totalSourceAmountDecimal = mongoose.Types.Decimal128.fromString(totalSourceAmount.toDecimalPlaces(2).toString());
+            const totalSourceAmountDecimal = mongoose.Types.Decimal128.fromString(totalSourceAmount.toDecimalPlaces(4).toString());
             const updatedFundingAccount = await user_funding_bank_account_details.findOneAndUpdate(
                 {
                     user_id: userId,
@@ -155,7 +155,7 @@ const userLoadWalletTransaction = async (
                 {
                     $inc: {
                         account_balance: mongoose.Types.Decimal128.fromString(
-                            totalSourceAmount.negated().toDecimalPlaces(2).toString()
+                            totalSourceAmount.negated().toDecimalPlaces(4).toString()
                         )
                     }
                 },
@@ -278,7 +278,7 @@ const userLoadWalletTransaction = async (
             remarks = `Wallet loaded from ${walletCurrency} ${userWalletActionData.data.network} crypto funding account. ` + `Crypto amount: ${sourceAmount}. ` + `Fee: ${feeAmount.toString()} ${walletCurrency}. ` + `Total ${walletCurrency} deducted: ${totalSourceAmount.toString()}.`;
         }
 
-        const loadAmountDecimal128 = mongoose.Types.Decimal128.fromString(loadAmount.toDecimalPlaces(2).toString());
+        const loadAmountDecimal128 = mongoose.Types.Decimal128.fromString(loadAmount.toDecimalPlaces(4).toString());
 
         // Update the wallet balance
         const updateInc: Record<string, mongoose.Types.Decimal128> = {
@@ -380,8 +380,8 @@ const userLoadWalletTransaction = async (
             throw new ServiceError("Invalid wallet balance");
         }
         const balanceAfter = balanceBefore.plus(loadAmount).toDecimalPlaces(18);
-        const balanceBeforeDecimal128 = mongoose.Types.Decimal128.fromString(balanceBefore.toDecimalPlaces(2).toString());
-        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(2).toString());
+        const balanceBeforeDecimal128 = mongoose.Types.Decimal128.fromString(balanceBefore.toDecimalPlaces(4).toString());
+        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(4).toString());
 
         // Transaction payload
         const transactionPayload = {

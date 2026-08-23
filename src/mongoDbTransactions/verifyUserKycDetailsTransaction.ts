@@ -2,7 +2,7 @@ import mongoose, { Types } from "mongoose";
 import { userKycDetailsModel as user_kyc_details } from "../models/user_kyc_details.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import logger from "../utils/logger.js";
-import {AppErrorClass, ServiceError,} from "../utils/AppErrorClass.js";
+import {AppErrorClass, NotFoundError, ServiceError,} from "../utils/AppErrorClass.js";
 import type { JwtPayload } from "jsonwebtoken";
 import crypto from "crypto";
 
@@ -17,6 +17,9 @@ interface userKycVerificationJwtPayloadType extends JwtPayload {
 
 const UserKycVerifyUpdateTransaction = async (decoded: userKycVerificationJwtPayloadType) => {
     // Get user id
+    if (!Types.ObjectId.isValid(decoded?.userId)) {
+        throw new NotFoundError("User id not found")
+    }
     const userId = new Types.ObjectId(decoded?.userId)
 
     const mongoSession = await mongoose.startSession();

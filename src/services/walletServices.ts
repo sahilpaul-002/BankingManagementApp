@@ -65,20 +65,21 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
         if (!cardholderId) {
             throw new InvalidRequestBodyError("User Id not found in request request body")
         }
+        const cardholderObjectId = new Types.ObjectId(cardholderId)
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
                 throw new ForbiddenError("Not authorized to access wallet details")
             }
         }
-        const cardHolderExist = await user_details.exists({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
+        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
         if (!cardHolderExist) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
 
         // Get user wallet details details
         const userWalletDetails = await user_wallet_details.findOne({
-            cardholder_id: new Types.ObjectId(cardholderId)
+            cardholder_id: cardholderObjectId
         });
         if (!userWalletDetails) {
             throw new NotFoundError("User wallet details not found")
@@ -153,15 +154,19 @@ export const createWalletService = async (requestSession: Request["session"], ae
         if (!cardholderId) {
             throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
         }
-        let userId;
+        const cardholderObjectId = new Types.ObjectId(cardholderId)
+        let userId: Types.ObjectId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = new Types.ObjectId(requestSession?.userId);
-            if (!userId) {
-                throw new UnauthenticatedError("Unauthenticated access detected");
+            const sessionUserId = requestSession?.userId;
+            if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+                throw new UnauthenticatedError(
+                    "Unauthorized session detected - invalid user id"
+                );
             }
+            userId = new Types.ObjectId(sessionUserId)
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
@@ -235,7 +240,7 @@ export const createWalletService = async (requestSession: Request["session"], ae
         // First wallet → Create document
         const insertedDocument: userWalletDetailsSchemaTypes = await user_wallet_details.create({
             user_id: userId as Types.ObjectId,
-            cardholder_id: new Types.ObjectId(cardholderId),
+            cardholder_id: cardholderObjectId,
             wallets_details: [
                 newWallet,
             ],
@@ -313,20 +318,25 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         if (!cardholderId) {
             throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
         }
+        const cardholderObjectId = new Types.ObjectId(cardholderId)
         // Check email present in request body
         const walletId: string | null = checkStringBody(walletDetails, "wallet_id")
         if (!walletId) {
             throw new InvalidRequestBodyError("Wallet-id not present in the request body");
         }
-        let userId;
+        const walletObjectId = new Types.ObjectId(walletId)
+        let userId: Types.ObjectId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = new Types.ObjectId(requestSession?.userId);
-            if (!userId) {
-                throw new UnauthenticatedError("Unauthenticated access detected");
+            const sessionUserId = requestSession?.userId;
+            if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+                throw new UnauthenticatedError(
+                    "Unauthorized session detected - invalid user id"
+                );
             }
+            userId = new Types.ObjectId(sessionUserId)
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
@@ -356,7 +366,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         }
 
         // Get wallet details from DB
-        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: new Types.ObjectId(walletId), cardholder_id: new Types.ObjectId(cardholderId) }).lean();
+        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: walletObjectId, cardholder_id: cardholderObjectId }).lean();
 
         // Check user exist in DB
         if (!userWalletDetails) {
@@ -378,7 +388,7 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
         }
 
         // Load wallet transaction
-        const loadWalletTransactionResult = await userLoadWalletTransaction(userId, new Types.ObjectId(cardholderId), new Types.ObjectId(walletId), validationResult, selectedWallet)
+        const loadWalletTransactionResult = await userLoadWalletTransaction(userId, cardholderObjectId, walletObjectId, validationResult, selectedWallet)
 
         if (loadWalletTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("Load wallet service failed to load wallet")
@@ -453,20 +463,25 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         if (!cardholderId) {
             throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
         }
+        const cardholderObjectId = new Types.ObjectId(cardholderId)
         // Check email present in request body
         const walletId: string | null = checkStringBody(walletDetails, "wallet_id")
         if (!walletId) {
             throw new InvalidRequestBodyError("Wallet-id not present in the request body");
         }
-        let userId;
+        const walletObjectId = new Types.ObjectId(walletId)
+        let userId: Types.ObjectId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = new Types.ObjectId(requestSession?.userId);
-            if (!userId) {
-                throw new UnauthenticatedError("Unauthenticated access detected");
+            const sessionUserId = requestSession?.userId;
+            if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+                throw new UnauthenticatedError(
+                    "Unauthorized session detected - invalid user id"
+                );
             }
+            userId = new Types.ObjectId(sessionUserId)
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
@@ -495,7 +510,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         }
 
         // Get wallet details from DB
-        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: new Types.ObjectId(walletId), cardholder_id: new Types.ObjectId(cardholderId) }).lean();
+        const userWalletDetails: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: walletObjectId, cardholder_id: cardholderObjectId }).lean();
 
         // Check user exist in DB
         if (!userWalletDetails) {
@@ -517,7 +532,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         }
 
         // Load wallet transaction
-        const withdrawWalletTransactionResult = await userWithdrawWalletTransaction(userId, new Types.ObjectId(cardholderId), new Types.ObjectId(walletId), validationResult, selectedWallet)
+        const withdrawWalletTransactionResult = await userWithdrawWalletTransaction(userId, cardholderObjectId, walletObjectId, validationResult, selectedWallet)
 
         if (withdrawWalletTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("Widthraw wallet service failed to load wallet")
@@ -580,6 +595,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
         if (!cardholderId) {
             throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
         }
+        const cardholderObjectId = new Types.ObjectId(cardholderId)
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
@@ -590,15 +606,19 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
         if (!walletId) {
             throw new InvalidRequestBodyError("Wallet-id not present in the request body");
         }
-        let userId;
+        const walletObjectId = new Types.ObjectId(walletId)
+        let userId: Types.ObjectId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = new Types.ObjectId(requestSession?.userId);
-            if (!userId) {
-                throw new UnauthenticatedError("Unauthenticated access detected");
+            const sessionUserId = requestSession?.userId;
+            if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+                throw new UnauthenticatedError(
+                    "Unauthorized session detected - invalid user id"
+                );
             }
+            userId = new Types.ObjectId(sessionUserId)
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
@@ -621,7 +641,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
         }
 
         // Verify wallet
-        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: new Types.ObjectId(walletId), cardholder_id: new Types.ObjectId(cardholderId) }).lean();
+        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: walletObjectId, cardholder_id: cardholderObjectId }).lean();
 
         if (!wallet) {
             throw new NotFoundError("Wallet not found");
@@ -662,7 +682,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
 
         // Query filters
         const query = {
-            wallet_id: new Types.ObjectId(walletId),
+            wallet_id: walletObjectId,
             ...(validationResult?.data?.wallet_type && { "wallet_details.wallet_type": validationResult?.data?.wallet_type }),
             ...(validationResult?.data?.wallet_currency && { "wallet_details.wallet_currency": validationResult?.data?.wallet_currency }),
             ...(validationResult?.data?.transaction_type && { transaction_type: validationResult?.data?.transaction_type }),
@@ -778,19 +798,24 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
                 throw new ForbiddenError("Not authorized to create wallet")
             }
         }
+        const cardholderObjectId = new Types.ObjectId(cardholderId)
         const walletId: string | null = checkStringQueryParams(aesDecryptedQueryData, "wallet_id")
         if (!walletId) {
             throw new InvalidRequestBodyError("Wallet-id not present in the request body");
         }
-        let userId;
+        const walletObjectId = new Types.ObjectId(walletId)
+        let userId: Types.ObjectId;
         if (cardholderId === requestSession?.cardholderId) {
-            userId = new Types.ObjectId(requestSession?.userId);
-            if (!userId) {
-                throw new UnauthenticatedError("Unauthenticated access detected");
+            const sessionUserId = requestSession?.userId;
+            if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+                throw new UnauthenticatedError(
+                    "Unauthorized session detected - invalid user id"
+                );
             }
+            userId = new Types.ObjectId(sessionUserId)
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: new Types.ObjectId(cardholderId), business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
@@ -798,15 +823,18 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
         }
 
         // Verify wallet
-        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: new Types.ObjectId(walletId), cardholder_id: new Types.ObjectId(cardholderId) }).lean();
+        const wallet: userWalletDetailsSchemaTypes | null = await user_wallet_details.findOne({ _id: walletObjectId, cardholder_id: cardholderObjectId }).lean();
 
         if (!wallet) {
             throw new NotFoundError("Wallet not found");
         }
 
+        if (!Types.ObjectId.isValid(transactionId)) {
+            throw new InvalidRequestParamsError("Transaction not present in the params")
+        }
         // Get Wallet Transaction Details
         const transaction = await user_wallet_transactions.findOne({
-            wallet_id: new Types.ObjectId(walletId),
+            wallet_id: walletObjectId,
             transaction_id: new Types.ObjectId(transactionId),
         }).select("transaction_id transaction_type transaction_status wallet_details amount balance_after createdAt").lean();
 
@@ -847,92 +875,44 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
             throw new BadRequestError("Invalid body data");
         }
 
-
-        // --------------------------------------------------
         // Check collection
-        // --------------------------------------------------
-
-        const isCollectionPresent =
-            await checkMongoDbCollectionExist(
-                "wallet_currency_conversion_quotess"
-            );
+        const isCollectionPresent = await checkMongoDbCollectionExist("wallet_currency_conversion_quotess");
 
         if (isCollectionPresent.status !== "SUCCESS") {
-            throw new NotFoundError(
-                "Currency conversion quotes collection does not exist in MongoDB"
-            );
+            throw new NotFoundError("Currency conversion quotes collection does not exist in MongoDB");
         }
 
-
-        // --------------------------------------------------
         // Validate email
-        // --------------------------------------------------
-
-        const email = checkStringQueryParams(
-            aesDecryptedQueryData,
-            "email"
-        );
-
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
         if (!email) {
-            throw new InvalidRequestBodyError(
-                "Email not found in request query"
-            );
+            throw new InvalidRequestBodyError("Email not found in request query");
         }
-
         if (email !== requestSession?.userEmail) {
             throw new UnauthorizedError(
                 "Unauthorized access detected - invalid email"
             );
         }
 
-
-        // --------------------------------------------------
         // Validate user type
-        // --------------------------------------------------
-
-        if (
-            requestSession?.userType !== "ADMIN" &&
-            requestSession?.userType !== "MASTER_ADMIN"
-        ) {
-            throw new ForbiddenError(
-                "Not authorized to create currency conversion quote"
-            );
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+            throw new ForbiddenError("Not authorized to create currency conversion quote");
         }
 
-
-        // --------------------------------------------------
         // Validate configuration
-        // --------------------------------------------------
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
+        const sessionProgramId = requestSession?.userConfiguration?.programId;
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
 
-        const sessionBusinessId =
-            requestSession?.userConfiguration?.businessId;
-
-        const sessionProgramId =
-            requestSession?.userConfiguration?.programId;
-
-        const sessionAgentCode =
-            requestSession?.userConfiguration?.agentCode;
-
-        const sessionSubAgentCode =
-            requestSession?.userConfiguration?.subAgentCode;
-
-
-        if (
-            userConfiguration?.businessId !== sessionBusinessId ||
+        if (userConfiguration?.businessId !== sessionBusinessId ||
             userConfiguration?.programId !== sessionProgramId ||
             userConfiguration?.agentCode !== sessionAgentCode ||
             userConfiguration?.subAgentCode !== sessionSubAgentCode
         ) {
-            throw new ForbiddenError(
-                "User configuration is not valid to create currency conversion quote"
-            );
+            throw new ForbiddenError("User configuration is not valid to create currency conversion quote");
         }
 
-
-        // --------------------------------------------------
         // Validate request body
-        // --------------------------------------------------
-
         const validationResult = walletCurrencyConversionValidationSchema.safeParse(aesDecryptedBodyData);
         if (!validationResult.success) {
             throw new ServiceError(
@@ -940,308 +920,167 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
                 z.flattenError(validationResult.error)
             );
         }
-
         const validatedData = validationResult.data;
 
-
-        // --------------------------------------------------
         // Get user ID
-        // --------------------------------------------------
-
-        const userId = requestSession?.userId;
-
-        if (!userId) {
-            throw new UnauthorizedError(
-                "Unauthorized session detected - user id not found in session"
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
             );
         }
+        const userId = new Types.ObjectId(sessionUserId)
 
+        // Get cardholder objectId
+        const cardholderId = validatedData.cardholder_id
+        if (!Types.ObjectId.isValid(cardholderId)) {
+            throw new BadRequestError("Invalid cardholder ID");
+        }
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
 
-        // --------------------------------------------------
         // Get wallet details
-        // --------------------------------------------------
-
-        const userWalletDetails =
-            await user_wallet_details.findOne(
-                {
-                    user_id: userId,
-                    cardholder_id: validatedData.cardholder_id,
-                },
-                {
-                    wallet_id: 1,
-                    cardholder_id: 1,
-                    wallets_details: 1,
-                }
-            ).lean();
-
-
+        const userWalletDetails = await user_wallet_details.findOne(
+            {
+                user_id: userId,
+                cardholder_id: cardholderObjectId,
+            },
+            {
+                cardholder_id: 1,
+                wallets_details: 1,
+            }
+        ).lean();
         if (!userWalletDetails) {
-            throw new NotFoundError(
-                "User wallet details not found"
-            );
+            throw new NotFoundError("User wallet details not found");
         }
 
-
-        // --------------------------------------------------
         // Find source wallet
-        // --------------------------------------------------
         const sourceWallet = userWalletDetails.wallets_details.find(
             (wallet) =>
                 wallet.wallet_currency ===
                 validatedData.source_wallet_currency &&
                 wallet.wallet_status === "ACTIVE"
         );
-
-
         if (!sourceWallet) {
-            throw new NotFoundError(
-                `Active ${validatedData.source_wallet_currency} wallet not found`
-            );
+            throw new NotFoundError(`Active ${validatedData.source_wallet_currency} wallet not found`);
         }
 
-
-        // --------------------------------------------------
         // Find destination wallet
-        // --------------------------------------------------
-
-        const destinationWallet =
-            userWalletDetails.wallets_details.find(
-                (wallet) =>
-                    wallet.wallet_currency ===
-                    validatedData.destination_wallet_currency &&
-                    wallet.wallet_status === "ACTIVE"
-            );
-
-
+        const destinationWallet = userWalletDetails.wallets_details.find(
+            (wallet) =>
+                wallet.wallet_currency ===
+                validatedData.destination_wallet_currency &&
+                wallet.wallet_status === "ACTIVE"
+        );
         if (!destinationWallet) {
-            throw new NotFoundError(
-                `Active ${validatedData.destination_wallet_currency} wallet not found`
-            );
+            throw new NotFoundError(`Active ${validatedData.destination_wallet_currency} wallet not found`);
         }
 
-
-        // --------------------------------------------------
         // Check source wallet balance
-        // --------------------------------------------------
-
-        const accountBalance = new Decimal(
-            sourceWallet.account_balance?.toString() ?? "0"
-        );
-
-        const holdingAmount = new Decimal(
-            sourceWallet.holding_amount?.toString() ?? "0"
-        );
-
-        const availableBalance =
-            accountBalance.minus(holdingAmount);
-
-
-        const sourceAmount =
-            new Decimal(validatedData.amount.toString());
-
+        const accountBalance = new Decimal(sourceWallet.account_balance?.toString() ?? "0");
+        const holdingAmount = new Decimal(sourceWallet.holding_amount?.toString() ?? "0");
+        const availableBalance = accountBalance.minus(holdingAmount);
+        const sourceAmount = new Decimal(validatedData.amount.toString());
+        if (availableBalance.lessThan(sourceAmount)) {
+            throw new BadRequestError("Insufficient wallet balance");
+        }
 
         if (availableBalance.lessThan(sourceAmount)) {
-            throw new BadRequestError(
-                "Insufficient wallet balance"
-            );
+            throw new BadRequestError("Insufficient wallet balance");
         }
 
-
-        // --------------------------------------------------
         // Get FX rate
-        // --------------------------------------------------
-
         const fxRateDetails = await getWalletFxRate(
             validatedData.source_wallet_currency,
             validatedData.destination_wallet_currency
         );
-
-
-        const exchangeRate = new Decimal(
-            fxRateDetails.exchange_rate.toString()
-        );
-
+        const exchangeRate = new Decimal(fxRateDetails.exchange_rate.toString());
 
         if (exchangeRate.lessThanOrEqualTo(0)) {
-            throw new ServiceError(
-                "Invalid FX rate received"
-            );
+            throw new ServiceError("Invalid FX rate received");
         }
 
-
-        // --------------------------------------------------
         // Calculate gross destination amount
-        // --------------------------------------------------
+        const grossDestinationAmount = sourceAmount.mul(exchangeRate).toDecimalPlaces(4);
 
-        const grossDestinationAmount =
-            sourceAmount
-                .mul(exchangeRate)
-                .toDecimalPlaces(2);
-
-
-        // --------------------------------------------------
         // Calculate conversion fee
-        // --------------------------------------------------
-
         const feePercentage = new Decimal(
             FEE_DETAILS.currency_conversion.toString()
         );
 
+        const feeAmount = sourceAmount.mul(feePercentage).div(100).toDecimalPlaces(4);
 
-        const feeAmount = sourceAmount
-            .mul(feePercentage)
-            .div(100)
-            .toDecimalPlaces(2);
-
-
-        // --------------------------------------------------
         // Calculate amount after fee
-        // --------------------------------------------------
+        const sourceAmountAfterFee = sourceAmount.minus(feeAmount).toDecimalPlaces(4);
 
-        const sourceAmountAfterFee =
-            sourceAmount
-                .minus(feeAmount)
-                .toDecimalPlaces(2);
-
-
-        // --------------------------------------------------
         // Calculate destination amount
-        // --------------------------------------------------
+        const destinationAmount = sourceAmountAfterFee.mul(exchangeRate).toDecimalPlaces(4);
 
-        const destinationAmount =
-            sourceAmountAfterFee
-                .mul(exchangeRate)
-                .toDecimalPlaces(2);
-
-
-        // --------------------------------------------------
         // Quote expiry
-        // --------------------------------------------------
-
         const expiresAt = new Date(
             Date.now() + 2 * 60 * 1000
         );
 
-
-        // --------------------------------------------------
         // Create quote
-        // --------------------------------------------------
         const conversionQuote = await wallet_currency_conversion_quotes.create({
-
             user_id: userId,
-
-            cardholder_id:
-                validatedData.cardholder_id,
-
-            wallet_id:
-                userWalletDetails.wallet_id,
-
+            cardholder_id: cardholderObjectId,
+            wallet_id: userWalletDetails._id,
             source_currency: validatedData.source_wallet_currency,
-
-            source_amount:
-                sourceAmount.toFixed(2),
-
+            source_amount: mongoose.Types.Decimal128.fromString(sourceAmount.toFixed(2)),
             destination_currency: validatedData.destination_wallet_currency,
-
-            destination_amount:
-                destinationAmount.toFixed(2),
-
-            exchange_rate:
-                exchangeRate.toFixed(8),
-
-            fee_percentage:
-                feePercentage.toFixed(2),
-
-            fee_amount:
-                feeAmount.toFixed(2),
-
+            destination_amount: mongoose.Types.Decimal128.fromString(destinationAmount.toFixed(2)),
+            exchange_rate: mongoose.Types.Decimal128.fromString(exchangeRate.toFixed(8)),
+            fee_percentage: mongoose.Types.Decimal128.fromString(feePercentage.toFixed(2)),
+            fee_amount: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(2)),
             quote_status: "ACTIVE",
-
             expires_at: expiresAt,
         });
 
-
-        // --------------------------------------------------
-        // Response
-        // --------------------------------------------------
-
         return {
-
             status: "SUCCESS",
-
             data: {
-
-                quote_id:
-                    conversionQuote._id.toString(),
-
+                quote_id: conversionQuote._id.toString(),
                 source: {
-                    currency:
-                        validatedData.source_wallet_currency,
-
-                    amount:
-                        sourceAmount.toFixed(2),
+                    currency: validatedData.source_wallet_currency,
+                    amount: sourceAmount.toFixed(2),
                 },
 
                 destination: {
-                    currency:
-                        validatedData.destination_wallet_currency,
-
-                    amount:
-                        destinationAmount.toFixed(2),
+                    currency: validatedData.destination_wallet_currency,
+                    amount: destinationAmount.toFixed(2),
                 },
-
-                exchange_rate:
-                    exchangeRate.toFixed(8),
-
+                exchange_rate: exchangeRate.toFixed(8),
                 fee: {
-                    currency:
-                        validatedData.source_wallet_currency,
-
-                    percentage:
-                        feePercentage.toFixed(2),
-
-                    amount:
-                        feeAmount.toFixed(2),
+                    currency: validatedData.source_wallet_currency,
+                    percentage: feePercentage.toFixed(2),
+                    amount: feeAmount.toFixed(2),
                 },
 
                 total_debit: {
-                    currency:
-                        validatedData.source_wallet_currency,
-
-                    amount:
-                        sourceAmount.toFixed(2),
+                    currency: validatedData.source_wallet_currency,
+                    amount: sourceAmount.toFixed(2),
                 },
 
-                quote_status:
-                    conversionQuote.quote_status,
-
-                expires_at:
-                    conversionQuote.expires_at,
+                quote_status: conversionQuote.quote_status,
+                expires_at: conversionQuote.expires_at,
             },
-
-            message:
-                "Currency conversion quote created successfully",
+            message: "Currency conversion quote created successfully",
         };
 
     }
     catch (err) {
-
         const error = err as any;
 
-        const errorStatus =
-            error?.status || "UnknownErrorStatus";
-
+        const errorStatus = error?.status || "UnknownErrorStatus";
 
         logger.error(error, {
             serviceName:
                 "CreateWalletCurrencyConversionQuoteService"
         });
 
-
         if (error instanceof AppErrorClass) {
             throw error;
         }
-
 
         throw new ServiceError(
             `CreateWalletCurrencyConversionQuoteService facing issue: [${errorStatus}] ${error.message}`,
@@ -1283,7 +1122,7 @@ export const executeWalletCurrencyConversionQuoteService = async (
 
         const isCollectionPresent =
             await checkMongoDbCollectionExist(
-                "wallet_currency_conversion_quotess"
+                "wallet_currency_conversion_quotes"
             );
 
         if (isCollectionPresent.status !== "SUCCESS") {

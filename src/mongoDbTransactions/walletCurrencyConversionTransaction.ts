@@ -311,13 +311,13 @@ const executeWalletCurrencyConversionTransaction = async ({
         const newSourceBalance =
             sourceBalance
                 .minus(sourceAmount)
-                .toDecimalPlaces(2);
+                .toDecimalPlaces(4);
 
 
         const newDestinationBalance =
             destinationBalance
                 .plus(destinationAmount)
-                .toDecimalPlaces(2);
+                .toDecimalPlaces(4);
 
 
         // --------------------------------------------------
@@ -633,7 +633,7 @@ const executeWalletCurrencyConversionTransaction = async ({
                 amount_after_fee:
                     sourceAmount
                         .minus(feeAmount)
-                        .toDecimalPlaces(2)
+                        .toDecimalPlaces(4)
                         .toFixed(2),
 
                 exchange_rate:

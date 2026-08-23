@@ -31,6 +31,9 @@ const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
     try {
         mongoSession.startTransaction();
 
+        if (!Types.ObjectId.isValid(decoded.userId)) {
+            throw new NotFoundError("User id not found")
+        }
         const userId = new Types.ObjectId(decoded.userId)
 
         // Verify request id
