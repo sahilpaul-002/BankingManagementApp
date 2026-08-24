@@ -7,6 +7,7 @@ import dotenv from "dotenv";
 import { startBankPayoutProcessingCronJob } from "../services/cronJobs/bankPayoutProcessingService.js";
 import { startPayoutQuoteExpiryCronJob } from "../services/cronJobs/payoutQuoteExpiryService.js";
 import { startCardExpiredAuthorizationTransactionCronJob } from "../services/cronJobs/cardExpiredAuthorizationTransactionService.js";
+import { startWalletCurrencyConversionQuoteExpiryCronJob } from "../services/cronJobs/walletCurrencyConversionQuoteExpiryService.js";
 
 // --------------------------------------- Load Environment Variable --------------------------------------- \\
 dotenv.config();
@@ -32,6 +33,7 @@ async function startServer(): Promise<void> {
     startBankPayoutProcessingCronJob();
     startPayoutQuoteExpiryCronJob();
     startCardExpiredAuthorizationTransactionCronJob()
+    startWalletCurrencyConversionQuoteExpiryCronJob()
     // Start the expired wallet Currency conversion cron job
 }
 
