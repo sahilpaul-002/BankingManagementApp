@@ -24,17 +24,16 @@ async function startServer(): Promise<void> {
         app.listen(PORT, () => {
             console.log(`🟢 Server is running on ${DOMAIN}:${PORT}`);
         });
+
+        // Start the cron jobs after the server has started
+        startBankPayoutProcessingCronJob();
+        startPayoutQuoteExpiryCronJob();
+        startCardExpiredAuthorizationTransactionCronJob()
+        startWalletCurrencyConversionQuoteExpiryCronJob()
     } catch (error) {
         console.error("❌ Server failed to start:", error);
         process.exit(1);
     }
-
-    // Start the cron jobs after the server has started
-    startBankPayoutProcessingCronJob();
-    startPayoutQuoteExpiryCronJob();
-    startCardExpiredAuthorizationTransactionCronJob()
-    startWalletCurrencyConversionQuoteExpiryCronJob()
-    // Start the expired wallet Currency conversion cron job
 }
 
 startServer();
