@@ -78,6 +78,16 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
 
+        // Validation optional query params
+        const walletType = checkStringQueryParams(aesDecryptedQueryData, "type");
+        const walletCurrency = checkStringQueryParams(aesDecryptedQueryData, "currency");
+        if (walletType && walletType !== "FIAT" && walletType !== "CRYPTO") {
+            throw new InvalidRequestBodyError("Invalid wallet type. Allowed values are FIAT or CRYPTO");
+        }
+        if (walletCurrency && !["USD", "EUR", "SGD", "USDC", "USDT"].includes(walletCurrency)) {
+            throw new InvalidRequestBodyError("Invalid wallet currency");
+        }
+
         // Get user wallet details details
         const userWalletDetails = await user_wallet_details.findOne({
             cardholder_id: cardholderObjectId
@@ -86,9 +96,22 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
             throw new NotFoundError("User wallet details not found")
         }
 
+        // Fillter wallets based on query params
+        let walletsDetails = userWalletDetails.wallets_details;
+        if (walletType || walletCurrency) {
+            walletsDetails = walletsDetails.filter((wallet) => {
+                const typeMatches = !walletType || wallet.wallet_type === walletType;
+                const currencyMatches = !walletCurrency || wallet.wallet_currency === walletCurrency;
+                return typeMatches && currencyMatches;
+            });
+        }
+        if (walletsDetails.length === 0) {
+            throw new NotFoundError("No wallet found matching the specified wallet filters");
+        }
+
         const walletDetails = {
             walletId: userWalletDetails?._id,
-            wallets_details: userWalletDetails?.wallets_details
+            wallets_details: walletsDetails
         }
 
         return { status: "SUCCESS", data: walletDetails || {}, message: "User wallet details fetched" }
@@ -210,6 +233,7 @@ export const createWalletService = async (requestSession: Request["session"], ae
         const newWallet: walletDetailsType = {
             wallet_status: "ACTIVE",
             account_balance: mongoose.Types.Decimal128.fromString("0"),
+            available_balance: mongoose.Types.Decimal128.fromString("0"),
             holding_amount: mongoose.Types.Decimal128.fromString("0"),
             wallet_type: validationResult.data.wallet_type,
             wallet_currency: validationResult.data.wallet_currency,
@@ -536,7 +560,7 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
         const withdrawWalletTransactionResult = await userWithdrawWalletTransaction(userId, cardholderObjectId, walletObjectId, validationResult, selectedWallet)
 
         if (withdrawWalletTransactionResult?.status !== "SUCCESS") {
-            throw new ServiceError("Widthraw wallet service failed to load wallet")
+            throw new ServiceError("Widthraw wallet service failed to withdraw wallet")
         }
 
         return { status: "SUCCESS", message: "Wallet withdrawed successfully", data: withdrawWalletTransactionResult?.data }
@@ -1169,11 +1193,11 @@ export const executeWalletCurrencyConversionQuoteService = async (requestSession
 
         // Execute MongoDB transaction
         const transactionResult = await executeWalletCurrencyConversionTransaction({
-                conversionQuote,
-                userId,
-                cardholderId: cardholderObjectId,
-                walletId: conversionQuote.wallet_id,
-            });
+            conversionQuote,
+            userId,
+            cardholderId: cardholderObjectId,
+            walletId: conversionQuote.wallet_id,
+        });
 
         return {
             status: "SUCCESS",

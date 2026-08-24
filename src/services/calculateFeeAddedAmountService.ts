@@ -20,5 +20,5 @@ export const calculateFeeAddedAmountService = (
     return amount
         .mul(feePercentage)
         .div(100)
-        .toDecimalPlaces(18);
+        .toDecimalPlaces(4);
 };

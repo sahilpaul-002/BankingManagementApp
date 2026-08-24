@@ -24,27 +24,54 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
             throw new BadRequestError("Withdrawal amount must be greater than zero");
         }
 
+        // Get Account Balance
         const currentBalance = new Decimal(selectedWallet.account_balance?.toString() ?? "0");
+        const currentAvailableBalance = new Decimal(selectedWallet.available_balance?.toString() ?? "0");
+        const currentHoldingAmount = new Decimal(selectedWallet.holding_amount?.toString() ?? "0");
+        // Validate account balance
         if (!currentBalance.isFinite() || currentBalance.lt(0)) {
-            throw new ServiceError("Invalid wallet balance");
+            throw new ServiceError("Invalid wallet account balance");
         }
-
-        // Check balance
-        if (withdrawAmount.gt(currentBalance)) {
-            throw new BadRequestError("Insufficient wallet balance");
+        // Validate available balance
+        if (!currentAvailableBalance.isFinite() || currentAvailableBalance.lt(0)) {
+            throw new ServiceError("Invalid wallet available balance");
         }
-
+        // Validate holding amount
+        if (!currentHoldingAmount.isFinite() || currentHoldingAmount.lt(0)) {
+            throw new ServiceError("Invalid wallet holding amount");
+        }
+        // Validate wallet balance relationship
+        if (!currentAvailableBalance.plus(currentHoldingAmount).toDecimalPlaces(4).equals(currentBalance.toDecimalPlaces(4))) {
+            throw new ServiceError("Invalid wallet balance: available balance + holding amount does not equal account balance");
+        }
+        // Withdrawal must be possible from AVAILABLE balance
+        if (withdrawAmount.gt(currentAvailableBalance)) {
+            throw new BadRequestError("Insufficient available wallet balance");
+        }
+        // Calculate balances after withdrawal
         const balanceAfter = currentBalance.minus(withdrawAmount).toDecimalPlaces(4);
+        const availableBalanceAfter = currentAvailableBalance.minus(withdrawAmount).toDecimalPlaces(4);
+        // Holding amount does not change
+        const holdingAmountAfter = currentHoldingAmount.toDecimalPlaces(4);
+        // Validate balance relationship after withdrawal
+        if (availableBalanceAfter.plus(holdingAmountAfter).toDecimalPlaces(4).equals(balanceAfter.toDecimalPlaces(4)) === false) {
+            throw new ServiceError("Invalid wallet balance after withdrawal");
+        }
         const withdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.toDecimalPlaces(4).toString());
         const negativeWithdrawAmountDecimal128 = mongoose.Types.Decimal128.fromString(withdrawAmount.negated().toDecimalPlaces(4).toString());
         const currentBalanceDecimal128 = mongoose.Types.Decimal128.fromString(currentBalance.toDecimalPlaces(4).toString());
         const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(4).toString());
+        const currentAvailableBalanceDecimal128 = mongoose.Types.Decimal128.fromString(currentAvailableBalance.toDecimalPlaces(4).toString());
+        const availableBalanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(availableBalanceAfter.toDecimalPlaces(4).toString());
 
         const now = new Date();
 
         // Configure updated wallet balance and dates
         const updateInc: Record<string, mongoose.Types.Decimal128> = {
             "wallets_details.$.account_balance":
+                negativeWithdrawAmountDecimal128,
+
+            "wallets_details.$.available_balance":
                 negativeWithdrawAmountDecimal128
         };
 
@@ -114,20 +141,20 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
 
                 wallets_details: {
                     $elemMatch: {
-                        wallet_type:
-                            userWalletActionData.data.wallet_type,
+                        wallet_type: userWalletActionData.data.wallet_type,
+                        wallet_currency: userWalletActionData.data.wallet_currency,
 
-                        wallet_currency:
-                            userWalletActionData.data.wallet_currency
+                        // Optimistic concurrency check
+                        account_balance: selectedWallet.account_balance,
+                        available_balance: selectedWallet.available_balance,
+                        holding_amount: selectedWallet.holding_amount
                     }
                 }
             },
-
             {
                 $inc: updateInc,
                 $set: updateSet
             },
-
             {
                 new: true,
                 session: mongoSession
@@ -203,7 +230,10 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
                 wallets_details: updatedWallet.wallets_details,
                 amount: withdrawAmount.toString(),
                 balance_before: currentBalance.toString(),
-                balance_after: balanceAfter.toString()
+                balance_after: balanceAfter.toString(),
+                available_balance_before: currentAvailableBalance.toString(),
+                available_balance_after: availableBalanceAfter.toString(),
+                holding_amount: holdingAmountAfter.toString()
             }
         };
 

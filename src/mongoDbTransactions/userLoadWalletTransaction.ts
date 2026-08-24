@@ -123,7 +123,7 @@ const userLoadWalletTransaction = async (
                     "Invalid source amount calculated from FX rate"
                 );
             }
-            sourceAmount = sourceAmountDecimal.toDecimalPlaces(18);
+            sourceAmount = sourceAmountDecimal.toDecimalPlaces(4);
 
             // Calculate fee on the source amount
             feeAmount = calculateFeeAddedAmountService(
@@ -230,40 +230,39 @@ const userLoadWalletTransaction = async (
             }
 
             // Convert total deduction to Mongo Decimal128
-            const totalSourceAmountDecimal = mongoose.Types.Decimal128.fromString(totalSourceAmount.toDecimalPlaces(18).toString());
+            const totalSourceAmountDecimal = mongoose.Types.Decimal128.fromString(totalSourceAmount.toDecimalPlaces(4).toString());
 
             // Deduct from user's crypto funding account
-            const updatedCryptoFundingAccount =
-                await user_crypto_deposit_account_details.findOneAndUpdate(
-                    {
-                        user_id: userId,
-                        cardholder_id: cardholderId,
-                        network: userWalletActionData.data.network as "ETHEREUM" | "POLYGON",
-                        asset: walletCurrency as "USDT" | "USDC",
-                        is_active: true,
+            const updatedCryptoFundingAccount = await user_crypto_deposit_account_details.findOneAndUpdate(
+                {
+                    user_id: userId,
+                    cardholder_id: cardholderId,
+                    network: userWalletActionData.data.network as "ETHEREUM" | "POLYGON",
+                    asset: walletCurrency as "USDT" | "USDC",
+                    is_active: true,
 
-                        // Make sure the account has enough
-                        // balance for amount + fee
-                        account_balance: {
-                            $gte: totalSourceAmountDecimal
-                        }
-                    },
-                    {
-                        $inc: {
-                            account_balance:
-                                mongoose.Types.Decimal128.fromString(
-                                    totalSourceAmount
-                                        .negated()
-                                        .toDecimalPlaces(18)
-                                        .toString()
-                                )
-                        }
-                    },
-                    {
-                        new: true,
-                        session: mongoSession
+                    // Make sure the account has enough
+                    // balance for amount + fee
+                    account_balance: {
+                        $gte: totalSourceAmountDecimal
                     }
-                ).lean();
+                },
+                {
+                    $inc: {
+                        account_balance:
+                            mongoose.Types.Decimal128.fromString(
+                                totalSourceAmount
+                                    .negated()
+                                    .toDecimalPlaces(4)
+                                    .toString()
+                            )
+                    }
+                },
+                {
+                    new: true,
+                    session: mongoSession
+                }
+            ).lean();
 
             if (!updatedCryptoFundingAccount) {
                 throw new ServiceError(
@@ -282,7 +281,8 @@ const userLoadWalletTransaction = async (
 
         // Update the wallet balance
         const updateInc: Record<string, mongoose.Types.Decimal128> = {
-            "wallets_details.$.account_balance": loadAmountDecimal128
+            "wallets_details.$.account_balance": loadAmountDecimal128,
+            "wallets_details.$.available_balance": loadAmountDecimal128,
         };
 
         const updateSet: Record<string, any> = {};
@@ -353,7 +353,12 @@ const userLoadWalletTransaction = async (
                 wallets_details: {
                     $elemMatch: {
                         wallet_type: walletType,
-                        wallet_currency: walletCurrency
+                        wallet_currency: walletCurrency,
+
+                        // Optimistic concurrency check
+                        account_balance: selectedWallet.account_balance,
+                        available_balance: selectedWallet.available_balance,
+                        holding_amount: selectedWallet.holding_amount,
                     }
                 }
             },
@@ -366,8 +371,6 @@ const userLoadWalletTransaction = async (
                 session: mongoSession
             }
         ).lean();
-
-
         if (!updatedWallet) {
             throw new ServiceError(
                 "Wallet update failed"
@@ -376,10 +379,28 @@ const userLoadWalletTransaction = async (
 
         // Calculate wallet balance
         const balanceBefore = new Decimal(selectedWallet.account_balance?.toString() ?? "0");
+        const availableBalanceBefore = new Decimal(selectedWallet.available_balance?.toString() ?? "0");
+        const holdingAmountBefore = new Decimal(selectedWallet.holding_amount?.toString() ?? "0");
         if (!balanceBefore.isFinite() || balanceBefore.lt(0)) {
-            throw new ServiceError("Invalid wallet balance");
+            throw new ServiceError("Invalid wallet account balance");
         }
-        const balanceAfter = balanceBefore.plus(loadAmount).toDecimalPlaces(18);
+        if (!availableBalanceBefore.isFinite() || availableBalanceBefore.lt(0)) {
+            throw new ServiceError("Invalid wallet available balance");
+        }
+        if (!holdingAmountBefore.isFinite() || holdingAmountBefore.lt(0)) {
+            throw new ServiceError("Invalid wallet holding amount");
+        }
+        // Validate wallet balance relationship
+        if (!availableBalanceBefore.plus(holdingAmountBefore).toDecimalPlaces(4).equals(balanceBefore.toDecimalPlaces(4))) {
+            throw new ServiceError(`Invalid ${walletCurrency} wallet balance`);
+        }
+        const balanceAfter = balanceBefore.plus(loadAmount).toDecimalPlaces(4);
+        const availableBalanceAfter = availableBalanceBefore.plus(loadAmount).toDecimalPlaces(4);
+        const holdingAmountAfter = holdingAmountBefore.toDecimalPlaces(4);
+        // Validate the balance relationship after the load
+        if (!availableBalanceAfter.plus(holdingAmountAfter).toDecimalPlaces(4).equals(balanceAfter.toDecimalPlaces(4))) {
+            throw new ServiceError(`Invalid ${walletCurrency} wallet balance after load`);
+        }
         const balanceBeforeDecimal128 = mongoose.Types.Decimal128.fromString(balanceBefore.toDecimalPlaces(4).toString());
         const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(4).toString());
 

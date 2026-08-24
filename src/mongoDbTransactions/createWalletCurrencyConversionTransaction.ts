@@ -122,7 +122,7 @@ const createWalletCurrencyConversionTransaction = async ({
         if (sourceAvailableBalance.lessThan(sourceAmount)) {
             throw new ServiceError(`Insufficient available ${sourceCurrency} wallet balance`);
         }
-        if (!sourceAvailableBalance.plus(sourceHoldingAmount).toDecimalPlaces(2).equals(sourceAccountBalance.toDecimalPlaces(2))) {
+        if (!sourceAvailableBalance.plus(sourceHoldingAmount).toDecimalPlaces(4).equals(sourceAccountBalance.toDecimalPlaces(4))) {
             throw new ServiceError(`Invalid ${sourceCurrency} wallet balance`);
         }
 
@@ -133,8 +133,8 @@ const createWalletCurrencyConversionTransaction = async ({
         //
         // Only the amount is reserved.
         // --------------------------------------------------
-        const newAvailableBalance = sourceAvailableBalance.minus(sourceAmount).toDecimalPlaces(2);
-        const newHoldingAmount = sourceHoldingAmount.plus(sourceAmount).toDecimalPlaces(2);
+        const newAvailableBalance = sourceAvailableBalance.minus(sourceAmount).toDecimalPlaces(4);
+        const newHoldingAmount = sourceHoldingAmount.plus(sourceAmount).toDecimalPlaces(4);
 
         // Update source wallet holding balance
         const holdingUpdateResult = await user_wallet_details.updateOne(

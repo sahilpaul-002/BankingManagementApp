@@ -118,7 +118,7 @@ const executeWalletCurrencyConversionTransaction = async ({
         const sourceBalance = new Decimal(latestSourceWallet.account_balance?.toString() ?? "0");
         const sourceAvailableBalance = new Decimal(latestSourceWallet.available_balance?.toString() ?? "0");
         const sourceHoldingAmount = new Decimal(latestSourceWallet.holding_amount?.toString() ?? "0");
-        if (!sourceAvailableBalance.plus(sourceHoldingAmount).toDecimalPlaces(2).equals(sourceBalance.toDecimalPlaces(2))) {
+        if (!sourceAvailableBalance.plus(sourceHoldingAmount).toDecimalPlaces(4).equals(sourceBalance.toDecimalPlaces(4))) {
             throw new ServiceError(`Invalid ${sourceCurrency} wallet balance`);
         }
         if (sourceHoldingAmount.lessThan(sourceAmount)) {
@@ -126,16 +126,16 @@ const executeWalletCurrencyConversionTransaction = async ({
         }
 
         // Calculate new balances
-        const newSourceBalance = sourceBalance.minus(sourceAmount).toDecimalPlaces(2);
-        const newSourceAvailableBalance = sourceAvailableBalance.toDecimalPlaces(2);
-        const newSourceHoldingAmount = sourceHoldingAmount.minus(sourceAmount).toDecimalPlaces(2);
+        const newSourceBalance = sourceBalance.minus(sourceAmount).toDecimalPlaces(4);
+        const newSourceAvailableBalance = sourceAvailableBalance.toDecimalPlaces(4);
+        const newSourceHoldingAmount = sourceHoldingAmount.minus(sourceAmount).toDecimalPlaces(4);
 
         // Get destination balance
         const destinationBalance = new Decimal(latestDestinationWallet.account_balance?.toString() ?? "0");
         const destinationAvailableBalance = new Decimal(latestDestinationWallet.available_balance?.toString() ?? "0");
         const destinationHoldingAmount = new Decimal(latestDestinationWallet.holding_amount?.toString() ?? "0");
-        const newDestinationBalance = destinationBalance.plus(destinationAmount).toDecimalPlaces(2);
-        const newDestinationAvailableBalance = destinationAvailableBalance.plus(destinationAmount).toDecimalPlaces(2);
+        const newDestinationBalance = destinationBalance.plus(destinationAmount).toDecimalPlaces(4);
+        const newDestinationAvailableBalance = destinationAvailableBalance.plus(destinationAmount).toDecimalPlaces(4);
 
         // Create convertion reference id
         const conversionReferenceId = crypto.randomUUID();
