@@ -4,6 +4,7 @@ import { AppErrorClass, ServiceError, NotFoundError } from "../utils/AppErrorCla
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
 import { userCardTransactionsModel as user_card_transactions } from "../models/user_card_transaction_details.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 const cardTransactionSettlementTransaction = async (
     decoded: {
@@ -175,11 +176,13 @@ const cardTransactionSettlementTransaction = async (
 
         logger.error(error, {serviceName: "CardTransactionSettlementTransaction"});
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`CardTransactionSettlementTransaction failed: ${error.message}`);
+        throw new ServiceError(`CardTransactionSettlementTransaction failed`, sanitizedError);
     } 
     finally {
         await mongoSession.endSession();

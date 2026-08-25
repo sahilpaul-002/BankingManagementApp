@@ -9,6 +9,7 @@ import { beneficiariesBankDetailsModel as beneficiaries_bank_details } from "../
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import addBeneficiaryBankDetailsValidationSchema from "../validations/addBeneficiaryBankDetailsValidation.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -96,13 +97,15 @@ export const getBeneficiariesListService = async (requestSession: Request["sessi
             serviceName: "GetBeneficiariesListService"
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
         throw new ServiceError(
-            `GetBeneficiariesListService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetBeneficiariesListService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -191,13 +194,15 @@ export const getBeneficiaryDetailsService = async (requestSession: Request["sess
             serviceName: "GetBeneficiaryDetailsService"
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
         throw new ServiceError(
-            `GetBeneficiaryDetailsService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetBeneficiaryDetailsService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -287,13 +292,15 @@ export const addBeneficiaryService = async (requestSession: Request["session"], 
             serviceName: "AddBeneficiaryService"
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
         throw new ServiceError(
-            `AddBeneficiaryService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `AddBeneficiaryService facing issue`,
+            sanitizedError
         );
     }
 }

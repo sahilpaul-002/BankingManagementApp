@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
-import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidSessionError, NotFoundError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import dotenv from "dotenv"
 import logger from "../utils/logger.js";
 import { gmailSendService } from "./gmailSendService.js";
@@ -21,6 +21,7 @@ import z from "zod";
 import destroySession from "../utils/destroySession.js";
 import Send2FaCodeTransaction from "../mongoDbTransactions/snd2FaCodeTransaction.js";
 import resetUserPasswordTransaction from "../mongoDbTransactions/resetUserPasswordTransaction.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 dotenv.config();
 
@@ -105,18 +106,12 @@ export const sendVerificationEmailService = async (req: Request, res: Response, 
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error;
         }
-        throw new ServiceUnavailableError("SendEmailService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError("SendEmailService is unavailbale as facing unknown issue.", sanitizedError)
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -234,18 +229,12 @@ export const verifyEmailService = async (requestSession: Request["session"], aes
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error;
         }
-        throw new ServiceUnavailableError("VerifyEmailService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError("VerifyEmailService is unavailbale as facing unknown issue.", sanitizedError)
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -389,18 +378,12 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error;
         }
-        throw new ServiceUnavailableError("VerifyEmailService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError("VerifyEmailService is unavailbale as facing unknown issue.", sanitizedError)
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -573,18 +556,12 @@ export const verify2FaCodeService = async (requestSession: Request["session"], a
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error;
         }
-        throw new ServiceUnavailableError("Verify2FaCodeService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError("Verify2FaCodeService is unavailbale as facing unknown issue.", sanitizedError)
     }
 }
 // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\
@@ -680,18 +657,12 @@ export const sendResetPasswordCodeService = async (requestSession: Request["sess
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error;
         }
-        throw new ServiceUnavailableError("VerifyEmailService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError("VerifyEmailService is unavailbale as facing unknown issue.", sanitizedError)
     }
 }
 // ---------------------------------- XXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
@@ -805,18 +776,12 @@ export const verifyResetPasswordCodeService = async (requestSession: Request["se
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error;
         }
-        throw new ServiceUnavailableError("VerifyResetPasswordCodeService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError("VerifyResetPasswordCodeService is unavailbale as facing unknown issue.", sanitizedError)
     }
 }
 // -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------- \\

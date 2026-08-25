@@ -5,6 +5,7 @@ import { userWalletTransactionsModel as user_wallet_transactions } from "../mode
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import { Decimal } from "decimal.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 type ExpireCardTransactionAuthorizationData = {
     transactionId: string;
@@ -243,13 +244,13 @@ const expireCardAuthorizationTransaction = async (transactionData: ExpireCardTra
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(
-            `ExpireCardTransactionAuthorization facing issue: ${error.message}`
-        );
+        throw new ServiceError(`ExpireCardTransactionAuthorization facing issue`, sanitizedError);
 
     } finally {
 

@@ -2,8 +2,9 @@ import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 import dotenv from 'dotenv';
 import fs from "fs";
 import logger from '../utils/logger.js';
-import { AppErrorClass, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
+import { AppErrorClass, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
 import streamifier from "streamifier";
+import sanitizeApiError from '../utils/sanitizeApiError.js';
 
 interface UploadCloudinaryResponse {
     status: "SUCCESS";
@@ -98,13 +99,13 @@ const uploadOnCloudinary = async (file: Express.Multer.File, businessId: string,
             // url: req.path,
             // method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `UploadOnClaudinaryConfigService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`UploadOnClaudinaryConfigService facing issue`, sanitizedError);
     }
 }
 

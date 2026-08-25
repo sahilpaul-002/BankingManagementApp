@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import dotenv from "dotenv";
 import { AppErrorClass, ExternalServiceError, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 dotenv.config();
 
@@ -51,12 +52,14 @@ export const resendMailSendService = async (mailConfig: mainConfigType) => {
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `ResendMailSendService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `ResendMailSendService facing issue`,
+            sanitizedError
         );
     }
 }

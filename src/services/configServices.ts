@@ -17,6 +17,7 @@ import { getHeaderAsymmetricKeyPair } from "../utils/asymmetricHeaderEncryptionD
 import dotenv from "dotenv"
 import { dnsXApiKeyModel as dns_x_api_key } from "../models/dns_x_api_key.js";
 import logger from "../utils/logger.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 dotenv.config();
 
@@ -160,12 +161,15 @@ export const getDnsConfigService = async (req: Request, aesDecryptedQueryData: R
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `GetDnsConfigService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetDnsConfigService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -191,12 +195,15 @@ export const getAesEncryptionKeyService = (req: Request): successResponseJson =>
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `GetEncryptionKeyService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetEncryptionKeyService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -222,12 +229,15 @@ export const getRsaPublicKeyService = (req: Request): successResponseJson => {
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `GetRsaPublicKeyService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetRsaPublicKeyService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -251,12 +261,15 @@ export const getMobileCountryCodesService = (req: Request): successResponseJson 
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `GetMobileCountryCodesService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetMobileCountryCodesService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -282,12 +295,15 @@ export const getHeaderPublicKeyService = (req: Request): successResponseJson => 
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `GetHeaderPublicKeyService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetHeaderPublicKeyService facing issue`,
+            sanitizedError
         );
     }
 }

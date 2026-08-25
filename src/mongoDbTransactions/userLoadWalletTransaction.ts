@@ -15,6 +15,7 @@ import { getFxRate } from "../services/fxRateService.js";
 import { Decimal } from "decimal.js";
 import { calculateFeeAddedAmountService } from "../services/calculateFeeAddedAmountService.js";
 import type { loadWalletValidationSchema } from "../validations/userWalletActionValidation.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 type loadWalletValidationType = SafeParseSuccess<z.infer<typeof loadWalletValidationSchema>>;
 
@@ -506,14 +507,13 @@ const userLoadWalletTransaction = async (
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
 
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-
-        throw new ServiceError(
-            `LoadWalletTransactionService facing issue: [${errorStatus}] ${error.message}`, error?.error ? error.error : error);
+        throw new ServiceError(`LoadWalletTransactionService facing issue`, sanitizedError);
     }
     finally {
 

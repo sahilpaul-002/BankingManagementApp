@@ -4,7 +4,7 @@ import type { failedResponseJson, successResponseJson } from "../types/responseJ
 import verifyJwtAuth from "../utils/verifyJwtAuth.js"
 import extractJwtTokenValue from "./extractJwtTokenValue.js"
 import setResponseCookie from "./setResponseCookie.js"
-import { AppErrorClass, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "./AppErrorClass.js"
+import { AppErrorClass, ServiceError, UnauthenticatedError, UnauthorizedError } from "./AppErrorClass.js"
 import logger from "./logger.js"
 
 interface jwtAuthDataType extends JwtPayload {
@@ -38,7 +38,7 @@ const jwtAuthTokenValidation = async (
     // Extract token value of sessiondata access token
     const jwtTokenVerificationResult: successResponseJson = extractJwtTokenValue(sessionAccessToken as string);
     if (jwtTokenVerificationResult.status !== "SUCCESS") {
-      throw new ServiceUnavailableError("ExtractJwtTokenValue service is unavaibale")
+      throw new ServiceError("ExtractJwtTokenValue service is unavaibale")
     }
     const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
     const jwtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
@@ -69,7 +69,7 @@ const jwtAuthTokenValidation = async (
       // Set Auth Token Cookie
       const setResponseAuthCookieResult: successResponseJson = setResponseCookie(res, "authToken", authToken, 1000 * 60 * 20);
       if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
-        throw new ServiceUnavailableError("SetResponseCookie service is unavaibale")
+        throw new ServiceError("SetResponseCookie service is unavaibale")
       }
 
       next()

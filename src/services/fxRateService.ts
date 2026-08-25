@@ -76,7 +76,7 @@ export const getFxRate = async (sourceCurrency: string, destinationCurrency: str
         }
 
         throw new ServiceError(
-            `Unable to retrieve FX rate: [${errorStatus}] ${error.message}`,
+            `Unable to retrieve FX rate`,
             error?.error ? error.error : error
         );
     }

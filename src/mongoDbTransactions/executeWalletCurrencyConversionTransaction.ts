@@ -7,6 +7,7 @@ import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import type { walletCurrencyConversionQuoteSchemaTypes, walletDetailsType } from "../types/schemaTypes.js";
 import crypto from "crypto";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 interface WalletCurrencyConversionType {
     conversionQuote: walletCurrencyConversionQuoteSchemaTypes;
@@ -367,16 +368,14 @@ const executeWalletCurrencyConversionTransaction = async ({
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+        
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
         throw new ServiceError(
-            `ExecuteWalletCurrencyConversionTransaction facing issue: ${error.message} `,
-            error?.error
-                ? error.error
-                : error
-        );
+            `ExecuteWalletCurrencyConversionTransaction facing issue`, sanitizedError);
     }
     finally {
 

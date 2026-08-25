@@ -5,6 +5,7 @@ import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_d
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError, BadRequestError, InvalidRequestBodyError, ForbiddenError } from "../utils/AppErrorClass.js";
 import type { userDetailsDocumentType, userDetailsSchemaTypes } from "../types/schemaTypes.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 const userSignUpTransaction = async (req: Request, res: Response, document: userDetailsDocumentType) => {
     const mongoSession = await mongoose.startSession();
@@ -160,14 +161,13 @@ const userSignUpTransaction = async (req: Request, res: Response, document: user
                 }
             );
 
+            const sanitizedError = sanitizeApiError(error);
+            
             if (error instanceof AppErrorClass) {
                 throw error;
             }
 
-            throw new ServiceError(
-                `UserSignUpTransactionService facing issue: ${error?.message || "Unknown error"
-                }`
-            );
+            throw new ServiceError(`UserSignUpTransactionService facing issue`, sanitizedError);
 
         }
         finally {

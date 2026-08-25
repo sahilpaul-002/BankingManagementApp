@@ -4,6 +4,7 @@ import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_d
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError, BadRequestError } from "../utils/AppErrorClass.js";
 import type { userDetailsSchemaTypes } from "../types/schemaTypes.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 const userLoginTransaction = async (userDetails: userDetailsSchemaTypes, deviceId: string, clientIp: string, userAgent: string | null) => {
     const mongoSession = await mongoose.startSession();
@@ -70,14 +71,13 @@ const userLoginTransaction = async (userDetails: userDetailsSchemaTypes, deviceI
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(
-            `UserLoginTransactionService facing issue: ${error.message
-            }`
-        );
+        throw new ServiceError(`UserLoginTransactionService facing issue`, sanitizedError);
 
     }
     finally {

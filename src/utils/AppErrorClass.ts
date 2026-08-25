@@ -1,21 +1,81 @@
 import type { errorStatusTypes } from "../types/responseJson.js";
 
+type SafeError = {
+    message?: string;
+    name?: string;
+    code?: string;
+    status?: number;
+    method?: string;
+    url?: string;
+};
+
+const sanitizeError = (error: any): SafeError | undefined => {
+    if (!error) {
+        return undefined;
+    }
+
+    // Axios error
+    if (error?.isAxiosError || error?.config) {
+        return {
+            message:
+                error?.response?.data?.message ||
+                error?.response?.data?.error?.message ||
+                error?.message ||
+                "External service request failed",
+            name: error?.name,
+            code: error?.code,
+            status: error?.response?.status,
+            method: error?.config?.method?.toUpperCase(),
+            // Only expose the URL/path, never the config object
+            url: error?.config?.url,
+        };
+    }
+
+    // Normal Error
+    if (error instanceof Error) {
+        return {
+            message: error.message,
+            name: error.name,
+        };
+    }
+
+    // Already sanitized/custom object
+    if (typeof error === "object") {
+        return {
+            message: error.message,
+            name: error.name,
+            code: error.code,
+            status: error.status,
+            method: error.method,
+            url: error.url,
+        };
+    }
+
+    return {
+        message: String(error),
+    };
+};
+
 export class AppErrorClass extends Error {
     public statusCode: number;
     public status: errorStatusTypes;
-    public error?: any;
+    public error: SafeError | undefined;
     public isOperational: boolean;
 
-    constructor(statusCode: number, status: errorStatusTypes, message: string, error?: any) {
+    constructor(
+        statusCode: number,
+        status: errorStatusTypes,
+        message: string,
+        error?: any
+    ) {
         super(message);
 
         this.statusCode = statusCode;
         this.status = status;
-        // this.error = error instanceof Error ? error.message : error;
-        this.error = error;
+        this.error = sanitizeError(error);
         this.isOperational = true;
 
-        Object.setPrototypeOf(this, AppErrorClass.prototype);
+        Object.setPrototypeOf(this, new.target.prototype);
         Error.captureStackTrace(this, this.constructor);
     }
 }

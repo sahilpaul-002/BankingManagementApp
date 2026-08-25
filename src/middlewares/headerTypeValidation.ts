@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
 import checkStringHeader from "../utils/checkStringHeader.js";
 import { request } from "node:http";
-import { AppErrorClass, InvalidHeaderError, ServiceError, ServiceUnavailableError, UnauthenticatedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, InvalidHeaderError, ServiceError, UnauthenticatedError } from "../utils/AppErrorClass.js";
 import { headerAsymmetricDecryptionMsg } from "../utils/asymmetricHeaderEncryptionDecryption.js";
 import type { decryptionFailedJson, decryptionSuccessJson } from "../types/decryptionRespoonseTypes.js";
 import logger from "../utils/logger.js";
@@ -102,7 +102,7 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
                     }
 
                     else {
-                        throw new ServiceUnavailableError(
+                        throw new ServiceError(
                             `Asymmetric header decryption service unavailable for ${headerKey}`
                         );
                     }

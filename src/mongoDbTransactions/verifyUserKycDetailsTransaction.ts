@@ -5,6 +5,7 @@ import logger from "../utils/logger.js";
 import {AppErrorClass, NotFoundError, ServiceError,} from "../utils/AppErrorClass.js";
 import type { JwtPayload } from "jsonwebtoken";
 import crypto from "crypto";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 interface userKycVerificationJwtPayloadType extends JwtPayload {
     userId: string;
@@ -99,11 +100,13 @@ const UserKycVerifyUpdateTransaction = async (decoded: userKycVerificationJwtPay
             serviceName: "UserKycVerifyUpdateTransaction",
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`UserKycVerifyUpdateTransaction facing issue: ${error.message}`);
+        throw new ServiceError(`UserKycVerifyUpdateTransaction facing issue`, sanitizedError);
     } finally {
         await mongoSession.endSession();
     }

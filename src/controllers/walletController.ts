@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
-import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 import { createWalletCurrencyConversionQuoteService, createWalletService, executeWalletCurrencyConversionQuoteService, getWalletService, getWalletTransactionDetailsService, getWalletTransactionsService, loadWalletService, withdrawWalletService } from "../services/walletServices.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
 export const getWallet = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -40,18 +41,12 @@ export const getWallet = async (req: Request, res: Response): Promise<Response<s
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetWalletController is facing unknown issue.", error)
+        throw new ServiceError("GetWalletController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
@@ -94,13 +89,13 @@ export const createWallet = async (req: Request, res: Response): Promise<Respons
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `CreateWalletController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`CreateWalletController facing issue`, sanitizedError);
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -143,13 +138,13 @@ export const loadWallet = async (req: Request, res: Response): Promise<Response<
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `LoadWalletController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`LoadWalletController facing issue`, sanitizedError);
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -192,13 +187,13 @@ export const withdrAawWallet = async (req: Request, res: Response): Promise<Resp
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `withdrawWalletController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`withdrawWalletController facing issue`, sanitizedError);
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -238,18 +233,12 @@ export const getWalletTransactions = async (req: Request, res: Response): Promis
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetWalletTransactionsController is facing unknown issue.", error)
+        throw new ServiceError("GetWalletTransactionsController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
@@ -290,18 +279,12 @@ export const getWalletTransactionDetails = async (req: Request<{ id?: string }>,
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("GetWalletTransactionDetailsController is facing unknown issue.", error)
+        throw new ServiceError("GetWalletTransactionDetailsController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
@@ -342,24 +325,18 @@ export const createWalletCurrencyConversionPayoutQuote = async (req: Request, re
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("CreateWalletCurrencyCOnversionPayoutQuoteController is facing unknown issue.", error)
+        throw new ServiceError("CreateWalletCurrencyCOnversionPayoutQuoteController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
 
 
-// ------------------------------------------ FUNCTION TO EXECUTE WALLET CURRENCY CONVERSION PAYOUT QUOTE ------------------------------------------ \\
+// -------------------------- FUNCTION TO EXECUTE WALLET CURRENCY CONVERSION PAYOUT QUOTE -------------------------- \\
 export const executeWalletCurrencyConversionPayoutQuote = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         let aesDecryptedBodyData = req.body
@@ -394,18 +371,12 @@ export const executeWalletCurrencyConversionPayoutQuote = async (req: Request, r
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
-                throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
+            throw error
         }
-        throw new ServiceUnavailableError("ExecuteWalletCurrencyConversionPayoutQuoteController is facing unknown issue.", error)
+        throw new ServiceError("ExecuteWalletCurrencyConversionPayoutQuoteController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

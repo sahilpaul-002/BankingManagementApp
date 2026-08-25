@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import extractJwtTokenValue from "../utils/extractJwtTokenValue.js";
 import cookieParser from "cookie-parser";
-import { AppErrorClass, ForbiddenError, InternalSeverError, InvalidHeaderError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InternalSeverError, InvalidHeaderError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import type { userDetailsSchemaTypes } from "../types/schemaTypes.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import destroySession from "../utils/destroySession.js";
@@ -40,14 +40,14 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
         // Extract token value of authorization header access token
         const jwtTokenVerificationResult1: successResponseJson = extractJwtTokenValue(authorizationHeaderToken as string);
         if (jwtTokenVerificationResult1.status !== "SUCCESS") {
-            throw new ServiceUnavailableError("ExtractJwtTokenValue service unavailbale")
+            throw new ServiceError("ExtractJwtTokenValue service unavailbale")
         }
         const jwtAccessTokenValue1: string | undefined = (jwtTokenVerificationResult1.data as { jwtTokenValue?: string })?.jwtTokenValue;
 
         // Extract token value of sessiondata access token
         const jwtTokenVerificationResult2: successResponseJson = extractJwtTokenValue(req.session?.sessiondata?.accessToken as string);
         if (jwtTokenVerificationResult2.status !== "SUCCESS") {
-            throw new ServiceUnavailableError("ExtractJwtTokenValue service unavailbale")
+            throw new ServiceError("ExtractJwtTokenValue service unavailbale")
         }
         const jwtAccessTokenValue2: string | undefined = (jwtTokenVerificationResult2.data as { jwtTokenValue?: string })?.jwtTokenValue;
         if (!jwtAccessTokenValue1 || !jwtAccessTokenValue2 || jwtAccessTokenValue1 !== jwtAccessTokenValue2) {

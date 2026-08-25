@@ -125,7 +125,7 @@ app.use((req, res, next) => {
 
     next()
 })
-app.use("/api/v1/public", publicRoutes);
+app.use("/api/v1/public", asyncRequestHandler(checkDatabaseConnection), publicRoutes);
 
 // // SWAGGER DOCUMENTATION ENDPOINT
 // app.use(
@@ -143,7 +143,7 @@ app.use(dynamicSession())
 // app.use(sessionExistance);
 
 // Check Database Connection
-app.use(checkDatabaseConnection);
+app.use(asyncRequestHandler(checkDatabaseConnection));
 
 // Check Origin Header Exist Middleware
 app.use(asyncRequestHandler(checkOriginExist))

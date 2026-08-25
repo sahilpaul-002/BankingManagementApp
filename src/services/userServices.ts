@@ -1,5 +1,5 @@
 import type { Request, Response } from "express"
-import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidRequestQueryError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidRequestQueryError, InvalidSessionError, NotFoundError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
@@ -36,6 +36,7 @@ import crypto from "crypto";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import { userFundingBankAccountDetailsModel as user_funding_bank_account_details } from "../models/user_funding_bank_account_details.js";
 import { userCryptoDepositAccountDetailsModel as user_crypto_deposit_account_details } from "../models/user_crypto_deposit_accout_details.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 dotenv.config();
 
@@ -185,12 +186,14 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `UserSignUpService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `UserSignUpService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -368,7 +371,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Extract token value of sessiondata access token
         const jwtTokenVerificationResult: successResponseJson = await extractJwtTokenValue(req.session?.sessiondata?.accessToken as string);
         if (jwtTokenVerificationResult.status !== "SUCCESS") {
-            throw new ServiceUnavailableError("Failed to extract JWT token value from sessiondata access token");
+            throw new ServiceError("Failed to extract JWT token value from sessiondata access token");
         }
         const accessToken: string = (jwtTokenVerificationResult.data as { jwtTokenValue?: string })?.jwtTokenValue as string
         const jwtSecretKey: string = process.env.JWT_SECRET_KEY || "e4b7c2a9d1f6e8c3b5a7d9f2c4e1a6b8d3f0c7a9e5b2d4"
@@ -378,7 +381,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Set Auth Token Cookie
         const setResponseAuthCookieResult: successResponseJson = await setResponseCookie(res, "authToken", jwtAuthToken, 1000 * 60 * 20);
         if (setResponseAuthCookieResult.status.toUpperCase() !== "SUCCESS") {
-            throw new ServiceUnavailableError("Failed to set response auth-token cookie");
+            throw new ServiceError("Failed to set response auth-token cookie");
         }
 
         // Create Auth Token
@@ -386,7 +389,7 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         // Set Refresh Token Cookie
         const setResponseRefreshCookieResult: successResponseJson = await setResponseCookie(res, "refreshToken", jwtRefreshToken, 1000 * 60 * 60);
         if (setResponseRefreshCookieResult.status.toUpperCase() !== "SUCCESS") {
-            throw new ServiceUnavailableError("Failed to set response refresh-token cookie");
+            throw new ServiceError("Failed to set response refresh-token cookie");
         }
 
         const frontendUserDetails = {
@@ -439,12 +442,14 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `UserLoginService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `UserLoginService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -567,12 +572,14 @@ export const userOnboardingService = async (requestSession: Request["session"], 
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `UserOnboardingService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `UserOnboardingService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -721,12 +728,14 @@ export const sendBankVerificationMailService = async (requestSession: Request["s
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `SendBankVerificationMailService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `SendBankVerificationMailService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -849,10 +858,12 @@ export const userBankVerificationWebhookService = async (aesDecryptedQueryData: 
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
-        throw new ServiceUnavailableError("GetUserBankVerificationWebhookService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError("GetUserBankVerificationWebhookService is unavailbale as facing unknown issue.", sanitizedError)
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -952,10 +963,12 @@ export const prefundUserFiatFundingAccountService = async (aesDecryptedBodyData:
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
-        throw new ServiceUnavailableError("UserPrefundFiatAccountWebhookService is unavailbale as facing unknown issue.", error)
+        throw new ServiceError("UserPrefundFiatAccountWebhookService is unavailbale as facing unknown issue.", sanitizedError)
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -1063,12 +1076,14 @@ export const prefundUserCryptoFundingAccountService = async (aesDecryptedBodyDat
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
-        throw new ServiceUnavailableError(
+        throw new ServiceError(
             "UserCryptoFundingAccountService is unavailable as facing unknown issue.",
-            error
+            sanitizedError
         );
     }
 }
@@ -1160,13 +1175,15 @@ export const getUserFundingAccountsBalancesService = async (aesDecryptedQueryDat
             serviceName: "GetUserFundingAccountsBalancesService"
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceUnavailableError(
+        throw new ServiceError(
             "GetUserFundingAccountsBalancesService is unavailable as facing unknown issue.",
-            error
+            sanitizedError
         );
     }
 };

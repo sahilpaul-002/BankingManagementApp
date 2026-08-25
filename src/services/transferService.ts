@@ -14,6 +14,7 @@ import { getFxRate } from "./fxRateService.js";
 import { FEE_DETAILS } from "../configs/configConstants.js";
 import { fiatPayoutQuoteModel as fiat_payout_quotes } from "../models/fiat_payout_quotes.js";
 import executeFiatPayoutTransaction from "../mongoDbTransactions/executePayoutQuoteTransaction.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -229,13 +230,15 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
             serviceName: "CreatePayoutQuoteService"
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
         throw new ServiceError(
-            `CreatePayoutQuoteService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `CreatePayoutQuoteService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -392,13 +395,15 @@ export const executePayoutQuoteService = async (requestSession: Request["session
             serviceName: "ExecutePayoutQuoteService"
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
         throw new ServiceError(
-            `ExecutePayoutQuoteService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `ExecutePayoutQuoteService facing issue`,
+            sanitizedError
         );
     }
 }

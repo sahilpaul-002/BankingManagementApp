@@ -1,10 +1,11 @@
 import type { Request, Response } from "express";
 import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
-import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 import { getCardholderDetailsService, getCardholderListService } from "../services/cardholderService.js";
 import { addBeneficiaryService, getBeneficiariesListService, getBeneficiaryDetailsService } from "../services/beneficiariesService.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------------------ FUNCTION TO GET CARDHOLDER LIST ------------------------------------------ \\
 export const getBeneficiariesList = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -41,18 +42,13 @@ export const getBeneficiariesList = async (req: Request, res: Response): Promise
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
                 throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
         }
-        throw new ServiceUnavailableError("GetBeneficiariesListController is facing unknown issue.", error)
+
+        throw new ServiceError("GetBeneficiariesListController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
@@ -94,17 +90,9 @@ export const getBeneficiaryDetails = async (req: Request<{ id?: string }>, res: 
         });
 
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
                 throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
         }
-        throw new ServiceUnavailableError("GetBeneficiaryDetailsController is facing unknown issue.", error)
+        throw new ServiceError("GetBeneficiaryDetailsController is facing unknown issue.", error)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
@@ -145,18 +133,12 @@ export const addBeneficiary = async (req: Request<{ id?: string }>, res: Respons
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            if (error instanceof UnauthenticatedError || error instanceof UnauthorizedError || error instanceof InvalidSessionError || error instanceof ForbiddenError) {
                 throw error
-            }
-            else {
-                throw new ServiceError(
-                    `[${errorStatus}] ${error.message}`,
-                    error?.error ? error.error : error
-                );
-            }
         }
-        throw new ServiceUnavailableError("AddBeneficiaryController is facing unknown issue.", error)
+        throw new ServiceError("AddBeneficiaryController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

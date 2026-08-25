@@ -3,6 +3,7 @@ import { userDetailsModel as user_details } from "../models/user_details.js";
 import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 const resetUserPasswordTransaction = async (userId: Types.ObjectId, hashedPassword: string) => {
 
@@ -73,13 +74,13 @@ const resetUserPasswordTransaction = async (userId: Types.ObjectId, hashedPasswo
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(
-            `ResetPasswordTransactionService facing issue: ${error.message}`
-        );
+        throw new ServiceError(`ResetPasswordTransactionService facing issue`, sanitizedError);
 
     }
     finally {

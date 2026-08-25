@@ -1,12 +1,13 @@
 import type { Request } from "express";
-import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
+import type { successResponseJson } from "../types/responseJson.js";
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestBodyError, InvalidRequestParamsError, InvalidRequestQueryError, NotFoundError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
-import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import logger from "../utils/logger.js";
 import type { ParsedQs } from "qs";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import { userDetailsModel as user_details } from "../models/user_details.js";
+import { Types } from "mongoose";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------------- GET CARDHOLDER LIST SERVICE -------------------------------------  \\
 type userConfigurationsType = {
@@ -90,13 +91,14 @@ export const getCardholderListService = async (requestSession: Request["session"
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
 
         throw new ServiceError(
-            `GetCardholderListService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetCardholderListService facing issue`, sanitizedError
         );
     }
 }
@@ -140,10 +142,12 @@ export const getCardholderDetailsService = async (requestSession: Request["sessi
             throw new ForbiddenError("User configuration is not valid to access cardholder details")
         }
 
+        const cardholderObjectId = new Types.ObjectId(cardholderId)
+
         // Get user details
         const usersDetails = await user_details.findOne(
             {
-                cardholder_id: cardholderId
+                cardholder_id: cardholderObjectId
             },
             {
                 full_name: 1,
@@ -181,13 +185,14 @@ export const getCardholderDetailsService = async (requestSession: Request["sessi
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
 
         throw new ServiceError(
-            `GetCardholderDetailsService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetCardholderDetailsService facing issue`, sanitizedError
         );
     }
 }

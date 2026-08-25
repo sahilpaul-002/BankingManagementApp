@@ -4,6 +4,7 @@ import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, Servi
 import { send2FaCodeService, sendResetPasswordCodeService, sendVerificationEmailService, verify2FaCodeService, verifyEmailService, verifyResetPasswordCodeService } from "../services/twoFaService.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------------- FUNCTION TO VERIFY EMAIL ------------------------------------- \\
 export const sendVerifyEmailCode = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -32,13 +33,12 @@ export const sendVerifyEmailCode = async (req: Request, res: Response): Promise<
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `VerifyEmailController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`VerifyEmailController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -71,13 +71,12 @@ export const verifyEmail = async (req: Request, res: Response): Promise<Response
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `VerifyEmailController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`VerifyEmailController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -115,13 +114,12 @@ export const send2FaVerificationCode = async (req: Request, res: Response): Prom
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `Send2FaVerificationCodeController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`Send2FaVerificationCodeController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -153,13 +151,12 @@ export const verify2FaCode = async (req: Request, res: Response): Promise<Respon
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `Verify2FaCodeController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`Verify2FaCodeController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -187,13 +184,12 @@ export const sendResetPasswordVerificationCode = async (req: Request, res: Respo
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `SendResetPasswordVerificationCodeController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`SendResetPasswordVerificationCodeController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -220,13 +216,12 @@ export const verifyResetPasswordCode = async (req: Request, res: Response): Prom
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `VerifyResetPasswordCodeController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`VerifyResetPasswordCodeController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

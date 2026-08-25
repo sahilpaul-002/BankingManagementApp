@@ -3,6 +3,7 @@ import { userAddressDetailsModel as user_address_details } from "../models/user_
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError, BadRequestError } from "../utils/AppErrorClass.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // Type for User Bank Details Payload
 export interface userBankDetailsPayloadType {
@@ -140,13 +141,13 @@ const userOnboardingTransaction = async (userId: Types.ObjectId, addressDocument
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(
-            `UserOnboardingTransactionService facing issue: ${error.message}`
-        );
+        throw new ServiceError(`UserOnboardingTransactionService facing issue`, sanitizedError);
 
     }
     finally {

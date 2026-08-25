@@ -5,6 +5,7 @@ import { walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes
 import { AppErrorClass, ServiceError, NotFoundError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 import type { walletCurrencyType, walletDetailsType } from "../types/schemaTypes.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 interface CreateWalletCurrencyConversionTransactionType {
     userId: Types.ObjectId;
@@ -229,17 +230,14 @@ const createWalletCurrencyConversionTransaction = async ({
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
 
-        throw new ServiceError(
-            `CreateWalletCurrencyConversionTransaction facing issue: ${error.message}`,
-            error?.error
-                ? error.error
-                : error
-        );
+        throw new ServiceError(`CreateWalletCurrencyConversionTransaction facing issue`, sanitizedError);
     }
     finally {
 

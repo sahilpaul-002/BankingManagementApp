@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
-import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 import { getKycService, kycVerificationWebhookService, sendKycVerificationMailService, uploadKycService } from "../services/kycServices.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------------- FUNCTION TO GET KYC ------------------------------------- \\
 export const getKyc = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -32,13 +33,12 @@ export const getKyc = async (req: Request, res: Response): Promise<Response<succ
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `GetKycController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`GetKycController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -71,13 +71,12 @@ export const uploadKyc = async (req: Request, res: Response): Promise<Response<s
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `UploadKycController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`UploadKycController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -109,13 +108,13 @@ export const sendKycVerificationMail = async (req: Request, res: Response): Prom
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
         throw new ServiceError(
-            `SendKycVerificationMailController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+            `SendKycVerificationMailController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -206,13 +205,13 @@ export const getKycVerificationWebhook = async (req: Request, res: Response): Pr
             method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
         throw new ServiceError(
-            `GetKycVerificationWebhookController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+            `GetKycVerificationWebhookController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

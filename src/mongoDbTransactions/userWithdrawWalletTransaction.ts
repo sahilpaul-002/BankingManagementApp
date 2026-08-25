@@ -11,6 +11,7 @@ import type { SafeParseResult } from "../types/zodTypes.js";
 import userWalletTransactionsValidationSchema from "../validations/userWalletTransactionsValidation.js";
 import crypto from "crypto";
 import { Decimal } from "decimal.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 type withdrawWalletValidationType = SafeParseSuccess<z.infer<typeof withdrawWalletValidationSchema>>;
 
@@ -250,14 +251,13 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(
-            `WithdrawWalletTransactionService facing issue: ${error.message
-            }`
-        );
+        throw new ServiceError(`WithdrawWalletTransactionService facing issue`, sanitizedError);
 
     }
 

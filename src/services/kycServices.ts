@@ -17,6 +17,7 @@ import type { ParsedQs } from "qs";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import UserKycVerifyUpdateTransaction from "../mongoDbTransactions/verifyUserKycDetailsTransaction.js";
 import crypto from "crypto";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 dotenv.config();
 
@@ -82,12 +83,15 @@ export const getKycService = async (requestSession: Request["session"], aesDecry
             // url: req.path,
             // method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `GetKycService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetKycService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -291,12 +295,14 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `UploadKycService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `UploadKycService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -446,12 +452,14 @@ export const sendKycVerificationMailService = async (requestSession: Request["se
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `SendKycVerificationMailService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `SendKycVerificationMailService facing issue`,
+            sanitizedError
         );
     }
 }
@@ -576,12 +584,14 @@ export const kycVerificationWebhookService = async (aesDecryptedQueryData: Recor
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `GetKycVerificationWebhookService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `GetKycVerificationWebhookService facing issue`,
+            sanitizedError
         );
     }
 }

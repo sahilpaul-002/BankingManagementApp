@@ -9,6 +9,7 @@ import userWalletTransactionsValidationSchema from "../validations/userWalletTra
 import userCardTransactionValidationSchema from "../validations/userCardTransactionValidation.js";
 import z from "zod";
 import type { walletDetailsType, userCardDetailsSchemaTypes, } from "../types/schemaTypes.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 const initiateCardTransaction = async (
     walletId: string,
@@ -231,13 +232,13 @@ const initiateCardTransaction = async (
             serviceName: "UserHoldWalletTransactionService",
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(
-            `UserHoldWalletTransactionService facing issue: ${error.message}`
-        );
+        throw new ServiceError(`UserHoldWalletTransactionService facing issue`, sanitizedError);
     }
     finally {
         await mongoSession.endSession();

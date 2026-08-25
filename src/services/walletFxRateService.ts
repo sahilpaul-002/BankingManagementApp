@@ -2,6 +2,7 @@ import type { walletCurrencyType } from "../types/schemaTypes.js";
 import { USD_BASE_WALLET_FX_RATES } from "../types/usdBasedFaxRates.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 interface WalletFxRateResponse {
     source_currency: walletCurrencyType;
@@ -77,13 +78,15 @@ const getWalletFxRate = async (
             serviceName: "GetWalletFxRate",
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
         throw new ServiceError(
-            `Unable to retrieve wallet FX rate: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
+            `Unable to retrieve wallet FX rate`,
+            sanitizedError
         );
     }
 };

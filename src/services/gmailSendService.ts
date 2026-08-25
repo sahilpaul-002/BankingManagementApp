@@ -2,6 +2,7 @@ import "dotenv/config";
 import nodemailer from "nodemailer";
 import { AppErrorClass, ExternalServiceError, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 const gmailServiceXApiKey = process.env.MAIL_GMAIL_X_API_KEY
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
@@ -46,7 +47,7 @@ export const gmailSendService = async (mailConfig: mainConfigType) => {
         if (sendEmailResponse?.response && sendEmailResponse?.messageId && sendEmailResponse?.response.includes("250") && sendEmailResponse?.response.includes("OK")) {
             return { status: "SUCCESS", id: sendEmailResponse?.messageId };
         }
-        
+
         throw new ExternalServiceError("GmailSendService faced error - failed to send email")
     }
     catch (err) {
@@ -59,12 +60,13 @@ export const gmailSendService = async (mailConfig: mainConfigType) => {
             // url: req.path,
             // method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
-            throw error
+            throw error;
         }
         throw new ServiceError(
-            `GmailSendService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+            `GmailSendService facing issue`, sanitizedError);
     }
 }

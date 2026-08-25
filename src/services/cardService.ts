@@ -22,6 +22,7 @@ import jwt, { type JwtPayload } from "jsonwebtoken";
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import { gmailSendService } from "./gmailSendService.js";
 import cardTransactionSettlementTransaction from "../mongoDbTransactions/cardTransactionSettelmentTransaction.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
@@ -154,11 +155,13 @@ export const createCardService = async (requestSession: Request["session"], aesD
 
         logger.error(error, { serviceName: "CreateCardService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`CreateCardService facing issue: ${error.message}`, error);
+        throw new ServiceError(`CreateCardService facing issue`, sanitizedError);
 
     }
 };
@@ -282,11 +285,13 @@ export const getCardsListService = async (requestSession: Request["session"], ae
 
         logger.error(error, { serviceName: "GetCardsListService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`GetCardsListService facing issue: ${error.message}`, error);
+        throw new ServiceError(`GetCardsListService facing issue`, sanitizedError);
 
     }
 };
@@ -368,11 +373,13 @@ export const getCardDetailsService = async (requestSession: Request["session"], 
 
         logger.error(error, { serviceName: "GetCardDetailsService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`GetCardDetailsService facing issue: ${error.message}`, error);
+        throw new ServiceError(`GetCardDetailsService facing issue`, sanitizedError);
 
     }
 };
@@ -486,11 +493,13 @@ export const updateCardStatusService = async (requestSession: Request["session"]
 
         logger.error(error, { serviceName: "UpdateCardStatusService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`UpdateCardStatusService facing issue: ${error.message}`, error);
+        throw new ServiceError(`UpdateCardStatusService facing issue`, sanitizedError);
 
     }
 };
@@ -653,11 +662,13 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
 
         logger.error(error, { serviceName: "UpdateCardLimitsService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`UpdateCardLimitsService facing issue: ${error.message}`, error);
+        throw new ServiceError(`UpdateCardLimitsService facing issue`, sanitizedError);
 
     }
 };
@@ -841,11 +852,13 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
 
         logger.error(error, { serviceName: "GetCardTransactionService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`GetCardTransactionService facing issue: ${error.message}`, error);
+        throw new ServiceError(`GetCardTransactionService facing issue`, sanitizedError);
     }
 
 };
@@ -948,11 +961,13 @@ export const getCardTransactionDetailsService = async (requestSession: Request["
 
         logger.error(error, { serviceName: "GetCardTransactionDetailsService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`GetCardTransactionDetailsService facing issue: ${error.message}`, error);
+        throw new ServiceError(`GetCardTransactionDetailsService facing issue`, sanitizedError);
     }
 
 };
@@ -1267,11 +1282,13 @@ export const createCardTransactionService = async (requestSession: Request["sess
 
         logger.error(error, { serviceName: "CreateCardTransactionService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`CreateCardTransactionService facing issue: ${error.message}`, error);
+        throw new ServiceError(`CreateCardTransactionService facing issue`, sanitizedError);
     }
 
 };
@@ -1314,7 +1331,7 @@ export const cardTransactionAuthorizationWebhookService = async (aesDecryptedQue
         }
 
         // Find Transaction
-        const transaction = await user_card_transactions.findOne({transaction_id: decoded.transactionId}).lean();
+        const transaction = await user_card_transactions.findOne({ transaction_id: decoded.transactionId }).lean();
 
         if (!transaction) {
             throw new NotFoundError("Card transaction not found");
@@ -1322,7 +1339,7 @@ export const cardTransactionAuthorizationWebhookService = async (aesDecryptedQue
 
         // Check if the transaction is already processed
         if (transaction.authorization_status !== "PENDING") {
-            throw new ServiceError(`Transaction already ${transaction.authorization_status.toLowerCase()}`            );
+            throw new ServiceError(`Transaction already ${transaction.authorization_status.toLowerCase()}`);
         }
 
         // Check if the transaction authorization is expired
@@ -1332,9 +1349,9 @@ export const cardTransactionAuthorizationWebhookService = async (aesDecryptedQue
 
         // Card Transaction Settlement Mongodb Transaction
         const cardTransactionSettlementResult = await cardTransactionSettlementTransaction(
-                decoded,
-                transaction
-            );
+            decoded,
+            transaction
+        );
 
         if (cardTransactionSettlementResult.status !== "SUCCESS") {
             throw new ServiceError(
@@ -1349,13 +1366,15 @@ export const cardTransactionAuthorizationWebhookService = async (aesDecryptedQue
         };
     } catch (err) {
         const error = err as any;
-        logger.error(error, {serviceName: "CardTransactionAuthorizationWebhookService",});
+        logger.error(error, { serviceName: "CardTransactionAuthorizationWebhookService", });
+
+        const sanitizedError = sanitizeApiError(error);
 
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`CardTransactionAuthorizationWebhookService failed: ${error.message}`);
+        throw new ServiceError(`CardTransactionAuthorizationWebhookService failed`, sanitizedError);
     }
 };
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

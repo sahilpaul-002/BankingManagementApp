@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import type { failedResponseJson } from "../types/responseJson.js";
-import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 
 const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Response<failedResponseJson> | void => {
@@ -45,7 +45,7 @@ const portalHeaderCheck = (req: Request, res: Response, next: NextFunction): Res
             throw error
         }
         else {
-            throw new ServiceUnavailableError(
+            throw new ServiceError(
                 `Portal header check validation facing issue: [${errorStatus}] ${error.message}`,
                 error
             );

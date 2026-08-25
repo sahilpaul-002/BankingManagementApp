@@ -15,6 +15,7 @@ import crypto from "crypto"
 import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 import userCardCreationValidationSchema from "../validations/userCardCreationValidation.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 const generateCardNumber = (): string => {
     const prefixes = ["4", "2", "5"];
@@ -206,13 +207,12 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `CreateCardTransactionService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`CreateCardTransactionService facing issue`, sanitizedError);
 
     }
     finally {

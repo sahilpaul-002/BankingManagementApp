@@ -7,7 +7,7 @@ import { userDetailsModel } from "../models/user_details.js";
 import { userAddressDetailsModel } from "../models/user_addresses_details.js";
 import { userBankDetailsModel } from "../models/user_bank_details.js";
 import { portalConfigurationsModel } from "../models/portal_configurations.js";
-import { AppErrorClass, ForbiddenError, InvalidSessionError, NotFoundError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
+import { AppErrorClass, NotFoundError, ServiceError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
 import { dnsXApiKeyModel } from "../models/dns_x_api_key.js";
 import { userKycDetailsModel } from "../models/user_kyc_details.js";
@@ -20,6 +20,7 @@ import { userCardTransactionsModel } from "../models/user_card_transaction_detai
 import { beneficiariesBankDetailsModel } from "../models/beneficiaries_bank_details.js";
 import { fiatPayoutTransactionsModel } from "../models/fiat_payout_transactions.js";
 import { fiatPayoutQuoteModel } from "../models/fiat_payout_quotes.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // Health Check
 export const healthCheck = (req: Request, res: Response): Response<successResponseJson> | void => {
@@ -36,13 +37,14 @@ export const healthCheck = (req: Request, res: Response): Response<successRespon
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
         throw new ServiceError(
-            `HealthCheckController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+            `HealthCheckController facing issue`, sanitizedError);
     }
 }
 
@@ -66,13 +68,14 @@ export const getSession = (req: Request, res: Response): Response<successRespons
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
         throw new ServiceError(
-            `GetSessionController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+            `GetSessionController facing issue`, sanitizedError);
     }
 }
 
@@ -110,13 +113,14 @@ export const destroySession = (req: Request, res: Response): Response<successRes
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
         throw new ServiceError(
-            `DestroySessionController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+            `DestroySessionController facing issue`, sanitizedError);
     }
 }
 
@@ -201,12 +205,13 @@ export const insertDDocumentIntoCollection = async (req: Request, res: Response)
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
         throw new ServiceError(
-            `InsertDocumentIntoCollectionController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+            `InsertDocumentIntoCollectionController facing issue`, sanitizedError);
     }
 }

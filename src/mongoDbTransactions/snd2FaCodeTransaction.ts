@@ -3,6 +3,7 @@ import { userMetaDetailsModel as user_meta_details } from "../models/user_meta_d
 import { userDetailsModel as user_details } from "../models/user_details.js";
 import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 const Send2FaCodeTransaction = async (userId: Types.ObjectId, hashedVerificationCode: string, verificationCodeExpiry: Date) => {
     const mongoSession = await mongoose.startSession();
@@ -67,11 +68,13 @@ const Send2FaCodeTransaction = async (userId: Types.ObjectId, hashedVerification
 
         logger.error(error, { serviceName: "Send2FaCodeTransaction" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`Send2FaCodeTransaction facing issue: ${error.message}`);
+        throw new ServiceError(`Send2FaCodeTransaction facing issue`, sanitizedError);
     }
     finally {
         await mongoSession.endSession();

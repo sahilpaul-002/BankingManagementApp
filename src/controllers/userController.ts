@@ -5,6 +5,7 @@ import { getUserFundingAccountsBalancesService, prefundUserCryptoFundingAccountS
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------ FUNCTION TO SET USERCONTROLLER HEADERS ------------------------------ \\
 const userControllerHeader = (req: Request) => {
@@ -65,13 +66,13 @@ export const userSignUp = async (req: Request, res: Response): Promise<Response<
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `UserSignUpController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`UserSignUpController facing issue`, sanitizedError);
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -113,13 +114,13 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `UserLoginController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`UserLoginController facing issue`, sanitizedError);
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -151,13 +152,13 @@ export const onboarding = async (req: Request, res: Response): Promise<Response<
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `UserOnbordingController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`UserOnbordingController facing issue`, sanitizedError);
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
@@ -188,13 +189,13 @@ export const sendBankVerificationMail = async (req: Request, res: Response): Pro
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `SendBankVerificationMailController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`SendBankVerificationMailController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -284,13 +285,13 @@ export const getUserBankVerificationWebhook = async (req: Request, res: Response
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `GetUserBankAccountVerificationWebhookController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`GetUserBankAccountVerificationWebhookController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -324,13 +325,13 @@ export const prefundUserFiatFundingAccount = async (req: Request, res: Response)
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `PrefundUserFiatFundingAccountController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`PrefundUserFiatFundingAccountController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -364,13 +365,13 @@ export const prefundUserCryptoFundingAccount = async (req: Request, res: Respons
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `PrefundUserCryptoFundingAccountController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`PrefundUserCryptoFundingAccountController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -389,7 +390,7 @@ export const getUserFundingAccountsBalances = async (req: Request, res: Response
             });
         }
 
-        return res.status(200).json({message: "Funding account balance fetched successfully", data: getUserFundingAccountsBalancesServiceResponse?.data ?? {}});
+        return res.status(200).json({ message: "Funding account balance fetched successfully", data: getUserFundingAccountsBalancesServiceResponse?.data ?? {} });
     }
     catch (err) {
         const error = err as any;
@@ -403,14 +404,12 @@ export const getUserFundingAccountsBalances = async (req: Request, res: Response
             method: req.method
         });
 
-        if (error instanceof AppErrorClass) {
-            throw error;
-        }
+        const sanitizedError = sanitizeApiError(error);
 
-        throw new ServiceError(
-            `GetUserFundingAccountsBalancesController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(`GetUserFundingAccountsBalancesController facing issue`, sanitizedError);
     }
 };
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

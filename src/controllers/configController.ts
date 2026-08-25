@@ -2,10 +2,11 @@ import type { Request, Response } from 'express';
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js";
 import { symmetricDecryptionMsg, symmetricEncryptionMsg } from '../utils/symmetricEncryptionDecryption.js';
 import { asymmetricDecryptionMsg } from '../utils/asymmetricEncryptionDecryption.js';
-import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
+import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, UnauthenticatedError, UnauthorizedError } from '../utils/AppErrorClass.js';
 import type { decryptionFailedJson, decryptionSuccessJson } from '../types/decryptionRespoonseTypes.js';
 import { getAesEncryptionKeyService, getDnsConfigService, getHeaderPublicKeyService, getMobileCountryCodesService, getRsaPublicKeyService } from '../services/configServices.js';
 import logger from '../utils/logger.js';
+import sanitizeApiError from '../utils/sanitizeApiError.js';
 
 // ------------------------------------- FUNCTION TO GET THE DNS CONFIGURATION DATA ------------------------------------- \\
 export const getDnsConfig = async (req: Request, res: Response<successResponseJson | failedResponseJson>): Promise<Response<successResponseJson> | void> => {
@@ -46,7 +47,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                 }
             }
             catch (err) {
-                throw new ServiceUnavailableError("Asymmetric decryption service is not working.", err);
+                throw new ServiceError("Asymmetric decryption service is not working.", err);
             }
 
             // AES Symmetric payload decryption
@@ -82,7 +83,7 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
                 }
             }
             catch (err) {
-                throw new ServiceUnavailableError("Symmetric decryption service is not working.", err);
+                throw new ServiceError("Symmetric decryption service is not working.", err);
             }
         }
         else {
@@ -99,13 +100,14 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `GetDnsConfigRequestPayloadDecryption facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+
+        throw new ServiceError(`GetDnsConfigRequestPayloadDecryption facing issue`, sanitizedError);
     }
     try {
         const getDnsConfigServiceResponse: successResponseJson = await getDnsConfigService(req, aesDecryptedQueryData);
@@ -139,13 +141,13 @@ export const getDnsConfig = async (req: Request, res: Response<successResponseJs
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `GetDnsConfigController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`GetDnsConfigController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -170,13 +172,13 @@ export const getEncryptionKey = (req: Request, res: Response): Response<successR
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `GetEncryptionKeyController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`GetEncryptionKeyController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -202,13 +204,13 @@ export const getPublicKey = (req: Request, res: Response): Response<successRespo
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `GetPublicKeyController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`GetPublicKeyController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -233,13 +235,13 @@ export const getMobileCountryCodes = (req: Request, res: Response): Response<suc
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `GetMobileCountryCodesController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`GetMobileCountryCodesController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -264,13 +266,14 @@ export const getHeaderPublicKey = (req: Request, res: Response): Response<succes
             url: req.path,
             method: req.method
         });
+
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
         throw new ServiceError(
-            `GetHeaderPublicKeyCController facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+            `GetHeaderPublicKeyCController facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

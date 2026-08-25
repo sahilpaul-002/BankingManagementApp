@@ -26,6 +26,7 @@ import getWalletFxRate from "./walletFxRateService.js";
 import executeWalletCurrencyConversionTransaction from "../mongoDbTransactions/executeWalletCurrencyConversionTransaction.js";
 import { loadWalletValidationSchema, withdrawWalletValidationSchema } from "../validations/userWalletActionValidation.js";
 import createWalletCurrencyConversionTransaction from "../mongoDbTransactions/createWalletCurrencyConversionTransaction.js";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -127,14 +128,13 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
 
-        throw new ServiceError(
-            `GetWalletService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`GetWalletService facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -286,13 +286,12 @@ export const createWalletService = async (requestSession: Request["session"], ae
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `CreateWalletService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`CreateWalletService facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -432,13 +431,12 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `LoadWalletService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`LoadWalletService facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -576,13 +574,12 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
             // method: req.method
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error
         }
-        throw new ServiceError(
-            `WithdrawWalletService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`WithdrawWalletService facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -769,11 +766,13 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
 
         logger.error(error, { serviceName: "GetWalletTransactionService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`GetWalletTransactionService facing issue: ${error.message}`, error);
+        throw new ServiceError(`GetWalletTransactionService facing issue`, sanitizedError);
     }
 
 };
@@ -874,13 +873,14 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
 
         logger.error(error, { serviceName: "GetWalletTransactionDetailsService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`GetWalletTransactionDetailsService facing issue: ${error.message}`, error);
+        throw new ServiceError(`GetWalletTransactionDetailsService facing issue`, sanitizedError);
     }
-
 };
 // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
@@ -1065,14 +1065,13 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
                 "CreateWalletCurrencyConversionQuoteService"
         });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(
-            `CreateWalletCurrencyConversionQuoteService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`CreateWalletCurrencyConversionQuoteService facing issue`, sanitizedError);
     }
 };
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
@@ -1216,15 +1215,13 @@ export const executeWalletCurrencyConversionQuoteService = async (requestSession
 
         logger.error(error, { serviceName: "ExecuteWalletCurrencyConversionQuoteService" });
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-
-        throw new ServiceError(
-            `ExecuteWalletCurrencyConversionQuoteService facing issue: [${errorStatus}] ${error.message}`,
-            error?.error ? error.error : error
-        );
+        throw new ServiceError(`ExecuteWalletCurrencyConversionQuoteService facing issue`, sanitizedError);
     }
 };
 // -------------------------------------------- XXXXXXXXXXXXXXXXXXXXXX -------------------------------------------- \\

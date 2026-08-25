@@ -7,6 +7,7 @@ import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError, BadRequestError, NotFoundError } from "../utils/AppErrorClass.js";
 import type { JwtPayload } from "jsonwebtoken";
 import crypto from "crypto";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 interface userBankVerificationJwtPayloadType extends JwtPayload {
     userId: string;
@@ -247,14 +248,13 @@ const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(
-            `UserBankVerificationTransactionService facing issue: ${error.message
-            }`
-        );
+        throw new ServiceError(`UserBankVerificationTransactionService facing issue`, sanitizedError);
 
     }
     finally {

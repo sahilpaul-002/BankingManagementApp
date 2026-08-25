@@ -8,6 +8,7 @@ import { AppErrorClass, ServiceError, } from "../utils/AppErrorClass.js";
 import type { fiatPayoutQuoteSchemaTypes, walletDetailsType } from "../types/schemaTypes.js";
 import { Decimal } from "decimal.js";
 import crypto from "crypto";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 
 type ExecuteFiatPayoutTransactionData = {
@@ -229,11 +230,13 @@ const executeFiatPayoutTransaction = async (transactionData: ExecuteFiatPayoutTr
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`ExecuteFiatPayoutTransaction facing issue: ${error.message}`);
+        throw new ServiceError(`ExecuteFiatPayoutTransaction facing issue`, sanitizedError);
     }
     finally {
 

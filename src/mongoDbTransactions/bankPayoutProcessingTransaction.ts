@@ -6,6 +6,7 @@ import logger from "../utils/logger.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
 import { Decimal } from "decimal.js";
 import crypto from "crypto";
+import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 type bankPayoutProcessingTransactionData = {
     payoutTransactionId: string;
@@ -306,11 +307,13 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
             }
         );
 
+        const sanitizedError = sanitizeApiError(error);
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
 
-        throw new ServiceError(`CompletePayoutTransaction facing issue: ${error.message}`);
+        throw new ServiceError(`CompletePayoutTransaction facing issue`, sanitizedError);
     } finally {
 
         await mongoSession.endSession();
