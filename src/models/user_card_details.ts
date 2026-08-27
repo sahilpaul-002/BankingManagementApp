@@ -17,13 +17,13 @@ const decimalField = (defaultValue: string) => ({
 const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
     {
         cardholder_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             index: true,
         },
 
         card_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             unique: true,
             index: true,

@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { userWalletDetailsModel as user_wallet_details } from "../models/user_wallet_details.js";
 import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
 import logger from "../utils/logger.js";
@@ -16,6 +16,7 @@ import { userCardDetailsModel as user_card_details } from "../models/user_card_d
 import userCardCreationValidationSchema from "../validations/userCardCreationValidation.js";
 import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
+import { Decimal } from "decimal.js"
 
 const generateCardNumber = (): string => {
     const prefixes = ["4", "2", "5"];
@@ -39,7 +40,7 @@ const generateCardNumber = (): string => {
 
 type userCardDataValidationType = SafeParseSuccess<z.infer<typeof userCardCreationValidationSchema>>;
 
-const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType, cardholderId: string, userCardData: userCardDataValidationType, walletId?: string) => {
+const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, userCardData: userCardDataValidationType) => {
     // Start transaction
     const mongoSession = await mongoose.startSession();
 
@@ -58,22 +59,58 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
             throw new NotFoundError("Required collection(card details) does not exist");
         }
 
-        const deductionAmount = FEE_DETAILS.create_card;
+        // Validate user usd wallet existance
+        const userUsdWalletDetailsDoc = await user_wallet_details.findOne(
+            {
+                cardholder_id: cardholderObjectId,
+                "wallets_details.wallet_currency": "USD"
+            },
+            {
+                wallet_id: 1,
+                user_id: 1,
+                wallets_details: {
+                    $elemMatch: {
+                        wallet_currency: "USD"
+                    }
+                }
+            }
+        ).lean();
+        if (!userUsdWalletDetailsDoc?.wallets_details?.length || !userUsdWalletDetailsDoc?.wallets_details?.[0]) {
+            throw new NotFoundError("User USD wallet not found");
+        }
+        const userUsdWallet: walletDetailsType = userUsdWalletDetailsDoc.wallets_details[0];
 
-        const balanceBefore = Number(userUsdWalletDetails?.account_balance?.toString()) ?? 0;
-        const balanceAfter = balanceBefore - deductionAmount;
+        // Check usd wallet amount
+        if ((Number(userUsdWallet?.account_balance!.toString()) ?? 0) <= 5) {
+            throw new BadRequestError("Issuficient balance in USD wallet");
+        }
+        const walletObjectId = userUsdWalletDetailsDoc?._id
+        if (!userUsdWallet) {
+            throw new NotFoundError("User USD wallet not found");
+        }
+        if (!userUsdWallet.account_balance) {
+            throw new ServiceError("USD wallet account balance not found");
+        }
+
+        const deductionAmount = new Decimal(FEE_DETAILS.create_card.toString());
+
+        const balanceBefore = new Decimal(userUsdWallet?.account_balance?.toString());
+        const balanceAfter = balanceBefore.minus(deductionAmount);
 
         // Deduct wallet balance
-        const deductionAmountDecimal = mongoose.Types.Decimal128.fromString(deductionAmount.toDecimalPlaces(4).toString());
+        const deductionAmountString = deductionAmount.toDecimalPlaces(4).toString();
+        const deductionAmountDecimal = mongoose.Types.Decimal128.fromString(deductionAmountString);
+        const negativeDeductionAmountDecimal = mongoose.Types.Decimal128.fromString(`-${deductionAmountString}`);
+
         const updatedWallet = await user_wallet_details.findOneAndUpdate(
             {
-                cardholder_id: cardholderId,
+                cardholder_id: cardholderObjectId,
                 "wallets_details.wallet_currency": "USD",
-                "wallets_details.account_balance": {$gte: deductionAmountDecimal,},
+                "wallets_details.account_balance": { $gte: deductionAmountDecimal, },
             },
             {
                 $inc: {
-                    "wallets_details.$.account_balance": -deductionAmount
+                    "wallets_details.$.account_balance": negativeDeductionAmountDecimal
                 }
             },
             {
@@ -87,7 +124,7 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
         }
 
         // Generate card details
-        const cardId = crypto.randomUUID();
+        const cardId = new Types.ObjectId();
         const cardNumber = generateCardNumber();
         const cvv = crypto.randomInt(100, 1000).toString();
 
@@ -105,12 +142,15 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
             monthlyLimit = cardLimits?.monthly_limit as string;
             yearlyLimit = cardLimits?.yearly_limit as string;
         }
+        const dailyLimitDecimal = mongoose.Types.Decimal128.fromString(dailyLimit!);
+        const monthlyLimitDecimal = mongoose.Types.Decimal128.fromString(monthlyLimit!);
+        const yearlyLimitDecimal = mongoose.Types.Decimal128.fromString(yearlyLimit!);
 
         // Create card
         const createdCard = await user_card_details.create(
             [
                 {
-                    cardholder_id: cardholderId as string,
+                    cardholder_id: cardholderObjectId,
                     card_id: cardId,
                     card_number: cardNumber,
                     card_status: "INACTIVE",
@@ -122,7 +162,9 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
                     card_currency: userCardData.data?.card_currency,
                     ...(userCardData.data.card_limits && {
                         card_limits: {
-                            daily_limit: dailyLimit!, monthly_limit: monthlyLimit!, yearly_limit: yearlyLimit!
+                            daily_limit: dailyLimitDecimal,
+                            monthly_limit: monthlyLimitDecimal,
+                            yearly_limit: yearlyLimitDecimal,
                         }
                     }),
                     ...(userCardData.data.merchant_categories && {
@@ -140,7 +182,7 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
             transaction_type: "WITHDRAW",
             transaction_status: "SUCCESS",
             wallet_details: {
-                wallet_type: userUsdWalletDetails?.wallet_type,
+                wallet_type: userUsdWallet?.wallet_type,
                 wallet_currency: "USD"
             },
             amount: deductionAmount,
@@ -169,21 +211,23 @@ const userCreateCardTransaction = async (userUsdWalletDetails: walletDetailsType
         await user_wallet_transactions.create(
             [
                 {
-                    wallet_id: walletId,
-                    transaction_id: crypto.randomUUID(),
-                    transaction_type: validationResult?.data?.transaction_type,
-                    transaction_status: validationResult?.data?.transaction_status,
+                    cardholder_id: cardholderObjectId,
+                    wallet_id: walletObjectId,
+                    transaction_id: new Types.ObjectId(),
+                    transaction_type: validationResult.data.transaction_type,
+                    transaction_status: validationResult.data.transaction_status,
                     wallet_details: {
-                        wallet_type: validationResult?.data?.wallet_details?.wallet_type,
-                        wallet_currency: validationResult?.data?.wallet_details?.wallet_currency,
+                        wallet_type: validationResult.data.wallet_details.wallet_type,
+                        wallet_currency: validationResult.data.wallet_details.wallet_currency,
                     },
-                    amount: validationResult.data.amount,
-                    balance_before: validationResult?.data?.balance_before,
-                    balance_after: validationResult?.data?.balance_after,
-                    reference_id: validationResult?.data?.reference_id,
-                    remarks: validationResult?.data?.remarks,
-                }
-            ] as any,
+
+                    amount: mongoose.Types.Decimal128.fromString(deductionAmount.toFixed(4)),
+                    balance_before: mongoose.Types.Decimal128.fromString(balanceBefore.toFixed(4)),
+                    balance_after: mongoose.Types.Decimal128.fromString(balanceAfter.toFixed(4)),
+                    reference_id: validationResult.data.reference_id,
+                    remarks: validationResult.data.remarks,
+                },
+            ],
             {
                 session: mongoSession,
             }

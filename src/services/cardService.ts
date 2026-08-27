@@ -23,6 +23,7 @@ import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import { gmailSendService } from "./gmailSendService.js";
 import cardTransactionSettlementTransaction from "../mongoDbTransactions/cardTransactionSettelmentTransaction.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
+import { Types } from "mongoose";
 
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
@@ -42,7 +43,7 @@ export const createCardService = async (requestSession: Request["session"], aesD
         }
 
         // Check collection
-        const isCollectionPresent = await checkMongoDbCollectionExist("user_wallet_transactions");
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_card_details");
 
         if (isCollectionPresent.status !== "SUCCESS") {
             throw new NotFoundError("Required collection does not exist");
@@ -76,40 +77,15 @@ export const createCardService = async (requestSession: Request["session"], aesD
             throw new ForbiddenError("User configuration is not valid to access to create card")
         }
         const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Valid cardholder-id not found in request request body")
         }
-        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
+        
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
+        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
         if (!cardHolderExist) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
-
-        // Validate user usd wallet existance
-        const userUsdWalletDetailsDoc = await user_wallet_details.findOne(
-            {
-                cardholder_id: cardholderId,
-                "wallets_details.wallet_currency": "USD"
-            },
-            {
-                wallet_id: 1,
-                user_id: 1,
-                wallets_details: {
-                    $elemMatch: {
-                        wallet_currency: "USD"
-                    }
-                }
-            }
-        ).lean();
-        if (!userUsdWalletDetailsDoc?.wallets_details?.length || !userUsdWalletDetailsDoc?.wallets_details?.[0]) {
-            throw new NotFoundError("User USD wallet not found");
-        }
-        const userUsdWallet: walletDetailsType = userUsdWalletDetailsDoc.wallets_details[0];
-
-        // Check usd wallet amount
-        if ((Number(userUsdWallet?.account_balance!.toString()) ?? 0) <= 5) {
-            throw new BadRequestError("Issuficient balance in USD wallet");
-        }
-
 
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof userCardCreationValidation>> = userCardCreationValidation.safeParse(aesDecryptedBodyData);
@@ -126,10 +102,8 @@ export const createCardService = async (requestSession: Request["session"], aesD
             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
 
-        const walletId = userUsdWalletDetailsDoc?.wallet_id
-
         // Create card transaction
-        const cardCreationTransactionResult = await userCreateCardTransaction(userUsdWallet, cardholderId, validationResult, walletId)
+        const cardCreationTransactionResult = await userCreateCardTransaction(cardholderObjectId, validationResult)
 
         if (cardCreationTransactionResult?.status !== "SUCCESS") {
             throw new ServiceError("Create card service is facing issue - failed to create user card")

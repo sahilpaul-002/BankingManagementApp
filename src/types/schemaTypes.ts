@@ -256,8 +256,8 @@ export interface cardLimitsTypes {
     yearly_limit: mongoose.Types.Decimal128;
 }
 export interface userCardDetailsSchemaTypes extends Document {
-    cardholder_id: string;
-    card_id: string;
+    cardholder_id: Types.ObjectId;
+    card_id: Types.ObjectId;
     card_number: string;
     card_status: "ACTIVE" | "INACTIVE" | "FROZEN" | "BLOCKED";
     cvv: string;
