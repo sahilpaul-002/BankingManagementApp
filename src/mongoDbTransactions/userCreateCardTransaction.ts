@@ -81,9 +81,6 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
         const userUsdWallet: walletDetailsType = userUsdWalletDetailsDoc.wallets_details[0];
 
         // Check usd wallet amount
-        if ((Number(userUsdWallet?.account_balance!.toString()) ?? 0) <= 5) {
-            throw new BadRequestError("Issuficient balance in USD wallet");
-        }
         const walletObjectId = userUsdWalletDetailsDoc?._id
         if (!userUsdWallet) {
             throw new NotFoundError("User USD wallet not found");
@@ -93,6 +90,10 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
         }
 
         const deductionAmount = new Decimal(FEE_DETAILS.create_card.toString());
+        const accountBalance = new Decimal(userUsdWallet.account_balance.toString());
+        if (accountBalance.lessThan(deductionAmount)) {
+            throw new BadRequestError("Insufficient balance in USD wallet");
+        }
 
         const balanceBefore = new Decimal(userUsdWallet?.account_balance?.toString());
         const balanceAfter = balanceBefore.minus(deductionAmount);
@@ -124,7 +125,6 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
         }
 
         // Generate card details
-        const cardId = new Types.ObjectId();
         const cardNumber = generateCardNumber();
         const cvv = crypto.randomInt(100, 1000).toString();
 
@@ -133,42 +133,43 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
         const validDate = new Date();
         validDate.setFullYear(validDate.getFullYear() + 5);
 
-        const cardLimits = userCardData.data?.card_limits
-        let dailyLimit: string
-        let monthlyLimit: string
-        let yearlyLimit: string
+
+        // Validate card limits
+        const cardLimits = userCardData.data.card_limits;
+        let cardLimitsData;
         if (cardLimits) {
-            dailyLimit = cardLimits?.daily_limit as string;
-            monthlyLimit = cardLimits?.monthly_limit as string;
-            yearlyLimit = cardLimits?.yearly_limit as string;
+            if (cardLimits.daily_limit === undefined || cardLimits.monthly_limit === undefined || cardLimits.yearly_limit === undefined) {
+                throw new ServiceError("Daily, monthly and yearly card limits are required");
+            }
+            cardLimitsData = {
+                daily_limit: mongoose.Types.Decimal128.fromString(cardLimits.daily_limit.toString()),
+                monthly_limit: mongoose.Types.Decimal128.fromString(cardLimits.monthly_limit.toString()),
+                yearly_limit: mongoose.Types.Decimal128.fromString(cardLimits.yearly_limit.toString()),
+            };
         }
-        const dailyLimitDecimal = mongoose.Types.Decimal128.fromString(dailyLimit!);
-        const monthlyLimitDecimal = mongoose.Types.Decimal128.fromString(monthlyLimit!);
-        const yearlyLimitDecimal = mongoose.Types.Decimal128.fromString(yearlyLimit!);
 
         // Create card
         const createdCard = await user_card_details.create(
             [
                 {
                     cardholder_id: cardholderObjectId,
-                    card_id: cardId,
                     card_number: cardNumber,
                     card_status: "INACTIVE",
                     cvv,
                     issued_date: issuedDate,
                     valid_date: validDate,
-                    name_on_card: userCardData.data?.name_on_card,
-                    card_type: userCardData.data?.card_type,
-                    card_currency: userCardData.data?.card_currency,
-                    ...(userCardData.data.card_limits && {
-                        card_limits: {
-                            daily_limit: dailyLimitDecimal,
-                            monthly_limit: monthlyLimitDecimal,
-                            yearly_limit: yearlyLimitDecimal,
-                        }
+                    name_on_card: userCardData.data.name_on_card,
+                    card_type: userCardData.data.card_type,
+                    card_currency: userCardData.data.card_currency,
+
+                    ...(cardLimitsData && {
+                        card_limits: cardLimitsData,
                     }),
+
                     ...(userCardData.data.merchant_categories && {
-                        valid_merchant_categories: [...(userCardData.data.merchant_categories ?? MERCHANT_CATEGORIES)],
+                        valid_merchant_categories: [
+                            ...userCardData.data.merchant_categories
+                        ],
                     }),
                 }
             ],
@@ -185,9 +186,9 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
                 wallet_type: userUsdWallet?.wallet_type,
                 wallet_currency: "USD"
             },
-            amount: deductionAmount,
-            balance_before: balanceBefore,
-            balance_after: balanceAfter,
+            amount: Number(deductionAmount),
+            balance_before: Number(balanceBefore),
+            balance_after: Number(balanceAfter),
             reference_id: crypto.randomUUID(),
             remarks: "Card creation fee",
         };
@@ -221,9 +222,9 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
                         wallet_currency: validationResult.data.wallet_details.wallet_currency,
                     },
 
-                    amount: mongoose.Types.Decimal128.fromString(deductionAmount.toFixed(4)),
-                    balance_before: mongoose.Types.Decimal128.fromString(balanceBefore.toFixed(4)),
-                    balance_after: mongoose.Types.Decimal128.fromString(balanceAfter.toFixed(4)),
+                    amount: mongoose.Types.Decimal128.fromString(deductionAmount.toFixed(2)),
+                    balance_before: mongoose.Types.Decimal128.fromString(balanceBefore.toFixed(2)),
+                    balance_after: mongoose.Types.Decimal128.fromString(balanceAfter.toFixed(2)),
                     reference_id: validationResult.data.reference_id,
                     remarks: validationResult.data.remarks,
                 },

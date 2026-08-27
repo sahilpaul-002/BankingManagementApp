@@ -257,7 +257,6 @@ export interface cardLimitsTypes {
 }
 export interface userCardDetailsSchemaTypes extends Document {
     cardholder_id: Types.ObjectId;
-    card_id: Types.ObjectId;
     card_number: string;
     card_status: "ACTIVE" | "INACTIVE" | "FROZEN" | "BLOCKED";
     cvv: string;

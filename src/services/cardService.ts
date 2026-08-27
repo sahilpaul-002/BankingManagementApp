@@ -23,7 +23,7 @@ import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import { gmailSendService } from "./gmailSendService.js";
 import cardTransactionSettlementTransaction from "../mongoDbTransactions/cardTransactionSettelmentTransaction.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
@@ -36,10 +36,10 @@ type userConfigurationsType = {
 }
 
 // ----------------------------------- CREATE CARD SERVICE ----------------------------------- \\
-export const createCardService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
+export const createCardService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, any> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
-            throw new BadRequestError("Invalid query data");
+            throw new BadRequestError("Invalid request data");
         }
 
         // Check collection
@@ -80,7 +80,7 @@ export const createCardService = async (requestSession: Request["session"], aesD
         if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
             throw new InvalidRequestBodyError("Valid cardholder-id not found in request request body")
         }
-        
+
         const cardholderObjectId = new Types.ObjectId(cardholderId);
         const cardHolderExist = await user_details.exists({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
         if (!cardHolderExist) {
@@ -111,7 +111,7 @@ export const createCardService = async (requestSession: Request["session"], aesD
 
         const cardDetails = {
             cardholderId: cardCreationTransactionResult?.data?.cardholder_id,
-            cardId: cardCreationTransactionResult?.data?.card_id,
+            cardId: cardCreationTransactionResult?.data?._id,
             cardNumber: cardCreationTransactionResult?.data?.card_number,
             nameOnCard: cardCreationTransactionResult?.data?.name_on_card,
             cardStatus: cardCreationTransactionResult?.data?.card_status,
@@ -171,16 +171,18 @@ export const getCardsListService = async (requestSession: Request["session"], ae
             throw new ForbiddenError("User configuration is not valid to access card list")
         }
         const cardholderId = checkStringBody(aesDecryptedQueryData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Valid cardholder-id not found in request body")
         }
+
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
                 throw new ForbiddenError("Not authorized to get card list")
             }
         }
-        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
+        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
         if (!cardHolderExist) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
@@ -222,7 +224,7 @@ export const getCardsListService = async (requestSession: Request["session"], ae
         }
 
         // Get total matching transactions
-        const totalCards = await user_card_details.countDocuments({ cardholder_id: cardholderId })
+        const totalCards = await user_card_details.countDocuments({ cardholder_id: cardholderObjectId })
         // Calculate total pages
         const totalPages = Math.max(1, Math.ceil(totalCards / pageSize));
         // Calculate current page
@@ -231,7 +233,7 @@ export const getCardsListService = async (requestSession: Request["session"], ae
         const skip = (currentPage - 1) * pageSize; // Skip fetching documents for page number more than 1
 
         // Fetch Cards List
-        const cardsList = await user_card_details.find({ cardholder_id: cardholderId }).select("-cardholder_id -cvv -valid_date -createdAt -updatedAt -__v").sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean()
+        const cardsList = await user_card_details.find({ cardholder_id: cardholderObjectId }).select("-cardholder_id -cvv -valid_date -valid_merchant_categories -createdAt -updatedAt -__v").sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean()
 
         if (!Array.isArray(cardsList) || cardsList.length === 0) {
             throw new NotFoundError("No cards associated with this cardholder found")
@@ -311,30 +313,33 @@ export const getCardDetailsService = async (requestSession: Request["session"], 
             throw new ForbiddenError("User configuration is not valid to access cardholder list")
         }
         const cardholderId = checkStringBody(aesDecryptedQueryData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Valid cardholder-id not found in request body")
         }
+
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
                 throw new ForbiddenError("Not authorized to get card details")
             }
         }
-        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
+        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
         if (!cardHolderExist) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
 
         // Validate card id
-        if (!cardId) {
-            throw new InvalidRequestParamsError("Card id not provided");
+        if (!cardId || !Types.ObjectId.isValid(cardId)) {
+            throw new InvalidRequestBodyError("Valid card-id not found in request query params")
         }
+        const cardObjectId = new Types.ObjectId(cardId)
 
         // Fetch Card Details
         const cardDetails = await user_card_details.findOne({
             cardholder_id: cardholderId,
-            card_id: cardId,
-        }).select("-cardholder_id -cvv -valid_date -createdAt -updatedAt -__v").lean();
+            _id: cardObjectId,
+        }).select("-cardholder_id -cvv -valid_date -valid_merchant_categories -createdAt -updatedAt -__v").lean();
 
         if (!cardDetails) {
             throw new NotFoundError("Card and card details not found")
@@ -405,24 +410,27 @@ export const updateCardStatusService = async (requestSession: Request["session"]
             throw new ForbiddenError("User configuration is not valid to access cardholder list")
         }
         const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Valid cardholder-id not found in request body")
         }
+
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
                 throw new ForbiddenError("Not authorized to update card status")
             }
         }
-        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
+        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
         if (!cardHolderExist) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
 
         // Validate card id
-        if (!cardId) {
-            throw new InvalidRequestParamsError("Card id not provided");
+        if (!cardId || !Types.ObjectId.isValid(cardId)) {
+            throw new InvalidRequestBodyError("Valid card-id not found in request query params")
         }
+        const cardObjectId = new Types.ObjectId(cardId)
 
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof userCardUpdateValidationSchema>> = userCardUpdateValidationSchema.safeParse(aesDecryptedBodyData);
@@ -442,8 +450,8 @@ export const updateCardStatusService = async (requestSession: Request["session"]
         // Update Card Details
         const updatedCardDetails = await user_card_details.findOneAndUpdate(
             {
-                cardholder_id: cardholderId,
-                card_id: cardId,
+                _id: cardObjectId,
+                cardholder_id: cardholderObjectId
             },
             {
                 $set: {
@@ -454,7 +462,7 @@ export const updateCardStatusService = async (requestSession: Request["session"]
                 new: true,
                 runValidators: true,
             }
-        ).select("-cardholder_id -cvv -valid_date -createdAt -updatedAt -__v").lean();;
+        ).select("-cardholder_id -cvv -valid_date -valid_merchant_categories -createdAt -updatedAt -__v").lean();;
 
         if (!updatedCardDetails) {
             throw new NotFoundError("Card and card details not found");
@@ -524,32 +532,35 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
             throw new ForbiddenError("User configuration is not valid to access cardholder list")
         }
         const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Valid cardholder-id not found in request body")
         }
+
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
                 throw new ForbiddenError("Not authorized to update card limits")
             }
         }
-        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
+        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
         if (!cardHolderExist) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
 
         // Validate card id
-        if (!cardId) {
-            throw new InvalidRequestParamsError("Card id not provided");
+        if (!cardId || !Types.ObjectId.isValid(cardId)) {
+            throw new InvalidRequestBodyError("Valid card-id not found in request query params")
         }
+        const cardObjectId = new Types.ObjectId(cardId)
 
-        if (!aesDecryptedBodyData?.cardLimits || typeof aesDecryptedBodyData?.cardLimits !== "object" || Array.isArray(aesDecryptedBodyData?.cardLimits) || Object.keys(aesDecryptedBodyData?.cardLimits).length === 0
+        if (!aesDecryptedBodyData?.card_limits || typeof aesDecryptedBodyData?.card_limits !== "object" || Array.isArray(aesDecryptedBodyData?.card_limits) || Object.keys(aesDecryptedBodyData?.card_limits).length === 0
         ) {
             throw new InvalidRequestBodyError("Card limits not present in request body")
         }
 
         // Check Card Status
-        const card = await user_card_details.findOne({ cardholder_id: cardholderId, card_id: cardId }).select("card_status card_limits").lean();
+        const card = await user_card_details.findOne({ cardholder_id: cardholderId, _id: cardObjectId }).select("card_status card_limits").lean();
         if (!card) {
             throw new NotFoundError("Card not found");
         }
@@ -575,37 +586,29 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
 
         // COnfigure the limits merging the existing and incoming limits
         const mergedLimits = {
-            daily_limit:
-                updateData.card_limits?.daily_limit ?? card?.card_limits?.daily_limit,
-
-            monthly_limit:
-                updateData.card_limits?.monthly_limit ?? card?.card_limits?.monthly_limit,
-
-            yearly_limit:
-                updateData.card_limits?.yearly_limit ?? card?.card_limits?.yearly_limit,
+            daily_limit: updateData.card_limits?.daily_limit ?? Number(card?.card_limits?.daily_limit?.toString()),
+            monthly_limit: updateData.card_limits?.monthly_limit ?? Number(card?.card_limits?.monthly_limit?.toString()),
+            yearly_limit: updateData.card_limits?.yearly_limit ?? Number(card?.card_limits?.yearly_limit?.toString()),
         };
 
         // Validate limit amounts
-        const daily = Number(mergedLimits.daily_limit);
-        const monthly = Number(mergedLimits.monthly_limit);
-        const yearly = Number(mergedLimits.yearly_limit);
+        const daily = mergedLimits.daily_limit;
+        const monthly = mergedLimits.monthly_limit;
+        const yearly = mergedLimits.yearly_limit;
         if (daily >= monthly) {
-            throw new BadRequestError(
-                "Daily limit must be less than monthly limit"
-            );
+            throw new BadRequestError("Daily limit must be less than monthly limit");
         }
         if (monthly >= yearly) {
-            throw new BadRequestError(
-                "Monthly limit must be less than yearly limit"
-            );
+            throw new BadRequestError("Monthly limit must be less than yearly limit");
         }
 
         // Build update object
-        const updateFields: Record<string, string> = {};
-        if (validationResult.data.card_limits) {
-            Object.entries(validationResult.data.card_limits).forEach(([key, value]) => {
+        const updateFields: Record<string, mongoose.Types.Decimal128> = {};
+        if (updateData.card_limits) {
+            Object.entries(updateData.card_limits).forEach(([key, value]) => {
                 if (value !== undefined) {
-                    updateFields[`card_limits.${key}`] = value;
+                    updateFields[`card_limits.${key}`] =
+                        mongoose.Types.Decimal128.fromString(value.toString());
                 }
             });
         }
@@ -613,8 +616,8 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
         // Update Card Details
         const updatedCard = await user_card_details.findOneAndUpdate(
             {
-                cardholder_id: cardholderId,
-                card_id: cardId,
+                cardholder_id: cardholderObjectId,
+                _id: cardObjectId,
             },
             {
                 $set: updateFields,
@@ -623,7 +626,7 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
                 new: true,
                 runValidators: true,
             }
-        ).select("-cardholder_id -cvv -valid_date -createdAt -updatedAt -__v").lean();
+        ).select("-cardholder_id -cvv -valid_date, -valid_merchant_categories -createdAt -updatedAt -__v").lean();
 
         if (!updatedCard) {
             throw new ServiceError("Failed update card limits");

@@ -5,7 +5,11 @@ const merchantCategoriesCheck = z
     .array(z.string())
     .check(({ value, issues }) => {
         value.forEach((category, index) => {
-            if (!MERCHANT_CATEGORIES.includes(category as typeof MERCHANT_CATEGORIES[number])) {
+            if (
+                !MERCHANT_CATEGORIES.includes(
+                    category as typeof MERCHANT_CATEGORIES[number]
+                )
+            ) {
                 issues.push({
                     code: "custom",
                     path: [index],
@@ -17,15 +21,11 @@ const merchantCategoriesCheck = z
     });
 
 const limitValidation = z
-    .string()
-    .trim()
-    .regex(/^\d+$/, "Value must contain numbers only")
-    .refine(
-        (value) => Number(value) >= 10,
-        {
-            message: "Minimum limit must be 10",
-        }
-    );
+    .number({
+        error: "Limit must be numeric",
+    })
+    .int("Limit must be a whole number")
+    .min(10, "Minimum limit must be 10");
 
 const cardLimitsSchema = z
     .object({
@@ -38,10 +38,8 @@ const cardLimitsSchema = z
         const hasMonthly = value.monthly_limit !== undefined;
         const hasYearly = value.yearly_limit !== undefined;
 
-        // Either all or none
-        if (
-            hasDaily || hasMonthly || hasYearly
-        ) {
+        // Either all three or none
+        if (hasDaily || hasMonthly || hasYearly) {
             if (!(hasDaily && hasMonthly && hasYearly)) {
                 issues.push({
                     code: "custom",
@@ -54,8 +52,8 @@ const cardLimitsSchema = z
                 return;
             }
 
-            // All three exist here
-            if (Number(value.daily_limit) >= Number(value.monthly_limit)) {
+            // Daily < Monthly
+            if (value.daily_limit! >= value.monthly_limit!) {
                 issues.push({
                     code: "custom",
                     path: ["daily_limit"],
@@ -64,7 +62,8 @@ const cardLimitsSchema = z
                 });
             }
 
-            if (Number(value.monthly_limit) >= Number(value.yearly_limit)) {
+            // Monthly < Yearly
+            if (value.monthly_limit! >= value.yearly_limit!) {
                 issues.push({
                     code: "custom",
                     path: ["monthly_limit"],
@@ -90,7 +89,7 @@ const userCardCreationValidationSchema = z.object({
 
     card_limits: cardLimitsSchema.optional(),
 
-    merchant_categories: merchantCategoriesCheck,
+    merchant_categories: merchantCategoriesCheck.optional(),
 });
 
 export default userCardCreationValidationSchema;

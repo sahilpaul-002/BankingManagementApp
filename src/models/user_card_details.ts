@@ -22,14 +22,6 @@ const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
             index: true,
         },
 
-        card_id: {
-            type: Schema.Types.ObjectId,
-            required: true,
-            unique: true,
-            index: true,
-            trim: true,
-        },
-
         card_number: {
             type: String,
             required: true,
@@ -164,8 +156,8 @@ const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
 );
 
 userCardDetailsSchema.index({
-    cardholder_id: 1,
-    card_id: 1,
+    _id: 1,
+    cardholder_id: 1
 });
 
 const userCardDetailsModel = mongoose.model<userCardDetailsSchemaTypes>(

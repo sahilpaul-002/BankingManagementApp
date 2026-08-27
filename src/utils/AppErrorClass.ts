@@ -7,6 +7,10 @@ type SafeError = {
     status?: number;
     method?: string;
     url?: string;
+
+    // Zov validation error
+    fieldErrors?: Record<string, string[]>;
+    formErrors?: string[];
 };
 
 const sanitizeError = (error: any): SafeError | undefined => {
@@ -28,6 +32,14 @@ const sanitizeError = (error: any): SafeError | undefined => {
             method: error?.config?.method?.toUpperCase(),
             // Only expose the URL/path, never the config object
             url: error?.config?.url,
+        };
+    }
+
+    // Zod flattened validation error
+    if (typeof error === "object" && ("fieldErrors" in error || "formErrors" in error)) {
+        return {
+            fieldErrors: error.fieldErrors ?? {},
+            formErrors: error.formErrors ?? [],
         };
     }
 
