@@ -58,56 +58,64 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
 
                 daily_transaction: {
                     credit: {
-                        type: Number,
-                        default: 0,
+                        type: Schema.Types.Decimal128,
+                        default: () => mongoose.Types.Decimal128.fromString("0"),
                         min: 0,
+                        required: true,
                     },
                     debit: {
-                        type: Number,
-                        default: 0,
+                        type: Schema.Types.Decimal128,
+                        default: () => mongoose.Types.Decimal128.fromString("0"),
                         min: 0,
+                        required: true,
                     },
                     date: {
                         type: Date,
                         default: Date.now,
+                        required: true,
                     },
                 },
 
                 monthly_transaction: {
                     credit: {
-                        type: Number,
-                        default: 0,
+                        type: Schema.Types.Decimal128,
+                        default: () => mongoose.Types.Decimal128.fromString("0"),
                         min: 0,
+                        required: true,
                     },
                     debit: {
-                        type: Number,
-                        default: 0,
+                        type: Schema.Types.Decimal128,
+                        default: () => mongoose.Types.Decimal128.fromString("0"),
                         min: 0,
+                        required: true,
                     },
                     month: {
                         type: Number,
                         default: () => new Date().getMonth() + 1,
+                        required: true,
                     },
                     year: {
                         type: Number,
                         default: () => new Date().getFullYear(),
+                        required: true,
                     },
                 },
 
                 yearly_transaction: {
                     credit: {
-                        type: Number,
-                        default: 0,
-                        min: 0,
+                        type: Schema.Types.Decimal128,
+                        default: () => mongoose.Types.Decimal128.fromString("0"),
+                        required: true,
                     },
                     debit: {
-                        type: Number,
-                        default: 0,
-                        min: 0,
+                        type: Schema.Types.Decimal128,
+                        default: () => mongoose.Types.Decimal128.fromString("0"),
+                        required: true,
                     },
                     year: {
                         type: Number,
                         default: () => new Date().getFullYear(),
+                        required: true,
                     },
                 },
             }

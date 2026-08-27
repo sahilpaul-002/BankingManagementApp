@@ -138,6 +138,75 @@ const executeWalletCurrencyConversionTransaction = async ({
         const newDestinationBalance = destinationBalance.plus(destinationAmount).toDecimalPlaces(4);
         const newDestinationAvailableBalance = destinationAvailableBalance.plus(destinationAmount).toDecimalPlaces(4);
 
+        // TRANSACTION LIMIT
+        const sourceAmountDecimal128 = mongoose.Types.Decimal128.fromString(sourceAmount.toDecimalPlaces(4).toString());
+        const destinationAmountDecimal128 = mongoose.Types.Decimal128.fromString(destinationAmount.toDecimalPlaces(4).toString());
+        const now = new Date();
+        const sourceUpdateInc: Record<string, mongoose.Types.Decimal128> = {};
+        const sourceUpdateSet: Record<string, any> = {};
+        const destinationUpdateInc: Record<string, mongoose.Types.Decimal128> = {};
+        const destinationUpdateSet: Record<string, any> = {};
+
+        // SOURCE WALLET - DEBIT
+        const sourceDaily = latestSourceWallet.daily_transaction;
+        if (!sourceDaily?.date || sourceDaily.date.toDateString() !== now.toDateString()) {
+            sourceUpdateSet[`wallets_details.${sourceWalletIndex}.daily_transaction.debit`] = sourceAmountDecimal128;
+            sourceUpdateSet[`wallets_details.${sourceWalletIndex}.daily_transaction.date`] = now;
+        }
+        else {
+            sourceUpdateInc[`wallets_details.${sourceWalletIndex}.daily_transaction.debit`] = sourceAmountDecimal128;
+        }
+        // Source Monthly Debit
+        const isSourceSameMonth = latestSourceWallet.monthly_transaction?.month === now.getMonth() + 1 && latestSourceWallet.monthly_transaction?.year === now.getFullYear();
+        if (isSourceSameMonth) {
+            sourceUpdateInc[`wallets_details.${sourceWalletIndex}.monthly_transaction.debit`] = sourceAmountDecimal128;
+        }
+        else {
+            sourceUpdateSet[`wallets_details.${sourceWalletIndex}.monthly_transaction.debit`] = sourceAmountDecimal128;
+            sourceUpdateSet[`wallets_details.${sourceWalletIndex}.monthly_transaction.month`] = now.getMonth() + 1;
+            sourceUpdateSet[`wallets_details.${sourceWalletIndex}.monthly_transaction.year`] = now.getFullYear();
+        }
+        // Source Yearly Debit
+        const isSourceSameYear = latestSourceWallet.yearly_transaction?.year === now.getFullYear();
+        if (isSourceSameYear) {
+            sourceUpdateInc[`wallets_details.${sourceWalletIndex}.yearly_transaction.debit`] = sourceAmountDecimal128;
+        }
+        else {
+            sourceUpdateSet[`wallets_details.${sourceWalletIndex}.yearly_transaction.debit`] = sourceAmountDecimal128;
+            sourceUpdateSet[`wallets_details.${sourceWalletIndex}.yearly_transaction.year`] = now.getFullYear();
+        }
+
+        // DESTINATION WALLET - CREDIT
+        const destinationDaily = latestDestinationWallet.daily_transaction;
+        if (!destinationDaily?.date || destinationDaily.date.toDateString() !== now.toDateString()
+        ) {
+            destinationUpdateSet[`wallets_details.${destinationWalletIndex}.daily_transaction.credit`] = destinationAmountDecimal128;
+            destinationUpdateSet[`wallets_details.${destinationWalletIndex}.daily_transaction.date`] = now;
+        }
+        else {
+            destinationUpdateInc[`wallets_details.${destinationWalletIndex}.daily_transaction.credit`] = destinationAmountDecimal128;
+        }
+
+        // Destination Monthly Credit
+        const isDestinationSameMonth = latestDestinationWallet.monthly_transaction?.month === now.getMonth() + 1 && latestDestinationWallet.monthly_transaction?.year === now.getFullYear();
+        if (isDestinationSameMonth) {
+            destinationUpdateInc[`wallets_details.${destinationWalletIndex}.monthly_transaction.credit`] = destinationAmountDecimal128;
+        }
+        else {
+            destinationUpdateSet[`wallets_details.${destinationWalletIndex}.monthly_transaction.credit`] = destinationAmountDecimal128;
+            destinationUpdateSet[`wallets_details.${destinationWalletIndex}.monthly_transaction.month`] = now.getMonth() + 1;
+            destinationUpdateSet[`wallets_details.${destinationWalletIndex}.monthly_transaction.year`] = now.getFullYear();
+        }
+        // Destination Yearly Credit
+        const isDestinationSameYear = latestDestinationWallet.yearly_transaction?.year === now.getFullYear();
+        if (isDestinationSameYear) {
+            destinationUpdateInc[`wallets_details.${destinationWalletIndex}.yearly_transaction.credit`] = destinationAmountDecimal128;
+        }
+        else {
+            destinationUpdateSet[`wallets_details.${destinationWalletIndex}.yearly_transaction.credit`] = destinationAmountDecimal128;
+            destinationUpdateSet[`wallets_details.${destinationWalletIndex}.yearly_transaction.year`] = now.getFullYear();
+        }
+
         // Create convertion reference id
         const conversionReferenceId = crypto.randomUUID();
 
@@ -152,7 +221,6 @@ const executeWalletCurrencyConversionTransaction = async ({
         const sourceWalletUpdateResult = await user_wallet_details.updateOne(
             {
                 _id: walletDetails._id,
-
                 wallets_details: {
                     $elemMatch: {
                         wallet_type: "FIAT",
@@ -180,7 +248,15 @@ const executeWalletCurrencyConversionTransaction = async ({
                         mongoose.Types.Decimal128.fromString(
                             newSourceHoldingAmount.toFixed(2)
                         ),
-                }
+
+                    // Transaction limit updates
+                    ...sourceUpdateSet,
+                },
+
+                $inc: {
+                    // Transaction limit increments
+                    ...sourceUpdateInc,
+                },
             },
             {
                 session: mongoSession,
@@ -216,7 +292,15 @@ const executeWalletCurrencyConversionTransaction = async ({
                         mongoose.Types.Decimal128.fromString(
                             newDestinationAvailableBalance.toFixed(2)
                         ),
-                }
+
+                    // Transaction limit updates
+                    ...destinationUpdateSet,
+                },
+
+                $inc: {
+                    // Transaction limit increments
+                    ...destinationUpdateInc,
+                },
             },
             {
                 session: mongoSession,
@@ -369,7 +453,7 @@ const executeWalletCurrencyConversionTransaction = async ({
         );
 
         const sanitizedError = sanitizeApiError(error);
-        
+
         if (error instanceof AppErrorClass) {
             throw error;
         }
