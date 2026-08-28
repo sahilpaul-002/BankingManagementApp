@@ -142,9 +142,9 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
                 throw new ServiceError("Daily, monthly and yearly card limits are required");
             }
             cardLimitsData = {
-                daily_limit: mongoose.Types.Decimal128.fromString(cardLimits.daily_limit.toString()),
-                monthly_limit: mongoose.Types.Decimal128.fromString(cardLimits.monthly_limit.toString()),
-                yearly_limit: mongoose.Types.Decimal128.fromString(cardLimits.yearly_limit.toString()),
+                daily_limit: mongoose.Types.Decimal128.fromString(new Decimal(cardLimits.daily_limit).toDecimalPlaces(4).toString()),
+                monthly_limit: mongoose.Types.Decimal128.fromString(new Decimal(cardLimits.monthly_limit).toDecimalPlaces(4).toString()),
+                yearly_limit: mongoose.Types.Decimal128.fromString(new Decimal(cardLimits.yearly_limit).toDecimalPlaces(4).toString()),
             };
         }
 

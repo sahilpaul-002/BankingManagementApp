@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Decimal } from "decimal.js";
 import { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 
 const merchantCategoriesCheck = z
@@ -21,11 +22,29 @@ const merchantCategoriesCheck = z
     });
 
 const limitValidation = z
-    .number({
-        error: "Limit must be numeric",
+    .string({
+        error: "Limit must be provided as a string",
     })
-    .int("Limit must be a whole number")
-    .min(10, "Minimum limit must be 10");
+    .trim()
+    .refine(
+        (value) => {
+            try {
+                const decimal = new Decimal(value);
+
+                return (
+                    decimal.isFinite() &&
+                    decimal.greaterThanOrEqualTo(10) &&
+                    decimal.decimalPlaces() <= 4
+                );
+            } catch {
+                return false;
+            }
+        },
+        {
+            message:
+                "Limit must be a valid number with maximum 4 decimal places and at least 10",
+        }
+    );
 
 const cardLimitsSchema = z
     .object({
@@ -33,42 +52,49 @@ const cardLimitsSchema = z
         monthly_limit: limitValidation.optional(),
         yearly_limit: limitValidation.optional(),
     })
-    .check(({ value, issues }) => {
-        const hasDaily = value.daily_limit !== undefined;
-        const hasMonthly = value.monthly_limit !== undefined;
-        const hasYearly = value.yearly_limit !== undefined;
+    .superRefine((value, ctx) => {
+        const {
+            daily_limit,
+            monthly_limit,
+            yearly_limit,
+        } = value;
 
-        // Either all three or none
+        const hasDaily = daily_limit !== undefined;
+        const hasMonthly = monthly_limit !== undefined;
+        const hasYearly = yearly_limit !== undefined;
+
+        // If any limit is provided, all three must be provided
         if (hasDaily || hasMonthly || hasYearly) {
-            if (!(hasDaily && hasMonthly && hasYearly)) {
-                issues.push({
+            if (!hasDaily || !hasMonthly || !hasYearly) {
+                ctx.addIssue({
                     code: "custom",
                     path: [],
                     message:
                         "Daily, monthly and yearly limits must all be provided together.",
-                    input: value,
                 });
 
                 return;
             }
 
-            // Daily < Monthly
-            if (value.daily_limit! >= value.monthly_limit!) {
-                issues.push({
+            const daily = new Decimal(daily_limit);
+            const monthly = new Decimal(monthly_limit);
+            const yearly = new Decimal(yearly_limit);
+
+            if (daily.greaterThanOrEqualTo(monthly)) {
+                ctx.addIssue({
                     code: "custom",
                     path: ["daily_limit"],
-                    message: "Daily limit must be less than monthly limit",
-                    input: value.daily_limit,
+                    message:
+                        "Daily limit must be less than monthly limit",
                 });
             }
 
-            // Monthly < Yearly
-            if (value.monthly_limit! >= value.yearly_limit!) {
-                issues.push({
+            if (monthly.greaterThanOrEqualTo(yearly)) {
+                ctx.addIssue({
                     code: "custom",
                     path: ["monthly_limit"],
-                    message: "Monthly limit must be less than yearly limit",
-                    input: value.monthly_limit,
+                    message:
+                        "Monthly limit must be less than yearly limit",
                 });
             }
         }

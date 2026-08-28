@@ -1,10 +1,43 @@
 import { z } from "zod";
+import { Decimal } from "decimal.js";
 
 const limitValidation = z
-    .number({
-        error: "Limit must be numeric",
+    .string({
+        error: "Limit must be provided as a string",
     })
-    .min(10, "Minimum limit must be 10");
+    .trim()
+    .refine(
+        (value) => {
+            try {
+                const decimal = new Decimal(value);
+
+                return decimal.isFinite();
+            } catch {
+                return false;
+            }
+        },
+        {
+            message: "Limit must be a valid number",
+        }
+    )
+    .refine(
+        (value) => {
+            const decimal = new Decimal(value);
+            return decimal.greaterThanOrEqualTo(10);
+        },
+        {
+            message: "Minimum limit must be 10",
+        }
+    )
+    .refine(
+        (value) => {
+            const decimal = new Decimal(value);
+            return decimal.decimalPlaces() <= 4;
+        },
+        {
+            message: "Limit cannot have more than 4 decimal places",
+        }
+    );
 
 const cardLimitsSchema = z
     .object({
@@ -18,7 +51,7 @@ const cardLimitsSchema = z
         const hasMonthly = value.monthly_limit !== undefined;
         const hasYearly = value.yearly_limit !== undefined;
 
-        // If card_limits is provided, all three limits must be provided
+        // Either all three or none
         if (hasDaily || hasMonthly || hasYearly) {
 
             if (!hasDaily || !hasMonthly || !hasYearly) {
@@ -33,8 +66,11 @@ const cardLimitsSchema = z
                 return;
             }
 
-            // Daily < Monthly
-            if (value.daily_limit! >= value.monthly_limit!) {
+            const daily = new Decimal(value.daily_limit!);
+            const monthly = new Decimal(value.monthly_limit!);
+            const yearly = new Decimal(value.yearly_limit!);
+
+            if (daily.greaterThanOrEqualTo(monthly)) {
                 issues.push({
                     code: "custom",
                     path: ["daily_limit"],
@@ -44,8 +80,7 @@ const cardLimitsSchema = z
                 });
             }
 
-            // Monthly < Yearly
-            if (value.monthly_limit! >= value.yearly_limit!) {
+            if (monthly.greaterThanOrEqualTo(yearly)) {
                 issues.push({
                     code: "custom",
                     path: ["monthly_limit"],

@@ -24,6 +24,7 @@ import { gmailSendService } from "./gmailSendService.js";
 import cardTransactionSettlementTransaction from "../mongoDbTransactions/cardTransactionSettelmentTransaction.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
 import mongoose, { Types } from "mongoose";
+import { Decimal } from "decimal.js"
 
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
@@ -586,19 +587,19 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
 
         // COnfigure the limits merging the existing and incoming limits
         const mergedLimits = {
-            daily_limit: updateData.card_limits?.daily_limit ?? Number(card?.card_limits?.daily_limit?.toString()),
-            monthly_limit: updateData.card_limits?.monthly_limit ?? Number(card?.card_limits?.monthly_limit?.toString()),
-            yearly_limit: updateData.card_limits?.yearly_limit ?? Number(card?.card_limits?.yearly_limit?.toString()),
+            daily_limit: updateData.card_limits?.daily_limit !== undefined ? new Decimal(updateData.card_limits.daily_limit).toDecimalPlaces(4) : new Decimal(card?.card_limits?.daily_limit?.toString() ?? "0").toDecimalPlaces(4),
+            monthly_limit: updateData.card_limits?.monthly_limit !== undefined ? new Decimal(updateData.card_limits.monthly_limit).toDecimalPlaces(4) : new Decimal(card?.card_limits?.monthly_limit?.toString() ?? "0").toDecimalPlaces(4),
+            yearly_limit: updateData.card_limits?.yearly_limit !== undefined ? new Decimal(updateData.card_limits.yearly_limit).toDecimalPlaces(4) : new Decimal(card?.card_limits?.yearly_limit?.toString() ?? "0").toDecimalPlaces(4),
         };
 
         // Validate limit amounts
         const daily = mergedLimits.daily_limit;
         const monthly = mergedLimits.monthly_limit;
         const yearly = mergedLimits.yearly_limit;
-        if (daily >= monthly) {
+        if (daily.greaterThanOrEqualTo(monthly)) {
             throw new BadRequestError("Daily limit must be less than monthly limit");
         }
-        if (monthly >= yearly) {
+        if (monthly.greaterThanOrEqualTo(yearly)) {
             throw new BadRequestError("Monthly limit must be less than yearly limit");
         }
 
