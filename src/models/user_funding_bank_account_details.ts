@@ -40,7 +40,7 @@ const userFundingBankAccountDetailsSchema = new Schema<userFundingBankAccountDet
         account_balance: {
             type: Schema.Types.Decimal128,
             required: true,
-            default: 0
+            default: () => mongoose.Types.Decimal128.fromString("0"),
         },
 
         swift_code: {

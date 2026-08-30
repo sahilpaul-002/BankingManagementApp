@@ -1032,21 +1032,21 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
                 quote_id: transactionResult.conversionQuote._id.toString(),
                 source: {
                     currency: validatedData.source_wallet_currency,
-                    amount: sourceAmount.toFixed(2),
+                    amount: sourceAmount.toFixed(4),
                 },
                 destination: {
                     currency: validatedData.destination_wallet_currency,
-                    amount: destinationAmount.toFixed(2),
+                    amount: destinationAmount.toFixed(4),
                 },
                 exchange_rate: exchangeRate.toFixed(8),
                 fee: {
                     currency: validatedData.source_wallet_currency,
-                    percentage: feePercentage.toFixed(2),
-                    amount: feeAmount.toFixed(2),
+                    percentage: feePercentage.toFixed(4),
+                    amount: feeAmount.toFixed(4),
                 },
                 total_debit: {
                     currency: validatedData.source_wallet_currency,
-                    amount: sourceAmount.toFixed(2),
+                    amount: sourceAmount.toFixed(4),
                 },
                 quote_status: transactionResult.conversionQuote.quote_status,
                 expires_at: transactionResult.conversionQuote.expires_at,

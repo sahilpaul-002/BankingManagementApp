@@ -80,7 +80,7 @@ const fiatPayoutQuoteSchema = new Schema<fiatPayoutQuoteSchemaTypes>({
         type: Schema.Types.Decimal128,
         required: true,
         min: 0,
-        default: 0,
+        default: () => mongoose.Types.Decimal128.fromString("0"),
     },
 
     total_debit: {

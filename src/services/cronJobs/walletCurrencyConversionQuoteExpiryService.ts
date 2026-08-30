@@ -155,12 +155,12 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
                 $set: {
                     [`wallets_details.${sourceWalletIndex}.available_balance`]:
                         mongoose.Types.Decimal128.fromString(
-                            newAvailableBalance.toFixed(2)
+                            newAvailableBalance.toFixed(4)
                         ),
 
                     [`wallets_details.${sourceWalletIndex}.holding_amount`]:
                         mongoose.Types.Decimal128.fromString(
-                            newHoldingAmount.toFixed(2)
+                            newHoldingAmount.toFixed(4)
                         ),
                 },
             },
@@ -187,24 +187,24 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
                         wallet_currency: sourceCurrency,
                     },
                     amount: mongoose.Types.Decimal128.fromString(
-                        sourceAmount.toFixed(2)
+                        sourceAmount.toFixed(4)
                     ),
                     balance_before: mongoose.Types.Decimal128.fromString(
-                        accountBalance.toFixed(2)
+                        accountBalance.toFixed(4)
                     ),
                     balance_after: mongoose.Types.Decimal128.fromString(
-                        accountBalance.toFixed(2)
+                        accountBalance.toFixed(4)
                     ),
                     reference_id: conversionQuote._id.toString(),
                     remarks: `Currency conversion quote expired. ` +
                         `Conversion from ${sourceCurrency} to ` +
                         `${destinationCurrency} failed. ` +
-                        `Reserved amount ${sourceAmount.toFixed(2)} ` +
+                        `Reserved amount ${sourceAmount.toFixed(4)} ` +
                         `${sourceCurrency} was released from holding. ` +
-                        `Destination amount: ${destinationAmount.toFixed(2)} ` +
+                        `Destination amount: ${destinationAmount.toFixed(4)} ` +
                         `${destinationCurrency}. ` +
                         `FX rate: ${exchangeRate.toFixed(8)}. ` +
-                        `Fee: ${feeAmount.toFixed(2)} ${sourceCurrency}.`,
+                        `Fee: ${feeAmount.toFixed(4)} ${sourceCurrency}.`,
                 },
             ],
             {
@@ -238,7 +238,7 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
 
         logger.info(`Wallet currency conversion quote ` +
             `${conversionQuote._id.toString()} processed successfully. ` +
-            `${sourceAmount.toFixed(2)} ${sourceCurrency} ` +
+            `${sourceAmount.toFixed(4)} ${sourceCurrency} ` +
             `released from holding balance. ` +
             `FAILED transaction created: ${failedTransactionId.toString()}`
         );

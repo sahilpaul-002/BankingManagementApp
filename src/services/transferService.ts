@@ -169,18 +169,18 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
             beneficiary_id: validatedData.beneficiary_id,
             // SOURCE
             source_currency: validatedData.source_wallet_currency,
-            source_amount: sourceAmount.toFixed(2),
+            source_amount: sourceAmount.toFixed(4),
             // DESTINATION
             destination_currency: destinationCurrency,
-            gross_destination_amount: grossDestinationAmount.toFixed(2),
-            destination_amount: netDestinationAmount.toFixed(2),
+            gross_destination_amount: grossDestinationAmount.toFixed(4),
+            destination_amount: netDestinationAmount.toFixed(4),
             // FX
             exchange_rate: exchangeRate.toFixed(8),
             // FEE
             fee_currency: "USD",
-            fee_amount: feeAmount.toFixed(2),
+            fee_amount: feeAmount.toFixed(4),
             // WALLET DEBIT
-            total_debit: totalDebit.toFixed(2),
+            total_debit: totalDebit.toFixed(4),
             // STATUS
             quote_status: "ACTIVE",
             expires_at: expiresAt,
@@ -199,21 +199,21 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
                 },
                 source: {
                     currency: validatedData.source_wallet_currency,
-                    amount: sourceAmount.toFixed(2),
+                    amount: sourceAmount.toFixed(4),
                 },
                 destination: {
                     currency: destinationCurrency,
-                    gross_amount: grossDestinationAmount.toFixed(2),
-                    amount: netDestinationAmount.toFixed(2),
+                    gross_amount: grossDestinationAmount.toFixed(4),
+                    amount: netDestinationAmount.toFixed(4),
                 },
                 exchange_rate: exchangeRate.toFixed(8),
                 fee: {
                     currency: validatedData.source_wallet_currency,
-                    amount: feeAmount.toFixed(2),
+                    amount: feeAmount.toFixed(4),
                 },
                 total_debit: {
                     currency: validatedData.source_wallet_currency,
-                    amount: totalDebit.toFixed(2),
+                    amount: totalDebit.toFixed(4),
                 },
                 quote_status: payoutQuote.quote_status,
                 expires_at: payoutQuote.expires_at,

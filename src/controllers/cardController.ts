@@ -332,16 +332,12 @@ export const createCardTransaction = async (req: Request<{ id?: string }>, res: 
     try {
         let aesDecryptedBodyData = req.body
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
-        const requestSession: Request["session"] | undefined = getRequestSession();
-        if (!requestSession) {
-            throw new UnauthenticatedError("Unauthenticated session");
-        }
 
-        const createCardTransactionResponse = await createCardTransactionService(requestSession, aesDecryptedBodyData)
+        const createCardTransactionResponse = await createCardTransactionService(aesDecryptedBodyData)
         if (createCardTransactionResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "Failed to create card transaction", 400);
+            return res.status(400).json({ status: "FAILED", message: "Failed to create card transaction", });
         }
-        return res.success("Card transaction created successfully", createCardTransactionResponse?.data, 200)
+        return res.status(200).json({status: "SUCCESS", message: "Card transaction created successfully", data: createCardTransactionResponse?.data});
     }
     catch (err) {
         const error = err as any;

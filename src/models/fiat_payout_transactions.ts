@@ -58,7 +58,7 @@ const fiatPayoutTransactionsSchema = new Schema<fiatPayoutTransactionsSchemaType
     fee_amount: {
         type: Schema.Types.Decimal128,
         required: true,
-        default: 0,
+        default: () => mongoose.Types.Decimal128.fromString("0"),
         min: 0,
     },
 

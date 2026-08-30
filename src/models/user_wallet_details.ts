@@ -27,20 +27,20 @@ const userWalletDetailsSchema = new Schema<userWalletDetailsSchemaTypes>(
                 },
 
                 account_balance: {
-                    type: mongoose.Schema.Types.Decimal128,
-                    default: 0,
+                    type: Schema.Types.Decimal128,
+                    default: () => mongoose.Types.Decimal128.fromString("0"),
                     min: 0,
                 },
 
                 available_balance: {
-                    type: mongoose.Schema.Types.Decimal128,
-                    default: 0,
+                    type: Schema.Types.Decimal128,
+                    default: () => mongoose.Types.Decimal128.fromString("0"),
                     min: 0,
                 },
 
                 holding_amount: {
-                    type: mongoose.Schema.Types.Decimal128,
-                    default: 0,
+                    type: Schema.Types.Decimal128,
+                    default: () => mongoose.Types.Decimal128.fromString("0"),
                     min: 0,
                 },
 

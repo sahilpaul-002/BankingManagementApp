@@ -158,12 +158,12 @@ const createWalletCurrencyConversionTransaction = async ({
                 $set: {
                     [`wallets_details.${sourceWalletIndex}.available_balance`]:
                         mongoose.Types.Decimal128.fromString(
-                            newAvailableBalance.toFixed(2)
+                            newAvailableBalance.toFixed(4)
                         ),
 
                     [`wallets_details.${sourceWalletIndex}.holding_amount`]:
                         mongoose.Types.Decimal128.fromString(
-                            newHoldingAmount.toFixed(2)
+                            newHoldingAmount.toFixed(4)
                         ),
                 },
             },
@@ -187,13 +187,13 @@ const createWalletCurrencyConversionTransaction = async ({
                     wallet_id: walletDetails._id,
                     source_currency: sourceCurrency,
                     source_amount: mongoose.Types.Decimal128.fromString(
-                        sourceAmount.toFixed(2)
+                        sourceAmount.toFixed(4)
                     ),
                     destination_currency: destinationCurrency,
-                    destination_amount: mongoose.Types.Decimal128.fromString(destinationAmount.toFixed(2)),
+                    destination_amount: mongoose.Types.Decimal128.fromString(destinationAmount.toFixed(4)),
                     exchange_rate: mongoose.Types.Decimal128.fromString(exchangeRate.toFixed(4)),
-                    fee_percentage: mongoose.Types.Decimal128.fromString(feePercentage.toFixed(2)),
-                    fee_amount: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(2)),
+                    fee_percentage: mongoose.Types.Decimal128.fromString(feePercentage.toFixed(4)),
+                    fee_amount: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(4)),
                     quote_status: "ACTIVE",
                     expires_at: expiresAt,
                 },
@@ -215,7 +215,7 @@ const createWalletCurrencyConversionTransaction = async ({
         return {
             status: "SUCCESS",
             conversionQuote: createdQuote,
-            sourceHoldingAmount: newHoldingAmount.toFixed(2),
+            sourceHoldingAmount: newHoldingAmount.toFixed(4),
         };
     }
     catch (err) {

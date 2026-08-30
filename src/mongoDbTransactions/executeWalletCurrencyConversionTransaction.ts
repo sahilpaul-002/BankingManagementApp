@@ -236,17 +236,17 @@ const executeWalletCurrencyConversionTransaction = async ({
                 $set: {
                     [`wallets_details.${sourceWalletIndex}.account_balance`]:
                         mongoose.Types.Decimal128.fromString(
-                            newSourceBalance.toFixed(2)
+                            newSourceBalance.toFixed(4)
                         ),
 
                     [`wallets_details.${sourceWalletIndex}.available_balance`]:
                         mongoose.Types.Decimal128.fromString(
-                            newSourceAvailableBalance.toFixed(2)
+                            newSourceAvailableBalance.toFixed(4)
                         ),
 
                     [`wallets_details.${sourceWalletIndex}.holding_amount`]:
                         mongoose.Types.Decimal128.fromString(
-                            newSourceHoldingAmount.toFixed(2)
+                            newSourceHoldingAmount.toFixed(4)
                         ),
 
                     // Transaction limit updates
@@ -285,12 +285,12 @@ const executeWalletCurrencyConversionTransaction = async ({
                 $set: {
                     [`wallets_details.${destinationWalletIndex}.account_balance`]:
                         mongoose.Types.Decimal128.fromString(
-                            newDestinationBalance.toFixed(2)
+                            newDestinationBalance.toFixed(4)
                         ),
 
                     [`wallets_details.${destinationWalletIndex}.available_balance`]:
                         mongoose.Types.Decimal128.fromString(
-                            newDestinationAvailableBalance.toFixed(2)
+                            newDestinationAvailableBalance.toFixed(4)
                         ),
 
                     // Transaction limit updates
@@ -329,15 +329,15 @@ const executeWalletCurrencyConversionTransaction = async ({
                         wallet_type: "FIAT",
                         wallet_currency: sourceCurrency,
                     },
-                    amount: mongoose.Types.Decimal128.fromString(sourceAmount.toFixed(2)),
+                    amount: mongoose.Types.Decimal128.fromString(sourceAmount.toFixed(4)),
                     balance_before: mongoose.Types.Decimal128.fromString(
-                        sourceBalance.toFixed(2)
+                        sourceBalance.toFixed(4)
                     ),
                     balance_after: mongoose.Types.Decimal128.fromString(
-                        newSourceBalance.toFixed(2)
+                        newSourceBalance.toFixed(4)
                     ),
                     reference_id: conversionReferenceId,
-                    remarks: `Currency conversion from ${sourceCurrency} to ${destinationCurrency}.Fee: ${feeAmount.toFixed(2)} ${sourceCurrency} `,
+                    remarks: `Currency conversion from ${sourceCurrency} to ${destinationCurrency}.Fee: ${feeAmount.toFixed(4)} ${sourceCurrency} `,
                 },
             ],
             {
@@ -366,13 +366,13 @@ const executeWalletCurrencyConversionTransaction = async ({
                         wallet_currency: destinationCurrency,
                     },
                     amount: mongoose.Types.Decimal128.fromString(
-                        destinationAmount.toFixed(2)
+                        destinationAmount.toFixed(4)
                     ),
                     balance_before: mongoose.Types.Decimal128.fromString(
-                        destinationBalance.toFixed(2)
+                        destinationBalance.toFixed(4)
                     ),
                     balance_after: mongoose.Types.Decimal128.fromString(
-                        newDestinationBalance.toFixed(2)
+                        newDestinationBalance.toFixed(4)
                     ),
                     reference_id: conversionReferenceId,
                     remarks: `Currency conversion from ${sourceCurrency} to ${destinationCurrency}. FX rate: ${exchangeRate.toFixed(8)} `,
@@ -423,15 +423,15 @@ const executeWalletCurrencyConversionTransaction = async ({
                 conversion_reference_id: conversionReferenceId,
                 source_currency: sourceCurrency,
                 destination_currency: destinationCurrency,
-                source_amount: sourceAmount.toFixed(2),
-                conversion_fee: feeAmount.toFixed(2),
-                amount_after_fee: sourceAmount.minus(feeAmount).toDecimalPlaces(4).toFixed(2),
+                source_amount: sourceAmount.toFixed(4),
+                conversion_fee: feeAmount.toFixed(4),
+                amount_after_fee: sourceAmount.minus(feeAmount).toDecimalPlaces(4).toFixed(4),
                 exchange_rate: exchangeRate.toFixed(8),
-                destination_amount: destinationAmount.toFixed(2),
-                source_balance_before: sourceBalance.toFixed(2),
-                source_balance_after: newSourceBalance.toFixed(2),
-                destination_balance_before: destinationBalance.toFixed(2),
-                destination_balance_after: newDestinationBalance.toFixed(2),
+                destination_amount: destinationAmount.toFixed(4),
+                source_balance_before: sourceBalance.toFixed(4),
+                source_balance_after: newSourceBalance.toFixed(4),
+                destination_balance_before: destinationBalance.toFixed(4),
+                destination_balance_after: newDestinationBalance.toFixed(4),
                 source_transaction_id: sourceTransactionId,
                 destination_transaction_id: destinationTransactionId,
                 quote_id: conversionQuote._id.toString(),

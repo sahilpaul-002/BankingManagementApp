@@ -112,12 +112,12 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
 
         const updateInc: Record<string, number> = {
             [`wallets_details.${sourceWalletIndex}.account_balance`]:
-                -Number(payoutAmount.toFixed(2)),
+                -Number(payoutAmount.toFixed(4)),
         };
 
         const updateSet: Record<string, any> = {
             [`wallets_details.${sourceWalletIndex}.holding_amount`]:
-                newHoldingAmount.toFixed(2),
+                newHoldingAmount.toFixed(4),
         };
 
         // --------------------------------------------------
@@ -128,7 +128,7 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
         if (!daily || daily.date.toDateString() !== now.toDateString()) {
             updateSet[
                 `wallets_details.${sourceWalletIndex}.daily_transaction.debit`
-            ] = payoutAmount.toFixed(2);
+            ] = payoutAmount.toFixed(4);
 
             updateSet[
                 `wallets_details.${sourceWalletIndex}.daily_transaction.date`
@@ -137,7 +137,7 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
         } else {
             updateInc[
                 `wallets_details.${sourceWalletIndex}.daily_transaction.debit`
-            ] = Number(payoutAmount.toFixed(2));
+            ] = Number(payoutAmount.toFixed(4));
         }
 
         // --------------------------------------------------
@@ -147,12 +147,12 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
         if (isSameMonth) {
             updateInc[
                 `wallets_details.${sourceWalletIndex}.monthly_transaction.debit`
-            ] = Number(payoutAmount.toFixed(2));
+            ] = Number(payoutAmount.toFixed(4));
 
         } else {
             updateSet[
                 `wallets_details.${sourceWalletIndex}.monthly_transaction.debit`
-            ] = payoutAmount.toFixed(2);
+            ] = payoutAmount.toFixed(4);
 
             updateSet[
                 `wallets_details.${sourceWalletIndex}.monthly_transaction.month`
@@ -170,13 +170,13 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
         if (isSameYear) {
             updateInc[
                 `wallets_details.${sourceWalletIndex}.yearly_transaction.debit`
-            ] = Number(payoutAmount.toFixed(2));
+            ] = Number(payoutAmount.toFixed(4));
 
         } else {
 
             updateSet[
                 `wallets_details.${sourceWalletIndex}.yearly_transaction.debit`
-            ] = payoutAmount.toFixed(2);
+            ] = payoutAmount.toFixed(4);
 
             updateSet[
                 `wallets_details.${sourceWalletIndex}.yearly_transaction.year`
@@ -260,7 +260,7 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
                     $set: {
                         transaction_status: "SUCCESS",
                         balance_after:
-                            newAccountBalance.toFixed(2),
+                            newAccountBalance.toFixed(4),
                         remarks:
                             "Payout successfully completed and wallet amount debited",
                     },

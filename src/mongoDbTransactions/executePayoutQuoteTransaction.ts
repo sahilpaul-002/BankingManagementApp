@@ -117,7 +117,7 @@ const executeFiatPayoutTransaction = async (transactionData: ExecuteFiatPayoutTr
             {
                 $set: {
                     "wallets_details.$.holding_amount":
-                        newHoldingAmount.toFixed(2),
+                        newHoldingAmount.toFixed(4),
                 },
             },
             {
@@ -181,8 +181,8 @@ const executeFiatPayoutTransaction = async (transactionData: ExecuteFiatPayoutTr
                 wallet_currency: payoutQuote.source_currency,
             },
             amount: payoutQuote.source_amount,
-            balance_before: walletBalanceBefore.toFixed(2),
-            balance_after: walletBalanceAfter.toFixed(2),
+            balance_before: walletBalanceBefore.toFixed(4),
+            balance_after: walletBalanceAfter.toFixed(4),
             reference_id: payoutTransactionId,
             remarks: "Amount held for fiat payout",
         };

@@ -50,19 +50,25 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
         },
 
         amount: {
-            type: mongoose.Schema.Types.Decimal128,
+            type: Schema.Types.Decimal128,
+            required: true,
+            min: 0,
+        },
+
+        fee: {
+            type: Schema.Types.Decimal128,
             required: true,
             min: 0,
         },
 
         balance_before: {
-            type: mongoose.Schema.Types.Decimal128,
+            type: Schema.Types.Decimal128,
             required: true,
             min: 0,
         },
 
         balance_after: {
-            type: mongoose.Schema.Types.Decimal128,
+            type: Schema.Types.Decimal128,
             required: true,
             min: 0,
         },

@@ -24,4 +24,6 @@ check if all database calls are efficiently called
 update address till kyc not completed
 add ref in all the db schemas
 in validation schema chnage the all the amounts from number to decimal128
+wallet transaction schema has changes
+card transaction should return transaction id and refference id (required for refund)
 implementation of swagger documentation

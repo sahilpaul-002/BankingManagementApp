@@ -28,6 +28,7 @@ import { Decimal } from "decimal.js"
 
 const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 const bmaNotificationMail = process.env.BMA_EMAIL || "bma_notification@yopmail.com"
+const baseUrl = process.env.BASE_URL
 
 type userConfigurationsType = {
     businessId: string;
@@ -986,7 +987,7 @@ export const getCardTransactionDetailsService = async (requestSession: Request["
 
 
 // ----------------------------------- CREATE CARD TRANSACTION ----------------------------------- \\
-const validateCardDetails = (cardDetails: Record<string, any>, cvvNumber: string, validThru: string, amount: string, currency: string, merchantName: string, merchantCategory: string, merchantCountry: string) => {
+const validateCardDetails = (cardDetails: Record<string, any>, cvvNumber: string, validThru: string, amount: string, currency: string, merchantName: string, merchantCategory: string, merchantCountry: string, transactionType: string) => {
     // 1. Verify CVV
     if (cardDetails.cvv !== cvvNumber) {
         throw new ServiceError("Transaction failed - Invalid card details");
@@ -1037,44 +1038,46 @@ const validateCardDetails = (cardDetails: Record<string, any>, cvvNumber: string
     }
 
     // Verify Limits
-    const amountNumber = Number(amount);
+    const amountDecimal = new Decimal(amount);
     const now = new Date();
 
-    // 7. Verify daily limit
-    let dailySpent = 0;
-    if (cardDetails.daily_transaction && cardDetails.daily_transaction.date.toDateString() === now.toDateString()) {
-        dailySpent = Number(cardDetails.daily_transaction.debit.toString());
-    }
-    const dailyLimit = Number(cardDetails.card_limits.daily_limit.toString());
-    if (dailySpent + amountNumber > dailyLimit) {
-        throw new ServiceError("Daily card limit exceeded");
-    }
+    if (transactionType?.toUpperCase() !== "REFUND") {
+        // 7. Verify daily limit
+        let dailySpent: Decimal = new Decimal(0);
+        if (cardDetails.daily_transaction && cardDetails.daily_transaction.date.toDateString() === now.toDateString()) {
+            dailySpent = new Decimal(cardDetails.daily_transaction.debit.toString());
+        }
+        const dailyLimit = new Decimal(cardDetails.card_limits.daily_limit.toString());
+        if (dailySpent.plus(amountDecimal).greaterThan(dailyLimit)) {
+            throw new ServiceError("Daily card limit exceeded");
+        }
 
-    // 8. Verify monthly limit
-    let monthlySpent = 0;
-    const monthly = cardDetails.monthly_transaction;
-    if (monthly.month === now.getMonth() + 1 && monthly.year === now.getFullYear()) {
-        monthlySpent = Number(monthly.debit.toString());
-    }
-    const monthlyLimit = Number(cardDetails.card_limits.monthly_limit.toString());
-    if (monthlySpent + amountNumber > monthlyLimit) {
-        throw new ServiceError("Monthly card limit exceeded");
-    }
+        // 8. Verify monthly limit
+        let monthlySpent: Decimal = new Decimal(0);
+        const monthly = cardDetails.monthly_transaction;
+        if (monthly.month === now.getMonth() + 1 && monthly.year === now.getFullYear()) {
+            monthlySpent = new Decimal(monthly.debit.toString());
+        }
+        const monthlyLimit = new Decimal(cardDetails.card_limits.monthly_limit.toString());
+        if (monthlySpent.plus(amountDecimal).greaterThan(monthlyLimit)) {
+            throw new ServiceError("Monthly card limit exceeded");
+        }
 
-    // 9. Verify yearly limit
-    let yearlySpent = 0;
-    const yearly = cardDetails.yearly_transaction;
-    if (yearly.year === now.getFullYear()) {
-        yearlySpent = Number(yearly.debit.toString());
-    }
-    const yearlyLimit = Number(cardDetails.card_limits.yearly_limit.toString());
-    if (yearlySpent + amountNumber > yearlyLimit) {
-        throw new ServiceError("Yearly card limit exceeded");
+        // 9. Verify yearly limit
+        let yearlySpent: Decimal = new Decimal(0);
+        const yearly = cardDetails.yearly_transaction;
+        if (yearly.year === now.getFullYear()) {
+            yearlySpent = new Decimal(yearly.debit.toString());
+        }
+        const yearlyLimit = new Decimal(cardDetails.card_limits.yearly_limit.toString());
+        if (yearlySpent.plus(amountDecimal).greaterThan(yearlyLimit)) {
+            throw new ServiceError("Yearly card limit exceeded");
+        }
     }
 
     return true;
 }
-export const createCardTransactionService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson | failedResponseJson> => {
+export const createCardTransactionService = async (aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid query data");
@@ -1103,6 +1106,11 @@ export const createCardTransactionService = async (requestSession: Request["sess
         if (!amount) {
             throw new InvalidRequestBodyError("Amount is not present in the request")
         }
+        const amountDecimal = new Decimal(amount);
+        if (!amountDecimal.isFinite() || amountDecimal.isNegative() || amountDecimal.isZero()
+        ) {
+            throw new InvalidRequestBodyError("Amount must be a valid positive number");
+        }
         const currency = checkStringBody(aesDecryptedBodyData, "currency")
         if (!currency) {
             throw new InvalidRequestBodyError("Currency is not present in the request")
@@ -1123,6 +1131,21 @@ export const createCardTransactionService = async (requestSession: Request["sess
         if (!transactionType || !["PURCHASE", "WITHDRAWAL", "REFUND"].includes(transactionType)) {
             throw new InvalidRequestBodyError("Transaction-Type is not valid, must be [PURCHASE | WITHDRAWAL | REFUND]")
         }
+        let originalTransactionId;
+        let originalReferenceId;
+        if (transactionType === "REFUND") {
+            originalTransactionId = checkStringBody(aesDecryptedBodyData, "transaction_id");
+            if (!originalTransactionId) {
+                throw new InvalidRequestBodyError("Transaction-ID is required for refund");
+            }
+            if (!Types.ObjectId.isValid(originalTransactionId)) {
+                throw new InvalidRequestBodyError("Invalid Transaction-ID");
+            }
+            originalReferenceId = checkStringBody(aesDecryptedBodyData, "reference_id");
+            if (!originalReferenceId) {
+                throw new InvalidRequestBodyError("Reference-ID is required for refund");
+            }
+        }
         const authorizationType = checkStringBody(aesDecryptedBodyData, "authorization_type")
         if (!authorizationType || !["HOLD", "IMMEDIATE"]?.includes(authorizationType)) {
             throw new InvalidRequestBodyError("Authorization-Type is not valid, must be [HOLD | IMMEDIATE]")
@@ -1133,45 +1156,15 @@ export const createCardTransactionService = async (requestSession: Request["sess
         if (!cardDetails) {
             throw new NotFoundError("Card not found");
         }
+        const cardholderObjectId = cardDetails.cardholder_id
 
-        const cardDetailsValidation = validateCardDetails(cardDetails, cvvNumber, validThru, amount, currency, merchantName, merchantCategory, merchantCountry)
+        const cardDetailsValidation = validateCardDetails(cardDetails, cvvNumber, validThru, amount, currency, merchantName, merchantCategory, merchantCountry, transactionType)
         if (!cardDetailsValidation) {
             throw new ServiceError("Transaction failed - Invalid card details")
         }
 
-        // Validate USD Wallet Balance \\
-        const wallet = await user_wallet_details.findOne(
-            {
-                cardholder_id: cardDetails.cardholder_id,
-            },
-            {
-                wallet_id: 1,
-                cardholder_id: 1,
-                wallets_details: {
-                    $elemMatch: {
-                        wallet_currency: "USD",
-                    },
-                },
-            }
-        ).lean();
-        if (!wallet || wallet.wallets_details.length === 0) {
-            throw new BadRequestError("USD wallet not found");
-        }
-        const selectedWallet = wallet.wallets_details[0];
-        if (selectedWallet?.wallet_status !== "ACTIVE") {
-            throw new BadRequestError("USD wallet is inactive");
-        }
-        const accountBalance = Number(selectedWallet?.account_balance!.toString());
-        const holdingAmount = Number(selectedWallet?.holding_amount!.toString());
-        const availableBalance = accountBalance - holdingAmount;
-        const transactionAmount = Number(amount);
-        if (availableBalance < transactionAmount) {
-            throw new BadRequestError("Insufficient available balance");
-        }
-        // xxxxxxxxxxxxxxxxxxxxxxxxxx \\
-
         // Initiate Card Transaction
-        const initiateCardTransactionResult = await initiateCardTransaction(wallet.wallet_id, selectedWallet, cardDetails,
+        const initiateCardTransactionResult = await initiateCardTransaction(cardholderObjectId, cardDetails,
             {
                 transaction_type: transactionType as
                     | "PURCHASE"
@@ -1180,11 +1173,15 @@ export const createCardTransactionService = async (requestSession: Request["sess
                 authorization_type: authorizationType as
                     | "HOLD"
                     | "IMMEDIATE",
-                amount: Number(amount),
+                amount: amount,
                 merchant_name: merchantName,
                 merchant_category: merchantCategory,
                 merchant_country: merchantCountry,
                 remarks: null,
+
+                // Required only for REFUND 
+                transaction_id: originalTransactionId!,
+                reference_id: originalReferenceId!,
             }
         );
 
@@ -1199,14 +1196,14 @@ export const createCardTransactionService = async (requestSession: Request["sess
             const maskedCardNumber = maskCardNumber(initiateCardTransactionResult?.data?.cardNumber)
 
             // Get Cardholder Email
-            const cardholderDetails = await user_details.findOne({ cardholder_id: cardDetails.cardholder_id }).select("email full_name business_id program_id subagent_code").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderObjectId }).select("email full_name business_name business_id program_id subagent_code").lean();
             if (!cardholderDetails?.email) {
                 throw new NotFoundError("Cardholder email not found");
             }
 
             // Get Dashboard
-            const dashboardName = requestSession?.sessiondata?.dashboardName || "BMA"
-            if (!dashboardName) {
+            const businessName = cardholderDetails?.business_name || "BMA"
+            if (!businessName) {
                 throw new UnauthenticatedError("Unauthenticated session detected");
             }
 
@@ -1242,8 +1239,8 @@ export const createCardTransactionService = async (requestSession: Request["sess
             );
 
             // Backend webhook URLs
-            const approveUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/card/cardTransactionAuthorizationWebhook?token=${encodeURIComponent(approveToken)}`;
-            const rejectUrl = `${requestSession?.sessiondata?.baseUrl}/api/v1/public/card/cardTransactionAuthorizationWebhook?token=${encodeURIComponent(rejectToken)}`;
+            const approveUrl = `${baseUrl}/api/v1/public/card/cardTransactionAuthorizationWebhook?token=${encodeURIComponent(approveToken)}`;
+            const rejectUrl = `${baseUrl}/api/v1/public/card/cardTransactionAuthorizationWebhook?token=${encodeURIComponent(rejectToken)}`;
 
             // Format authorization expiry date
             const formattedExpiry = initiateCardTransactionResult?.data?.authorizationExpiresAt.toLocaleString("en-IN", {
@@ -1256,9 +1253,9 @@ export const createCardTransactionService = async (requestSession: Request["sess
             const emailTemplate = generateEmailTemplate(
                 "CARD_TRANSACTION_AUTHORIZATION",
                 {
-                    userId: cardDetails?.cardholder_id,
+                    userId: cardDetails?._id?.toString(),
                     userName: cardholderDetails?.full_name || "Cardholder",
-                    dashboardName: dashboardName,
+                    dashboardName: businessName,
                     cardholderEmail: cardholderDetails?.email,
                     transactionId: initiateCardTransactionResult?.data?.transactionId,
                     maskedCardNumber: maskedCardNumber,
@@ -1273,7 +1270,7 @@ export const createCardTransactionService = async (requestSession: Request["sess
 
             const toEmail: string = cardholderDetails?.email
             const sendEmail: string = fromEmail
-            const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
+            const mainConfig = { toEmail, sendEmail, dashboardName: businessName, emailTemplate }
             // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
             const gmailMailServiceResponse = await gmailSendService(mainConfig)
 

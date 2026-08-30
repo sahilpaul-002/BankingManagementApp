@@ -8,14 +8,12 @@ const userCardTransactionsSchema = new Schema<userCardTransactionsTypes>(
             type: Schema.Types.ObjectId,
             required: true,
             index: true,
-            trim: true,
         },
 
         card_id: {
             type: Schema.Types.ObjectId,
             required: true,
             index: true,
-            trim: true,
         },
 
         transaction_id: {
@@ -23,7 +21,6 @@ const userCardTransactionsSchema = new Schema<userCardTransactionsTypes>(
             required: true,
             unique: true,
             index: true,
-            trim: true,
         },
 
         transaction_type: {
@@ -87,7 +84,13 @@ const userCardTransactionsSchema = new Schema<userCardTransactionsTypes>(
         },
 
         amount: {
-            type: mongoose.Schema.Types.Decimal128,
+            type: Schema.Types.Decimal128,
+            required: true,
+            min: 0,
+        },
+
+        fee: {
+            type: Schema.Types.Decimal128,
             required: true,
             min: 0,
         },
@@ -154,6 +157,11 @@ userCardTransactionsSchema.index({
 userCardTransactionsSchema.index({
     authorization_status: 1,
     authorization_expires_at: 1,
+});
+
+userCardTransactionsSchema.index({
+    transaction_id: 1,
+    reference_id: 1,
 });
 
 const userCardTransactionsModel = mongoose.model<userCardTransactionsTypes>(

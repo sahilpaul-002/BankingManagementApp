@@ -123,7 +123,7 @@ const expireCardAuthorizationTransaction = async (transactionData: ExpireCardTra
                 {
                     $set: {
                         [`wallets_details.${walletIndex}.holding_amount`]:
-                            newHoldingAmount.toFixed(2),
+                            newHoldingAmount.toFixed(4),
                     },
                 },
                 {
@@ -226,8 +226,8 @@ const expireCardAuthorizationTransaction = async (transactionData: ExpireCardTra
                 transaction_id: cardTransaction.transaction_id,
                 authorization_status: "EXPIRED",
                 transaction_status: "FAILED",
-                released_amount: transactionAmount.toFixed(2),
-                holding_amount: newHoldingAmount.toFixed(2),
+                released_amount: transactionAmount.toFixed(4),
+                holding_amount: newHoldingAmount.toFixed(4),
             },
         };
 

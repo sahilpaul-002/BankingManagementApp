@@ -225,6 +225,7 @@ export interface userWalletTransactionsTypes extends Document {
         wallet_currency: "USD" | "EUR" | "SGD" | "USDC" | "USDT";
     };
     amount: mongoose.Types.Decimal128;
+    fee: mongoose.Types.Decimal128;
     balance_before: mongoose.Types.Decimal128;
     balance_after: mongoose.Types.Decimal128;
     reference_id: string | null;
@@ -301,6 +302,7 @@ export interface userCardTransactionsTypes extends Document {
     currency: "USD";
     name_on_card: string;
     amount: mongoose.Types.Decimal128;
+    fee: mongoose.Types.Decimal128;
     card_type: "VIRTUAL" | "PHYSICAL";
     merchant_name: string;
     merchant_category: string;

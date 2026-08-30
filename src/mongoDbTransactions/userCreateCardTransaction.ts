@@ -222,9 +222,9 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
                         wallet_currency: validationResult.data.wallet_details.wallet_currency,
                     },
 
-                    amount: mongoose.Types.Decimal128.fromString(deductionAmount.toFixed(2)),
-                    balance_before: mongoose.Types.Decimal128.fromString(balanceBefore.toFixed(2)),
-                    balance_after: mongoose.Types.Decimal128.fromString(balanceAfter.toFixed(2)),
+                    amount: mongoose.Types.Decimal128.fromString(deductionAmount.toFixed(4)),
+                    balance_before: mongoose.Types.Decimal128.fromString(balanceBefore.toFixed(4)),
+                    balance_after: mongoose.Types.Decimal128.fromString(balanceAfter.toFixed(4)),
                     reference_id: validationResult.data.reference_id,
                     remarks: validationResult.data.remarks,
                 },

@@ -107,7 +107,6 @@ const userDetailsSchema = new Schema<userDetailsSchemaTypes>({
     cardholder_id: {
         type: Schema.Types.ObjectId,
         default: null,
-        trim: true,
     },
     status: {
         type: String,

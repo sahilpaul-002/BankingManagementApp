@@ -27,7 +27,7 @@ export default function requestLogger(
                 method: req.method,
                 url: req.originalUrl,
                 status: res.statusCode,
-                responseTime: `${responseTime.toFixed(2)}ms`,
+                responseTime: `${responseTime.toFixed(4)}ms`,
             },
         });
     });

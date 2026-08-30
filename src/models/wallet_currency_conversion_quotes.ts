@@ -28,7 +28,7 @@ const walletCurrencyConversionQuoteSchema = new Schema<walletCurrencyConversionQ
         },
 
         source_amount: {
-            type: mongoose.Schema.Types.Decimal128,
+            type: Schema.Types.Decimal128,
             required: true,
             min: 0,
         },
@@ -40,25 +40,25 @@ const walletCurrencyConversionQuoteSchema = new Schema<walletCurrencyConversionQ
         },
 
         destination_amount: {
-            type: mongoose.Schema.Types.Decimal128,
+            type: Schema.Types.Decimal128,
             required: true,
             min: 0,
         },
 
         exchange_rate: {
-            type: mongoose.Schema.Types.Decimal128,
+            type: Schema.Types.Decimal128,
             required: true,
             min: 0,
         },
 
         fee_percentage: {
-            type: mongoose.Schema.Types.Decimal128,
+            type: Schema.Types.Decimal128,
             required: true,
             min: 0,
         },
 
         fee_amount: {
-            type: mongoose.Schema.Types.Decimal128,
+            type: Schema.Types.Decimal128,
             required: true,
             min: 0,
         },
