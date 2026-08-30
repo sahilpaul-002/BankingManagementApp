@@ -287,9 +287,9 @@ export interface userCardDetailsSchemaTypes extends Document {
 
 // Types for User Card Transactions Model Schema
 export interface userCardTransactionsTypes extends Document {
-    cardholder_id: string;
-    card_id: string;
-    transaction_id: string;
+    cardholder_id: Types.ObjectId;
+    card_id: Types.ObjectId;
+    transaction_id: Types.ObjectId;
     transaction_type: "PURCHASE" | "REFUND" | "WITHDRAWAL" | "REVERSAL" | "FEE";
     transaction_status: "PENDING" | "SUCCESS" | "FAILED" | "REVERSED";
     authorization_type: "HOLD" | "IMMEDIATE";

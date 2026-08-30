@@ -2,6 +2,11 @@ import z from "zod";
 import { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 
 const getCardTransactionsValidationSchema = z.object({
+    cardholder_id: z
+        .string()
+        .trim()
+        .min(1, "Cardholder ID is required"),
+
     card_id: z
         .string()
         .trim()

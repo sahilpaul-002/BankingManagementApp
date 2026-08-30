@@ -1,0 +1,588 @@
+DECIMAL HANDLING IN FINTECH APPLICATION
+
+Technology Stack:
+Node.js + TypeScript + decimal.js + Mongoose + MongoDB
+
+--------------------------------------------------
+1. TYPES USED
+--------------------------------------------------
+
+There are 3 important representations for financial values:
+
+1. string
+   Used for API input/output.
+
+2. Decimal (decimal.js)
+   Used for financial calculations, comparisons, validation and rounding.
+
+3. Decimal128 (Mongoose/MongoDB)
+   Used for storing financial values in MongoDB.
+
+Recommended architecture:
+
+API
+ ↓
+string
+ ↓
+Decimal
+ ↓
+Business Logic / Calculations
+ ↓
+Decimal
+ ↓
+Decimal128
+ ↓
+MongoDB
+
+
+--------------------------------------------------
+2. WHY USE STRING FOR API VALUES?
+--------------------------------------------------
+
+Financial values should preferably be sent as strings.
+
+Example:
+
+{
+    "daily_limit": "250.4864"
+}
+
+Instead of:
+
+{
+    "daily_limit": 250.4864
+}
+
+Reason:
+
+JavaScript Number uses floating-point arithmetic and can introduce precision problems.
+
+For example:
+
+0.1 + 0.2
+
+can produce:
+
+0.30000000000000004
+
+Therefore, don't use JavaScript Number for financial calculations.
+
+
+--------------------------------------------------
+3. STRING → DECIMAL
+--------------------------------------------------
+
+Convert API strings to Decimal before performing calculations.
+
+Example:
+
+const amount = new Decimal("250.4864");
+
+Now amount is a Decimal object.
+
+Use Decimal for:
+
+- Addition
+- Subtraction
+- Multiplication
+- Division
+- Comparisons
+- Precision validation
+- Rounding
+
+Examples:
+
+amount.plus("10");
+
+amount.minus("5");
+
+amount.times("2");
+
+amount.div("3");
+
+amount.greaterThan("100");
+
+amount.greaterThanOrEqualTo("100");
+
+amount.decimalPlaces();
+
+
+--------------------------------------------------
+4. DECIMAL → DECIMAL128
+--------------------------------------------------
+
+Decimal should be converted to Decimal128 before storing in MongoDB.
+
+Example:
+
+const amount = new Decimal("250.4864");
+
+const decimal128Value =
+    mongoose.Types.Decimal128.fromString(
+        amount.toString()
+    );
+
+For fixed precision:
+
+const decimal128Value =
+    mongoose.Types.Decimal128.fromString(
+        amount.toFixed(4)
+    );
+
+Use Decimal for calculations and Decimal128 for database storage.
+
+
+--------------------------------------------------
+5. DECIMAL128 → DECIMAL
+--------------------------------------------------
+
+MongoDB returns Decimal128 values.
+
+Before performing calculations, convert Decimal128 to Decimal.
+
+Example:
+
+const daily = new Decimal(
+    card.card_limits.daily_limit.toString()
+);
+
+Now daily is a Decimal object.
+
+You can safely perform:
+
+daily.plus(...);
+
+daily.minus(...);
+
+daily.greaterThan(...);
+
+daily.greaterThanOrEqualTo(...);
+
+
+--------------------------------------------------
+6. DECIMAL128 → STRING
+--------------------------------------------------
+
+When returning a financial value through an API, convert Decimal128 to string.
+
+Example:
+
+const dailyLimit =
+    card.card_limits.daily_limit.toString();
+
+Result:
+
+"250.4864"
+
+Recommended API response:
+
+{
+    "daily_limit": "250.4864",
+    "monthly_limit": "500",
+    "yearly_limit": "1000"
+}
+
+
+--------------------------------------------------
+7. DECIMAL → NUMBER
+--------------------------------------------------
+
+Technically possible:
+
+const value = decimalValue.toNumber();
+
+But avoid this for financial calculations.
+
+Only use Number when a non-financial operation specifically requires it.
+
+
+--------------------------------------------------
+8. DECIMAL128 → NUMBER
+--------------------------------------------------
+
+Technically possible:
+
+const value = Number(
+    decimal128Value.toString()
+);
+
+But avoid this for financial calculations for the same floating-point precision reasons.
+
+
+--------------------------------------------------
+9. PRECISION / DECIMAL PLACES
+--------------------------------------------------
+
+If the application allows a maximum of 4 decimal places, validate this before storing.
+
+Example:
+
+const amount = new Decimal("250.4864");
+
+if (amount.decimalPlaces() > 4) {
+    // Invalid
+}
+
+Examples:
+
+10          → valid
+10.5        → valid
+10.50       → valid
+10.1234     → valid
+10.12345    → invalid
+
+Validation should reject values with excessive precision rather than silently accepting them.
+
+
+--------------------------------------------------
+10. ROUNDING
+--------------------------------------------------
+
+If rounding is required, use Decimal.
+
+Example:
+
+const amount = new Decimal("250.486468");
+
+const rounded = amount.toDecimalPlaces(4);
+
+Result:
+
+250.4865
+
+For database storage:
+
+const decimal128 =
+    mongoose.Types.Decimal128.fromString(
+        rounded.toFixed(4)
+    );
+
+
+--------------------------------------------------
+11. CARD LIMIT EXAMPLE
+--------------------------------------------------
+
+API Request:
+
+{
+    "card_limits": {
+        "daily_limit": "250.4864",
+        "monthly_limit": "500.1234",
+        "yearly_limit": "1000.5678"
+    }
+}
+
+
+Step 1: Receive as strings
+
+"250.4864"
+"500.1234"
+"1000.5678"
+
+
+Step 2: Convert to Decimal
+
+const daily = new Decimal("250.4864");
+const monthly = new Decimal("500.1234");
+const yearly = new Decimal("1000.5678");
+
+
+Step 3: Validate
+
+if (daily.decimalPlaces() > 4) {
+    // invalid
+}
+
+if (monthly.decimalPlaces() > 4) {
+    // invalid
+}
+
+if (yearly.decimalPlaces() > 4) {
+    // invalid
+}
+
+
+Step 4: Validate relationships
+
+Daily must be less than Monthly:
+
+if (daily.greaterThanOrEqualTo(monthly)) {
+    throw new BadRequestError(
+        "Daily limit must be less than monthly limit"
+    );
+}
+
+Monthly must be less than Yearly:
+
+if (monthly.greaterThanOrEqualTo(yearly)) {
+    throw new BadRequestError(
+        "Monthly limit must be less than yearly limit"
+    );
+}
+
+
+Step 5: Convert to Decimal128
+
+const cardLimitsData = {
+    daily_limit:
+        mongoose.Types.Decimal128.fromString(
+            daily.toFixed(4)
+        ),
+
+    monthly_limit:
+        mongoose.Types.Decimal128.fromString(
+            monthly.toFixed(4)
+        ),
+
+    yearly_limit:
+        mongoose.Types.Decimal128.fromString(
+            yearly.toFixed(4)
+        )
+};
+
+
+Step 6: Store in MongoDB
+
+MongoDB stores:
+
+daily_limit:   Decimal128("250.4864")
+monthly_limit: Decimal128("500.1234")
+yearly_limit:  Decimal128("1000.5678")
+
+
+--------------------------------------------------
+12. READING CARD LIMITS
+--------------------------------------------------
+
+MongoDB:
+
+Decimal128("250.4864")
+
+Convert to Decimal:
+
+const daily = new Decimal(
+    card.card_limits.daily_limit.toString()
+);
+
+Now the value can safely be used for calculations.
+
+
+--------------------------------------------------
+13. UPDATE CARD LIMITS
+--------------------------------------------------
+
+When updating limits, two possible sources exist:
+
+1. New values from API
+2. Existing values from MongoDB
+
+Both should be converted to Decimal before comparison.
+
+Example:
+
+const mergedLimits = {
+    daily_limit:
+        updateData.card_limits?.daily_limit ??
+        new Decimal(
+            card.card_limits.daily_limit.toString()
+        ),
+
+    monthly_limit:
+        updateData.card_limits?.monthly_limit ??
+        new Decimal(
+            card.card_limits.monthly_limit.toString()
+        ),
+
+    yearly_limit:
+        updateData.card_limits?.yearly_limit ??
+        new Decimal(
+            card.card_limits.yearly_limit.toString()
+        )
+};
+
+
+Now all values are Decimal.
+
+Therefore:
+
+const daily = mergedLimits.daily_limit;
+const monthly = mergedLimits.monthly_limit;
+const yearly = mergedLimits.yearly_limit;
+
+Comparison works:
+
+daily.greaterThanOrEqualTo(monthly);
+
+monthly.greaterThanOrEqualTo(yearly);
+
+
+After validation, convert updated values to Decimal128 before saving.
+
+
+--------------------------------------------------
+14. IMPORTANT: DON'T MIX TYPES
+--------------------------------------------------
+
+Avoid:
+
+const daily = "250.4864";
+const monthly = new Decimal("500");
+
+daily.greaterThanOrEqualTo(monthly);
+
+This fails because daily is a string.
+
+Also avoid:
+
+const daily = 250.4864;
+const monthly = new Decimal("500");
+
+Instead:
+
+const daily = new Decimal("250.4864");
+const monthly = new Decimal("500");
+
+Financial calculations should use Decimal consistently.
+
+
+--------------------------------------------------
+15. RECOMMENDED TYPE BY LAYER
+--------------------------------------------------
+
+Layer                     Type
+
+API Input                 string
+
+Zod validation            string → Decimal
+
+Business logic            Decimal
+
+Financial calculations    Decimal
+
+Financial comparison      Decimal
+
+Rounding                  Decimal
+
+MongoDB storage            Decimal128
+
+MongoDB retrieved value    Decimal128 → Decimal
+
+API Response              string
+
+JavaScript Number          Avoid for money
+
+
+--------------------------------------------------
+16. COMPLETE CONVERSION MAP
+--------------------------------------------------
+
+API → Application:
+
+string
+  ↓
+Decimal
+
+
+Application → Database:
+
+Decimal
+  ↓
+toFixed()/toString()
+  ↓
+Decimal128
+  ↓
+MongoDB
+
+
+Database → Application:
+
+Decimal128
+  ↓
+toString()
+  ↓
+Decimal
+
+
+Application → API:
+
+Decimal / Decimal128
+  ↓
+toString()
+  ↓
+string
+
+
+--------------------------------------------------
+17. GOLDEN RULE
+--------------------------------------------------
+
+For the fintech application:
+
+STRING = API REPRESENTATION
+
+DECIMAL = BUSINESS/CALCULATION REPRESENTATION
+
+DECIMAL128 = DATABASE REPRESENTATION
+
+Therefore:
+
+API
+ ↓
+STRING
+ ↓
+DECIMAL
+ ↓
+CALCULATE / VALIDATE / COMPARE / ROUND
+ ↓
+DECIMAL
+ ↓
+DECIMAL128
+ ↓
+DATABASE
+
+And when reading:
+
+DATABASE
+ ↓
+DECIMAL128
+ ↓
+STRING
+ ↓
+DECIMAL
+ ↓
+CALCULATE / VALIDATE / COMPARE
+ ↓
+STRING
+ ↓
+API
+
+
+--------------------------------------------------
+18. FINAL RECOMMENDATION
+--------------------------------------------------
+
+Use the following standard throughout the fintech application:
+
+- Receive financial values as strings.
+- Validate them using Decimal.
+- Perform all financial calculations using Decimal.
+- Perform all financial comparisons using Decimal.
+- Apply precision/rounding using Decimal.
+- Store financial values in MongoDB as Decimal128.
+- Convert Decimal128 to Decimal before performing calculations.
+- Return financial values as strings in API responses.
+- Avoid JavaScript Number for monetary calculations.
+
+This pattern should be applied consistently to:
+
+- Wallet account balance
+- Available balance
+- Holding amount
+- Wallet transactions
+- Fees
+- FX rates
+- Payout amounts
+- Conversion amounts
+- Card limits
+- Transaction amounts
+- Any other monetary/financial value.

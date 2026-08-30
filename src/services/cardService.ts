@@ -683,36 +683,40 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
             throw new ForbiddenError("User configuration is not valid to access cardholder list")
         }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Valid cardholder-id not found in request request body")
         }
         // Check user type for non-user's cardholder id
-        if (cardholderId !== requestSession?.cardholderId) {
+        if (cardholderId?.toString() !== requestSession?.cardholderId?.toString()) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
                 throw new ForbiddenError("Not authorized to get card transactions")
             }
         }
+        const cardholderObjectId = new Types.ObjectId(cardholderId)
         const cardId: string | null = checkStringQueryParams(aesDecryptedQueryData, "card_id")
-        if (!cardId) {
-            throw new InvalidRequestBodyError("Card-id not present in the request body");
+        // Validate card id
+        if (!cardId || !Types.ObjectId.isValid(cardId)) {
+            throw new InvalidRequestBodyError("Valid card-id not found in request query params")
         }
-        let userId;
-        if (cardholderId === requestSession?.cardholderId) {
-            userId = requestSession?.userId;
-            if (!userId) {
+        const cardObjectId = new Types.ObjectId(cardId)
+        let userId: Types.ObjectId;
+        if (cardholderId?.toString() === requestSession?.cardholderId?.toString()) {
+            const sessionUserId = requestSession?.userId;
+            if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
                 throw new UnauthenticatedError("Unauthenticated access detected");
             }
+            userId = new Types.ObjectId(sessionUserId);
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
-            userId = cardholderDetails?._id.toString();
+            userId = cardholderDetails?._id;
         }
 
         // Verify card
-        const cardExists = await user_card_details.exists({ card_id: cardId, cardholder_id: cardholderId });
+        const cardExists = await user_card_details.exists({ _id: cardObjectId, cardholder_id: cardholderObjectId });
         if (!cardExists) {
             throw new NotFoundError("Card not found");
         }
@@ -764,8 +768,8 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
 
         // Query filters
         const query = {
-            cardholder_id: cardholderId,
-            card_id: cardId,
+            cardholder_id: cardholderObjectId,
+            card_id: cardObjectId,
             ...(validationResult.data.transaction_type && { transaction_type: validationResult.data.transaction_type }),
             ...(validationResult.data.transaction_status && { transaction_status: validationResult.data.transaction_status }),
             ...(validationResult.data.card_type && { card_type: validationResult.data.card_type }),
@@ -805,6 +809,14 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
             throw new NotFoundError("card transactions not found")
         }
 
+        const formattedTransactions = transactions.map((transaction) => ({
+            ...transaction,
+            transaction_id: transaction.transaction_id.toString(),
+            amount: new Decimal(transaction.amount.toString())
+                .toDecimalPlaces(4)
+                .toFixed(4),
+        }));
+
         return {
             status: "SUCCESS",
             message: "Card transactions fetched successfully",
@@ -821,7 +833,7 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
                     has_previous_page: currentPage > 1,
                 },
 
-                transactions,
+                transactions: formattedTransactions
             },
         }
     }
@@ -877,44 +889,58 @@ export const getCardTransactionDetailsService = async (requestSession: Request["
             throw new ForbiddenError("User configuration is not valid to access card transaction details")
         }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError(
+                "Valid cardholder ID not found in request body"
+            );
         }
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
         // Check user type for non-user's cardholder id
-        if (cardholderId !== requestSession?.cardholderId) {
+        if (cardholderId?.toString() !== requestSession?.cardholderId?.toString()) {
             if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
                 throw new ForbiddenError("Not authorized to create wallet")
             }
         }
         const cardId: string | null = checkStringQueryParams(aesDecryptedQueryData, "card_id")
-        if (!cardId) {
-            throw new InvalidRequestBodyError("Wallet-id not present in the request body");
+        // Validate card id
+        if (!cardId || !Types.ObjectId.isValid(cardId)) {
+            throw new InvalidRequestBodyError("Valid card-id not found in request query params")
         }
-        let userId;
-        if (cardholderId === requestSession?.cardholderId) {
-            userId = requestSession?.userId;
-            if (!userId) {
+        const cardObjectId = new Types.ObjectId(cardId)
+        let userId: Types.ObjectId;
+        if (cardholderId?.toString() === requestSession?.cardholderId?.toString()) {
+            const sessionUserId = requestSession?.userId;
+            if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
                 throw new UnauthenticatedError("Unauthenticated access detected");
             }
+            userId = new Types.ObjectId(sessionUserId);
         }
         else {
-            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
+            const cardholderDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("_id").lean();
             if (!cardholderDetails) {
                 throw new ServiceError("Cardholder Id provided is invalid or does not exist or cardholder bank details not verified")
             }
-            userId = cardholderDetails?._id.toString();
+            userId = cardholderDetails?._id;
         }
 
         // Verify card
-        const cardExists = await user_card_details.exists({ card_id: cardId, cardholder_id: cardholderId });
+        const cardExists = await user_card_details.exists({ _id: cardObjectId, cardholder_id: cardholderObjectId });
         if (!cardExists) {
             throw new NotFoundError("Card not found");
         }
 
+        // Validate Transaction Id
+        if (!transactionId || !Types.ObjectId.isValid(transactionId)) {
+            throw new InvalidRequestParamsError("Invalid transaction id present in the request params");
+        }
+        const transactionObjectId = new Types.ObjectId(transactionId)
+
+
         // Get Card Transaction Details
         const transaction = await user_card_transactions.findOne({
-            card_id: cardId,
-            transaction_id: transactionId,
+            cardholder_id: cardholderObjectId,
+            card_id: cardObjectId,
+            transaction_id: transactionObjectId,
         }).select(`transaction_id
             transaction_type
             transaction_status
@@ -927,12 +953,19 @@ export const getCardTransactionDetailsService = async (requestSession: Request["
             reference_id
             remarks
             createdAt`).lean();
-
         if (!transaction) {
             throw new NotFoundError("Card transaction not found")
         }
 
-        return { status: "SUCCESS", message: "Card transaction fetched successfully", data: { cardId, transaction } };
+        const formattedTransaction = {
+            ...transaction,
+            transaction_id: transaction.transaction_id.toString(),
+            amount: new Decimal(transaction.amount.toString())
+                .toDecimalPlaces(4)
+                .toString(),
+        };
+
+        return { status: "SUCCESS", message: "Card transaction fetched successfully", data: { cardId, transaction: formattedTransaction, } };
     }
     catch (err) {
         const error = err as any;

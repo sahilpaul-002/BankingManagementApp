@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 import type { userCardDetailsSchemaTypes } from "../types/schemaTypes.js";
+import {Decimal} from "decimal.js"
 
 const decimalField = (defaultValue: string) => ({
     type: Schema.Types.Decimal128,
@@ -8,9 +9,14 @@ const decimalField = (defaultValue: string) => ({
     default: () => mongoose.Types.Decimal128.fromString(defaultValue),
     validate: {
         validator(value: mongoose.Types.Decimal128) {
-            return parseFloat(value.toString()) >= 10;
+            const decimalValue = new Decimal(value.toString());
+
+            return (
+                decimalValue.greaterThanOrEqualTo(10) &&
+                decimalValue.decimalPlaces() <= 4
+            );
         },
-        message: "Value must be at least 10."
+        message: "Value must be at least 10 and must have at most 4 decimal places."
     }
 });
 

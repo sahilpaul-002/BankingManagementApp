@@ -5,21 +5,21 @@ import { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 const userCardTransactionsSchema = new Schema<userCardTransactionsTypes>(
     {
         cardholder_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             index: true,
             trim: true,
         },
 
         card_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             index: true,
             trim: true,
         },
 
         transaction_id: {
-            type: String,
+            type: Schema.Types.ObjectId,
             required: true,
             unique: true,
             index: true,
@@ -138,6 +138,12 @@ userCardTransactionsSchema.index({
     cardholder_id: 1,
     card_id: 1,
     createdAt: -1,
+});
+
+userCardTransactionsSchema.index({
+    cardholder_id: 1,
+    card_id: 1,
+    transaction_id: -1,
 });
 
 userCardTransactionsSchema.index({
