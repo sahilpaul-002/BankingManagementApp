@@ -243,27 +243,25 @@ const initiateCardTransaction = async (
             throw new ServiceError("Invalid wallet transaction", z.flattenError(walletValidation.error));
         }
 
-        await user_wallet_transactions.create(
-            [
-                {
-                    cardholder_id: cardholderObjectId,
-                    wallet_id: walletObjectId,
-                    transaction_id: transactionId,
-                    transaction_type: walletValidation.data.transaction_type,
-                    transaction_status: walletValidation.data.transaction_status,
-                    wallet_details: walletValidation.data.wallet_details,
-                    amount: walletValidation.data.amount,
-                    fee: walletValidation.data.fee,
-                    balance_before: walletValidation.data.balance_before,
-                    balance_after: walletValidation.data.balance_after,
-                    reference_id: walletValidation.data.reference_id,
-                    remarks: walletValidation.data.remarks ?? `Card ${transactionData.transaction_type} transaction`,
-                },
-            ],
-            {
-                session: mongoSession,
-            }
-        );
+        const walletTransaction = new user_wallet_transactions({
+            cardholder_id: cardholderObjectId,
+            wallet_id: walletObjectId,
+            transaction_id: transactionId,
+            transaction_type: walletValidation.data.transaction_type,
+            transaction_status: walletValidation.data.transaction_status,
+            wallet_details: walletValidation.data.wallet_details,
+            amount: walletValidation.data.amount,
+            fee: walletValidation.data.fee,
+            balance_before: walletValidation.data.balance_before,
+            balance_after: walletValidation.data.balance_after,
+            reference_id: walletValidation.data.reference_id,
+            remarks:
+                walletValidation.data.remarks ??
+                `Card ${transactionData.transaction_type} transaction`,
+        });
+        await walletTransaction.save({
+            session: mongoSession,
+        });
 
         const authorizationExpiresAt = new Date(
             Date.now() + 2 * 60 * 1000 // 2 minutes
