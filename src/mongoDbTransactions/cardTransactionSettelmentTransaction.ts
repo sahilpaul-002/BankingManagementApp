@@ -6,6 +6,7 @@ import { userWalletTransactionsModel as user_wallet_transactions } from "../mode
 import { userCardTransactionsModel as user_card_transactions } from "../models/user_card_transaction_details.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
 import { Decimal } from "decimal.js";
+import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
 
 const cardTransactionSettlementTransaction = async (
     decoded: {
@@ -20,6 +21,8 @@ const cardTransactionSettlementTransaction = async (
 
     try {
         mongoSession.startTransaction();
+
+        const now = new Date();
 
         const latestTransaction = await user_card_transactions.findOne(
             {
@@ -39,7 +42,7 @@ const cardTransactionSettlementTransaction = async (
         }
 
         // Check authorization expiry
-        if (latestTransaction.authorization_expires_at && new Date() > latestTransaction.authorization_expires_at) {
+        if (latestTransaction.authorization_expires_at && now > latestTransaction.authorization_expires_at) {
             throw new ServiceError("Authorization request has expired");
         }
 
@@ -59,6 +62,12 @@ const cardTransactionSettlementTransaction = async (
         // Validate wallet transaction
         if (walletTransaction.transaction_type !== "HOLD") {
             throw new ServiceError("Associated wallet transaction is not a HOLD transaction");
+        }
+        if (walletTransaction.transaction_status !== "PENDING") {
+            throw new ServiceError(`Wallet transaction already ${walletTransaction.transaction_status.toLowerCase()}`);
+        }
+        if (latestTransaction.authorization_type !== "HOLD") {
+            throw new ServiceError("Only HOLD card transactions can be settled");
         }
 
         // Get Wallet
@@ -85,9 +94,15 @@ const cardTransactionSettlementTransaction = async (
             (x) =>
                 x.wallet_type === walletTransaction.wallet_details.wallet_type && x.wallet_currency === walletTransaction.wallet_details.wallet_currency
         );
-
         if (!walletData) {
             throw new NotFoundError("Wallet details not found");
+        }
+        const currentBalance = new Decimal(walletData.account_balance?.toString() ?? "0");
+        const currentAvailableBalance = new Decimal(walletData.available_balance?.toString() ?? "0");
+        const currentHoldingAmount = new Decimal(walletData.holding_amount?.toString() ?? "0");
+        // Validate walllet balance accounting
+        if (!currentBalance.equals(currentAvailableBalance.plus(currentHoldingAmount))) {
+            throw new ServiceError("Wallet balance inconsistency detected before card transaction settlement");
         }
 
         // Get Transaciton Amount
@@ -97,6 +112,11 @@ const cardTransactionSettlementTransaction = async (
         }
         const amountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.toDecimalPlaces(4).toString());
         const negativeAmountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.negated().toDecimalPlaces(4).toString());
+
+        // Validate HOLD amount
+        if (transactionAmount.greaterThan(currentHoldingAmount)) {
+            throw new ServiceError("Insufficient holding balance for card transaction settlement");
+        }
 
         const updateInc: Record<string, mongoose.Types.Decimal128> = {};
         let cardTransactionUpdate: Record<string, any>;
@@ -145,6 +165,56 @@ const cardTransactionSettlementTransaction = async (
         );
         if (walletUpdate.modifiedCount !== 1) {
             throw new ServiceError("Failed to update wallet");
+        }
+
+        // Reverse card limit usage on REJECT
+        if (decoded.action === "REJECT") {
+            const transactionCreatedAt = new Date(latestTransaction.createdAt);
+            const isSameDay = transactionCreatedAt.toDateString() === now.toDateString();
+            const isSameMonth = transactionCreatedAt.getFullYear() === now.getFullYear() && transactionCreatedAt.getMonth() === now.getMonth();
+            const isSameYear = transactionCreatedAt.getFullYear() === now.getFullYear();
+            const cardLimitFilter: Record<string, any> = {
+                _id: latestTransaction.card_id,
+                cardholder_id: latestTransaction.cardholder_id,
+                card_status: "ACTIVE",
+            };
+            const cardLimitInc: Record<string, mongoose.Types.Decimal128> = {};
+
+            // Get the transaction amount that was originally used
+            // for card limit calculation.
+            const negativeTransactionAmountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.negated().toDecimalPlaces(4).toString());
+
+            // Daily limit
+            if (isSameDay) {
+                cardLimitInc["daily_transaction.debit"] = negativeTransactionAmountDecimal128;
+            }
+
+            // Monthly limit
+            if (isSameMonth) {
+                cardLimitInc["monthly_transaction.debit"] = negativeTransactionAmountDecimal128;
+            }
+
+            // Yearly limit
+            if (isSameYear) {
+                cardLimitInc["yearly_transaction.debit"] = negativeTransactionAmountDecimal128;
+            }
+
+            // Update card limit usage
+            if (Object.keys(cardLimitInc).length > 0) {
+                const cardLimitUpdate = await user_card_details.updateOne(
+                    cardLimitFilter,
+                    {
+                        $inc: cardLimitInc,
+                    },
+                    {
+                        session: mongoSession,
+                    }
+                );
+
+                if (cardLimitUpdate.modifiedCount !== 1) {
+                    throw new ServiceError("Failed to reverse card limit usage");
+                }
+            }
         }
 
         // Update Wallet Transactions

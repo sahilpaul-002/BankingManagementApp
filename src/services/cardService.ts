@@ -795,11 +795,15 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
             transaction_type: 1,
             transaction_status: 1,
             amount: 1,
+            fee: 1,
             currency: 1,
             merchant_name: 1,
             merchant_category: 1,
             merchant_country: 1,
             card_type: 1,
+            authorization_type: 1,
+            authorization_status: 1,
+            reference_id: 1,
             createdAt: 1,
         };
 
@@ -987,96 +991,6 @@ export const getCardTransactionDetailsService = async (requestSession: Request["
 
 
 // ----------------------------------- CREATE CARD TRANSACTION ----------------------------------- \\
-const validateCardDetails = (cardDetails: Record<string, any>, cvvNumber: string, validThru: string, amount: string, currency: string, merchantName: string, merchantCategory: string, merchantCountry: string, transactionType: string) => {
-    // 1. Verify CVV
-    if (cardDetails.cvv !== cvvNumber) {
-        throw new ServiceError("Transaction failed - Invalid card details");
-    }
-
-    // 2. Verify expiry date
-    const [expMonth, expYear] = validThru.split("/");
-
-    if (!expMonth || !expYear) {
-        throw new ServiceError("Transaction failed - Invalid Valid-Thru format");
-    }
-
-    const cardExpiry = new Date(cardDetails.valid_date);
-
-    const storedMonth = String(cardExpiry.getMonth() + 1).padStart(2, "0");
-    const storedYear = String(cardExpiry.getFullYear()).slice(-2);
-
-    if (storedMonth !== expMonth || storedYear !== expYear) {
-        throw new ServiceError("Transaction failed - Invalid card details");
-    }
-
-    // 3. Check card status
-    if (cardDetails.card_status !== "ACTIVE") {
-        throw new ServiceError(
-            `Transaction failed - Card cannot be used because it is ${cardDetails.card_status} status`
-        );
-    }
-
-    // 4. Check card expiry
-    const today = new Date();
-
-    if (cardExpiry < today) {
-        throw new ServiceError("Transaction failed - Card has expired");
-    }
-
-    // 5. Verify currency
-    if (cardDetails.card_currency !== currency) {
-        throw new ServiceError("Transaction failed - Card currency does not match transaction currency");
-    }
-
-    // 6. Verify merchant category
-    if (
-        !cardDetails.valid_merchant_categories.includes(merchantCategory)
-    ) {
-        throw new ServiceError(
-            "Transaction failed - Transactions are not allowed for this merchant category"
-        );
-    }
-
-    // Verify Limits
-    const amountDecimal = new Decimal(amount);
-    const now = new Date();
-
-    if (transactionType?.toUpperCase() !== "REFUND") {
-        // 7. Verify daily limit
-        let dailySpent: Decimal = new Decimal(0);
-        if (cardDetails.daily_transaction && cardDetails.daily_transaction.date.toDateString() === now.toDateString()) {
-            dailySpent = new Decimal(cardDetails.daily_transaction.debit.toString());
-        }
-        const dailyLimit = new Decimal(cardDetails.card_limits.daily_limit.toString());
-        if (dailySpent.plus(amountDecimal).greaterThan(dailyLimit)) {
-            throw new ServiceError("Daily card limit exceeded");
-        }
-
-        // 8. Verify monthly limit
-        let monthlySpent: Decimal = new Decimal(0);
-        const monthly = cardDetails.monthly_transaction;
-        if (monthly.month === now.getMonth() + 1 && monthly.year === now.getFullYear()) {
-            monthlySpent = new Decimal(monthly.debit.toString());
-        }
-        const monthlyLimit = new Decimal(cardDetails.card_limits.monthly_limit.toString());
-        if (monthlySpent.plus(amountDecimal).greaterThan(monthlyLimit)) {
-            throw new ServiceError("Monthly card limit exceeded");
-        }
-
-        // 9. Verify yearly limit
-        let yearlySpent: Decimal = new Decimal(0);
-        const yearly = cardDetails.yearly_transaction;
-        if (yearly.year === now.getFullYear()) {
-            yearlySpent = new Decimal(yearly.debit.toString());
-        }
-        const yearlyLimit = new Decimal(cardDetails.card_limits.yearly_limit.toString());
-        if (yearlySpent.plus(amountDecimal).greaterThan(yearlyLimit)) {
-            throw new ServiceError("Yearly card limit exceeded");
-        }
-    }
-
-    return true;
-}
 export const createCardTransactionService = async (aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -1151,20 +1065,8 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             throw new InvalidRequestBodyError("Authorization-Type is not valid, must be [HOLD | IMMEDIATE]")
         }
 
-        // Verify card
-        const cardDetails = await user_card_details.findOne({ card_number: cardNumber }).lean();
-        if (!cardDetails) {
-            throw new NotFoundError("Card not found");
-        }
-        const cardholderObjectId = cardDetails.cardholder_id
-
-        const cardDetailsValidation = validateCardDetails(cardDetails, cvvNumber, validThru, amount, currency, merchantName, merchantCategory, merchantCountry, transactionType)
-        if (!cardDetailsValidation) {
-            throw new ServiceError("Transaction failed - Invalid card details")
-        }
-
         // Initiate Card Transaction
-        const initiateCardTransactionResult = await initiateCardTransaction(cardholderObjectId, cardDetails,
+        const initiateCardTransactionResult = await initiateCardTransaction(cardNumber, cvvNumber, validThru, currency,
             {
                 transaction_type: transactionType as
                     | "PURCHASE"
@@ -1189,6 +1091,9 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             throw new ServiceError("Card transaction service failed")
         }
 
+        const cardholderObjectId = new Types.ObjectId(initiateCardTransactionResult?.data?.cardholderId);
+
+
         if (authorizationType === "HOLD") {
             const maskCardNumber = (cardNumber: string): string => {
                 return `**** **** **** ${cardNumber.slice(-4)}`;
@@ -1211,7 +1116,7 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             // Create Card Transaction Auth Token
             const approveToken = jwt.sign(
                 {
-                    userId: cardDetails?.cardholder_id,
+                    userId: cardholderDetails?._id,
                     userName: cardholderDetails?.full_name || "Cardholder",
                     cardholderEmail: cardholderDetails?.email,
                     action: "APPROVE",
@@ -1225,7 +1130,7 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             );
             const rejectToken = jwt.sign(
                 {
-                    userId: cardDetails?.cardholder_id,
+                    userId: cardholderDetails?._id,
                     userName: cardholderDetails?.full_name || "Cardholder",
                     cardholderEmail: cardholderDetails?.email,
                     action: "REJECT",
@@ -1253,7 +1158,7 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             const emailTemplate = generateEmailTemplate(
                 "CARD_TRANSACTION_AUTHORIZATION",
                 {
-                    userId: cardDetails?._id?.toString(),
+                    userId: cardholderDetails?._id?.toString(),
                     userName: cardholderDetails?.full_name || "Cardholder",
                     dashboardName: businessName,
                     cardholderEmail: cardholderDetails?.email,

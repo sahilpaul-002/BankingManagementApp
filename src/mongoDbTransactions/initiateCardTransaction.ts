@@ -12,10 +12,66 @@ import type { walletDetailsType, userCardDetailsSchemaTypes, } from "../types/sc
 import sanitizeApiError from "../utils/sanitizeApiError.js";
 import { Decimal } from "decimal.js";
 import { calculateFeeAddedAmountService } from "../services/calculateFeeAddedAmountService.js";
+import { userCardDetailsModel as user_card_details } from "../models/user_card_details.js";
+
+const validateCardDetails = (cardDetails: Record<string, any>, cvvNumber: string, validThru: string, currency: string, merchantCategory: string) => {
+    // 1. Verify CVV
+    if (cardDetails.cvv !== cvvNumber) {
+        throw new ServiceError("Transaction failed - Invalid card details");
+    }
+
+    // 2. Verify expiry date
+    const [expMonth, expYear] = validThru.split("/");
+
+    if (!expMonth || !expYear) {
+        throw new ServiceError("Transaction failed - Invalid Valid-Thru format");
+    }
+
+    const cardExpiry = new Date(cardDetails.valid_date);
+
+    const storedMonth = String(cardExpiry.getMonth() + 1).padStart(2, "0");
+    const storedYear = String(cardExpiry.getFullYear()).slice(-2);
+
+    if (storedMonth !== expMonth || storedYear !== expYear) {
+        throw new ServiceError("Transaction failed - Invalid card details");
+    }
+
+    // 3. Check card status
+    if (cardDetails.card_status !== "ACTIVE") {
+        throw new ServiceError(
+            `Transaction failed - Card cannot be used because it is ${cardDetails.card_status} status`
+        );
+    }
+
+    // 4. Check card expiry
+    const today = new Date();
+
+    if (cardExpiry < today) {
+        throw new ServiceError("Transaction failed - Card has expired");
+    }
+
+    // 5. Verify currency
+    if (cardDetails.card_currency !== currency) {
+        throw new ServiceError("Transaction failed - Card currency does not match transaction currency");
+    }
+
+    // 6. Verify merchant category
+    if (
+        !cardDetails.valid_merchant_categories.includes(merchantCategory)
+    ) {
+        throw new ServiceError(
+            "Transaction failed - Transactions are not allowed for this merchant category"
+        );
+    }
+
+    return true;
+}
 
 const initiateCardTransaction = async (
-    cardholderObjectId: Types.ObjectId,
-    cardDetails: userCardDetailsSchemaTypes,
+    cardNumber: string,
+    cvvNumber: string,
+    validThru: string,
+    currency: string,
     transactionData: {
         transaction_type: "PURCHASE" | "REFUND" | "WITHDRAWAL" | "REVERSAL" | "FEE";
         authorization_type: "HOLD" | "IMMEDIATE",
@@ -31,6 +87,19 @@ const initiateCardTransaction = async (
 
     try {
         mongoSession.startTransaction();
+
+        // Fetch Card Details
+        const cardDetails = await user_card_details.findOne({ card_number: cardNumber }).session(mongoSession).lean();
+        if (!cardDetails) {
+            throw new NotFoundError("Card not found");
+        }
+        const cardholderObjectId = cardDetails.cardholder_id
+
+        // Validate Card Details
+        const cardDetailsValidation = validateCardDetails(cardDetails, cvvNumber, validThru, currency, transactionData?.merchant_category)
+        if (!cardDetailsValidation) {
+            throw new ServiceError("Transaction failed - Invalid card details")
+        }
 
         // Validate USD Wallet Balance
         const wallet = await user_wallet_details.findOne(
@@ -101,11 +170,11 @@ const initiateCardTransaction = async (
             }
 
             if (originalTransaction.transaction_type !== "PURCHASE") {
-                throw new BadRequestError("Only purchase transactions can be refunded");
+                throw new ServiceError("Only purchase transactions can be refunded");
             }
 
             if (originalTransaction.transaction_status !== "SUCCESS") {
-                throw new BadRequestError("Only successful transactions can be refunded");
+                throw new ServiceError("Only successful transactions can be refunded");
             }
 
             transactionAmount = new Decimal(originalTransaction.amount.toString());
@@ -128,6 +197,177 @@ const initiateCardTransaction = async (
         const transactionId = new Types.ObjectId();
 
         const now = new Date();
+
+        // ============================ Card Transaction Limits Check ============================ \\
+        if (transactionData.transaction_type !== "REFUND") {
+            // Get configured card transaction limits
+            const cardDailyLimit = new Decimal(cardDetails.card_limits?.daily_limit?.toString() ?? "0");
+            const cardMonthlyLimit = new Decimal(cardDetails.card_limits?.monthly_limit?.toString() ?? "0");
+            const cardYearlyLimit = new Decimal(cardDetails.card_limits?.yearly_limit?.toString() ?? "0");
+
+            // Validate configured limits
+            if (!cardDailyLimit.isFinite() || cardDailyLimit.lessThanOrEqualTo(0)) {
+                throw new ServiceError("Invalid card daily limit");
+            }
+            if (!cardMonthlyLimit.isFinite() || cardMonthlyLimit.lessThanOrEqualTo(0)) {
+                throw new ServiceError("Invalid card monthly limit");
+            }
+            if (!cardYearlyLimit.isFinite() || cardYearlyLimit.lessThanOrEqualTo(0)) {
+                throw new ServiceError("Invalid card yearly limit");
+            }
+
+            //Validate transaction amount
+            if (!transactionAmount.isFinite() || transactionAmount.lessThanOrEqualTo(0)) {
+                throw new ServiceError("Invalid card transaction amount");
+            }
+
+            // Current date information
+            const currentDay = now.toDateString();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+
+            // Get current card transaction usage
+            const dailyTransaction = cardDetails.daily_transaction;
+            const currentDailyDebit =
+                dailyTransaction?.date &&
+                    dailyTransaction.date.toDateString() === currentDay
+                    ? new Decimal(
+                        dailyTransaction.debit?.toString() ?? "0"
+                    )
+                    : new Decimal(0);
+
+            const monthlyTransaction = cardDetails.monthly_transaction;
+            const currentMonthlyDebit =
+                monthlyTransaction?.month === currentMonth &&
+                    monthlyTransaction?.year === currentYear
+                    ? new Decimal(
+                        monthlyTransaction.debit?.toString() ?? "0"
+                    )
+                    : new Decimal(0);
+
+            const yearlyTransaction = cardDetails.yearly_transaction;
+            const currentYearlyDebit =
+                yearlyTransaction?.year === currentYear
+                    ? new Decimal(
+                        yearlyTransaction.debit?.toString() ?? "0"
+                    )
+                    : new Decimal(0);
+
+            // Calculate projected usage
+            const projectedDailyDebit = currentDailyDebit.plus(transactionAmount);
+            const projectedMonthlyDebit = currentMonthlyDebit.plus(transactionAmount);
+            const projectedYearlyDebit = currentYearlyDebit.plus(transactionAmount);
+
+            // Check daily limit
+            if (projectedDailyDebit.greaterThan(cardDailyLimit)) {
+                throw new ServiceError(
+                    `Daily card transaction limit exceeded. ` +
+                    `Daily limit: ${cardDailyLimit.toFixed(4)}, ` +
+                    `Already used: ${currentDailyDebit.toFixed(4)}, ` +
+                    `Transaction amount: ${transactionAmount.toFixed(4)}`
+                );
+            }
+
+            // Check monthly limit
+            if (projectedMonthlyDebit.greaterThan(cardMonthlyLimit)) {
+                throw new ServiceError(
+                    `Monthly card transaction limit exceeded. ` +
+                    `Monthly limit: ${cardMonthlyLimit.toFixed(4)}, ` +
+                    `Already used: ${currentMonthlyDebit.toFixed(4)}, ` +
+                    `Transaction amount: ${transactionAmount.toFixed(4)}`
+                );
+            }
+
+            // Check yearly limit
+            if (projectedYearlyDebit.greaterThan(cardYearlyLimit)) {
+                throw new ServiceError(
+                    `Yearly card transaction limit exceeded. ` +
+                    `Yearly limit: ${cardYearlyLimit.toFixed(4)}, ` +
+                    `Already used: ${currentYearlyDebit.toFixed(4)}, ` +
+                    `Transaction amount: ${transactionAmount.toFixed(4)}`
+                );
+            }
+
+            // Prepare Decimal128 transaction amount
+            const cardTransactionAmountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.toDecimalPlaces(4).toString());
+            const cardUpdateInc: Record<string, mongoose.Types.Decimal128> = {};
+            const cardUpdateSet: Record<string, any> = {};
+
+            // Update DAILY transaction usage
+            if (!dailyTransaction?.date || dailyTransaction.date.toDateString() !== currentDay) {
+                // New day -> reset daily usage
+                cardUpdateSet["daily_transaction.debit"] = cardTransactionAmountDecimal128;
+                cardUpdateSet["daily_transaction.date"] = now;
+            }
+            else {
+                // Same day -> increment usage
+                cardUpdateInc["daily_transaction.debit"] = cardTransactionAmountDecimal128;
+            }
+
+            // Update MONTHLY transaction usage
+            const isSameMonth = monthlyTransaction?.month === currentMonth && monthlyTransaction?.year === currentYear;
+            if (isSameMonth) {
+                // Same month -> increment usage
+                cardUpdateInc["monthly_transaction.debit"] = cardTransactionAmountDecimal128;
+            }
+            else {
+                // New month -> reset usage
+                cardUpdateSet["monthly_transaction.debit"] = cardTransactionAmountDecimal128;
+                cardUpdateSet["monthly_transaction.month"] = currentMonth;
+                cardUpdateSet["monthly_transaction.year"] = currentYear;
+            }
+
+            // Update YEARLY transaction usage
+            const isSameYear = yearlyTransaction?.year === currentYear;
+            if (isSameYear) {
+                // Same year -> increment usage
+                cardUpdateInc["yearly_transaction.debit"] = cardTransactionAmountDecimal128;
+            }
+            else {
+                // New year -> reset usage
+                cardUpdateSet["yearly_transaction.debit"] = cardTransactionAmountDecimal128;
+                cardUpdateSet["yearly_transaction.year"] = currentYear;
+            }
+
+            // Update card transaction counters
+            const cardFilter: Record<string, any> = {
+                _id: cardDetails._id,
+                cardholder_id: cardholderObjectId,
+                card_status: "ACTIVE",
+            };
+            // Only protect daily usage when it is being incremented
+            if (dailyTransaction?.date && dailyTransaction.date.toDateString() === currentDay) {
+                cardFilter["daily_transaction.debit"] = dailyTransaction.debit;
+            }
+            // Only protect monthly usage when it is being incremented
+            if (isSameMonth) {
+                cardFilter["monthly_transaction.debit"] = monthlyTransaction.debit;
+            }
+            // Only protect yearly usage when it is being incremented
+            if (isSameYear) {
+                cardFilter["yearly_transaction.debit"] = yearlyTransaction.debit;
+            }
+            const updatedCard = await user_card_details.findOneAndUpdate(
+                cardFilter,
+                {
+                    ...(Object.keys(cardUpdateInc).length > 0
+                        ? { $inc: cardUpdateInc }
+                        : {}),
+
+                    ...(Object.keys(cardUpdateSet).length > 0
+                        ? { $set: cardUpdateSet }
+                        : {}),
+                },
+                {
+                    new: true,
+                    session: mongoSession,
+                }
+            ).lean();
+            if (!updatedCard) {
+                throw new ServiceError("Failed to update card transaction limit usage");
+            }
+        }
+        // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx \\
 
         const updateInc: Record<string, mongoose.Types.Decimal128> = {};
         const updateSet: Record<string, any> = {};
@@ -309,6 +549,29 @@ const initiateCardTransaction = async (
                 session: mongoSession,
             }
         );
+
+        // Update existing card transaction to REVERSED if it is a REFUND transaction
+        if (transactionData.transaction_type === "REFUND" && originalTransaction) {
+            const updatedOriginalTransaction = await user_card_transactions.findOneAndUpdate(
+                {
+                    _id: originalTransaction._id,
+                    transaction_type: "PURCHASE",
+                    transaction_status: "SUCCESS",
+                },
+                {
+                    $set: {
+                        transaction_status: "REVERSED",
+                    },
+                },
+                {
+                    new: true,
+                    session: mongoSession,
+                }
+            ).lean();
+            if (!updatedOriginalTransaction) {
+                throw new ServiceError("Transaction was already refunded or is no longer eligible for refund");
+            }
+        }
         // xxxxxxxxxxxxxxxxxxxxxxxxxx \\
 
         // Commit MongoDB transaction
@@ -319,6 +582,7 @@ const initiateCardTransaction = async (
             message: "Card transaction created successfully",
             data: {
                 walletId: walletObjectId?.toString(),
+                cardholderId: cardholderObjectId?.toString(),
                 cardId: cardDetails._id?.toString(),
                 cardNumber: cardDetails.card_number,
                 transactionId: transactionId?.toString(),
