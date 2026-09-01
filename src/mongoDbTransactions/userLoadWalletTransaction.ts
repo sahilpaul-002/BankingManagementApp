@@ -53,15 +53,12 @@ const userLoadWalletTransaction = async (
 
 
         if (!isFiatWallet && !isCryptoWallet) {
-            throw new ServiceError(
-                `Unsupported wallet type: ${walletType}`
-            );
+            throw new ServiceError(`Unsupported wallet type: ${walletType}`);
         }
 
 
         let sourceCurrency = walletCurrency;
         let sourceAmount = loadAmount;
-        let exchangeRate = 1;
 
         let remarks = "Wallet loaded successfully";
 
@@ -93,17 +90,15 @@ const userLoadWalletTransaction = async (
         // +100 SGD
         //
         // ------------------------------------------
-
+        let exchangeRate = new Decimal(1);
         if (isFiatWallet) {
             sourceCurrency = "USD";
 
             // Get fx rate
             const fxRateResponse = await getFxRate(sourceCurrency, walletCurrency);
-            exchangeRate = fxRateResponse.exchange_rate;
-            if (!exchangeRate || exchangeRate <= 0) {
-                throw new ServiceError(
-                    `Invalid FX rate for ${sourceCurrency} to ${walletCurrency}`
-                );
+            exchangeRate = new Decimal(fxRateResponse.exchange_rate.toString());
+            if (!exchangeRate.isFinite() || exchangeRate.lte(0)) {
+                throw new ServiceError(`Invalid FX rate for ${sourceCurrency} to ${walletCurrency}`);
             }
 
 
@@ -120,24 +115,17 @@ const userLoadWalletTransaction = async (
             // --------------------------------------------------------
             const sourceAmountDecimal = new Decimal(loadAmount).div(exchangeRate);
             if (!sourceAmountDecimal.isFinite() || sourceAmountDecimal.lte(0)) {
-                throw new ServiceError(
-                    "Invalid source amount calculated from FX rate"
-                );
+                throw new ServiceError("Invalid source amount calculated from FX rate");
             }
             sourceAmount = sourceAmountDecimal.toDecimalPlaces(4);
 
             // Calculate fee on the source amount
-            feeAmount = calculateFeeAddedAmountService(
-                sourceAmountDecimal,
-                "load_fiat_wallet_percent"
-            );
+            feeAmount = calculateFeeAddedAmountService(sourceAmountDecimal, "load_fiat_wallet_percent");
 
             // Total amount to deduct from funding account
             totalSourceAmount = sourceAmountDecimal.plus(feeAmount);
             if (!totalSourceAmount.isFinite() || totalSourceAmount.lte(0)) {
-                throw new ServiceError(
-                    "Invalid total funding amount calculated"
-                );
+                throw new ServiceError("Invalid total funding amount calculated");
             }
 
             // Find and deduct from the usd funding account
@@ -197,23 +185,19 @@ const userLoadWalletTransaction = async (
             ];
 
             if (!supportedCryptoCurrencies.includes(walletCurrency)) {
-                throw new ServiceError(
-                    `Unsupported crypto wallet currency: ${walletCurrency}`
-                );
+                throw new ServiceError(`Unsupported crypto wallet currency: ${walletCurrency}`);
             }
 
             // Crypto wallet receives exactly the amount requested by the user
             sourceCurrency = walletCurrency;
             sourceAmount = loadAmount;
-            exchangeRate = 1;
+            exchangeRate = new Decimal(1);
 
             // Calculate crypto funding fee
             const sourceAmountDecimal = new Decimal(loadAmount);
 
             if (!sourceAmountDecimal.isFinite() || sourceAmountDecimal.lte(0)) {
-                throw new ServiceError(
-                    "Invalid crypto source amount"
-                );
+                throw new ServiceError("Invalid crypto source amount");
             }
 
             feeAmount = calculateFeeAddedAmountService(
@@ -225,9 +209,7 @@ const userLoadWalletTransaction = async (
             totalSourceAmount = sourceAmountDecimal.plus(feeAmount);
 
             if (!totalSourceAmount.isFinite() || totalSourceAmount.lte(0)) {
-                throw new ServiceError(
-                    "Invalid total crypto funding amount calculated"
-                );
+                throw new ServiceError("Invalid total crypto funding amount calculated");
             }
 
             // Convert total deduction to Mongo Decimal128
@@ -266,9 +248,7 @@ const userLoadWalletTransaction = async (
             ).lean();
 
             if (!updatedCryptoFundingAccount) {
-                throw new ServiceError(
-                    `Insufficient ${walletCurrency} crypto funding account balance or active crypto funding account not found`
-                );
+                throw new ServiceError(`Insufficient ${walletCurrency} crypto funding account balance or active crypto funding account not found`);
             }
 
             // ---------------------------------------------
@@ -291,57 +271,32 @@ const userLoadWalletTransaction = async (
         // Daily transaction
         const daily = selectedWallet.daily_transaction;
         if (!daily?.date || daily.date.toDateString() !== now.toDateString()) {
-            updateSet[
-                "wallets_details.$.daily_transaction.credit"
-            ] = loadAmountDecimal128;
-
-            updateSet[
-                "wallets_details.$.daily_transaction.date"
-            ] = now;
+            updateSet["wallets_details.$.daily_transaction.credit"] = loadAmountDecimal128;
+            updateSet["wallets_details.$.daily_transaction.date"] = now;
         }
         else {
-            updateInc[
-                "wallets_details.$.daily_transaction.credit"
-            ] = loadAmountDecimal128;
-
+            updateInc["wallets_details.$.daily_transaction.credit"] = loadAmountDecimal128;
         }
 
         // Monthly Transaction
         const isSameMonth = selectedWallet.monthly_transaction?.month === now.getMonth() + 1 && selectedWallet.monthly_transaction?.year === now.getFullYear();
         if (isSameMonth) {
-            updateInc[
-                "wallets_details.$.monthly_transaction.credit"
-            ] = loadAmountDecimal128;
+            updateInc["wallets_details.$.monthly_transaction.credit"] = loadAmountDecimal128;
         }
         else {
-            updateSet[
-                "wallets_details.$.monthly_transaction.credit"
-            ] = loadAmountDecimal128;
-
-            updateSet[
-                "wallets_details.$.monthly_transaction.month"
-            ] = now.getMonth() + 1;
-
-            updateSet[
-                "wallets_details.$.monthly_transaction.year"
-            ] = now.getFullYear();
+            updateSet["wallets_details.$.monthly_transaction.credit"] = loadAmountDecimal128;
+            updateSet["wallets_details.$.monthly_transaction.month"] = now.getMonth() + 1;
+            updateSet["wallets_details.$.monthly_transaction.year"] = now.getFullYear();
         }
 
         // Yearly transaction
         const isSameYear = selectedWallet.yearly_transaction?.year === now.getFullYear();
         if (isSameYear) {
-            updateInc[
-                "wallets_details.$.yearly_transaction.credit"
-            ] = loadAmountDecimal128;
+            updateInc["wallets_details.$.yearly_transaction.credit"] = loadAmountDecimal128;
         }
         else {
-            updateSet[
-                "wallets_details.$.yearly_transaction.credit"
-            ] = loadAmountDecimal128;
-
-            updateSet[
-                "wallets_details.$.yearly_transaction.year"
-            ] = now.getFullYear();
+            updateSet["wallets_details.$.yearly_transaction.credit"] = loadAmountDecimal128;
+            updateSet["wallets_details.$.yearly_transaction.year"] = now.getFullYear();
         }
 
         // Update user wallet
@@ -402,35 +357,24 @@ const userLoadWalletTransaction = async (
         if (!availableBalanceAfter.plus(holdingAmountAfter).toDecimalPlaces(4).equals(balanceAfter.toDecimalPlaces(4))) {
             throw new ServiceError(`Invalid ${walletCurrency} wallet balance after load`);
         }
-        const balanceBeforeDecimal128 = mongoose.Types.Decimal128.fromString(balanceBefore.toDecimalPlaces(4).toString());
-        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(4).toString());
 
-        // Transaction payload
         const transactionPayload = {
             transaction_type: "LOAD",
             transaction_status: "SUCCESS",
             wallet_details: {
                 wallet_type: walletType,
                 wallet_currency: walletCurrency,
-                network: userWalletActionData.data.network
             },
-            amount: Number(loadAmount.toString()),
-            balance_before: Number(balanceBefore.toString()),
-            balance_after: Number(balanceAfter.toString()),
+            amount: loadAmount.toDecimalPlaces(4),
+            fee: feeAmount.toDecimalPlaces(4),
+            balance_before: balanceBefore.toDecimalPlaces(4),
+            balance_after: balanceAfter.toDecimalPlaces(4),
             reference_id: crypto.randomUUID(),
             remarks: remarks
         };
 
-
         // Validate transaction payload
-        const validationResult:
-            SafeParseResult<
-                z.infer<typeof userWalletTransactionsValidationSchema>
-            > =
-            userWalletTransactionsValidationSchema.safeParse(
-                transactionPayload
-            );
-
+        const validationResult: SafeParseResult<z.infer<typeof userWalletTransactionsValidationSchema>> = userWalletTransactionsValidationSchema.safeParse(transactionPayload);
 
         if (!validationResult.success) {
             throw new ServiceError(
@@ -440,6 +384,11 @@ const userLoadWalletTransaction = async (
                 )
             );
         }
+
+        const amountDecimal128 = mongoose.Types.Decimal128.fromString(validationResult.data.amount.toDecimalPlaces(4).toString());
+        const feeDecimal128 = mongoose.Types.Decimal128.fromString(validationResult.data.fee.toDecimalPlaces(4).toString());
+        const balanceBeforeDecimal128 = mongoose.Types.Decimal128.fromString(validationResult.data.balance_before.toDecimalPlaces(4).toString());
+        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(validationResult.data.balance_after.toDecimalPlaces(4).toString());
 
 
         // Create wallet transaction
@@ -452,10 +401,11 @@ const userLoadWalletTransaction = async (
                     transaction_type: validationResult.data.transaction_type,
                     transaction_status: validationResult.data.transaction_status,
                     wallet_details: {
-                        wallet_type: validationResult.data.wallet_details?.wallet_type,
-                        wallet_currency: validationResult.data.wallet_details?.wallet_currency
+                        wallet_type: validationResult.data.wallet_details.wallet_type,
+                        wallet_currency: validationResult.data.wallet_details.wallet_currency
                     },
-                    amount: loadAmountDecimal128,
+                    amount: amountDecimal128,
+                    fee: feeDecimal128,
                     balance_before: balanceBeforeDecimal128,
                     balance_after: balanceAfterDecimal128,
                     reference_id: validationResult.data.reference_id,

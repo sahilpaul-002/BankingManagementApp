@@ -1,3 +1,4 @@
+import {Decimal} from "decimal.js";
 import z from "zod";
 
 const userWalletCreationValidationSchema = z.object({
@@ -8,14 +9,16 @@ const userWalletCreationValidationSchema = z.object({
     account_balance: z
         .number("Account balance must be a number")
         .min(0, "Account balance cannot be negative")
+        .transform((value) => new Decimal(value))
         .optional()
-        .default(0),
+        .default(new Decimal(0)),
 
     holding_amount: z
         .number("Holding amount must be a number")
         .min(0, "Holding amount cannot be negative")
+        .transform((value) => new Decimal(value))
         .optional()
-        .default(0),
+        .default(new Decimal(0)),
 
     wallet_type: z
         .enum(["FIAT", "CRYPTO"], {

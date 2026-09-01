@@ -339,14 +339,14 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
             throw new ForbiddenError("User configuration is not valid to load wallet")
         }
         const cardholderId = checkStringBody(walletDetails, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Invalid cardholder-id not found in request request body")
         }
         const cardholderObjectId = new Types.ObjectId(cardholderId)
         // Check email present in request body
         const walletId: string | null = checkStringBody(walletDetails, "wallet_id")
-        if (!walletId) {
-            throw new InvalidRequestBodyError("Wallet-id not present in the request body");
+        if (!walletId || !Types.ObjectId.isValid(walletId)) {
+            throw new InvalidRequestBodyError("Invalid wallet-id not present in the request body");
         }
         const walletObjectId = new Types.ObjectId(walletId)
         let userId: Types.ObjectId;
@@ -367,13 +367,15 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
             userId = cardholderDetails?._id;
         }
 
+        const amountDecimal = new Decimal(walletDetails?.amount?.toString())
+
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof loadWalletValidationSchema>> = loadWalletValidationSchema.safeParse(
             {
                 wallet_type: walletDetails?.wallet_type,
                 wallet_currency: walletDetails?.wallet_currency,
                 network: walletDetails?.network,
-                amount: Number(walletDetails?.amount),
+                amount: amountDecimal,
             }
         );
         if (!validationResult.success) {
@@ -511,12 +513,14 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
             userId = cardholderDetails?._id;
         }
 
+        const amountDecimal = new Decimal(walletDetails?.amount?.toString());
+
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof withdrawWalletValidationSchema>> = withdrawWalletValidationSchema.safeParse(
             {
                 wallet_type: walletDetails?.wallet_type,
                 wallet_currency: walletDetails?.wallet_currency,
-                amount: Number(walletDetails?.amount),
+                amount: amountDecimal,
             }
         );
         if (!validationResult.success) {

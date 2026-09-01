@@ -81,56 +81,32 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
         // Daily Transaction Check (For Reset)
         const daily = selectedWallet.daily_transaction;
         if (!daily?.date || daily.date.toDateString() !== now.toDateString()) {
-            updateSet[
-                "wallets_details.$.daily_transaction.debit"
-            ] = withdrawAmountDecimal128;
-
-            updateSet[
-                "wallets_details.$.daily_transaction.date"
-            ] = now;
+            updateSet["wallets_details.$.daily_transaction.debit"] = withdrawAmountDecimal128;
+            updateSet["wallets_details.$.daily_transaction.date"] = now;
         }
         else {
-            updateInc[
-                "wallets_details.$.daily_transaction.debit"
-            ] = withdrawAmountDecimal128;
+            updateInc["wallets_details.$.daily_transaction.debit"] = withdrawAmountDecimal128;
         }
 
         // Monthly Transaction Check (For Reset)
         const isSameMonth = selectedWallet.monthly_transaction?.month === now.getMonth() + 1 && selectedWallet.monthly_transaction?.year === now.getFullYear();
         if (isSameMonth) {
-            updateInc[
-                "wallets_details.$.monthly_transaction.debit"
-            ] = withdrawAmountDecimal128;
+            updateInc["wallets_details.$.monthly_transaction.debit"] = withdrawAmountDecimal128;
         }
         else {
-            updateSet[
-                "wallets_details.$.monthly_transaction.debit"
-            ] = withdrawAmountDecimal128;
-
-            updateSet[
-                "wallets_details.$.monthly_transaction.month"
-            ] = now.getMonth() + 1;
-
-            updateSet[
-                "wallets_details.$.monthly_transaction.year"
-            ] = now.getFullYear();
+            updateSet["wallets_details.$.monthly_transaction.debit"] = withdrawAmountDecimal128;
+            updateSet["wallets_details.$.monthly_transaction.month"] = now.getMonth() + 1;
+            updateSet["wallets_details.$.monthly_transaction.year"] = now.getFullYear();
         }
 
         // Yearly Transaction Check (For Reset)
         const isSameYear = selectedWallet.yearly_transaction?.year === now.getFullYear();
         if (isSameYear) {
-            updateInc[
-                "wallets_details.$.yearly_transaction.debit"
-            ] = withdrawAmountDecimal128;
+            updateInc["wallets_details.$.yearly_transaction.debit"] = withdrawAmountDecimal128;
         }
         else {
-            updateSet[
-                "wallets_details.$.yearly_transaction.debit"
-            ] = withdrawAmountDecimal128;
-
-            updateSet[
-                "wallets_details.$.yearly_transaction.year"
-            ] = now.getFullYear();
+            updateSet["wallets_details.$.yearly_transaction.debit"] = withdrawAmountDecimal128;
+            updateSet["wallets_details.$.yearly_transaction.year"] = now.getFullYear();
         }
 
         // Update wallet
@@ -174,9 +150,10 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
                 wallet_type: userWalletActionData.data.wallet_type,
                 wallet_currency: userWalletActionData.data.wallet_currency
             },
-            amount: Number(withdrawAmount.toString()),
-            balance_before: Number(currentBalance.toString()),
-            balance_after: Number(balanceAfter.toString()),
+            amount: withdrawAmount,
+            fee: new Decimal(0),
+            balance_before: currentBalance,
+            balance_after: balanceAfter,
             reference_id: crypto.randomUUID(),
             remarks: "Wallet withdrawn",
         };
@@ -196,6 +173,8 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
 
+        const feeDecimal128 = mongoose.Types.Decimal128.fromString(validationResult.data.fee.toString());
+
         // Transaction entry
         await user_wallet_transactions.create(
             [
@@ -205,11 +184,13 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
                     transaction_id: new Types.ObjectId(),
                     transaction_type: validationResult.data.transaction_type,
                     transaction_status: validationResult.data.transaction_status,
+
                     wallet_details: {
-                        wallet_type: validationResult.data.wallet_details?.wallet_type,
-                        wallet_currency: validationResult.data.wallet_details?.wallet_currency
+                        wallet_type: validationResult.data.wallet_details.wallet_type,
+                        wallet_currency: validationResult.data.wallet_details.wallet_currency
                     },
                     amount: withdrawAmountDecimal128,
+                    fee: feeDecimal128,
                     balance_before: currentBalanceDecimal128,
                     balance_after: balanceAfterDecimal128,
                     reference_id: validationResult.data.reference_id,

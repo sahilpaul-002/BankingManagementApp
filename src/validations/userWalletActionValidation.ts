@@ -1,3 +1,4 @@
+import { Decimal } from "decimal.js";
 import z from "zod";
 
 // ---------------------------------------------------------
@@ -23,10 +24,13 @@ const userWalletActionBaseSchema = z.object({
         .optional(),
 
     amount: z
-        .number({
-            error: "Amount must be a number"
-        })
-        .positive("Amount must be greater than 0")
+        .instanceof(Decimal)
+        .refine(
+            (value) => value.isFinite() && value.gt(0),
+            {
+                message: "Amount must be greater than 0"
+            }
+        )
 });
 
 

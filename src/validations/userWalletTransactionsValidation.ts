@@ -1,8 +1,5 @@
-import mongoose from "mongoose";
 import z from "zod";
 import { Decimal } from "decimal.js";
-
-const decimal128Schema = z.instanceof(mongoose.Types.Decimal128);
 
 const userWalletTransactionsValidationSchema = z.object(
     {
@@ -33,13 +30,13 @@ const userWalletTransactionsValidationSchema = z.object(
             ),
         }),
 
-        amount: decimal128Schema,
+        amount: z.instanceof(Decimal),
 
-        fee: z.instanceof(mongoose.Types.Decimal128),
+        fee: z.instanceof(Decimal),
 
-        balance_before: decimal128Schema,
+        balance_before: z.instanceof(Decimal),
 
-        balance_after: decimal128Schema,
+        balance_after: z.instanceof(Decimal),
 
         reference_id: z
             .string()
@@ -52,69 +49,70 @@ const userWalletTransactionsValidationSchema = z.object(
             .trim()
             .min(1, "Remarks is required.")
             .nullable(),
-    })
-    .superRefine((data, ctx) => {
-        const fiatCurrencies = ["USD", "EUR", "SGD"];
-        const cryptoCurrencies = ["USDC", "USDT"];
+    }
+).superRefine((data, ctx) => {
 
-        if (
-            data.wallet_details.wallet_type === "FIAT" &&
-            !fiatCurrencies.includes(data.wallet_details.wallet_currency)
-        ) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["wallet_details", "wallet_currency"],
-                message: "FIAT supports USD, EUR, SGD",
-            });
-        }
+    const fiatCurrencies = ["USD", "EUR", "SGD"];
+    const cryptoCurrencies = ["USDC", "USDT"];
 
-        if (
-            data.wallet_details.wallet_type === "CRYPTO" &&
-            !cryptoCurrencies.includes(data.wallet_details.wallet_currency)
-        ) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["wallet_details", "wallet_currency"],
-                message: "CRYPTO supports USDC, USDT",
-            });
-        }
+    if (
+        data.wallet_details.wallet_type === "FIAT" &&
+        !fiatCurrencies.includes(data.wallet_details.wallet_currency)
+    ) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["wallet_details", "wallet_currency"],
+            message: "FIAT supports USD, EUR, SGD",
+        });
+    }
 
-        const fee = new Decimal(data.fee.toString());
-        if (!fee.isFinite() || fee.isNegative()) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["fee"],
-                message: "Fee cannot be negative",
-            });
-        }
+    if (
+        data.wallet_details.wallet_type === "CRYPTO" &&
+        !cryptoCurrencies.includes(data.wallet_details.wallet_currency)
+    ) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["wallet_details", "wallet_currency"],
+            message: "CRYPTO supports USDC, USDT",
+        });
+    }
 
-        const amount = new Decimal(data.amount.toString());
-        const balanceBefore = new Decimal(data.balance_before.toString());
-        const balanceAfter = new Decimal(data.balance_after.toString());
+    const fee = data.fee;
+    const amount = data.amount;
+    const balanceBefore = data.balance_before;
+    const balanceAfter = data.balance_after;
 
-        if (!amount.isFinite() || amount.lte(0)) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["amount"],
-                message: "Amount must be greater than 0",
-            });
-        }
+    if (!fee.isFinite() || fee.isNegative()) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["fee"],
+            message: "Fee cannot be negative",
+        });
+    }
 
-        if (!balanceBefore.isFinite() || balanceBefore.isNegative()) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["balance_before"],
-                message: "Balance before cannot be negative",
-            });
-        }
+    if (!amount.isFinite() || amount.lte(0)) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["amount"],
+            message: "Amount must be greater than 0",
+        });
+    }
 
-        if (!balanceAfter.isFinite() || balanceAfter.isNegative()) {
-            ctx.addIssue({
-                code: "custom",
-                path: ["balance_after"],
-                message: "Balance after cannot be negative",
-            });
-        }
-    });
+    if (!balanceBefore.isFinite() || balanceBefore.isNegative()) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["balance_before"],
+            message: "Balance before cannot be negative",
+        });
+    }
+
+    if (!balanceAfter.isFinite() || balanceAfter.isNegative()) {
+        ctx.addIssue({
+            code: "custom",
+            path: ["balance_after"],
+            message: "Balance after cannot be negative",
+        });
+    }
+});
 
 export default userWalletTransactionsValidationSchema;
