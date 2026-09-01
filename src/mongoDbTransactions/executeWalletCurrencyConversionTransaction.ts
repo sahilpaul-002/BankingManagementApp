@@ -75,9 +75,12 @@ const executeWalletCurrencyConversionTransaction = async ({
         }
 
         // Find latest source wallet
+        const cryptoCurrencies = ["USDC", "USDT"];
+        const sourceWalletType = cryptoCurrencies.includes(sourceCurrency) ? "CRYPTO" : "FIAT";
+        const destinationWalletType = cryptoCurrencies.includes(destinationCurrency) ? "CRYPTO" : "FIAT";
         const sourceWalletIndex = walletDetails.wallets_details.findIndex(
             (wallet) =>
-                wallet.wallet_type === "FIAT" &&
+                wallet.wallet_type === sourceWalletType &&
                 wallet.wallet_currency === sourceCurrency &&
                 wallet.wallet_status === "ACTIVE"
         );
@@ -88,9 +91,8 @@ const executeWalletCurrencyConversionTransaction = async ({
         // Find latest destination wallet
         const destinationWalletIndex = walletDetails.wallets_details.findIndex(
             (wallet) =>
-                wallet.wallet_type === "FIAT" &&
-                wallet.wallet_currency ===
-                destinationCurrency &&
+                wallet.wallet_type === destinationWalletType &&
+                wallet.wallet_currency === destinationCurrency &&
                 wallet.wallet_status === "ACTIVE"
         );
         if (destinationWalletIndex === -1) {
@@ -223,7 +225,7 @@ const executeWalletCurrencyConversionTransaction = async ({
                 _id: walletDetails._id,
                 wallets_details: {
                     $elemMatch: {
-                        wallet_type: "FIAT",
+                        wallet_type: sourceWalletType,
                         wallet_currency: sourceCurrency,
                         wallet_status: "ACTIVE",
                         account_balance: latestSourceWallet.account_balance,
@@ -234,20 +236,9 @@ const executeWalletCurrencyConversionTransaction = async ({
             },
             {
                 $set: {
-                    [`wallets_details.${sourceWalletIndex}.account_balance`]:
-                        mongoose.Types.Decimal128.fromString(
-                            newSourceBalance.toFixed(4)
-                        ),
-
-                    [`wallets_details.${sourceWalletIndex}.available_balance`]:
-                        mongoose.Types.Decimal128.fromString(
-                            newSourceAvailableBalance.toFixed(4)
-                        ),
-
-                    [`wallets_details.${sourceWalletIndex}.holding_amount`]:
-                        mongoose.Types.Decimal128.fromString(
-                            newSourceHoldingAmount.toFixed(4)
-                        ),
+                    [`wallets_details.${sourceWalletIndex}.account_balance`]: mongoose.Types.Decimal128.fromString(newSourceBalance.toFixed(4)),
+                    [`wallets_details.${sourceWalletIndex}.available_balance`]: mongoose.Types.Decimal128.fromString(newSourceAvailableBalance.toFixed(4)),
+                    [`wallets_details.${sourceWalletIndex}.holding_amount`]: mongoose.Types.Decimal128.fromString(newSourceHoldingAmount.toFixed(4)),
 
                     // Transaction limit updates
                     ...sourceUpdateSet,
@@ -273,7 +264,7 @@ const executeWalletCurrencyConversionTransaction = async ({
 
                 wallets_details: {
                     $elemMatch: {
-                        wallet_type: "FIAT",
+                        wallet_type: destinationWalletType,
                         wallet_currency: destinationCurrency,
                         wallet_status: "ACTIVE",
                         account_balance: latestDestinationWallet.account_balance,
@@ -283,15 +274,9 @@ const executeWalletCurrencyConversionTransaction = async ({
             },
             {
                 $set: {
-                    [`wallets_details.${destinationWalletIndex}.account_balance`]:
-                        mongoose.Types.Decimal128.fromString(
-                            newDestinationBalance.toFixed(4)
-                        ),
-
-                    [`wallets_details.${destinationWalletIndex}.available_balance`]:
-                        mongoose.Types.Decimal128.fromString(
-                            newDestinationAvailableBalance.toFixed(4)
-                        ),
+                    [`wallets_details.${destinationWalletIndex}.account_balance`]: mongoose.Types.Decimal128.fromString(newDestinationBalance.toFixed(4)),
+                    [`wallets_details.${destinationWalletIndex}.available_balance`]: mongoose.Types.Decimal128.fromString(
+                        newDestinationAvailableBalance.toFixed(4)),
 
                     // Transaction limit updates
                     ...destinationUpdateSet,
@@ -326,16 +311,13 @@ const executeWalletCurrencyConversionTransaction = async ({
                     transaction_type: "WITHDRAW",
                     transaction_status: "SUCCESS",
                     wallet_details: {
-                        wallet_type: "FIAT",
+                        wallet_type: sourceWalletType,
                         wallet_currency: sourceCurrency,
                     },
                     amount: mongoose.Types.Decimal128.fromString(sourceAmount.toFixed(4)),
-                    balance_before: mongoose.Types.Decimal128.fromString(
-                        sourceBalance.toFixed(4)
-                    ),
-                    balance_after: mongoose.Types.Decimal128.fromString(
-                        newSourceBalance.toFixed(4)
-                    ),
+                    fee: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(4)),
+                    balance_before: mongoose.Types.Decimal128.fromString(sourceBalance.toFixed(4)),
+                    balance_after: mongoose.Types.Decimal128.fromString(newSourceBalance.toFixed(4)),
                     reference_id: conversionReferenceId,
                     remarks: `Currency conversion from ${sourceCurrency} to ${destinationCurrency}.Fee: ${feeAmount.toFixed(4)} ${sourceCurrency} `,
                 },
@@ -362,18 +344,13 @@ const executeWalletCurrencyConversionTransaction = async ({
                     transaction_type: "LOAD",
                     transaction_status: "SUCCESS",
                     wallet_details: {
-                        wallet_type: "FIAT",
+                        wallet_type: destinationWalletType,
                         wallet_currency: destinationCurrency,
                     },
-                    amount: mongoose.Types.Decimal128.fromString(
-                        destinationAmount.toFixed(4)
-                    ),
-                    balance_before: mongoose.Types.Decimal128.fromString(
-                        destinationBalance.toFixed(4)
-                    ),
-                    balance_after: mongoose.Types.Decimal128.fromString(
-                        newDestinationBalance.toFixed(4)
-                    ),
+                    amount: mongoose.Types.Decimal128.fromString(destinationAmount.toFixed(4)),
+                    fee: mongoose.Types.Decimal128.fromString("0"),
+                    balance_before: mongoose.Types.Decimal128.fromString(destinationBalance.toFixed(4)),
+                    balance_after: mongoose.Types.Decimal128.fromString(newDestinationBalance.toFixed(4)),
                     reference_id: conversionReferenceId,
                     remarks: `Currency conversion from ${sourceCurrency} to ${destinationCurrency}. FX rate: ${exchangeRate.toFixed(8)} `,
                 },
