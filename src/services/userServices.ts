@@ -37,6 +37,7 @@ import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import { userFundingBankAccountDetailsModel as user_funding_bank_account_details } from "../models/user_funding_bank_account_details.js";
 import { userCryptoDepositAccountDetailsModel as user_crypto_deposit_account_details } from "../models/user_crypto_deposit_accout_details.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
+import { Decimal } from "decimal.js";
 
 dotenv.config();
 
@@ -910,11 +911,11 @@ export const prefundUserFiatFundingAccountService = async (aesDecryptedBodyData:
         }
 
         // Validate Amount
-        const prefundAmountNumber = Number(amount);
-        if (!Number.isFinite(prefundAmountNumber) || prefundAmountNumber <= 0) {
+        const prefundAmountDecimal = new Decimal(amount);
+        if (!prefundAmountDecimal.isFinite() || prefundAmountDecimal.isNegative() || prefundAmountDecimal.isZero()) {
             throw new InvalidRequestBodyError("Prefund amount must be a valid number greater than zero");
         }
-        const prefundAmount = mongoose.Types.Decimal128.fromString(amount);
+        const prefundAmount = mongoose.Types.Decimal128.fromString(prefundAmountDecimal.toDecimalPlaces(4).toFixed(4));
 
         // Find fiat account and update fiat account
         const updatedFiatAccount = await user_funding_bank_account_details.findOneAndUpdate(
@@ -1012,25 +1013,18 @@ export const prefundUserCryptoFundingAccountService = async (aesDecryptedBodyDat
         }
 
         // Validate Asset
-        const supportedAssets = [
-            "USDT",
-            "USDC"
-        ];
-
+        const supportedAssets = ["USDT", "USDC"];
         if (!supportedAssets.includes(asset)) {
             throw new InvalidRequestBodyError("Invalid crypto asset");
         }
 
         // Validate Amount
-        const cryptoAmountNumber = Number(amount);
-
-        if (!Number.isFinite(cryptoAmountNumber) || cryptoAmountNumber <= 0) {
+        const cryptoAmountDecimal = new Decimal(amount);
+        if (!cryptoAmountDecimal.isFinite() || cryptoAmountDecimal.isNegative() || cryptoAmountDecimal.isZero()) {
             throw new InvalidRequestBodyError("Crypto funding amount must be a valid number greater than zero");
         }
-
-        const cryptoAmount = mongoose.Types.Decimal128.fromString(amount);
-
-        const cryptoModel = user_crypto_deposit_account_details;
+        // Round to 4 decimal places before converting to Decimal128
+        const cryptoAmount = mongoose.Types.Decimal128.fromString(cryptoAmountDecimal.toDecimalPlaces(4).toFixed(4));
 
         // Find crypto funding account and update crypto funding account
         const updatedCryptoFundingAccount = await user_crypto_deposit_account_details.findOneAndUpdate(
@@ -1133,8 +1127,10 @@ export const getUserFundingAccountsBalancesService = async (aesDecryptedQueryDat
 
             responseData.fiat = {
                 account_id: fiatFundingAccount._id,
-                currency: fiatFundingAccount.account_currency,
-                balance: fiatFundingAccount.account_balance
+                account_number: fiatFundingAccount.account_number,
+                account_currency: fiatFundingAccount.account_currency,
+                account_balance: fiatFundingAccount.account_balance,
+                is_active: fiatFundingAccount.is_active
             };
         }
 

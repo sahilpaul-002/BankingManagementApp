@@ -64,9 +64,13 @@ const initiateCardTransaction = async (
         const currentBalance = new Decimal(selectedWallet.account_balance?.toString() ?? "0");
         const currentAvailableBalance = new Decimal(selectedWallet.available_balance?.toString() ?? "0");
         const currentHolding = new Decimal(selectedWallet.holding_amount?.toString() ?? "0");
+
+        // Check wallet accounting balance
+        if (!currentBalance.equals(currentAvailableBalance.plus(currentHolding))) {
+            throw new ServiceError("Wallet balance inconsistency detected before card transaction");
+        }
+
         let transactionAmount = new Decimal(transactionData.amount);
-        const transactionAmountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.toDecimalPlaces(4).toString());
-        const negativeTransactionAmountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.negated().toDecimalPlaces(4).toString());
 
         // Calculate Fees
         let feeAmount = new Decimal(0);
@@ -112,6 +116,8 @@ const initiateCardTransaction = async (
             feeAmount = calculateFeeAddedAmountService(transactionAmount, "card_transaction_percent");
         }
         const totalTransactionAmount = transactionAmount.plus(feeAmount);
+        const transactionAmountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.toDecimalPlaces(4).toString());
+        const negativeTransactionAmountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.negated().toDecimalPlaces(4).toString());
         const feeAmountDecimal128 = mongoose.Types.Decimal128.fromString(feeAmount.toDecimalPlaces(4).toString());
         const totalTransactionAmountDecimal128 = mongoose.Types.Decimal128.fromString(totalTransactionAmount.toDecimalPlaces(4).toString());
         const negativeTotalTransactionAmountDecimal128 = mongoose.Types.Decimal128.fromString(totalTransactionAmount.negated().toDecimalPlaces(4).toString());
@@ -230,10 +236,10 @@ const initiateCardTransaction = async (
                 wallet_type: selectedWallet.wallet_type,
                 wallet_currency: selectedWallet.wallet_currency,
             },
-            amount: totalTransactionAmountDecimal128,
-            fee: feeAmountDecimal128,
-            balance_before: balanceBeforeDecimal128,
-            balance_after: balanceAfterDecimal128,
+            amount: totalTransactionAmount,
+            fee: feeAmount,
+            balance_before: currentBalance,
+            balance_after: balanceAfter,
             reference_id: referenceId,
             remarks: transactionData.remarks ?? `Card ${transactionData.transaction_type} transaction`,
         };
@@ -250,14 +256,12 @@ const initiateCardTransaction = async (
             transaction_type: walletValidation.data.transaction_type,
             transaction_status: walletValidation.data.transaction_status,
             wallet_details: walletValidation.data.wallet_details,
-            amount: walletValidation.data.amount,
-            fee: walletValidation.data.fee,
-            balance_before: walletValidation.data.balance_before,
-            balance_after: walletValidation.data.balance_after,
+            amount: mongoose.Types.Decimal128.fromString(walletValidation.data.amount.toFixed(4)),
+            fee: mongoose.Types.Decimal128.fromString(walletValidation.data.fee.toFixed(4)),
+            balance_before: mongoose.Types.Decimal128.fromString(walletValidation.data.balance_before.toFixed(4)),
+            balance_after: mongoose.Types.Decimal128.fromString(walletValidation.data.balance_after.toFixed(4)),
             reference_id: walletValidation.data.reference_id,
-            remarks:
-                walletValidation.data.remarks ??
-                `Card ${transactionData.transaction_type} transaction`,
+            remarks: walletValidation.data.remarks ?? `Card ${transactionData.transaction_type} transaction`,
         });
         await walletTransaction.save({
             session: mongoSession,

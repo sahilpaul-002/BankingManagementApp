@@ -341,7 +341,7 @@ export const getCardDetailsService = async (requestSession: Request["session"], 
         const cardDetails = await user_card_details.findOne({
             cardholder_id: cardholderId,
             _id: cardObjectId,
-        }).select("-cardholder_id -cvv -valid_date -valid_merchant_categories -createdAt -updatedAt -__v").lean();
+        }).select("-cardholder_id -cvv -createdAt -updatedAt -__v").lean();
 
         if (!cardDetails) {
             throw new NotFoundError("Card and card details not found")
@@ -464,7 +464,7 @@ export const updateCardStatusService = async (requestSession: Request["session"]
                 new: true,
                 runValidators: true,
             }
-        ).select("-cardholder_id -cvv -valid_date -valid_merchant_categories -createdAt -updatedAt -__v").lean();;
+        ).select("-cardholder_id -cvv -valid_date -card_limits -daily_transaction -monthly_transaction -yearly_transaction -valid_merchant_categories -createdAt -updatedAt -__v").lean();;
 
         if (!updatedCardDetails) {
             throw new NotFoundError("Card and card details not found");
@@ -628,7 +628,7 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
                 new: true,
                 runValidators: true,
             }
-        ).select("-cardholder_id -cvv -valid_date, -valid_merchant_categories -createdAt -updatedAt -__v").lean();
+        ).select("-cardholder_id -cvv -valid_date -daily_transaction -monthly_transaction -yearly_transaction -valid_merchant_categories -createdAt -updatedAt -__v").lean();
 
         if (!updatedCard) {
             throw new ServiceError("Failed update card limits");

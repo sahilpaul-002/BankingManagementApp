@@ -73,6 +73,9 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
                         wallet_currency: "USD"
                     }
                 }
+            },
+            {
+                session: mongoSession
             }
         ).lean();
         if (!userUsdWalletDetailsDoc?.wallets_details?.length || !userUsdWalletDetailsDoc?.wallets_details?.[0]) {
@@ -80,43 +83,78 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
         }
         const userUsdWallet: walletDetailsType = userUsdWalletDetailsDoc.wallets_details[0];
 
-        // Check usd wallet amount
-        const walletObjectId = userUsdWalletDetailsDoc?._id
+        // Check USD wallet
+        const walletObjectId = userUsdWalletDetailsDoc?._id;
         if (!userUsdWallet) {
             throw new NotFoundError("User USD wallet not found");
         }
-        if (!userUsdWallet.account_balance) {
+        // Check account balance exists
+        if (userUsdWallet.account_balance == null) {
             throw new ServiceError("USD wallet account balance not found");
         }
-
-        const deductionAmount = new Decimal(FEE_DETAILS.create_card.toString());
+        // Check available balance exists
+        if (userUsdWallet.available_balance == null) {
+            throw new ServiceError("USD wallet available balance not found");
+        }
+        // Check holding amount exists
+        if (userUsdWallet.holding_amount == null) {
+            throw new ServiceError("USD wallet holding amount not found");
+        }
+        // Card creation fee
+        const feeAmount = new Decimal(FEE_DETAILS.create_card.toString());
+        // Convert wallet balances to Decimal
         const accountBalance = new Decimal(userUsdWallet.account_balance.toString());
-        if (accountBalance.lessThan(deductionAmount)) {
-            throw new BadRequestError("Insufficient balance in USD wallet");
+        const availableBalance = new Decimal(userUsdWallet.available_balance.toString());
+        const holdingAmount = new Decimal(userUsdWallet.holding_amount.toString());
+
+        // Balance Check
+        if (availableBalance.lessThan(feeAmount)) {
+            throw new ServiceError("Insufficient available balance in USD wallet");
         }
 
-        const balanceBefore = new Decimal(userUsdWallet?.account_balance?.toString());
-        const balanceAfter = balanceBefore.minus(deductionAmount);
+        // Calculate Balances
+        const accountBalanceBefore = accountBalance;
+        const accountBalanceAfter = accountBalance.minus(feeAmount);
+
+        const availableBalanceBefore = availableBalance;
+        const availableBalanceAfter = availableBalance.minus(feeAmount);
+
+        const holdingAmountBefore = holdingAmount;
+        const holdingAmountAfter = holdingAmount;
+
+        // Verify Wallet SAccounting
+        if (!accountBalance.equals(availableBalance.plus(holdingAmount))) {
+            throw new ServiceError("Wallet balance inconsistency detected before card creation");
+        }
+        if (!accountBalanceAfter.equals(availableBalanceAfter.plus(holdingAmountAfter))) {
+            throw new ServiceError("Wallet balance inconsistency detected after card creation");
+        }
 
         // Deduct wallet balance
-        const deductionAmountString = deductionAmount.toDecimalPlaces(4).toString();
-        const deductionAmountDecimal = mongoose.Types.Decimal128.fromString(deductionAmountString);
-        const negativeDeductionAmountDecimal = mongoose.Types.Decimal128.fromString(`-${deductionAmountString}`);
+        const feeAmountString = feeAmount.toDecimalPlaces(4).toString();
+        const feeAmountDecimal = mongoose.Types.Decimal128.fromString(feeAmountString);
+        const negativeFeeAmountDecimal = mongoose.Types.Decimal128.fromString(`-${feeAmountString}`);
 
         const updatedWallet = await user_wallet_details.findOneAndUpdate(
             {
                 cardholder_id: cardholderObjectId,
                 "wallets_details.wallet_currency": "USD",
-                "wallets_details.account_balance": { $gte: deductionAmountDecimal, },
+                "wallets_details.account_balance": {
+                    $gte: feeAmountDecimal,
+                },
+                "wallets_details.available_balance": {
+                    $gte: feeAmountDecimal,
+                },
             },
             {
                 $inc: {
-                    "wallets_details.$.account_balance": negativeDeductionAmountDecimal
-                }
+                    "wallets_details.$.account_balance": negativeFeeAmountDecimal,
+                    "wallets_details.$.available_balance": negativeFeeAmountDecimal,
+                },
             },
             {
                 new: true,
-                session: mongoSession
+                session: mongoSession,
             }
         );
 
@@ -186,9 +224,10 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
                 wallet_type: userUsdWallet?.wallet_type,
                 wallet_currency: "USD"
             },
-            amount: Number(deductionAmount),
-            balance_before: Number(balanceBefore),
-            balance_after: Number(balanceAfter),
+            amount: feeAmount,
+            fee: new Decimal("0"),
+            balance_before: accountBalanceBefore,
+            balance_after: accountBalanceAfter,
             reference_id: crypto.randomUUID(),
             remarks: "Card creation fee",
         };
@@ -222,11 +261,12 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
                         wallet_currency: validationResult.data.wallet_details.wallet_currency,
                     },
 
-                    amount: mongoose.Types.Decimal128.fromString(deductionAmount.toFixed(4)),
-                    balance_before: mongoose.Types.Decimal128.fromString(balanceBefore.toFixed(4)),
-                    balance_after: mongoose.Types.Decimal128.fromString(balanceAfter.toFixed(4)),
+                    amount: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(4)),
+                    fee: mongoose.Types.Decimal128.fromString(validationResult.data.fee.toFixed(4)),
+                    balance_before: mongoose.Types.Decimal128.fromString(accountBalanceBefore.toFixed(4)),
+                    balance_after: mongoose.Types.Decimal128.fromString(accountBalanceAfter.toFixed(4)),
                     reference_id: validationResult.data.reference_id,
-                    remarks: validationResult.data.remarks,
+                    remarks: "Card creation wallet withdrawal transaction",
                 },
             ],
             {
