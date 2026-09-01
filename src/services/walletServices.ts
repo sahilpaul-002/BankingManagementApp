@@ -941,13 +941,22 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
             throw new ForbiddenError("User configuration is not valid to create currency conversion quote");
         }
 
+        // Validate request body amount
+        const amount = aesDecryptedBodyData.amount;
+        if (amount === undefined || amount === null || amount.trim() === "") {
+            throw new InvalidRequestBodyError("Amount is required");
+        }
+        const amountDecimal = new Decimal(amount);
+
         // Validate request body
-        const validationResult = walletCurrencyConversionValidationSchema.safeParse(aesDecryptedBodyData);
+        const validationResult = walletCurrencyConversionValidationSchema.safeParse({
+            cardholder_id: aesDecryptedBodyData.cardholder_id,
+            source_wallet_currency: aesDecryptedBodyData.source_wallet_currency,
+            destination_wallet_currency: aesDecryptedBodyData.destination_wallet_currency,
+            amount: amountDecimal,
+        });
         if (!validationResult.success) {
-            throw new ServiceError(
-                "Invalid request",
-                z.flattenError(validationResult.error)
-            );
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
         const validatedData = validationResult.data;
 
@@ -999,9 +1008,8 @@ export const createWalletCurrencyConversionQuoteService = async (requestSession:
         const grossDestinationAmount = sourceAmount.mul(exchangeRate).toDecimalPlaces(4);
 
         // Calculate conversion fee
-        const feePercentage = new Decimal(
-            FEE_DETAILS.currency_conversion.toString()
-        );
+        const isCryptoConversion = (validatedData.source_wallet_currency === "USD" && ["USDT", "USDC"].includes(validatedData.destination_wallet_currency)) || (["USDT", "USDC"].includes(validatedData.source_wallet_currency) && validatedData.destination_wallet_currency === "USD");
+        const feePercentage = new Decimal((isCryptoConversion ? FEE_DETAILS.crypto_currency_conversion : FEE_DETAILS.currency_conversion).toString());
 
         const feeAmount = sourceAmount.mul(feePercentage).div(100).toDecimalPlaces(4);
 

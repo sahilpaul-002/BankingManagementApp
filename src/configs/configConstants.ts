@@ -11,5 +11,6 @@ export const FEE_DETAILS: feeDetailsSchemaTypes = {
     'create_card': 5,
     'm2p_percent': 6,
     'p2P_percent': 8,
-    'currency_conversion': 4
+    'currency_conversion': 4,
+    'crypto_currency_conversion': 10,
 }

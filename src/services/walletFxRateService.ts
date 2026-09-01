@@ -1,3 +1,4 @@
+import {Decimal} from "decimal.js";
 import type { walletCurrencyType } from "../types/schemaTypes.js";
 import { USD_BASE_WALLET_FX_RATES } from "../types/usdBasedFaxRates.js";
 import { AppErrorClass, ServiceError } from "../utils/AppErrorClass.js";
@@ -7,16 +8,11 @@ import sanitizeApiError from "../utils/sanitizeApiError.js";
 interface WalletFxRateResponse {
     source_currency: walletCurrencyType;
     destination_currency: walletCurrencyType;
-    exchange_rate: number;
+    exchange_rate: Decimal;
 }
 
-const getWalletFxRate = async (
-    sourceCurrency: string,
-    destinationCurrency: string
-): Promise<WalletFxRateResponse> => {
-
+const getWalletFxRate = async (sourceCurrency: string, destinationCurrency: string): Promise<WalletFxRateResponse> => {
     try {
-
         const source = sourceCurrency.trim().toUpperCase() as walletCurrencyType;
         const destination = destinationCurrency.trim().toUpperCase() as walletCurrencyType;
 
@@ -25,7 +21,7 @@ const getWalletFxRate = async (
             return {
                 source_currency: source,
                 destination_currency: destination,
-                exchange_rate: 1,
+                exchange_rate: new Decimal(1),
             };
         }
 
@@ -57,13 +53,12 @@ const getWalletFxRate = async (
          * destination rate / source rate
          */
 
-        const exchangeRate =
-            destinationRate / sourceRate;
+        const exchangeRate = destinationRate / sourceRate;
 
         return {
             source_currency: source,
             destination_currency: destination,
-            exchange_rate: exchangeRate,
+            exchange_rate: new Decimal(exchangeRate),
         };
 
     }

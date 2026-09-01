@@ -369,4 +369,5 @@ export interface feeDetailsSchemaTypes {
     m2p_percent: number;
     p2P_percent: number;
     currency_conversion: number;
+    crypto_currency_conversion: number;
 }

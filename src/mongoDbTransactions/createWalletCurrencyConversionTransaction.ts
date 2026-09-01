@@ -43,21 +43,20 @@ const createWalletCurrencyConversionTransaction = async ({
 
 
         // Validate quote amounts
-        if (sourceAmount.lessThanOrEqualTo(0)) {
-            throw new ServiceError("Invalid sourc amount");
+        if (!sourceAmount.isFinite() || sourceAmount.lessThanOrEqualTo(0)) {
+            throw new ServiceError("Invalid source amount");
         }
-        if (destinationAmount.lessThanOrEqualTo(0)) {
-            throw new ServiceError("Invalid destinatio amount");
+        if (!destinationAmount.isFinite() || destinationAmount.lessThanOrEqualTo(0)) {
+            throw new ServiceError("Invalid destination amount");
         }
-        if (exchangeRate.lessThanOrEqualTo(0)) {
-            throw new ServiceError("Invalid conversio rate");
+        if (!exchangeRate.isFinite() || exchangeRate.lessThanOrEqualTo(0)) {
+            throw new ServiceError("Invalid conversion rate");
         }
-        if (feePercentage.isNegative()) {
-            throw new ServiceError("Invalid conversio percentage");
+        if (!feePercentage.isFinite() || feePercentage.isNegative()) {
+            throw new ServiceError("Invalid conversion fee percentage");
         }
-
-        if (feeAmount.isNegative()) {
-            throw new ServiceError("Invalid conversio amount");
+        if (!feeAmount.isFinite() || feeAmount.isNegative()) {
+            throw new ServiceError("Invalid conversion fee amount");
         }
 
         // Get latest wallet details
@@ -75,9 +74,12 @@ const createWalletCurrencyConversionTransaction = async ({
         }
 
         // Find latest source wallet
+        const cryptoCurrencies = ["USDC", "USDT"];
+        const sourceWalletType = cryptoCurrencies.includes(sourceCurrency) ? "CRYPTO" : "FIAT";
+        const destinationWalletType = cryptoCurrencies.includes(destinationCurrency) ? "CRYPTO" : "FIAT";
         const sourceWalletIndex = walletDetails.wallets_details.findIndex(
             (wallet) =>
-                wallet.wallet_type === "FIAT" &&
+                wallet.wallet_type === sourceWalletType &&
                 wallet.wallet_currency === sourceCurrency &&
                 wallet.wallet_status === "ACTIVE"
         );
@@ -88,7 +90,7 @@ const createWalletCurrencyConversionTransaction = async ({
         // Find latest destination wallet
         const destinationWalletIndex = walletDetails.wallets_details.findIndex(
             (wallet) =>
-                wallet.wallet_type === "FIAT" &&
+                wallet.wallet_type === destinationWalletType &&
                 wallet.wallet_currency === destinationCurrency &&
                 wallet.wallet_status === "ACTIVE"
         );
@@ -145,7 +147,7 @@ const createWalletCurrencyConversionTransaction = async ({
                 cardholder_id: cardholderId,
                 wallets_details: {
                     $elemMatch: {
-                        wallet_type: "FIAT",
+                        wallet_type: sourceWalletType,
                         wallet_currency: sourceCurrency,
                         wallet_status: "ACTIVE",
                         account_balance: sourceWallet.account_balance,
@@ -156,15 +158,8 @@ const createWalletCurrencyConversionTransaction = async ({
             },
             {
                 $set: {
-                    [`wallets_details.${sourceWalletIndex}.available_balance`]:
-                        mongoose.Types.Decimal128.fromString(
-                            newAvailableBalance.toFixed(4)
-                        ),
-
-                    [`wallets_details.${sourceWalletIndex}.holding_amount`]:
-                        mongoose.Types.Decimal128.fromString(
-                            newHoldingAmount.toFixed(4)
-                        ),
+                    [`wallets_details.${sourceWalletIndex}.available_balance`]: mongoose.Types.Decimal128.fromString(newAvailableBalance.toFixed(4)),
+                    [`wallets_details.${sourceWalletIndex}.holding_amount`]: mongoose.Types.Decimal128.fromString(newHoldingAmount.toFixed(4)),
                 },
             },
             {
