@@ -376,7 +376,7 @@ export const cardTransactionSettlementWebhook = async (req: Request, res: Respon
                     text-align: center;
                     padding-top: 100px;
                 ">
-                    <h2>KYC Verification Expired</h2>
+                    <h2>Card Transaction AuthorizationExpired</h2>
                     <p>
                         This card transaction authorization has been expired.
                     </p>
@@ -401,7 +401,7 @@ export const cardTransactionSettlementWebhook = async (req: Request, res: Respon
                     text-align: center;
                     padding-top: 100px;
                 ">
-                    <h2>KYC Approved Successfully</h2>
+                    <h2>Card Transaction Approved Successfully</h2>
                     <p>
                         The card transaction authorization request has been processed.
                     </p>
@@ -421,7 +421,7 @@ export const cardTransactionSettlementWebhook = async (req: Request, res: Respon
                     text-align: center;
                     padding-top: 100px;
                 ">
-                    <h2>KYC Rejected Successfully</h2>
+                    <h2>Card Transaction Rejected Successfully</h2>
                     <p>
                         The card transaction authorization request has been processed.
                     </p>

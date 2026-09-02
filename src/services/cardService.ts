@@ -1116,7 +1116,7 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             // Create Card Transaction Auth Token
             const approveToken = jwt.sign(
                 {
-                    userId: cardholderDetails?._id,
+                    userId: cardholderDetails?.cardholder_id,
                     userName: cardholderDetails?.full_name || "Cardholder",
                     cardholderEmail: cardholderDetails?.email,
                     action: "APPROVE",
@@ -1130,7 +1130,7 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             );
             const rejectToken = jwt.sign(
                 {
-                    userId: cardholderDetails?._id,
+                    userId: cardholderDetails?.cardholder_id,
                     userName: cardholderDetails?.full_name || "Cardholder",
                     cardholderEmail: cardholderDetails?.email,
                     action: "REJECT",
@@ -1158,7 +1158,7 @@ export const createCardTransactionService = async (aesDecryptedBodyData: Record<
             const emailTemplate = generateEmailTemplate(
                 "CARD_TRANSACTION_AUTHORIZATION",
                 {
-                    userId: cardholderDetails?._id?.toString(),
+                    userId: cardholderDetails?.cardholder_id?.toString(),
                     userName: cardholderDetails?.full_name || "Cardholder",
                     dashboardName: businessName,
                     cardholderEmail: cardholderDetails?.email,

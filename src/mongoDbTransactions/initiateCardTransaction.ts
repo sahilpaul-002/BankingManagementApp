@@ -199,7 +199,7 @@ const initiateCardTransaction = async (
         const now = new Date();
 
         // ============================ Card Transaction Limits Check ============================ \\
-        if (transactionData.transaction_type !== "REFUND") {
+        if (transactionData.transaction_type !== "REFUND" && transactionData.authorization_type === "IMMEDIATE") {
             // Get configured card transaction limits
             const cardDailyLimit = new Decimal(cardDetails.card_limits?.daily_limit?.toString() ?? "0");
             const cardMonthlyLimit = new Decimal(cardDetails.card_limits?.monthly_limit?.toString() ?? "0");
