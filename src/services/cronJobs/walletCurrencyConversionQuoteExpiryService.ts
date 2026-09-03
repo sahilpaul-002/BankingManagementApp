@@ -53,10 +53,7 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
         ).session(mongoSession);
 
         if (existingFailedTransaction) {
-            logger.info(
-                `Expired wallet currency conversion quote ${conversionQuote._id.toString()} ` +
-                `has already been processed. Holding amount release skipped.`
-            );
+            logger.info(`Expired wallet currency conversion quote ${conversionQuote._id.toString()} ` + `has already been processed. Holding amount release skipped.`);
 
             await mongoSession.commitTransaction();
 
@@ -86,7 +83,7 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
                 user_id: userId,
                 cardholder_id: cardholderId,
             }
-        ).session(mongoSession);
+        ).session(mongoSession).lean();
 
         if (!walletDetails) {
             throw new ServiceError("User wallet details not found for expired currency conversion quote");
@@ -102,7 +99,6 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
         if (sourceWalletIndex === -1) {
             throw new ServiceError(`Active ${sourceCurrency} source wallet not found`);
         }
-
         const sourceWallet = walletDetails.wallets_details[sourceWalletIndex];
         if (!sourceWallet) {
             throw new ServiceError("Source wallet not found for expired currency conversion quote");
@@ -186,15 +182,10 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
                         wallet_type: "FIAT",
                         wallet_currency: sourceCurrency,
                     },
-                    amount: mongoose.Types.Decimal128.fromString(
-                        sourceAmount.toFixed(4)
-                    ),
-                    balance_before: mongoose.Types.Decimal128.fromString(
-                        accountBalance.toFixed(4)
-                    ),
-                    balance_after: mongoose.Types.Decimal128.fromString(
-                        accountBalance.toFixed(4)
-                    ),
+                    amount: mongoose.Types.Decimal128.fromString(sourceAmount.toFixed(4)),
+                    fee: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(4)),
+                    balance_before: mongoose.Types.Decimal128.fromString(accountBalance.toFixed(4)),
+                    balance_after: mongoose.Types.Decimal128.fromString(accountBalance.toFixed(4)),
                     reference_id: conversionQuote._id.toString(),
                     remarks: `Currency conversion quote expired. ` +
                         `Conversion from ${sourceCurrency} to ` +
@@ -359,30 +350,50 @@ export const expireWalletCurrencyConversionQuotesService = async (): Promise<voi
 
 // ----------------------------- WALLET CURRENCY CONVERSION QUOTE EXPIRY CRON JOB ----------------------------- //
 export const startWalletCurrencyConversionQuoteExpiryCronJob = (): void => {
-        /*
-            Cron expression:
+    /*
+        Cron expression:
 
-            "* * * * *"
+        "* * * * *"
 
-            Means:
-            - Run every 1 minute
-            - Find ACTIVE or EXPIRED conversion quotes
-            - Check expires_at <= current time
-            - Release source amount from holding_amount
-            - Move it back to available_balance
-            - Keep account_balance unchanged
-            - Create a FAILED wallet transaction
-            - If quote is ACTIVE, mark it EXPIRED
-            - If quote is already EXPIRED, leave it EXPIRED
-        */
+        Means:
+        - Run every 1 minute
+        - Find ACTIVE or EXPIRED conversion quotes
+        - Check expires_at <= current time
+        - Release source amount from holding_amount
+        - Move it back to available_balance
+        - Keep account_balance unchanged
+        - Create a FAILED wallet transaction
+        - If quote is ACTIVE, mark it EXPIRED
+        - If quote is already EXPIRED, leave it EXPIRED
+    */
 
-        cron.schedule("* * * * *", async () => {
-
-            logger.info("Expired wallet currency conversion quote cron job started.");
+    cron.schedule("* * * * *", async () => {
+        try {
+            logger.info("Expired wallet currency conversion quote cron job started.",
+                {
+                    serviceName: "ExpireWalletCurrencyConversionQuotesCronJob",
+                }
+            );
 
             await expireWalletCurrencyConversionQuotesService();
 
-        });
+            logger.info("Expired wallet currency conversion quote cron job completed.",
+                {
+                    serviceName: "ExpireWalletCurrencyConversionQuotesCronJob",
+                }
+            );
+        } catch (err: any) {
+            const error = err;
 
-        logger.info("Wallet currency conversion quote expiry cron job initialized successfully.");
-    };
+            logger.error(
+                error,
+                {
+                    serviceName: "ExpireWalletCurrencyConversionQuotesCronJob",
+                    message: "Unexpected error in wallet currency conversion quote expiry cron job",
+                }
+            );
+        }
+    });
+
+    logger.info("Wallet currency conversion quote expiry cron job initialized successfully.");
+};

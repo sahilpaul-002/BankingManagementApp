@@ -67,10 +67,15 @@ const expireCardAuthorizationTransaction = async (transactionData: ExpireCardTra
         if (!transactionAmount.isFinite() || transactionAmount.isNaN() || transactionAmount.lessThanOrEqualTo(0)) {
             throw new ServiceError("Invalid card transaction amount");
         }
+        const transactionFee = new Decimal(cardTransaction.fee?.toString() ?? "0");
+        if (!transactionFee.isFinite() || transactionFee.isNaN() || transactionFee.lessThanOrEqualTo(0)) {
+            throw new ServiceError("Invalid card transaction fee");
+        }
+        const totalTransactionAmount = transactionAmount.plus(transactionFee);
 
         // Convert amount to Decimal128
-        const amountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.toDecimalPlaces(4).toString());
-        const negativeAmountDecimal128 = mongoose.Types.Decimal128.fromString(transactionAmount.negated().toDecimalPlaces(4).toString());
+        const amountDecimal128 = mongoose.Types.Decimal128.fromString(totalTransactionAmount.toDecimalPlaces(4).toString());
+        const negativeAmountDecimal128 = mongoose.Types.Decimal128.fromString(totalTransactionAmount.negated().toDecimalPlaces(4).toString());
 
         // Fetch wallet
         const walletDetails = await user_wallet_details.findOne(
@@ -131,7 +136,7 @@ const expireCardAuthorizationTransaction = async (transactionData: ExpireCardTra
         }
 
         // Validate holding amount
-        if (transactionAmount.greaterThan(currentHoldingAmount)) {
+        if (totalTransactionAmount.greaterThan(currentHoldingAmount)) {
             throw new ServiceError("Insufficient holding amount to release card transaction hold");
         }
 
@@ -142,8 +147,8 @@ const expireCardAuthorizationTransaction = async (transactionData: ExpireCardTra
         // available_balance += transaction amount
         // account_balance remains unchanged
         // ---------------------------------------------------------------------
-        const newHoldingAmount = currentHoldingAmount.minus(transactionAmount);
-        const newAvailableBalance = currentAvailableBalance.plus(transactionAmount);
+        const newHoldingAmount = currentHoldingAmount.minus(totalTransactionAmount);
+        const newAvailableBalance = currentAvailableBalance.plus(totalTransactionAmount);
         const newAccountBalance = currentAccountBalance;
 
         // Validate resulting wallet invariant
@@ -258,7 +263,7 @@ const expireCardAuthorizationTransaction = async (transactionData: ExpireCardTra
                 transaction_id: cardTransaction.transaction_id,
                 authorization_status: "EXPIRED",
                 transaction_status: "FAILED",
-                released_amount: transactionAmount.toDecimalPlaces(4).toString(),
+                released_amount: totalTransactionAmount.toDecimalPlaces(4).toString(),
                 holding_amount: newHoldingAmount.toDecimalPlaces(4).toString(),
                 available_balance: newAvailableBalance.toDecimalPlaces(4).toString(),
                 account_balance: newAccountBalance.toDecimalPlaces(4).toString(),

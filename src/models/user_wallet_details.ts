@@ -129,6 +129,12 @@ userWalletDetailsSchema.index({
     _id: 1,
 });
 
+userWalletDetailsSchema.index({
+    _id: 1,
+    cardholder_id: 1,
+    userId_id: 1
+});
+
 const userWalletDetailsModel = mongoose.model<userWalletDetailsSchemaTypes>(
     "WalletDetails",
     userWalletDetailsSchema,
