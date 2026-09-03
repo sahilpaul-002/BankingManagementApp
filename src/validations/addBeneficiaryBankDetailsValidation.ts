@@ -12,13 +12,10 @@ const addBeneficiaryBankDetailsValidationSchema = z.object({
         ),
 
     account_currency: z
-        .string("Account currency is required and must be a string")
-        .trim()
-        .toUpperCase()
-        .refine(
-            (currency) => BENEFICIARIES_FIAT_CURRENCIES.includes(currency as typeof BENEFICIARIES_FIAT_CURRENCIES[number]),
-            "Unsupported account currency"
-        ),
+        .enum(BENEFICIARIES_FIAT_CURRENCIES, {
+            error: "Unsupported account currency"
+        })
+        .transform((value) => value.toUpperCase()),
 
     account_holder_name: z
         .string("Account holder name is required and must be a string")
@@ -60,4 +57,4 @@ const addBeneficiaryBankDetailsValidationSchema = z.object({
 
 }).strict();
 
-export default addBeneficiaryBankDetailsValidationSchema
+export default addBeneficiaryBankDetailsValidationSchema;

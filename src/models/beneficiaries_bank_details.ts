@@ -4,7 +4,7 @@ import { BENEFICIARIES_FIAT_CURRENCIES } from "../types/beneficiariesFiatCurrenc
 
 const beneficiariesBankDetailsSchema = new Schema<beneficiariesBankDetailsSchemaTypes>({
     user_id: {
-        type: String,
+        type: Types.ObjectId,
         ref: "UserDetails",
         required: true,
         index: true,

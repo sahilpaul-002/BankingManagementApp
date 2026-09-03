@@ -5,7 +5,7 @@ import { addBeneficiary, getBeneficiariesList, getBeneficiaryDetails } from "../
 const router: Router = express.Router()
 
 router.get("/", getBeneficiariesList)
-router.post("/", addBeneficiary)
+router.post("/add", addBeneficiary)
 
 
 router.get("/:id", getBeneficiaryDetails)  // Dynamic router lower in heirarchy to that it does not overplay specific routes

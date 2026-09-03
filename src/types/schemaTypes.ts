@@ -341,7 +341,7 @@ export interface userCardTransactionsTypes extends Document {
 
 // Type for Beneficiaries Bank Details Model Schema
 export interface beneficiariesBankDetailsSchemaTypes extends Document {
-    user_id: string;
+    user_id: Types.ObjectId;
     account_number: string;
     account_currency: BeneficieriesFiatCurrencyType;
     account_holder_name: string;

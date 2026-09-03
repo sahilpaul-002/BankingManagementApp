@@ -10,6 +10,8 @@ import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
 import addBeneficiaryBankDetailsValidationSchema from "../validations/addBeneficiaryBankDetailsValidation.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
+import { Types } from "mongoose";
+import type { BENEFICIARIES_FIAT_CURRENCIES } from "../types/beneficiariesFiatCurrency.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -34,36 +36,25 @@ export const getBeneficiariesListService = async (requestSession: Request["sessi
 
         // Validate User Configuration
         const email = checkStringQueryParams(aesDecryptedQueryData, "email");
-
         if (!email) {
             throw new InvalidRequestBodyError("Email not found in request query");
         }
-
         if (email !== requestSession?.userEmail) {
             throw new UnauthorizedError("Unauthorized access detected - invalid email");
         }
-
-        if (
-            requestSession?.userType !== "ADMIN" &&
-            requestSession?.userType !== "MASTER_ADMIN"
-        ) {
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
             throw new ForbiddenError("Not authorized to access beneficiaries list");
         }
-
         const sessionBusinessId = requestSession?.userConfiguration?.businessId;
         const sessionProgramId = requestSession?.userConfiguration?.programId;
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
-
-        if (
-            userConfiguration?.businessId !== sessionBusinessId ||
+        if (userConfiguration?.businessId !== sessionBusinessId ||
             userConfiguration?.programId !== sessionProgramId ||
             userConfiguration?.agentCode !== sessionAgentCode ||
             userConfiguration?.subAgentCode !== sessionSubAgentCode
         ) {
-            throw new ForbiddenError(
-                "User configuration is not valid to access beneficiaries list"
-            );
+            throw new ForbiddenError("User configuration is not valid to access beneficiaries list");
         }
 
         // Fetch beneficiaries
@@ -126,48 +117,38 @@ export const getBeneficiaryDetailsService = async (requestSession: Request["sess
         }
 
         // Check Beneficiary Id Present
-        if (!beneficiaryId) {
-            throw new InvalidRequestParamsError("Account number not present in request params");
+        if (!beneficiaryId || !Types.ObjectId.isValid(beneficiaryId)) {
+            throw new InvalidRequestParamsError("Beneficiary ID not present or invalid in request params");
         }
+        const beneficiaryObjectId = new Types.ObjectId(beneficiaryId);
 
         // Validate User Configuration
         const email = checkStringQueryParams(aesDecryptedQueryData, "email");
-
         if (!email) {
             throw new InvalidRequestBodyError("Email not found in request query");
         }
-
         if (email !== requestSession?.userEmail) {
             throw new UnauthorizedError("Unauthorized access detected - invalid email");
         }
-
-        if (
-            requestSession?.userType !== "ADMIN" &&
-            requestSession?.userType !== "MASTER_ADMIN"
-        ) {
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
             throw new ForbiddenError("Not authorized to access beneficiary details");
         }
-
         const sessionBusinessId = requestSession?.userConfiguration?.businessId;
         const sessionProgramId = requestSession?.userConfiguration?.programId;
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
-
-        if (
-            userConfiguration?.businessId !== sessionBusinessId ||
+        if (userConfiguration?.businessId !== sessionBusinessId ||
             userConfiguration?.programId !== sessionProgramId ||
             userConfiguration?.agentCode !== sessionAgentCode ||
             userConfiguration?.subAgentCode !== sessionSubAgentCode
         ) {
-            throw new ForbiddenError(
-                "User configuration is not valid to access beneficiary details"
-            );
+            throw new ForbiddenError("User configuration is not valid to access beneficiary details");
         }
 
         // Fetch Beneficiary Details
         const beneficiaryDetails = await beneficiaries_bank_details.findOne(
             {
-                _id: beneficiaryId
+                _id: beneficiaryObjectId
             },
             {
                 account_number: 1,
@@ -224,58 +205,52 @@ export const addBeneficiaryService = async (requestSession: Request["session"], 
 
         // Validate User Configuration
         const email = checkStringQueryParams(aesDecryptedQueryData, "email");
-
         if (!email) {
             throw new InvalidRequestBodyError("Email not found in request query");
         }
-
         if (email !== requestSession?.userEmail) {
             throw new UnauthorizedError("Unauthorized access detected - invalid email");
         }
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+            throw new ForbiddenError("Not authorized to access beneficiary details");
+        }
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
+        const sessionProgramId = requestSession?.userConfiguration?.programId;
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
+        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
+            throw new ForbiddenError("User configuration is not valid to access beneficiary details");
+        }
+
+        // Check user id
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthorizedError("Unauthorized session detected - user ID not found.");
+        }
+        const userObjectId = new Types.ObjectId(sessionUserId)
 
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof addBeneficiaryBankDetailsValidationSchema>> = addBeneficiaryBankDetailsValidationSchema.safeParse(aesDecryptedBodyData);
         if (!validationResult.success) {
             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
         }
-
         // Validated data
         const validatedData = validationResult.data;
 
-        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
-            throw new ForbiddenError("Not authorized to access beneficiary details");
-        }
-
-        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
-        const sessionProgramId = requestSession?.userConfiguration?.programId;
-        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
-        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
-
-        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
-            throw new ForbiddenError("User configuration is not valid to access beneficiary details");
-        }
-
-        // Check user id
-        const userId = requestSession?.userId;
-        if (!userId) {
-            throw new UnauthorizedError("Unauthorized session detected - user ID not found.");
-        }
-
         // Check duplicate account number
         const existingBeneficiary = await beneficiaries_bank_details.exists({
-            user_id: userId,
+            user_id: userObjectId,
             account_number: validatedData.account_number
         });
         if (existingBeneficiary) {
             throw new ServiceError("Beneficiary with this account number already exists");
         }
 
-        // Create beneficiary
         const beneficiary = await beneficiaries_bank_details.create({
-            user_id: userId,
+            user_id: userObjectId,
             account_holder_name: validatedData.account_holder_name,
             account_number: validatedData.account_number,
-            account_currency: validatedData.account_currency as any,
+            account_currency: validatedData.account_currency as typeof BENEFICIARIES_FIAT_CURRENCIES[number],
             bank_name: validatedData.bank_name,
             swift_code: validatedData.swift_code,
             iban_code: validatedData.iban_code,
