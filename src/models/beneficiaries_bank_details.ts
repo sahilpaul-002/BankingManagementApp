@@ -54,6 +54,13 @@ beneficiariesBankDetailsSchema.index(
     }
 );
 
+beneficiariesBankDetailsSchema.index(
+    {
+        user_id: 1,
+        _id: 1,
+    },
+);
+
 const beneficiariesBankDetailsModel = mongoose.model("BeneficiariesBankDetails", beneficiariesBankDetailsSchema, "beneficiaries_bank_details");
 
 export { beneficiariesBankDetailsModel };

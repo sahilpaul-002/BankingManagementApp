@@ -353,9 +353,9 @@ export interface beneficiariesBankDetailsSchemaTypes extends Document {
 }
 
 export interface fiatPayoutQuoteSchemaTypes extends Document {
-    user_id: string;
-    wallet_id: string;
-    beneficiary_id: string;
+    user_id: Types.ObjectId;
+    wallet_id: Types.ObjectId;
+    beneficiary_id: Types.ObjectId;
     source_currency: "USD" | "EUR" | "SGD";
     source_amount: Types.Decimal128;
     destination_currency: string;
