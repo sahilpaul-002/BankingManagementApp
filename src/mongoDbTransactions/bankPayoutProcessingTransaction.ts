@@ -50,7 +50,7 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
         const walletDetails = await user_wallet_details.findOne(
             {
                 user_id: payoutTransaction.user_id,
-                wallet_id: payoutTransaction.wallet_id,
+                _id: payoutTransaction.wallet_id,
             }
         ).session(mongoSession);
 
@@ -206,11 +206,6 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
         }
 
         // --------------------------------------------------
-        // Generate provider reference
-        // --------------------------------------------------
-        const providerReference = `MOCK-BANK-${crypto.randomUUID()}`;
-
-        // --------------------------------------------------
         // Update payout transaction
         // --------------------------------------------------
         const payoutUpdateResult = await fiat_payout_transactions.updateOne(
@@ -222,7 +217,6 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
                     $set: {
                         status: "SUCCESS",
                         completed_at: now,
-                        provider_reference: providerReference,
                         remarks: "Payout successfully completed by mock external bank",
                     },
                 },
@@ -258,6 +252,7 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
                 },
                 {
                     $set: {
+                        transaction_type: "WITHDRAW",
                         transaction_status: "SUCCESS",
                         balance_after:
                             newAccountBalance.toFixed(4),
@@ -283,9 +278,6 @@ const bankPayoutProcessingTransaction = async (transactionData: bankPayoutProces
             data: {
                 payout_transaction_id:
                     payoutTransaction._id.toString(),
-
-                provider_reference:
-                    providerReference,
 
                 source_amount:
                     payoutTransaction.source_amount,

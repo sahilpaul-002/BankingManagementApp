@@ -17,7 +17,6 @@ const processPayoutTransactions = async (): Promise<void> => {
                 },
                 {
                     _id: 1,
-                    transaction_id: 1,
                 }
             );
 
@@ -65,7 +64,6 @@ const processPayoutTransactions = async (): Promise<void> => {
                 },
                 {
                     _id: 1,
-                    transaction_id: 1,
                 }
             );
 
@@ -74,7 +72,7 @@ const processPayoutTransactions = async (): Promise<void> => {
 
             try {
 
-                const result = await bankPayoutProcessingTransaction({
+                await bankPayoutProcessingTransaction({
                         payoutTransactionId: payout._id?.toString() as string,
                     });
 
@@ -113,7 +111,7 @@ const processPayoutTransactions = async (): Promise<void> => {
 export const startBankPayoutProcessingCronJob = (): void => {
 
     // 30 minute interval cron job to process PENDING and PROCESSING payout transactions
-    cron.schedule("*/30 * * * *", async () => {
+    cron.schedule("*/2 * * * *", async () => {
 
             logger.info(
                 "Payout processing cron job started"

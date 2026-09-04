@@ -1,22 +1,32 @@
 import cron from "node-cron";
 import mongoose, { Types } from "mongoose";
 import { Decimal } from "decimal.js";
-import { walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes } from "../../models/wallet_currency_conversion_quotes.js";
-import { userWalletDetailsModel as user_wallet_details } from "../../models/user_wallet_details.js";
-import { userWalletTransactionsModel as user_wallet_transactions } from "../../models/user_wallet_transaction_details.js";
+import {
+    walletCurrencyConversionQuoteModel as wallet_currency_conversion_quotes
+} from "../../models/wallet_currency_conversion_quotes.js";
+import {
+    userWalletDetailsModel as user_wallet_details
+} from "../../models/user_wallet_details.js";
+import {
+    userWalletTransactionsModel as user_wallet_transactions
+} from "../../models/user_wallet_transaction_details.js";
 import { AppErrorClass, ServiceError } from "../../utils/AppErrorClass.js";
 import logger from "../../utils/logger.js";
 
 
 // ----------------------------- EXPIRE WALLET CURRENCY CONVERSION QUOTE TRANSACTION ----------------------------- //
-const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.ObjectId): Promise<void> => {
+const expireWalletCurrencyConversionQuoteTransaction = async (
+    quoteId: Types.ObjectId
+): Promise<void> => {
 
     const mongoSession = await mongoose.startSession();
 
     try {
         mongoSession.startTransaction();
 
-        // Get wallet currency conversion active / expired quotes
+        // --------------------------------------------------
+        // 1. Get ACTIVE / EXPIRED quote
+        // --------------------------------------------------
         const conversionQuote = await wallet_currency_conversion_quotes.findOne(
             {
                 _id: quoteId,
@@ -27,56 +37,156 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
         ).session(mongoSession);
 
         if (!conversionQuote) {
-            // Quote may already be EXECUTED or otherwise processed.
+            // Quote may already be EXECUTED or already processed.
             await mongoSession.abortTransaction();
-
             return;
         }
 
-        // Validate expiry
+        // --------------------------------------------------
+        // 2. Validate quote expiry
+        // --------------------------------------------------
         if (conversionQuote.expires_at.getTime() > Date.now()) {
-
             await mongoSession.abortTransaction();
-
             return;
         }
 
-        // Check if the specified quotes has already failed
-        const existingFailedTransaction = await user_wallet_transactions.findOne(
-            {
-                wallet_id: conversionQuote.wallet_id,
-                cardholder_id: conversionQuote.cardholder_id,
-                transaction_status: "FAILED",
-                transaction_type: "WITHDRAW",
-                reference_id: conversionQuote._id.toString(),
-            }
-        ).session(mongoSession);
+        // --------------------------------------------------
+        // 3. Get conversion reference ID
+        //
+        // IMPORTANT:
+        // The quote and HOLD transaction use the same
+        // conversion_reference_id.
+        // --------------------------------------------------
+        const conversionReferenceId =
+            conversionQuote.conversion_reference_id;
 
-        if (existingFailedTransaction) {
-            logger.info(`Expired wallet currency conversion quote ${conversionQuote._id.toString()} ` + `has already been processed. Holding amount release skipped.`);
+        if (!conversionReferenceId) {
+            throw new ServiceError(
+                "Currency conversion reference ID not found in expired quote"
+            );
+        }
+
+        // --------------------------------------------------
+        // 4. Check whether the HOLD transaction still exists
+        //
+        // The source HOLD transaction was created when
+        // the quote was created.
+        //
+        // We must update that transaction instead of
+        // creating another FAILED transaction.
+        // --------------------------------------------------
+        const sourceHoldTransaction =
+            await user_wallet_transactions.findOne(
+                {
+                    wallet_id: conversionQuote.wallet_id,
+                    cardholder_id: conversionQuote.cardholder_id,
+
+                    transaction_type: "HOLD",
+                    transaction_status: "PENDING",
+
+                    reference_id: conversionReferenceId as string,
+                }
+            ).session(mongoSession);
+
+        if (!sourceHoldTransaction) {
+
+            // --------------------------------------------------
+            // If HOLD no longer exists, the quote may have already
+            // been processed by execution or another process.
+            // --------------------------------------------------
+            logger.info(
+                `No pending HOLD transaction found for expired ` +
+                `wallet currency conversion quote ` +
+                `${conversionQuote._id.toString()}. ` +
+                `Reference ID: ${conversionReferenceId}`
+            );
+
+            // If quote is still ACTIVE, mark it EXPIRED.
+            if (conversionQuote.quote_status === "ACTIVE") {
+
+                const quoteUpdateResult =
+                    await wallet_currency_conversion_quotes.updateOne(
+                        {
+                            _id: conversionQuote._id,
+                            quote_status: "ACTIVE",
+                        },
+                        {
+                            $set: {
+                                quote_status: "EXPIRED",
+                            },
+                        },
+                        {
+                            session: mongoSession,
+                        }
+                    );
+
+                if (quoteUpdateResult.modifiedCount !== 1) {
+                    throw new ServiceError(
+                        "Currency conversion quote could not be marked as EXPIRED"
+                    );
+                }
+            }
 
             await mongoSession.commitTransaction();
 
             return;
         }
 
-        // Extract quote details
+        // --------------------------------------------------
+        // 5. Extract quote details
+        // --------------------------------------------------
         const userId = conversionQuote.user_id;
         const cardholderId = conversionQuote.cardholder_id;
         const walletId = conversionQuote.wallet_id;
-        const sourceCurrency = conversionQuote.source_currency;
-        const sourceAmount = new Decimal(conversionQuote.source_amount?.toString() ?? "0");
-        const destinationCurrency = conversionQuote.destination_currency;
-        const destinationAmount = new Decimal(conversionQuote.destination_amount?.toString() ?? "0");
-        const exchangeRate = new Decimal(conversionQuote.exchange_rate?.toString() ?? "0");
-        const feeAmount = new Decimal(conversionQuote.fee_amount?.toString() ?? "0");
 
-        // Validate source amount
+        const sourceCurrency = conversionQuote.source_currency;
+        const destinationCurrency =
+            conversionQuote.destination_currency;
+
+        const sourceAmount = new Decimal(
+            conversionQuote.source_amount?.toString() ?? "0"
+        );
+
+        const destinationAmount = new Decimal(
+            conversionQuote.destination_amount?.toString() ?? "0"
+        );
+
+        const exchangeRate = new Decimal(
+            conversionQuote.exchange_rate?.toString() ?? "0"
+        );
+
+        const feeAmount = new Decimal(
+            conversionQuote.fee_amount?.toString() ?? "0"
+        );
+
+        // --------------------------------------------------
+        // 6. Validate source amount
+        // --------------------------------------------------
         if (sourceAmount.lessThanOrEqualTo(0)) {
-            throw new ServiceError("Invalid source amount in expired currency conversion quote");
+            throw new ServiceError(
+                "Invalid source amount in expired currency conversion quote"
+            );
         }
 
-        // Get latest wallet details
+        // --------------------------------------------------
+        // 7. Determine source wallet type
+        //
+        // CHANGED:
+        // Previously this cron assumed FIAT.
+        //
+        // Conversion also supports:
+        // USDC / USDT -> CRYPTO
+        // USD / EUR / SGD -> FIAT
+        // --------------------------------------------------
+        const cryptoCurrencies = ["USDC", "USDT"];
+
+        const sourceWalletType = cryptoCurrencies.includes(sourceCurrency)
+            ? "CRYPTO"
+            : "FIAT";
+
+        // --------------------------------------------------
+        // 8. Get latest wallet details
+        // --------------------------------------------------
         const walletDetails = await user_wallet_details.findOne(
             {
                 _id: walletId,
@@ -86,129 +196,236 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
         ).session(mongoSession).lean();
 
         if (!walletDetails) {
-            throw new ServiceError("User wallet details not found for expired currency conversion quote");
+            throw new ServiceError(
+                "User wallet details not found for expired currency conversion quote"
+            );
         }
 
-        // Find source wallet
-        const sourceWalletIndex = walletDetails.wallets_details.findIndex(
-            (wallet) =>
-                wallet.wallet_type === "FIAT" &&
-                wallet.wallet_currency === sourceCurrency &&
-                wallet.wallet_status === "ACTIVE"
-        );
+        // --------------------------------------------------
+        // 9. Find source wallet
+        // --------------------------------------------------
+        const sourceWalletIndex =
+            walletDetails.wallets_details.findIndex(
+                (wallet) =>
+                    wallet.wallet_type === sourceWalletType &&
+                    wallet.wallet_currency === sourceCurrency &&
+                    wallet.wallet_status === "ACTIVE"
+            );
+
         if (sourceWalletIndex === -1) {
-            throw new ServiceError(`Active ${sourceCurrency} source wallet not found`);
+            throw new ServiceError(
+                `Active ${sourceCurrency} source wallet not found`
+            );
         }
-        const sourceWallet = walletDetails.wallets_details[sourceWalletIndex];
+
+        const sourceWallet =
+            walletDetails.wallets_details[sourceWalletIndex];
+
         if (!sourceWallet) {
-            throw new ServiceError("Source wallet not found for expired currency conversion quote");
+            throw new ServiceError(
+                "Source wallet not found for expired currency conversion quote"
+            );
         }
 
-        // Get current wallet balances
-        const accountBalance = new Decimal(sourceWallet.account_balance?.toString() ?? "0");
-        const availableBalance = new Decimal(sourceWallet.available_balance?.toString() ?? "0");
-        const holdingAmount = new Decimal(sourceWallet.holding_amount?.toString() ?? "0");
+        // --------------------------------------------------
+        // 10. Get current wallet balances
+        // --------------------------------------------------
+        const accountBalance = new Decimal(
+            sourceWallet.account_balance?.toString() ?? "0"
+        );
 
-        // Validate Wallet Balance
-        if (!availableBalance.plus(holdingAmount).toDecimalPlaces(4).equals(accountBalance.toDecimalPlaces(4))) {
-            throw new ServiceError(`Invalid ${sourceCurrency} wallet balance while ` + `releasing expired currency conversion quote`);
+        const availableBalance = new Decimal(
+            sourceWallet.available_balance?.toString() ?? "0"
+        );
+
+        const holdingAmount = new Decimal(
+            sourceWallet.holding_amount?.toString() ?? "0"
+        );
+
+        // --------------------------------------------------
+        // 11. Validate wallet balance consistency
+        // --------------------------------------------------
+        if (
+            !availableBalance
+                .plus(holdingAmount)
+                .toDecimalPlaces(4)
+                .equals(accountBalance.toDecimalPlaces(4))
+        ) {
+            throw new ServiceError(
+                `Invalid ${sourceCurrency} wallet balance while ` +
+                `releasing expired currency conversion quote`
+            );
         }
 
-        // Cehck holding balance contains the quote amount
+        // --------------------------------------------------
+        // 12. Make sure holding contains the quote amount
+        // --------------------------------------------------
         if (holdingAmount.lessThan(sourceAmount)) {
-            throw new ServiceError(`Insufficient ${sourceCurrency} holding balance ` + `to release expired currency conversion quote`);
+            throw new ServiceError(
+                `Insufficient ${sourceCurrency} holding balance ` +
+                `to release expired currency conversion quote`
+            );
         }
 
-        // Calculating new balances
-        const newAvailableBalance = availableBalance.plus(sourceAmount).toDecimalPlaces(4);
-        const newHoldingAmount = holdingAmount.minus(sourceAmount).toDecimalPlaces(4);
+        // --------------------------------------------------
+        // 13. Calculate released balances
+        // --------------------------------------------------
+        const newAvailableBalance = availableBalance
+            .plus(sourceAmount)
+            .toDecimalPlaces(4);
 
-        // Final balance consistency check
-        if (!newAvailableBalance.plus(newHoldingAmount).toDecimalPlaces(4).equals(accountBalance.toDecimalPlaces(4))) {
-            throw new ServiceError(`Invalid ${sourceCurrency} wallet balance after ` + `releasing expired currency conversion quote`);
+        const newHoldingAmount = holdingAmount
+            .minus(sourceAmount)
+            .toDecimalPlaces(4);
+
+        // --------------------------------------------------
+        // 14. Final balance consistency check
+        // --------------------------------------------------
+        if (
+            !newAvailableBalance
+                .plus(newHoldingAmount)
+                .toDecimalPlaces(4)
+                .equals(accountBalance.toDecimalPlaces(4))
+        ) {
+            throw new ServiceError(
+                `Invalid ${sourceCurrency} wallet balance after ` +
+                `releasing expired currency conversion quote`
+            );
         }
 
-        // Wallet Update
-        const walletUpdateResult = await user_wallet_details.updateOne(
-            {
-                _id: walletDetails._id,
-                user_id: userId,
-                cardholder_id: cardholderId,
-
-                wallets_details: {
-                    $elemMatch: {
-                        wallet_type: "FIAT",
-                        wallet_currency: sourceCurrency,
-                        wallet_status: "ACTIVE",
-
-                        account_balance: sourceWallet.account_balance,
-                        available_balance: sourceWallet.available_balance,
-                        holding_amount: sourceWallet.holding_amount,
-                    },
-                },
-            },
-            {
-                $set: {
-                    [`wallets_details.${sourceWalletIndex}.available_balance`]:
-                        mongoose.Types.Decimal128.fromString(
-                            newAvailableBalance.toFixed(4)
-                        ),
-
-                    [`wallets_details.${sourceWalletIndex}.holding_amount`]:
-                        mongoose.Types.Decimal128.fromString(
-                            newHoldingAmount.toFixed(4)
-                        ),
-                },
-            },
-            {
-                session: mongoSession,
-            }
-        );
-        if (walletUpdateResult.modifiedCount !== 1) {
-            throw new ServiceError("Source wallet balance changed before expired " + "currency conversion quote could be released");
-        }
-
-        // Update the transaction status to failed
-        const failedTransactionId = new Types.ObjectId();
-        await user_wallet_transactions.create(
-            [
+        // --------------------------------------------------
+        // 15. Atomic wallet update
+        // --------------------------------------------------
+        const walletUpdateResult =
+            await user_wallet_details.updateOne(
                 {
+                    _id: walletDetails._id,
+                    user_id: userId,
                     cardholder_id: cardholderId,
-                    wallet_id: walletDetails._id,
-                    transaction_id: failedTransactionId,
-                    transaction_type: "WITHDRAW",
-                    transaction_status: "FAILED",
-                    wallet_details: {
-                        wallet_type: "FIAT",
-                        wallet_currency: sourceCurrency,
-                    },
-                    amount: mongoose.Types.Decimal128.fromString(sourceAmount.toFixed(4)),
-                    fee: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(4)),
-                    balance_before: mongoose.Types.Decimal128.fromString(accountBalance.toFixed(4)),
-                    balance_after: mongoose.Types.Decimal128.fromString(accountBalance.toFixed(4)),
-                    reference_id: conversionQuote._id.toString(),
-                    remarks: `Currency conversion quote expired. ` +
-                        `Conversion from ${sourceCurrency} to ` +
-                        `${destinationCurrency} failed. ` +
-                        `Reserved amount ${sourceAmount.toFixed(4)} ` +
-                        `${sourceCurrency} was released from holding. ` +
-                        `Destination amount: ${destinationAmount.toFixed(4)} ` +
-                        `${destinationCurrency}. ` +
-                        `FX rate: ${exchangeRate.toFixed(8)}. ` +
-                        `Fee: ${feeAmount.toFixed(4)} ${sourceCurrency}.`,
-                },
-            ],
-            {
-                session: mongoSession,
-            }
-        );
 
-        // If quote is still ACTIVE, mark it EXPIRED.
-        if (conversionQuote.quote_status === "ACTIVE") {
-            const quoteUpdateResult = await wallet_currency_conversion_quotes.updateOne(
+                    wallets_details: {
+                        $elemMatch: {
+                            wallet_type: sourceWalletType,
+                            wallet_currency: sourceCurrency,
+                            wallet_status: "ACTIVE",
+
+                            account_balance:
+                                sourceWallet.account_balance,
+
+                            available_balance:
+                                sourceWallet.available_balance,
+
+                            holding_amount:
+                                sourceWallet.holding_amount,
+                        },
+                    },
+                },
+                {
+                    $set: {
+                        [`wallets_details.${sourceWalletIndex}.available_balance`]:
+                            mongoose.Types.Decimal128.fromString(
+                                newAvailableBalance.toFixed(4)
+                            ),
+
+                        [`wallets_details.${sourceWalletIndex}.holding_amount`]:
+                            mongoose.Types.Decimal128.fromString(
+                                newHoldingAmount.toFixed(4)
+                            ),
+                    },
+                },
+                {
+                    session: mongoSession,
+                }
+            );
+
+        if (walletUpdateResult.modifiedCount !== 1) {
+            throw new ServiceError(
+                "Source wallet balance changed before expired " +
+                "currency conversion quote could be released"
+            );
+        }
+
+        // --------------------------------------------------
+        // 16. UPDATE EXISTING HOLD TRANSACTION
+        //
+        // CHANGED:
+        //
+        // DO NOT create a new FAILED transaction.
+        //
+        // Existing:
+        //     HOLD / PENDING
+        //
+        // Becomes:
+        //     RELEASE / SUCCESS
+        //
+        // The amount is the amount that was originally held.
+        // --------------------------------------------------
+        const releaseTransaction =
+            await user_wallet_transactions.findOneAndUpdate(
+                {
+                    _id: sourceHoldTransaction._id,
+
+                    transaction_type: "HOLD",
+                    transaction_status: "PENDING",
+
+                    reference_id: conversionReferenceId as string,
+
+                    wallet_id: walletDetails._id,
+                    cardholder_id: cardholderId,
+                },
+                {
+                    $set: {
+                        transaction_type: "RELEASE",
+                        transaction_status: "SUCCESS",
+
+                        fee: mongoose.Types.Decimal128.fromString("0"),
+
+                        // Account balance does not change during
+                        // HOLD -> RELEASE.
+                        balance_before:
+                            mongoose.Types.Decimal128.fromString(
+                                accountBalance.toFixed(4)
+                            ),
+
+                        balance_after:
+                            mongoose.Types.Decimal128.fromString(
+                                accountBalance.toFixed(4)
+                            ),
+
+                        remarks:
+                            `Currency conversion quote expired. ` +
+                            `${sourceAmount.toFixed(4)} ${sourceCurrency} ` +
+                            `released from holding balance and ` +
+                            `returned to available balance. ` +
+                            `Conversion to ${destinationCurrency} was not executed.`,
+                    },
+                },
+                {
+                    session: mongoSession,
+                    new: true,
+                }
+            );
+
+        if (!releaseTransaction) {
+            throw new ServiceError(
+                "Source wallet HOLD transaction could not be updated to RELEASE"
+            );
+        }
+
+        // --------------------------------------------------
+        // 17. Mark quote as EXPIRED
+        //
+        // Whether it was ACTIVE or already EXPIRED, the
+        // final state remains EXPIRED.
+        // --------------------------------------------------
+        const quoteUpdateResult =
+            await wallet_currency_conversion_quotes.updateOne(
                 {
                     _id: conversionQuote._id,
-                    quote_status: "ACTIVE",
+
+                    quote_status: {
+                        $in: ["ACTIVE", "EXPIRED"],
+                    },
                 },
                 {
                     $set: {
@@ -219,27 +436,30 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
                     session: mongoSession,
                 }
             );
-            if (quoteUpdateResult.modifiedCount !== 1) {
-                throw new ServiceError("Currency conversion quote could not be marked as EXPIRED");
-            }
+
+        if (quoteUpdateResult.modifiedCount !== 1) {
+            throw new ServiceError(
+                "Currency conversion quote could not be marked as EXPIRED"
+            );
         }
 
-        // Commit transaction
+        // --------------------------------------------------
+        // 18. Commit transaction
+        // --------------------------------------------------
         await mongoSession.commitTransaction();
 
-        logger.info(`Wallet currency conversion quote ` +
+        logger.info(
+            `Wallet currency conversion quote ` +
             `${conversionQuote._id.toString()} processed successfully. ` +
             `${sourceAmount.toFixed(4)} ${sourceCurrency} ` +
             `released from holding balance. ` +
-            `FAILED transaction created: ${failedTransactionId.toString()}`
+            `HOLD transaction ${sourceHoldTransaction.transaction_id.toString()} ` +
+            `updated to RELEASE.`
         );
-
     }
     catch (err) {
-        // Only abort if transaction is still active
-        if (
-            mongoSession.inTransaction()
-        ) {
+
+        if (mongoSession.inTransaction()) {
             await mongoSession.abortTransaction();
         }
 
@@ -248,7 +468,9 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
         logger.error(
             error,
             {
-                serviceName: "ExpireWalletCurrencyConversionQuoteTransaction",
+                serviceName:
+                    "ExpireWalletCurrencyConversionQuoteTransaction",
+
                 quoteId: quoteId.toString(),
             }
         );
@@ -257,16 +479,13 @@ const expireWalletCurrencyConversionQuoteTransaction = async (quoteId: Types.Obj
             throw error;
         }
 
-        throw new ServiceError(`ExpireWalletCurrencyConversionQuoteTransaction facing issue: ${error.message}`,
-            error?.error
-                ? error.error
-                : error
+        throw new ServiceError(
+            `ExpireWalletCurrencyConversionQuoteTransaction facing issue: ${error.message}`,
+            error?.error ? error.error : error
         );
     }
     finally {
-
         await mongoSession.endSession();
-
     }
 };
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
@@ -278,22 +497,28 @@ export const expireWalletCurrencyConversionQuotesService = async (): Promise<voi
 
         const currentDate = new Date();
 
-        // Get Active/Expired Quotes
-        const expiredQuotes = await wallet_currency_conversion_quotes.find(
-            {
-                quote_status: {
-                    $in: ["ACTIVE", "EXPIRED"],
+        const expiredQuotes =
+            await wallet_currency_conversion_quotes.find(
+                {
+                    quote_status: {
+                        $in: ["ACTIVE", "EXPIRED"],
+                    },
+
+                    expires_at: {
+                        $lte: currentDate,
+                    },
                 },
-                expires_at: {
-                    $lte: currentDate,
-                },
-            },
-            {
-                _id: 1,
-            }
-        ).lean();
+                {
+                    _id: 1,
+                }
+            ).lean();
+
         if (expiredQuotes.length === 0) {
-            logger.info("Expired wallet currency conversion quote cron job completed. " + "No expired ACTIVE or EXPIRED conversion quotes found.");
+
+            logger.info(
+                "Expired wallet currency conversion quote cron job completed. " +
+                "No expired ACTIVE or EXPIRED conversion quotes found."
+            );
 
             return;
         }
@@ -301,18 +526,19 @@ export const expireWalletCurrencyConversionQuotesService = async (): Promise<voi
         let successfullyProcessedCount = 0;
         let failedCount = 0;
 
-        // --------------------------------------------------
-        // Process each quote separately.
-        //
-        // Each quote gets its own MongoDB transaction.
-        // --------------------------------------------------
         for (const quote of expiredQuotes) {
+
             try {
-                await expireWalletCurrencyConversionQuoteTransaction(quote._id);
+
+                await expireWalletCurrencyConversionQuoteTransaction(
+                    quote._id
+                );
 
                 successfullyProcessedCount++;
+
             }
             catch (err) {
+
                 failedCount++;
 
                 const error = err as any;
@@ -320,36 +546,41 @@ export const expireWalletCurrencyConversionQuotesService = async (): Promise<voi
                 logger.error(
                     error,
                     {
-                        serviceName: "ExpireWalletCurrencyConversionQuotesService",
+                        serviceName:
+                            "ExpireWalletCurrencyConversionQuotesService",
+
                         quoteId: quote._id.toString(),
                     }
                 );
             }
         }
 
-        logger.info(`Expired wallet currency conversion quote cron job completed. ` +
+        logger.info(
+            `Expired wallet currency conversion quote cron job completed. ` +
             `${successfullyProcessedCount} quote(s) processed successfully. ` +
             `${failedCount} quote(s) failed.`
         );
 
     }
     catch (err) {
+
         const error = err as any;
 
         logger.error(
             error,
             {
-                serviceName: "ExpireWalletCurrencyConversionQuotesService failed to find expired quotes",
+                serviceName:
+                    "ExpireWalletCurrencyConversionQuotesService failed to find expired quotes",
             }
         );
     }
 };
-// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
-
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- //
 
 
 // ----------------------------- WALLET CURRENCY CONVERSION QUOTE EXPIRY CRON JOB ----------------------------- //
 export const startWalletCurrencyConversionQuoteExpiryCronJob = (): void => {
+
     /*
         Cron expression:
 
@@ -362,38 +593,49 @@ export const startWalletCurrencyConversionQuoteExpiryCronJob = (): void => {
         - Release source amount from holding_amount
         - Move it back to available_balance
         - Keep account_balance unchanged
-        - Create a FAILED wallet transaction
-        - If quote is ACTIVE, mark it EXPIRED
-        - If quote is already EXPIRED, leave it EXPIRED
+        - Update existing HOLD transaction to RELEASE
+        - Mark quote as EXPIRED
     */
 
     cron.schedule("* * * * *", async () => {
+
         try {
-            logger.info("Expired wallet currency conversion quote cron job started.",
+
+            logger.info(
+                "Expired wallet currency conversion quote cron job started.",
                 {
-                    serviceName: "ExpireWalletCurrencyConversionQuotesCronJob",
+                    serviceName:
+                        "ExpireWalletCurrencyConversionQuotesCronJob",
                 }
             );
 
             await expireWalletCurrencyConversionQuotesService();
 
-            logger.info("Expired wallet currency conversion quote cron job completed.",
+            logger.info(
+                "Expired wallet currency conversion quote cron job completed.",
                 {
-                    serviceName: "ExpireWalletCurrencyConversionQuotesCronJob",
+                    serviceName:
+                        "ExpireWalletCurrencyConversionQuotesCronJob",
                 }
             );
-        } catch (err: any) {
-            const error = err;
+
+        }
+        catch (err: any) {
 
             logger.error(
-                error,
+                err,
                 {
-                    serviceName: "ExpireWalletCurrencyConversionQuotesCronJob",
-                    message: "Unexpected error in wallet currency conversion quote expiry cron job",
+                    serviceName:
+                        "ExpireWalletCurrencyConversionQuotesCronJob",
+
+                    message:
+                        "Unexpected error in wallet currency conversion quote expiry cron job",
                 }
             );
         }
     });
 
-    logger.info("Wallet currency conversion quote expiry cron job initialized successfully.");
+    logger.info(
+        "Wallet currency conversion quote expiry cron job initialized successfully."
+    );
 };

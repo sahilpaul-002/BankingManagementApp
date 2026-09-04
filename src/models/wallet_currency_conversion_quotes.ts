@@ -88,7 +88,8 @@ const walletCurrencyConversionQuoteSchema = new Schema<walletCurrencyConversionQ
 
         conversion_reference_id: {
             type: String,
-            required: false,
+            required: true,
+            unique: true,
             index: true,
         },
     },

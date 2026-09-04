@@ -6,6 +6,8 @@ import { AppErrorClass, ServiceError, NotFoundError } from "../utils/AppErrorCla
 import logger from "../utils/logger.js";
 import type { walletCurrencyType, walletDetailsType } from "../types/schemaTypes.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
+import { userWalletTransactionsModel as user_wallet_transactions } from "../models/user_wallet_transaction_details.js";
+import crypto from "crypto"
 
 interface CreateWalletCurrencyConversionTransactionType {
     userId: Types.ObjectId;
@@ -166,12 +168,44 @@ const createWalletCurrencyConversionTransaction = async ({
                 session: mongoSession,
             }
         );
-
-
         if (holdingUpdateResult.modifiedCount !== 1) {
             throw new ServiceError("Source wallet balance changed before currency conversion quote could be created");
         }
 
+        const conversionReferenceId = crypto.randomUUID();
+        const sourceTransactionId = new Types.ObjectId();
+
+        // Create Souce Wallet Transaction
+        await user_wallet_transactions.create(
+            [
+                {
+                    cardholder_id: cardholderId,
+                    wallet_id: walletDetails._id,
+                    transaction_id: sourceTransactionId,
+                    transaction_type: "HOLD",
+                    transaction_status: "PENDING",
+                    wallet_details: {
+                        wallet_type: sourceWalletType,
+                        wallet_currency: sourceCurrency,
+                    },
+                    amount: mongoose.Types.Decimal128.fromString(
+                        sourceAmount.toFixed(4)
+                    ),
+                    fee: mongoose.Types.Decimal128.fromString("0"),
+                    balance_before: mongoose.Types.Decimal128.fromString(
+                        sourceAccountBalance.toFixed(4)
+                    ),
+                    balance_after: mongoose.Types.Decimal128.fromString(
+                        sourceAccountBalance.toFixed(4)
+                    ),
+                    reference_id: conversionReferenceId,
+                    remarks: `Currency conversion amount held from ${sourceCurrency} wallet for conversion to ${destinationCurrency}`,
+                },
+            ],
+            {
+                session: mongoSession,
+            }
+        );
 
         // Create currency conversion quote
         const conversionQuote = await wallet_currency_conversion_quotes.create(
@@ -190,6 +224,7 @@ const createWalletCurrencyConversionTransaction = async ({
                     fee_percentage: mongoose.Types.Decimal128.fromString(feePercentage.toFixed(4)),
                     fee_amount: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(4)),
                     quote_status: "ACTIVE",
+                    conversion_reference_id: conversionReferenceId,
                     expires_at: expiresAt,
                 },
             ],

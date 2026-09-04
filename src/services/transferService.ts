@@ -70,7 +70,7 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
         // Calculate source amount
         const sourceAmount = new Decimal(aesDecryptedBodyData.source_amount?.toString() ?? "0");
         // Validate the quote details in the request body
-        const validationData = { ...aesDecryptedBodyData, source_amount: new Decimal(aesDecryptedBodyData.source_amount?.toString() ?? "0") };
+        const validationData = { ...aesDecryptedBodyData, source_amount: sourceAmount };
         const validationResult = createFiatPayoutQuoteValidationSchema.safeParse(validationData);
         if (!validationResult.success) {
             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
@@ -105,6 +105,7 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
             },
             {
                 _id: 1,
+                cardholder_id: 1,
                 wallets_details: 1,
             }
         ).lean();
@@ -139,16 +140,26 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
         }
         // Calculate gross destination amount
         const grossDestinationAmount = sourceAmount.mul(exchangeRate).toDecimalPlaces(4);
-        // Calculate payout fee in SOURCE currency
-        const feeAmount = sourceAmount.mul(new Decimal(FEE_DETAILS.p2P_percent.toString())).div(100).toDecimalPlaces(4);
+
+        // Get FX rate from source currency to USD
         const sourceToUsdFxRateDetails = await getFxRate(validatedData.source_wallet_currency, "USD");
         const sourceToUsdExchangeRate = new Decimal(sourceToUsdFxRateDetails.exchange_rate.toString());
         if (sourceToUsdExchangeRate.lessThanOrEqualTo(0)) {
             throw new ServiceError("Invalid source to USD FX rate received");
         }
-        const feeAmountUsd = feeAmount.mul(sourceToUsdExchangeRate).toDecimalPlaces(4);
-        // Convert fee from SOURCE currency to DESTINATION currency
-        const destinationFeeAmount = feeAmount.mul(exchangeRate).toDecimalPlaces(4);
+        // Convert source amount to USD for fee calculation
+        const sourceAmountUsd = sourceAmount.mul(sourceToUsdExchangeRate).toDecimalPlaces(4);
+        // Calculate payout fee in USD
+        const feeAmountUsd = sourceAmountUsd.mul(new Decimal(FEE_DETAILS.p2P_percent.toString())).div(100).toDecimalPlaces(4);
+        // Get FX rate from USD to destination currency
+        const usdToDestinationFxRateDetails = await getFxRate("USD", destinationCurrency);
+        const usdToDestinationExchangeRate = new Decimal(usdToDestinationFxRateDetails.exchange_rate.toString());
+        if (usdToDestinationExchangeRate.lessThanOrEqualTo(0)) {
+            throw new ServiceError("Invalid USD to destination FX rate received");
+        }
+        // Convert USD fee to destination currency
+        const destinationFeeAmount = feeAmountUsd.mul(usdToDestinationExchangeRate).toDecimalPlaces(4);
+
         // Calculate amount actually received by beneficiary
         const netDestinationAmount = grossDestinationAmount.minus(destinationFeeAmount).toDecimalPlaces(4);
         // Wallet debit is the original source amount
@@ -158,6 +169,7 @@ export const createPayoutQuoteService = async (requestSession: Request["session"
         const expiresAt = new Date(
             Date.now() + 2 * 60 * 1000
         );
+
         const payoutQuote = await fiat_payout_quotes.create({
             user_id: userObjectId,
             wallet_id: userWalletDetails._id,
@@ -253,33 +265,20 @@ export const executePayoutQuoteService = async (requestSession: Request["session
 
         // Validate User Configuration
         const email = checkStringQueryParams(aesDecryptedQueryData, "email");
-
         if (!email) {
             throw new InvalidRequestBodyError("Email not found in request query");
         }
-
         if (email !== requestSession?.userEmail) {
             throw new UnauthorizedError("Unauthorized access detected - invalid email");
         }
-
-        if (
-            requestSession?.userType !== "ADMIN" &&
-            requestSession?.userType !== "MASTER_ADMIN"
-        ) {
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
             throw new ForbiddenError("Not authorized to access beneficiaries list");
         }
-
         const sessionBusinessId = requestSession?.userConfiguration?.businessId;
         const sessionProgramId = requestSession?.userConfiguration?.programId;
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
         const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
-
-        if (
-            userConfiguration?.businessId !== sessionBusinessId ||
-            userConfiguration?.programId !== sessionProgramId ||
-            userConfiguration?.agentCode !== sessionAgentCode ||
-            userConfiguration?.subAgentCode !== sessionSubAgentCode
-        ) {
+        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
             throw new ForbiddenError("User configuration is not valid to access payout quotes");
         }
 
@@ -288,86 +287,20 @@ export const executePayoutQuoteService = async (requestSession: Request["session
         if (!quoteId) {
             throw new InvalidRequestBodyError("Quote ID not found in request body");
         }
+        if (!Types.ObjectId.isValid(quoteId)) {
+            throw new InvalidRequestBodyError("Invalid quote ID");
+        }
+        const payoutQuoteObjectId = new Types.ObjectId(quoteId);
 
         // Get user id
-        const userId = requestSession?.userId;
-        if (!userId) {
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
             throw new UnauthorizedError("Unauthorized session detected - user id not found in session");
         }
-
-        // Get payout quote details
-        const payoutQuote = await fiat_payout_quotes.findOne({
-            _id: quoteId,
-            user_id: userId,
-        });
-        if (!payoutQuote) {
-            throw new NotFoundError("Payout quote not found");
-        }
-        // Check quote status
-        if (payoutQuote.quote_status !== "ACTIVE") {
-            throw new ServiceError(`Payout quote cannot be executed because its status is ${payoutQuote.quote_status}`);
-        }
-        // Check quote expiry
-        if (payoutQuote.expires_at.getTime() <= Date.now()) {
-            // Update the quote status to EXPIRED
-            await fiat_payout_quotes.updateOne(
-                {
-                    _id: payoutQuote._id,
-                    quote_status: "ACTIVE",
-                },
-                {
-                    $set: {
-                        quote_status: "EXPIRED",
-                    },
-                }
-            );
-
-            throw new ServiceError("Payout quote has expired");
-        }
-
-        // Check beneficiary
-        const beneficiaryDetails = await beneficiaries_bank_details.findOne({
-            _id: payoutQuote.beneficiary_id,
-            user_id: userId,
-        }).lean();
-        if (!beneficiaryDetails) {
-            throw new NotFoundError("Beneficiary details not found - unable to execute payout");
-        }
-
-        // Get user wallet details
-        const userWalletDetails = await user_wallet_details.findOne(
-            {
-                user_id: userId,
-            },
-            {
-                wallet_id: 1,
-                wallets_details: 1,
-            }
-        ).lean();
-        if (!userWalletDetails) {
-            throw new NotFoundError("User wallet details not found");
-        }
-        // Get source wallet details
-        const sourceWallet = userWalletDetails.wallets_details.find(
-            (wallet) =>
-                wallet.wallet_type === "FIAT" &&
-                wallet.wallet_currency === payoutQuote?.source_currency &&
-                wallet.wallet_status === "ACTIVE"
-        );
-        if (!sourceWallet) {
-            throw new NotFoundError(`Active ${payoutQuote?.source_currency} fiat wallet not found`);
-        }
-        // Validate source wallet balance using Decimal.js for accurate decimal arithmetic
-        const accountBalance = new Decimal(sourceWallet.account_balance?.toString() ?? "0");
-        const holdingAmount = new Decimal(sourceWallet.holding_amount?.toString() ?? "0");
-        const availableBalance = accountBalance.minus(holdingAmount);
-        const payoutSourceAmount = new Decimal(payoutQuote.source_amount?.toString() ?? "0");
-        if (availableBalance.lessThan(payoutSourceAmount)) {
-            throw new ServiceError("Insufficient wallet balance");
-        }
+        const userObjectId = new Types.ObjectId(sessionUserId)
 
         // Execute payout mongo db transaction
-        const transactionResult = await executeFiatPayoutTransaction({ payoutQuote, sourceWallet, cardholderId: userWalletDetails.cardholder_id, });
+        const transactionResult = await executeFiatPayoutTransaction({ payoutQuoteId: payoutQuoteObjectId, userId: userObjectId });
 
         return {
             status: "SUCCESS",

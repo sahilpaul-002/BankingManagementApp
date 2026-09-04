@@ -77,14 +77,12 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
             type: String,
             trim: true,
             required: true,
-            default: null,
         },
 
         remarks: {
             type: String,
             trim: true,
             required: true,
-            default: null,
         }
     },
     {

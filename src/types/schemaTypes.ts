@@ -248,8 +248,8 @@ export interface userWalletTransactionsTypes extends Document {
     fee: mongoose.Types.Decimal128;
     balance_before: mongoose.Types.Decimal128;
     balance_after: mongoose.Types.Decimal128;
-    reference_id: string | null;
-    remarks: string | null;
+    reference_id: string;
+    remarks: string;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -373,10 +373,10 @@ export interface fiatPayoutQuoteSchemaTypes extends Document {
 
 // Type for Fiat Payout Transactions Model Schema
 export interface fiatPayoutTransactionsSchemaTypes extends Document {
-    quote_id: string;
-    user_id: string;
-    wallet_id: string;
-    beneficiary_id: string;
+    quote_id: Types.ObjectId;
+    user_id: Types.ObjectId;
+    wallet_id: Types.ObjectId;
+    beneficiary_id: Types.ObjectId;
     source_currency: "USD" | "EUR" | "SGD";
     source_amount: Types.Decimal128;
     destination_currency: string;

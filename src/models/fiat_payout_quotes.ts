@@ -12,7 +12,6 @@ const fiatPayoutQuoteSchema = new Schema<fiatPayoutQuoteSchemaTypes>({
         type: Schema.Types.ObjectId,
         required: true,
         index: true,
-        trim: true,
     },
 
     beneficiary_id: {

@@ -43,17 +43,20 @@ const executeWalletCurrencyConversionTransaction = async ({
         if (sourceAmount.lessThanOrEqualTo(0)) {
             throw new ServiceError("Invalid source conversion amount");
         }
-
         if (destinationAmount.lessThanOrEqualTo(0)) {
             throw new ServiceError("Invalid destination conversion amount");
         }
-
         if (exchangeRate.lessThanOrEqualTo(0)) {
             throw new ServiceError("Invalid conversion exchange rate");
         }
-
         if (feeAmount.isNegative()) {
             throw new ServiceError("Invalid conversion fee");
+        }
+
+        // Get the conversion reference id
+        const conversionReferenceId = conversionQuote.conversion_reference_id;
+        if (!conversionReferenceId) {
+            throw new ServiceError("Currency conversion reference ID not found in quote");
         }
 
         // --------------------------------------------------
@@ -209,9 +212,6 @@ const executeWalletCurrencyConversionTransaction = async ({
             destinationUpdateSet[`wallets_details.${destinationWalletIndex}.yearly_transaction.year`] = now.getFullYear();
         }
 
-        // Create convertion reference id
-        const conversionReferenceId = crypto.randomUUID();
-
         // --------------------------------------------------
         // Source wallet atomic update
         //
@@ -296,36 +296,41 @@ const executeWalletCurrencyConversionTransaction = async ({
         }
 
         // --------------------------------------------------
-        // SOURCE TRANSACTION
+        // SOURCE TRANSACTION UPDATE
         //
         // Conversion out of source wallet
         // --------------------------------------------------
-        const sourceTransactionId = new Types.ObjectId();
-
-        await user_wallet_transactions.create(
-            [
-                {
-                    cardholder_id: cardholderId,
-                    wallet_id: walletDetails._id,
-                    transaction_id: sourceTransactionId,
+        const sourceHoldTransaction = await user_wallet_transactions.findOneAndUpdate(
+            {
+                cardholder_id: cardholderId,
+                wallet_id: walletDetails._id,
+                transaction_type: "HOLD",
+                transaction_status: "PENDING",
+                reference_id: conversionReferenceId as string,
+            },
+            {
+                $set: {
                     transaction_type: "WITHDRAW",
                     transaction_status: "SUCCESS",
-                    wallet_details: {
-                        wallet_type: sourceWalletType,
-                        wallet_currency: sourceCurrency,
-                    },
-                    amount: mongoose.Types.Decimal128.fromString(sourceAmount.toFixed(4)),
-                    fee: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(4)),
-                    balance_before: mongoose.Types.Decimal128.fromString(sourceBalance.toFixed(4)),
-                    balance_after: mongoose.Types.Decimal128.fromString(newSourceBalance.toFixed(4)),
-                    reference_id: conversionReferenceId,
-                    remarks: `Currency conversion from ${sourceCurrency} to ${destinationCurrency}.Fee: ${feeAmount.toFixed(4)} ${sourceCurrency} `,
+
+                    fee: mongoose.Types.Decimal128.fromString("0"),
+
+                    balance_after: mongoose.Types.Decimal128.fromString(
+                        newSourceBalance.toFixed(4)
+                    ),
+
+                    remarks:
+                        `Currency conversion from ${sourceCurrency} to ${destinationCurrency}`,
                 },
-            ],
+            },
             {
                 session: mongoSession,
+                new: true,
             }
         );
+        if (!sourceHoldTransaction) {
+            throw new ServiceError("Source wallet HOLD transaction could not be updated");
+        }
 
 
         // --------------------------------------------------
@@ -348,10 +353,10 @@ const executeWalletCurrencyConversionTransaction = async ({
                         wallet_currency: destinationCurrency,
                     },
                     amount: mongoose.Types.Decimal128.fromString(destinationAmount.toFixed(4)),
-                    fee: mongoose.Types.Decimal128.fromString("0"),
+                    fee: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(4)),
                     balance_before: mongoose.Types.Decimal128.fromString(destinationBalance.toFixed(4)),
                     balance_after: mongoose.Types.Decimal128.fromString(newDestinationBalance.toFixed(4)),
-                    reference_id: conversionReferenceId,
+                    reference_id: conversionReferenceId as string,
                     remarks: `Currency conversion from ${sourceCurrency} to ${destinationCurrency}. FX rate: ${exchangeRate.toFixed(8)} `,
                 },
             ],
@@ -409,7 +414,7 @@ const executeWalletCurrencyConversionTransaction = async ({
                 source_balance_after: newSourceBalance.toFixed(4),
                 destination_balance_before: destinationBalance.toFixed(4),
                 destination_balance_after: newDestinationBalance.toFixed(4),
-                source_transaction_id: sourceTransactionId,
+                source_transaction_id: sourceHoldTransaction.transaction_id,
                 destination_transaction_id: destinationTransactionId,
                 quote_id: conversionQuote._id.toString(),
                 quote_status: "EXECUTED",

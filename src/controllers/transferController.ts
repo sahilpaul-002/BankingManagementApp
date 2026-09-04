@@ -24,7 +24,7 @@ export const createPayoutQuote = async (req: Request, res: Response): Promise<Re
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const createPayoutQuoteServiceResponse = await createPayoutQuoteService(requestSession, aesDecryptedBodyData, aesDecryptedBodyData, userConfigurations)
+        const createPayoutQuoteServiceResponse = await createPayoutQuoteService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
         if (createPayoutQuoteServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to create payout quote", 400);
         }
@@ -70,7 +70,7 @@ export const executePayoutQuote = async (req: Request, res: Response): Promise<R
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const executePayoutQuoteServiceResponse = await executePayoutQuoteService(requestSession, aesDecryptedBodyData, aesDecryptedBodyData, userConfigurations)
+        const executePayoutQuoteServiceResponse = await executePayoutQuoteService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
         if (executePayoutQuoteServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to execute payout quote", 400);
         }

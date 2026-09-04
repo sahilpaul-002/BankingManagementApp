@@ -3,25 +3,25 @@ import type { fiatPayoutTransactionsSchemaTypes } from "../types/schemaTypes.js"
 
 const fiatPayoutTransactionsSchema = new Schema<fiatPayoutTransactionsSchemaTypes>({
     quote_id: {
-        type: String,
+        type: Schema.Types.ObjectId,
         required: true,
         index: true,
     },
 
     user_id: {
-        type: String,
+        type: Schema.Types.ObjectId,
         required: true,
         index: true,
     },
 
     wallet_id: {
-        type: String,
+        type: Schema.Types.ObjectId,
         required: true,
         index: true,
     },
 
     beneficiary_id: {
-        type: String,
+        type: Schema.Types.ObjectId,
         ref: "BeneficiariesBankDetails",
         required: true,
         index: true,
