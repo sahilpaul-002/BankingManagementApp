@@ -21,7 +21,6 @@ const processPayoutTransactions = async (): Promise<void> => {
             );
 
         for (const payout of pendingPayouts) {
-
             const processingStartedAt = new Date();
 
             const result = await fiat_payout_transactions.updateOne(
@@ -49,8 +48,7 @@ const processPayoutTransactions = async (): Promise<void> => {
         }
 
 
-        // Find PROCESSING payouts that have been processing
-        // for at least 15 minutes
+        // Find PROCESSING payouts that have been processing for at least 15 minutes
         const processingThreshold = new Date(
             now.getTime() - 15 * 60 * 1000
         );
@@ -71,17 +69,10 @@ const processPayoutTransactions = async (): Promise<void> => {
         for (const payout of processingPayouts) {
 
             try {
+                await bankPayoutProcessingTransaction({payoutTransactionId: payout._id?.toString() as string,});
 
-                await bankPayoutProcessingTransaction({
-                        payoutTransactionId: payout._id?.toString() as string,
-                    });
-
-                logger.info(
-                    `Payout transaction ${payout._id?.toString()} completed successfully`
-                );
-
+                logger.info(`Payout transaction ${payout._id?.toString()} completed successfully`);
             } catch (err) {
-
                 const error = err as any;
 
                 logger.error(
@@ -95,7 +86,6 @@ const processPayoutTransactions = async (): Promise<void> => {
         }
 
     } catch (err) {
-
         const error = err as any;
 
         logger.error(
@@ -113,15 +103,11 @@ export const startBankPayoutProcessingCronJob = (): void => {
     // 30 minute interval cron job to process PENDING and PROCESSING payout transactions
     cron.schedule("*/2 * * * *", async () => {
 
-            logger.info(
-                "Payout processing cron job started"
-            );
+            logger.info("Payout processing cron job started");
 
             await processPayoutTransactions();
 
-            logger.info(
-                "Payout processing cron job completed"
-            );
+            logger.info("Payout processing cron job completed");
         }
     );
 

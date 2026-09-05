@@ -59,13 +59,7 @@ const executeWalletCurrencyConversionTransaction = async ({
             throw new ServiceError("Currency conversion reference ID not found in quote");
         }
 
-        // --------------------------------------------------
-        // Fetch latest wallet document
-        //
-        // We do this inside the transaction so execution
-        // does not depend only on the wallet snapshot
-        // obtained by the execute service.
-        // --------------------------------------------------
+        // Fetch wallet details
         const walletDetails = await user_wallet_details.findOne(
             {
                 _id: walletId,
@@ -77,7 +71,7 @@ const executeWalletCurrencyConversionTransaction = async ({
             throw new ServiceError("User wallet details not found");
         }
 
-        // Find latest source wallet
+        // Find source wallet
         const cryptoCurrencies = ["USDC", "USDT"];
         const sourceWalletType = cryptoCurrencies.includes(sourceCurrency) ? "CRYPTO" : "FIAT";
         const destinationWalletType = cryptoCurrencies.includes(destinationCurrency) ? "CRYPTO" : "FIAT";
@@ -91,7 +85,7 @@ const executeWalletCurrencyConversionTransaction = async ({
             throw new ServiceError(`Active ${sourceCurrency} source wallet not found`);
         }
 
-        // Find latest destination wallet
+        // Find destination wallet
         const destinationWalletIndex = walletDetails.wallets_details.findIndex(
             (wallet) =>
                 wallet.wallet_type === destinationWalletType &&
@@ -99,18 +93,15 @@ const executeWalletCurrencyConversionTransaction = async ({
                 wallet.wallet_status === "ACTIVE"
         );
         if (destinationWalletIndex === -1) {
-            throw new ServiceError(
-                `Active ${destinationCurrency} destination wallet not found`
-            );
+            throw new ServiceError(`Active ${destinationCurrency} destination wallet not found`);
         }
-
 
         // Prevent accidental same wallet conversion
         if (sourceWalletIndex === destinationWalletIndex) {
             throw new ServiceError("Source and destination wallets cannot be the same");
         }
 
-        //  Get latest wallet objects
+        //  Get wallet objects
         const latestSourceWallet = walletDetails.wallets_details[sourceWalletIndex];
         const latestDestinationWallet = walletDetails.wallets_details[destinationWalletIndex];
         if (!latestSourceWallet) {
@@ -212,14 +203,7 @@ const executeWalletCurrencyConversionTransaction = async ({
             destinationUpdateSet[`wallets_details.${destinationWalletIndex}.yearly_transaction.year`] = now.getFullYear();
         }
 
-        // --------------------------------------------------
-        // Source wallet atomic update
-        //
-        // The old balance is included in the query.
-        //
-        // Therefore another transaction cannot overwrite
-        // a newer balance.
-        // --------------------------------------------------
+        // Update source wallet
         const sourceWalletUpdateResult = await user_wallet_details.updateOne(
             {
                 _id: walletDetails._id,
@@ -239,11 +223,9 @@ const executeWalletCurrencyConversionTransaction = async ({
                     [`wallets_details.${sourceWalletIndex}.account_balance`]: mongoose.Types.Decimal128.fromString(newSourceBalance.toFixed(4)),
                     [`wallets_details.${sourceWalletIndex}.available_balance`]: mongoose.Types.Decimal128.fromString(newSourceAvailableBalance.toFixed(4)),
                     [`wallets_details.${sourceWalletIndex}.holding_amount`]: mongoose.Types.Decimal128.fromString(newSourceHoldingAmount.toFixed(4)),
-
                     // Transaction limit updates
                     ...sourceUpdateSet,
                 },
-
                 $inc: {
                     // Transaction limit increments
                     ...sourceUpdateInc,
@@ -261,7 +243,6 @@ const executeWalletCurrencyConversionTransaction = async ({
         const destinationWalletUpdateResult = await user_wallet_details.updateOne(
             {
                 _id: walletDetails._id,
-
                 wallets_details: {
                     $elemMatch: {
                         wallet_type: destinationWalletType,
@@ -277,7 +258,6 @@ const executeWalletCurrencyConversionTransaction = async ({
                     [`wallets_details.${destinationWalletIndex}.account_balance`]: mongoose.Types.Decimal128.fromString(newDestinationBalance.toFixed(4)),
                     [`wallets_details.${destinationWalletIndex}.available_balance`]: mongoose.Types.Decimal128.fromString(
                         newDestinationAvailableBalance.toFixed(4)),
-
                     // Transaction limit updates
                     ...destinationUpdateSet,
                 },
@@ -295,11 +275,7 @@ const executeWalletCurrencyConversionTransaction = async ({
             throw new ServiceError("Destination wallet balance changed before currency conversion");
         }
 
-        // --------------------------------------------------
-        // SOURCE TRANSACTION UPDATE
-        //
-        // Conversion out of source wallet
-        // --------------------------------------------------
+        // Source wallet transaction update
         const sourceHoldTransaction = await user_wallet_transactions.findOneAndUpdate(
             {
                 cardholder_id: cardholderId,
@@ -312,15 +288,9 @@ const executeWalletCurrencyConversionTransaction = async ({
                 $set: {
                     transaction_type: "WITHDRAW",
                     transaction_status: "SUCCESS",
-
                     fee: mongoose.Types.Decimal128.fromString("0"),
-
-                    balance_after: mongoose.Types.Decimal128.fromString(
-                        newSourceBalance.toFixed(4)
-                    ),
-
-                    remarks:
-                        `Currency conversion from ${sourceCurrency} to ${destinationCurrency}`,
+                    balance_after: mongoose.Types.Decimal128.fromString(newSourceBalance.toFixed(4)),
+                    remarks: `Currency conversion from ${sourceCurrency} to ${destinationCurrency}`,
                 },
             },
             {
@@ -333,11 +303,7 @@ const executeWalletCurrencyConversionTransaction = async ({
         }
 
 
-        // --------------------------------------------------
-        // DESTINATION TRANSACTION
-        //
-        // Conversion into destination wallet
-        // --------------------------------------------------
+        // Destination wallet transaction
         const destinationTransactionId = new Types.ObjectId();
 
         await user_wallet_transactions.create(
@@ -353,6 +319,7 @@ const executeWalletCurrencyConversionTransaction = async ({
                         wallet_currency: destinationCurrency,
                     },
                     amount: mongoose.Types.Decimal128.fromString(destinationAmount.toFixed(4)),
+                    // Destination wallet has fee deduction
                     fee: mongoose.Types.Decimal128.fromString(feeAmount.toFixed(4)),
                     balance_before: mongoose.Types.Decimal128.fromString(destinationBalance.toFixed(4)),
                     balance_after: mongoose.Types.Decimal128.fromString(newDestinationBalance.toFixed(4)),
@@ -365,14 +332,7 @@ const executeWalletCurrencyConversionTransaction = async ({
             }
         );
 
-
-        // --------------------------------------------------
         // Update conversion quote
-        //
-        // IMPORTANT:
-        // Only do this if your quote schema contains
-        // quote_status: "EXECUTED".
-        // --------------------------------------------------
         const quoteUpdateResult = await wallet_currency_conversion_quotes.updateOne(
             {
                 _id: conversionQuote._id,
@@ -440,8 +400,7 @@ const executeWalletCurrencyConversionTransaction = async ({
             throw error;
         }
 
-        throw new ServiceError(
-            `ExecuteWalletCurrencyConversionTransaction facing issue`, sanitizedError);
+        throw new ServiceError(`ExecuteWalletCurrencyConversionTransaction facing issue`, sanitizedError);
     }
     finally {
 
