@@ -11,6 +11,7 @@ const userWalletTransactionSchema = new Schema<userWalletTransactionsTypes>(
 
         wallet_id: {
             type: Schema.Types.ObjectId,
+            ref: "WalletDetails",
             required: true,
             index: true,
         },

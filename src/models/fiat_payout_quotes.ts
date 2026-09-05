@@ -4,18 +4,21 @@ import type { fiatPayoutQuoteSchemaTypes } from "../types/schemaTypes.js";
 const fiatPayoutQuoteSchema = new Schema<fiatPayoutQuoteSchemaTypes>({
     user_id: {
         type: Schema.Types.ObjectId,
+        ref: "UserDetails",
         required: true,
         index: true,
     },
 
     wallet_id: {
         type: Schema.Types.ObjectId,
+        ref: "WalletDetails",
         required: true,
         index: true,
     },
 
     beneficiary_id: {
         type: Schema.Types.ObjectId,
+        ref: "BeneficiariesBankDetails",
         required: true,
         index: true,
     },

@@ -6,6 +6,7 @@ const userKycDetailsSchema = new Schema<userKycDetailsSchemaTypes>(
     {
         user_id: {
             type: Schema.Types.ObjectId,
+            ref: "UserDetails",
             unique: true,
             required: true,
             index: true,

@@ -12,6 +12,7 @@ const userCardTransactionsSchema = new Schema<userCardTransactionsTypes>(
 
         card_id: {
             type: Schema.Types.ObjectId,
+            ref: "CardDetails",
             required: true,
             index: true,
         },

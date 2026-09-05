@@ -5,6 +5,7 @@ const walletCurrencyConversionQuoteSchema = new Schema<walletCurrencyConversionQ
     {
         user_id: {
             type: Schema.Types.ObjectId,
+            ref: "UserDetails",
             required: true,
             index: true,
         },
@@ -17,6 +18,7 @@ const walletCurrencyConversionQuoteSchema = new Schema<walletCurrencyConversionQ
 
         wallet_id: {
             type: Schema.Types.ObjectId,
+            ref: "WalletDetails",
             required: true,
             index: true,
         },

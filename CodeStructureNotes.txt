@@ -20,9 +20,5 @@ ADD EMAIL SENDING WEBHOOK LATER IN PRODUCTION
 complete sign up - refine the return data with only needed data
 Add global session logout in frontend
 Check lru cache for required apis
-check if all database calls are efficiently called
 update address till kyc not completed
-add ref in all the db schemas
-in validation schema chnage the all the amounts from number to decimal128
-wallet transaction schema has changes
 implementation of swagger documentation
