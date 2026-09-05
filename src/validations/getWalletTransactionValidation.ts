@@ -88,6 +88,20 @@ const getWalletTransactionsValidationSchema = z.object({
                     "For FIAT wallets, wallet currency must be USD, EUR or SGD",
             });
         }
+
+        // Validate Date Range
+        if (data.from_date && data.to_date) {
+            const fromDate = new Date(data.from_date);
+            const toDate = new Date(data.to_date);
+
+            if (fromDate > toDate) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["to_date"],
+                    message: "To date must be greater than or equal to from date",
+                });
+            }
+        }
     });
 
 export default getWalletTransactionsValidationSchema;

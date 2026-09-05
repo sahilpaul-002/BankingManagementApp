@@ -290,7 +290,7 @@ export const getWalletTransactionDetails = async (req: Request<{ id?: string }>,
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
 
 
-// ---------------------------- FUNCTION TO CREATE WALLET CURRENCU CONVERSIONPAYOUT QUOTE ---------------------------- \\
+// ---------------------------- FUNCTION TO CREATE WALLET CURRENCY CONVERSIONPAYOUT QUOTE ---------------------------- \\
 export const createWalletCurrencyConversionPayoutQuote = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         let aesDecryptedBodyData = req.body

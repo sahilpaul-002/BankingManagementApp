@@ -16,6 +16,10 @@ import { fiatPayoutQuoteModel as fiat_payout_quotes } from "../models/fiat_payou
 import executeFiatPayoutTransaction from "../mongoDbTransactions/executePayoutQuoteTransaction.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
 import mongoose, { Types } from "mongoose";
+import { fiatPayoutTransactionsModel as fiat_payout_transactions } from "../models/fiat_payout_transactions.js";
+import { userDetailsModel as user_details } from "../models/user_details.js"
+import getPayoutQuoteTransactionsValidationSchema from "../validations/getPayoutQuoteTransactionsValidation.js";
+import type { SafeParseResult } from "../types/zodTypes.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -330,3 +334,269 @@ export const executePayoutQuoteService = async (requestSession: Request["session
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// ----------------------------------- GET PAYOUT QUOTE TRANSACTIONS ----------------------------------- \\
+export const getPayoutQuoteTransactionsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check Validations
+        const validationResult: SafeParseResult<z.infer<typeof getPayoutQuoteTransactionsValidationSchema>> = getPayoutQuoteTransactionsValidationSchema.safeParse(aesDecryptedQueryData);
+        if (!validationResult.success) {
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
+        const validatedData = validationResult.data;
+
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("fiat_payout_transactions");
+
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist");
+        }
+
+        // Validate Email & Wallet Id
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request request body")
+        }
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId
+        const sessionProgramId = requestSession?.userConfiguration?.programId
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
+        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
+            throw new ForbiddenError("User configuration is not valid to access payout quote transactions")
+        }
+        const userId = checkStringQueryParams(aesDecryptedQueryData, "user_id");
+        if (userId !== requestSession.userId) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid user id provided")
+        }
+        if (!userId || !Types.ObjectId.isValid(userId)) {
+            throw new InvalidRequestBodyError("User-id not found or invalid user-id in request request body")
+        }
+        const userObjectId = new Types.ObjectId(userId)
+        const userDetails = await user_details.findOne({ _id: userObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("email").lean();
+        if (!userDetails) {
+            throw new ServiceError("Invalid user-id previded in the request params")
+        }
+        if (email !== userDetails.email) {
+            throw new ServiceError("Invalid email provided in the request params")
+        }
+        // Check Admin Access
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+            throw new ForbiddenError("Not authorized to create wallet")
+        }
+
+        // Date range filter
+        const dateFilter: {
+            $gte?: Date;
+            $lte?: Date;
+        } = {};
+        let fromDate: string | null;
+        let toDate: string | null;
+
+        if (aesDecryptedQueryData.from_date) {
+            fromDate = checkStringQueryParams(aesDecryptedQueryData, "from_date");
+            if (!fromDate) {
+                throw new InvalidRequestQueryError("From date parameter is not present");
+            }
+            dateFilter.$gte = new Date(fromDate);
+        }
+
+        if (aesDecryptedQueryData.to_date) {
+            toDate = checkStringQueryParams(aesDecryptedQueryData, "to_date");
+            if (!toDate) {
+                throw new InvalidRequestQueryError("To date parameter is not present");
+            }
+
+            const endDate = new Date(toDate);
+            endDate.setHours(23, 59, 59, 999);
+
+            dateFilter.$lte = endDate;
+        }
+
+        // Get page in request
+        const requestedPage = validationResult?.data?.page;
+        // Get page size in request
+        const pageSize = validationResult?.data?.page_size;
+
+        // Query filters
+        const query: Record<string, any> = {
+            user_id: userId,
+        };
+        if (validatedData.beneficiary_id) {
+            query.beneficiary_id = validatedData.beneficiary_id;
+        }
+        if (validatedData.source_currency) {
+            query.source_currency = validatedData.source_currency;
+        }
+        if (validatedData.destination_currency) {
+            query.destination_currency = validatedData.destination_currency;
+        }
+        if (validatedData.status) {
+            query.status = validatedData.status;
+        }
+        if (Object.keys(dateFilter).length > 0) {
+            query.createdAt = dateFilter;
+        }
+
+        // Get total matching transactions
+        const totalTransactions = await fiat_payout_transactions.countDocuments(query);
+        // Calculate total pages
+        const totalPages = Math.max(1, Math.ceil(totalTransactions / pageSize));
+        // Calculate current page
+        const currentPage = Math.min(requestedPage, totalPages);
+        // Calculate skip using the corrected page
+        const skip = (currentPage - 1) * pageSize; // Skip fetching documents for page number more than 1
+
+        // Query Selects
+        const querySelect = {
+            quote_id: 1,
+            beneficiary_id: 1,
+            source_currency: 1,
+            source_amount: 1,
+            destination_currency: 1,
+            destination_amount: 1,
+            exchange_rate: 1,
+            fee_amount: 1,
+            status: 1,
+            processing_started_at: 1,
+            completed_at: 1,
+            provider_reference: 1,
+            remarks: 1,
+        };
+
+        // Fetch transactions
+        const transactions = await fiat_payout_transactions.find(query).sort({ createdAt: -1 }).skip(skip).limit(pageSize).select(querySelect).lean();
+
+        if (!Array.isArray(transactions) || transactions.length === 0) {
+            throw new NotFoundError("Payout quote transactions not found");
+        }
+
+        return {
+            status: "SUCCESS",
+            message: "Payout quote transactions fetched successfully",
+            data: {
+                user_id: userId,
+                pagination: {
+                    current_page: currentPage,
+                    page_size: pageSize,
+                    total_records: totalTransactions,
+                    total_pages: totalPages,
+                    has_next_page: currentPage * pageSize < totalTransactions,
+                    has_previous_page: currentPage > 1,
+                },
+                transactions,
+            },
+        };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, { serviceName: "GetPayoutQuoteTransactionsService" });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`GetPayoutQuoteTransactionsService facing issue`, sanitizedError);
+    }
+
+};
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\ 
+
+
+// ----------------------------------- GET PATOUT QUOTE TRANSACTION DETAILS ----------------------------------- \\
+export const getPayoutQuoteTransactionDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType, transactionId?: string): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("fiat_payout_transactions");
+
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist");
+        }
+
+        // Validate Email & Wallet Id
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request request body")
+        }
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId
+        const sessionProgramId = requestSession?.userConfiguration?.programId
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
+        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
+            throw new ForbiddenError("User configuration is not valid to access payout quote transactions")
+        }
+        const userId = checkStringQueryParams(aesDecryptedQueryData, "user_id");
+        if (userId !== requestSession.userId) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid user id provided")
+        }
+        if (!userId || !Types.ObjectId.isValid(userId)) {
+            throw new InvalidRequestBodyError("User-id not found or invalid user-id in request request body")
+        }
+        const userObjectId = new Types.ObjectId(userId)
+        const userDetails = await user_details.findOne({ _id: userObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }).select("email").lean();
+        if (!userDetails) {
+            throw new ServiceError("Invalid user-id previded in the request params")
+        }
+        if (email !== userDetails.email) {
+            throw new ServiceError("Invalid email provided in the request params")
+        }
+        // Check Admin Access
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+            throw new ForbiddenError("Not authorized to create wallet")
+        }
+
+        // Validate Quote Id
+        const quoteId = checkStringQueryParams(aesDecryptedQueryData, "quote_id");
+        if (!quoteId) {
+            throw new InvalidRequestParamsError("Quote id is not present");
+        }
+        if (!Types.ObjectId.isValid(quoteId)) {
+            throw new InvalidRequestParamsError("Invalid quote id provided");
+        }
+        const quoteObjectId = new Types.ObjectId(quoteId);
+
+        // Get Payout Quote Transaction Details
+        const transaction = await fiat_payout_transactions.findOne({quote_id: quoteObjectId, user_id: userObjectId})
+        .select("-user_id -wallet_id -createdAt -updatedAt").lean();
+        if (!transaction) {
+            throw new NotFoundError("Payout quote transaction not found");
+        }
+
+        return {
+            status: "SUCCESS",
+            message: "Payout quote transaction details fetched successfully",
+            data: {transaction},
+        };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, { serviceName: "GetPayoutQuoteTransactionDetailsService" });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`GetPayoutQuoteTransactionDetailsService facing issue`, sanitizedError);
+    }
+};
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\

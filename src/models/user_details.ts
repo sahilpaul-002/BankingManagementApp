@@ -202,6 +202,18 @@ userDetailsSchema.index(
     }
 );
 
+userDetailsSchema.index(
+    {
+        _id: 1,
+        agent_code: 1,
+        business_id: 1,
+        program_id: 1
+    },
+    {
+        name: "idx_agent_subagent_business_program"
+    }
+);
+
 const userDetailsModel = mongoose.model<userDetailsSchemaTypes>("UserDetails", userDetailsSchema, "user_details");
 
 export { userDetailsModel };

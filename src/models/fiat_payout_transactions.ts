@@ -104,6 +104,11 @@ const fiatPayoutTransactionsSchema = new Schema<fiatPayoutTransactionsSchemaType
     }
 );
 
+fiatPayoutTransactionsSchema.index({
+    quote_id: 1,
+    user_id: 1,
+});
+
 const fiatPayoutTransactionsModel = mongoose.model("FiatPayoutTransactions", fiatPayoutTransactionsSchema, "fiat_payout_transactions");
 
 export { fiatPayoutTransactionsModel };

@@ -64,8 +64,8 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
             throw new ForbiddenError("User configuration is not valid to access wallet details")
         }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("User Id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Invalid cardholder-id not found in request request body")
         }
         const cardholderObjectId = new Types.ObjectId(cardholderId)
         // Check user type for non-user's cardholder id
@@ -175,8 +175,8 @@ export const createWalletService = async (requestSession: Request["session"], ae
             throw new ForbiddenError("User configuration is not valid to create wallet")
         }
         const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Invalid cardholder-id not found in request request body")
         }
         const cardholderObjectId = new Types.ObjectId(cardholderId)
         let userId: Types.ObjectId;
@@ -485,14 +485,14 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
             throw new ForbiddenError("User configuration is not valid to withdraw amount from wallet")
         }
         const cardholderId = checkStringBody(walletDetails, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Invalid cardholder-id not found in request request body")
         }
         const cardholderObjectId = new Types.ObjectId(cardholderId)
         // Check email present in request body
         const walletId: string | null = checkStringBody(walletDetails, "wallet_id")
-        if (!walletId) {
-            throw new InvalidRequestBodyError("Wallet-id not present in the request body");
+        if (!walletId || !Types.ObjectId.isValid(walletId)) {
+            throw new InvalidRequestBodyError("Wallet-id not present or invalid wallet-id in the request body");
         }
         const walletObjectId = new Types.ObjectId(walletId)
         let userId: Types.ObjectId;
@@ -618,8 +618,8 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
             throw new ForbiddenError("User configuration is not valid to access wallet transactions")
         }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Invalid cardholder-id not found in request request body")
         }
         const cardholderObjectId = new Types.ObjectId(cardholderId)
         // Check user type for non-user's cardholder id
@@ -629,8 +629,8 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
             }
         }
         const walletId: string | null = checkStringQueryParams(aesDecryptedQueryData, "wallet_id")
-        if (!walletId) {
-            throw new InvalidRequestBodyError("Wallet-id not present in the request body");
+        if (!walletId || !Types.ObjectId.isValid(walletId)) {
+            throw new InvalidRequestBodyError("Wallet-id not present or invalid wallet-id in the request body");
         }
         const walletObjectId = new Types.ObjectId(walletId)
         let userId: Types.ObjectId;
@@ -819,8 +819,8 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
             throw new ForbiddenError("User configuration is not valid to access wallet transaction details")
         }
         const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
-        if (!cardholderId) {
-            throw new InvalidRequestBodyError("Cardholder-id not found in request request body")
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Invalid cardholder-id not found in request request body")
         }
         // Check user type for non-user's cardholder id
         if (cardholderId !== requestSession?.cardholderId) {
@@ -830,8 +830,8 @@ export const getWalletTransactionDetailsService = async (requestSession: Request
         }
         const cardholderObjectId = new Types.ObjectId(cardholderId)
         const walletId: string | null = checkStringQueryParams(aesDecryptedQueryData, "wallet_id")
-        if (!walletId) {
-            throw new InvalidRequestBodyError("Wallet-id not present in the request body");
+        if (!walletId || !Types.ObjectId.isValid(walletId)) {
+            throw new InvalidRequestBodyError("Wallet-id not present or invalid wallet-id in the request body");
         }
         const walletObjectId = new Types.ObjectId(walletId)
         let userId: Types.ObjectId;

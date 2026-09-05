@@ -130,6 +130,11 @@ userWalletDetailsSchema.index({
 });
 
 userWalletDetailsSchema.index({
+    user_id: 1,
+    _id: 1,
+});
+
+userWalletDetailsSchema.index({
     _id: 1,
     cardholder_id: 1,
     userId_id: 1
