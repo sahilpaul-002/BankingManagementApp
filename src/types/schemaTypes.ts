@@ -25,8 +25,8 @@ export interface portalConfigurationSchemaTypes extends Document {
     m2p_allowed: boolean;
     p2p_allowed: boolean;
     admin_email: string;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Type for User Details Model Schema
@@ -58,8 +58,8 @@ export interface userDetailsSchemaTypes extends Document {
     two_fa_type: "SMS-OTP" | "EMAIL-OTP" | "TOTP" | null;
     authenticator_secret: string | null;
     last_login_at?: Date;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Type for creating User Details document
@@ -91,8 +91,8 @@ export interface userDetailsDocumentType {
     two_fa_type?: "SMS-OTP" | "EMAIL-OTP" | "TOTP" | null;
     authenticator_secret?: string | null;
     last_login_at?: Date;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Type for User Meta Details Model Schema
@@ -104,8 +104,8 @@ export interface userMetaDetailsSchemaTypes extends Document {
     login_at?: Date | null;
     verification_code?: string | null;
     verification_code_expires_at?: Date | null;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Type for User Bank Details Model Schema
@@ -119,8 +119,8 @@ export interface userBankDetailsSchemaTypes extends Document {
     bank_name: string;
     is_verified?: boolean;
     user_bank_request_id: string;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Type for User Address Details Types
@@ -146,8 +146,8 @@ export interface userAddressDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     billing_address: billingAddressTypes;
     delivery_address: deliveryAddressTypes;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Types for user funding bank details
@@ -162,8 +162,8 @@ export interface userFundingBankAccountDetailsSchemaTypes extends Document {
     iban_code: string;
     bank_name: string;
     is_active: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Types for user crypto deposit account details
@@ -175,8 +175,8 @@ export interface userCryptoDepositAccountDetailsSchemaTypes extends Document {
     deposit_address: string;
     account_balance: Types.Decimal128;
     is_active: boolean;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Types for User Kyc Details Model Schema
@@ -195,8 +195,8 @@ export interface userKycDetailsSchemaTypes extends Document {
     },
     kyc_request_id: string;
     deleted_at?: Date;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Types for User Wallet Details Model Schema
@@ -229,8 +229,8 @@ export interface userWalletDetailsSchemaTypes extends Document {
     user_id: Types.ObjectId;
     cardholder_id: Types.ObjectId;
     wallets_details: walletDetailsType[],
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Types for User Wallet Transactions Model Schema
@@ -250,8 +250,8 @@ export interface userWalletTransactionsTypes extends Document {
     balance_after: mongoose.Types.Decimal128;
     reference_id: string;
     remarks: string;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Type for User Wallet Currency Conversion Quote Model Schema
@@ -270,8 +270,8 @@ export interface walletCurrencyConversionQuoteSchemaTypes extends Document {
     expires_at: Date;
     executed_at: Date;
     conversion_reference_id: String;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Types for Cardholder Card Details Model Schema
@@ -308,8 +308,8 @@ export interface userCardDetailsSchemaTypes extends Document {
         debit: mongoose.Types.Decimal128;
         year: number;
     };
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Types for User Card Transactions Model Schema
@@ -335,8 +335,8 @@ export interface userCardTransactionsTypes extends Document {
     merchant_country: string;
     reference_id: string | null;
     remarks: string | null;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Type for Beneficiaries Bank Details Model Schema
@@ -348,8 +348,8 @@ export interface beneficiariesBankDetailsSchemaTypes extends Document {
     swift_code: string;
     iban_code: string;
     bank_name: string;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface fiatPayoutQuoteSchemaTypes extends Document {
@@ -367,8 +367,8 @@ export interface fiatPayoutQuoteSchemaTypes extends Document {
     total_debit: Types.Decimal128;
     quote_status: "ACTIVE" | "EXECUTED" | "EXPIRED" | "CANCELLED";
     expires_at: Date;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Type for Fiat Payout Transactions Model Schema
@@ -388,8 +388,8 @@ export interface fiatPayoutTransactionsSchemaTypes extends Document {
     completed_at?: Date | null;
     provider_reference?: string | null;
     remarks?: string | null;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 // Types for Fee Details Model Schema
