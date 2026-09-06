@@ -514,7 +514,7 @@ export const getPayoutQuoteTransactionsService = async (requestSession: Request[
 
 
 // ----------------------------------- GET PATOUT QUOTE TRANSACTION DETAILS ----------------------------------- \\
-export const getPayoutQuoteTransactionDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType, transactionId?: string): Promise<successResponseJson | failedResponseJson> => {
+export const getPayoutQuoteTransactionDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType, quoteId?: string): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");
@@ -563,7 +563,6 @@ export const getPayoutQuoteTransactionDetailsService = async (requestSession: Re
         }
 
         // Validate Quote Id
-        const quoteId = checkStringQueryParams(aesDecryptedQueryData, "quote_id");
         if (!quoteId) {
             throw new InvalidRequestParamsError("Quote id is not present");
         }
@@ -574,7 +573,7 @@ export const getPayoutQuoteTransactionDetailsService = async (requestSession: Re
 
         // Get Payout Quote Transaction Details
         const transaction = await fiat_payout_transactions.findOne({quote_id: quoteObjectId, user_id: userObjectId})
-        .select("-user_id -wallet_id -createdAt -updatedAt").lean();
+        .select("-_id -user_id -wallet_id -createdAt -updatedAt").lean();
         if (!transaction) {
             throw new NotFoundError("Payout quote transaction not found");
         }

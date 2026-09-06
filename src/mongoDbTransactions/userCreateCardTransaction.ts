@@ -265,7 +265,7 @@ const userCreateCardTransaction = async (cardholderObjectId: Types.ObjectId, use
                     fee: mongoose.Types.Decimal128.fromString(validationResult.data.fee.toFixed(4)),
                     balance_before: mongoose.Types.Decimal128.fromString(accountBalanceBefore.toFixed(4)),
                     balance_after: mongoose.Types.Decimal128.fromString(accountBalanceAfter.toFixed(4)),
-                    reference_id: validationResult.data.reference_id,
+                    reference_id: validationResult.data.reference_id as string,
                     remarks: "Card creation wallet withdrawal transaction",
                 },
             ],
