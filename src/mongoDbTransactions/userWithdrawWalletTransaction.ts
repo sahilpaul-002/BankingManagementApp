@@ -193,8 +193,8 @@ const userWithdrawWalletTransaction = async (userId: Types.ObjectId, cardholderI
                     fee: feeDecimal128,
                     balance_before: currentBalanceDecimal128,
                     balance_after: balanceAfterDecimal128,
-                    reference_id: validationResult.data.reference_id,
-                    remarks: validationResult.data.remarks
+                    reference_id: validationResult.data.reference_id as string,
+                    remarks: validationResult.data.remarks as string
                 }
             ],
             {
