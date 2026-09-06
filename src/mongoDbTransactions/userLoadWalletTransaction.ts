@@ -408,8 +408,8 @@ const userLoadWalletTransaction = async (
                     fee: feeDecimal128,
                     balance_before: balanceBeforeDecimal128,
                     balance_after: balanceAfterDecimal128,
-                    reference_id: validationResult.data.reference_id,
-                    remarks: validationResult.data.remarks
+                    reference_id: validationResult.data.reference_id as string,
+                    remarks: validationResult.data.remarks as string
                 }
             ],
             {
