@@ -79,24 +79,7 @@ export const expireWalletCurrencyConversionQuotesService = async (): Promise<voi
 
 // ----------------------------- WALLET CURRENCY CONVERSION QUOTE EXPIRY CRON JOB ----------------------------- //
 export const startWalletCurrencyConversionQuoteExpiryCronJob = (): void => {
-
-    /*
-        Cron expression:
-
-        "* * * * *"
-
-        Means:
-        - Run every 1 minute
-        - Find ACTIVE or EXPIRED conversion quotes
-        - Check expires_at <= current time
-        - Release source amount from holding_amount
-        - Move it back to available_balance
-        - Keep account_balance unchanged
-        - Update existing HOLD transaction to RELEASE
-        - Mark quote as EXPIRED
-    */
-
-    cron.schedule("* * * * *", async () => {
+    cron.schedule("*/5 * * * *", async () => {
 
         try {
 

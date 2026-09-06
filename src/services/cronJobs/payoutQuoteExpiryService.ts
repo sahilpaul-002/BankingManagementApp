@@ -42,22 +42,7 @@ export const expirePayoutQuotesService = async (): Promise<void> => {
 
 // ------------------------------------- PAYOUT QUOTE EXPIRY CRON JOB ------------------------------------- \\
 export const startPayoutQuoteExpiryCronJob = (): void => {
-
-    /*
-        Cron expression:
-
-        "* * * * *"
-
-        Means:
-        - Run every 1 minute
-        - Check ACTIVE payout quotes
-        - Mark quotes as EXPIRED when expires_at <= current time
-
-        Your payout quotes currently expire after 2 minutes,
-        so checking every minute is appropriate.
-    */
-
-    cron.schedule("* * * * *", async () => {
+    cron.schedule("*/5 * * * *", async () => {
 
         logger.info("Expired payout quote cron job started.");
 

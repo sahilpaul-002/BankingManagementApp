@@ -58,7 +58,7 @@ const processExpiredCardTransactions = async (): Promise<void> => {
                 // 5. Updating card transaction to REJECTED / FAILED.
                 // 6. Committing all changes atomically.
                 // -------------------------------------------------------------
-                const result = await expireCardAuthorizationTransaction({transactionId: transaction.transaction_id});
+                const result = await expireCardAuthorizationTransaction({ transactionId: transaction.transaction_id });
 
                 // Log successful processing
                 logger.info(`Card transaction ${transaction.transaction_id} authorization expiry processed successfully`,
@@ -101,48 +101,41 @@ const processExpiredCardTransactions = async (): Promise<void> => {
 
 // Start Card Authorization Expiry Cron Job
 export const startCardExpiredAuthorizationTransactionCronJob = (): void => {
-        cron.schedule(
-            "* * * * *",
-            async () => {
+    cron.schedule("*/5 * * * *", async () => {
 
-                const cronStartedAt = new Date();
-                logger.info("Card transaction authorization expiry cron job started",
-                    {
-                        serviceName: "CardTransactionAuthorizationExpiryCronService",
-                        startedAt: cronStartedAt,
-                    }
-                );
-
-                try {
-                    await processExpiredCardTransactions();
-                }
-                catch (err: any) {
-                    const error = err;
-
-                    logger.error(
-                        error,
-                        {
-                            serviceName: "CardTransactionAuthorizationExpiryCronService",
-                            message: "Unexpected error in card transaction authorization expiry cron job",
-                        }
-                    );
-                }
-                finally {
-                    logger.info("Card transaction authorization expiry cron job completed",
-                        {
-                            serviceName: "CardTransactionAuthorizationExpiryCronService",
-                            completedAt: new Date(),
-                        }
-                    );
-                }
-            }
-        );
-
-
-        logger.info("Card transaction authorization expiry cron job initialized successfully",
+        const cronStartedAt = new Date();
+        logger.info("Card transaction authorization expiry cron job started",
             {
                 serviceName: "CardTransactionAuthorizationExpiryCronService",
-                schedule: "* * * * *",
+                startedAt: cronStartedAt,
             }
         );
-    };
+
+        try {
+            await processExpiredCardTransactions();
+        }
+        catch (err: any) {
+            const error = err;
+
+            logger.error(
+                error,
+                {
+                    serviceName: "CardTransactionAuthorizationExpiryCronService",
+                    message: "Unexpected error in card transaction authorization expiry cron job",
+                }
+            );
+        }
+        finally {
+            logger.info("Card transaction authorization expiry cron job completed",
+                {
+                    serviceName: "CardTransactionAuthorizationExpiryCronService",
+                    completedAt: new Date(),
+                }
+            );
+        }
+    }
+    );
+
+
+    logger.info("Card transaction authorization expiry cron job initialized successfully",);
+};

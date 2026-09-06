@@ -12,31 +12,31 @@ const processPayoutTransactions = async (): Promise<void> => {
 
         // Move PENDING payouts to PROCESSING
         const pendingPayouts = await fiat_payout_transactions.find(
-                {
-                    status: "PENDING",
-                },
-                {
-                    _id: 1,
-                }
-            );
+            {
+                status: "PENDING",
+            },
+            {
+                _id: 1,
+            }
+        );
 
         for (const payout of pendingPayouts) {
             const processingStartedAt = new Date();
 
             const result = await fiat_payout_transactions.updateOne(
-                    {
-                        _id: payout._id,
-                        status: "PENDING",
+                {
+                    _id: payout._id,
+                    status: "PENDING",
+                },
+                {
+                    $set: {
+                        status: "PROCESSING",
+                        processing_started_at: processingStartedAt,
+                        provider_reference: `MOCK-BANK-${crypto.randomUUID()}`,
+                        remarks: "Payout submitted to mock external bank and is being processed",
                     },
-                    {
-                        $set: {
-                            status: "PROCESSING",
-                            processing_started_at: processingStartedAt,
-                            provider_reference: `MOCK-BANK-${crypto.randomUUID()}`,
-                            remarks: "Payout submitted to mock external bank and is being processed",
-                        },
-                    }
-                );
+                }
+            );
 
             if (result.modifiedCount === 1) {
 
@@ -54,22 +54,22 @@ const processPayoutTransactions = async (): Promise<void> => {
         );
 
         const processingPayouts = await fiat_payout_transactions.find(
-                {
-                    status: "PROCESSING",
-                    processing_started_at: {
-                        $lte: processingThreshold,
-                    },
+            {
+                status: "PROCESSING",
+                processing_started_at: {
+                    $lte: processingThreshold,
                 },
-                {
-                    _id: 1,
-                }
-            );
+            },
+            {
+                _id: 1,
+            }
+        );
 
 
         for (const payout of processingPayouts) {
 
             try {
-                await bankPayoutProcessingTransaction({payoutTransactionId: payout._id?.toString() as string,});
+                await bankPayoutProcessingTransaction({ payoutTransactionId: payout._id?.toString() as string, });
 
                 logger.info(`Payout transaction ${payout._id?.toString()} completed successfully`);
             } catch (err) {
@@ -100,15 +100,15 @@ const processPayoutTransactions = async (): Promise<void> => {
 
 export const startBankPayoutProcessingCronJob = (): void => {
 
-    // 30 minute interval cron job to process PENDING and PROCESSING payout transactions
-    cron.schedule("*/2 * * * *", async () => {
+    // 15 minute interval cron job to process PENDING and PROCESSING payout transactions
+    cron.schedule("*/15 * * * *", async () => {
 
-            logger.info("Payout processing cron job started");
+        logger.info("Payout processing cron job started");
 
-            await processPayoutTransactions();
+        await processPayoutTransactions();
 
-            logger.info("Payout processing cron job completed");
-        }
+        logger.info("Payout processing cron job completed");
+    }
     );
 
     logger.info("Payout processing cron job initialized successfully");
