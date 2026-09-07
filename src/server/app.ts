@@ -113,6 +113,15 @@ const redisClient: RedisClientType = await redisConfig();
 app.locals.redisClient = redisClient;
 // --------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX --------------------------------------- \\
 
+// ---------------------------------------- Base Route ---------------------------------------- \\
+app.get("/", (_req, res) => {
+    return res.status(200).json({
+        status: "OK",
+        message: "Banking Management API is running",
+    });
+});
+// --------------------------------------------- XXXXXXXXXXXXXXXXXXXXXX --------------------------------------------- \\
+
 // ---------------------------------------- Public Routes ---------------------------------------- \\
 app.use((req, res, next) => {
     const skipRoutes = [
