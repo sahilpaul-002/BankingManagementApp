@@ -78,10 +78,11 @@ const handleErrors = (error: unknown, dispatch: any): never => {
             case 429:
                 console.error("SERVICE_TIMEOUT", err);
                 // toast.error("Application time out")
-                dispatch(triggerDestroySession({
-                    title: 'Session Expiring',
-                    type: 'SESSION_INACTIVITY',
-                }))
+                // dispatch(triggerDestroySession({
+                //     title: 'Session Expiring',
+                //     type: 'SESSION_INACTIVITY',
+                // }))
+                dispatch(setShowErrorBanner("Application facing service timeout issue."))
                 throw error
 
             case 500:

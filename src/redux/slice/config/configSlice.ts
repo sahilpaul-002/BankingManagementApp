@@ -5,25 +5,18 @@ import type { rootStateType } from '../../sotre'
 export type portalType = 'admin' | 'business' | 'user'
 
 export interface applicationHeaderItemsType {
-  "agent-code": string;
-  "subagent-code": string;
-  "business-id": string;
-  "program-id": string;
-  "client-id": string;
-  "x-api-key": string;
-  "authorization": string
+  "agent-code": string | null;
+  "subagent-code": string | null;
+  "business-id": string | null;
+  "program-id": string | null;
+  "x-api-key": string | null;
+  "authorization": string | null;
 }
 
 export interface dnsConfigDataType {
   domain_name: string;
-  // agent_code: string;
-  // subagent_code: string;
-  // business_id: string;
   dashboard_name: string;
-  // program_id: string;
   prefund_flag: boolean;
-  // client_id: string;
-  // x_api_key: string;
   logo_url?: string | null;
   base_url_api: string;
   favicon?: string | null;
@@ -61,7 +54,10 @@ const configSlice = createSlice({
   reducers: {
     // Set Application Headers
     setAppliationHeaders: (state, action: PayloadAction<applicationHeaderItemsType>) => {
-      state.applicationHeaders = action.payload
+      state.applicationHeaders = {
+        ...state.applicationHeaders,
+        ...action.payload,
+      } as applicationHeaderItemsType;
     },
 
     // Set DNS Config Details

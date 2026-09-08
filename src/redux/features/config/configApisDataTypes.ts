@@ -1,12 +1,7 @@
 export interface dnsDataObjectType {
     domain_name: string
-    agent_code: string
-    subagent_code: string
-    business_id: string
     dashboard_name: string
-    program_id: string
     prefund_flag: boolean
-    client_id: string
     x_api_key: string
     logo_url?: string | null
     base_url_api: string
@@ -52,6 +47,7 @@ export interface dnsConfigRequestType {
     domainName: string
 }
 
+// export type dnsConfigResponseType = Omit<dnsDataObjectType, "x_api_key" | "accessToken">
 export interface dnsConfigResponseType extends dnsDataObjectType { }
 
 export type encryptionKeyResponseType = { key: string }
@@ -62,13 +58,3 @@ export interface apiResponseType<T> {
     data?: T;
     error?: any;
 }
-
-export type applicationHeadersType = {
-    'x-api-key'?: string;
-    'agent-code'?: string;
-    'subagent-code'?: string;
-    'program-id'?: string;
-    'business-id'?: string;
-    'client-id'?: string;
-    'authorization'?: string;
-};

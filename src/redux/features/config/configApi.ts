@@ -6,7 +6,7 @@ import { aesDecryption, type DecryptResult } from '@/utils/aesDecryption'
 import { aesEncryption } from '@/utils/aesEncryption'
 import { rsaEncryption } from '@/utils/rsaEncryption'
 import { createApi, type FetchBaseQueryError } from '@reduxjs/toolkit/query/react'
-import type { apiResponseType, applicationHeadersType, dnsConfigRequestType, dnsConfigResponseType, encryptionKeyResponseType } from './configApisDataTypes'
+import type { apiResponseType, dnsConfigRequestType, dnsConfigResponseType, encryptionKeyResponseType, processedDnsDataObjectType } from './configApisDataTypes'
 import { logError } from '@/errorHandling/errorLogger'
 import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError'
 import { CONFIG_URL } from '@/configs/constants'
@@ -29,7 +29,7 @@ export const configApis = createApi({
         // =======================================================
         // DNS CONFIG DATA
         // =======================================================
-        getDnsConfig: build.query<apiResponseType<dnsConfigResponseType>, dnsConfigRequestType>({
+        getDnsConfig: build.query<apiResponseType<processedDnsDataObjectType>, dnsConfigRequestType>({
             async queryFn(payload, { dispatch }, _extraOptions, baseQuery) {
                 try {
                     // ---------------------------- Get AES Encryption Key ---------------------------- \\
@@ -101,13 +101,12 @@ export const configApis = createApi({
                     // --------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------- \\
 
                     // ================================ Create Application Headers ================================ \\
-                    const applicationHeaders: applicationHeadersType = {
+                    const applicationHeaders: applicationHeaderItemsType = {
+                        "agent-code": null,
+                        "subagent-code": null,
+                        "business-id": null,
+                        "program-id": null,
                         'x-api-key': decryptedData?.x_api_key,
-                        'agent-code': decryptedData?.agent_code,
-                        'subagent-code': decryptedData?.subagent_code,
-                        'program-id': decryptedData?.program_id,
-                        'business-id': decryptedData?.business_id,
-                        'client-id': decryptedData?.client_id,
                         'authorization': `Bearer ${decryptedData?.accessToken}`
                     }
 
@@ -125,10 +124,10 @@ export const configApis = createApi({
                     // console.log("RsaEncryptionPublicKey : ", rsaEncryptionPublicKey)
                     // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
                     // Encrypt header using RSA
-                    let encryptedHeaders: Partial<Record<keyof applicationHeadersType, string>> = {};
+                    let encryptedHeaders: Partial<Record<keyof applicationHeaderItemsType, string>> = {};
 
-                    for (const key in applicationHeaders) {
-                        const typedKey = key as keyof applicationHeadersType;
+                    for (const key of ["x-api-key", "authorization"] as const) {
+                        const typedKey = key as keyof applicationHeaderItemsType;
 
                         const value = applicationHeaders[typedKey];
 
@@ -147,11 +146,14 @@ export const configApis = createApi({
                     dispatch(setAppliationHeaders(encryptedHeaders as applicationHeaderItemsType))
                     // ================================ XXXXXXXXXXXXXXXXXXXXXX ================================ \\
 
+                    // Sanitaze dns data
+                    const {x_api_key, accessToken, ...sanitizedDecryptedData} = decryptedData;
+
                     return {
                         data: {
                             status: "SUCCESS",
                             message: "DNS config fetch successfully",
-                            data: decryptedData
+                            data: sanitizedDecryptedData
                         }
                     };
                 }
@@ -164,7 +166,7 @@ export const configApis = createApi({
             async onQueryStarted(payload, { dispatch, queryFulfilled }) {
                 try {
                     const { data } = await queryFulfilled
-                    const { x_api_key, agent_code, subagent_code, program_id, business_id, client_id, accessToken, ...rest } = data?.data as dnsConfigResponseType
+                    const { x_api_key, accessToken, ...rest } = data?.data as dnsConfigResponseType
                     // ✅ Store DNS config in slice
                     dispatch(setDnsConfigDetails(rest))
                     // Set the dns base url in session storage

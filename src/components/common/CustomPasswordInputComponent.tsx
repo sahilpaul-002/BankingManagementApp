@@ -18,6 +18,7 @@ interface InputPropsTypes extends InputHTMLAttributes<HTMLInputElement> {
     fieldDescriptionRequired?: boolean,
     fieldDescriptionText?: string,
     fieldDescriptionClassname?: string,
+    showValidationRules?: boolean,
     showPassword: boolean,
     setShowPassword: React.Dispatch<React.SetStateAction<boolean>>
     password?: string
@@ -25,7 +26,7 @@ interface InputPropsTypes extends InputHTMLAttributes<HTMLInputElement> {
 
 const CustomPasswordInputComponent = forwardRef<HTMLInputElement, InputPropsTypes>((props, ref) => {
     // Destructure Props
-    const { id, label, type, placeholder, error, hint, fieldLabelClassname, inputClassname, fieldDescriptionRequired, fieldDescriptionText, fieldDescriptionClassname, showPassword, setShowPassword, password, ...restAttributes } = props
+    const { id, label, type, placeholder, error, hint, fieldLabelClassname, inputClassname, fieldDescriptionRequired, fieldDescriptionText, fieldDescriptionClassname, showValidationRules = true, showPassword, setShowPassword, password, ...restAttributes } = props
 
     const { onChange, onBlur, ...rest } = restAttributes;
 
@@ -61,7 +62,7 @@ const CustomPasswordInputComponent = forwardRef<HTMLInputElement, InputPropsType
             <Field>
                 <div className="customPasswordInput-label-container w-full! h-full flex justify-between items-center gap-10">
                     <FieldLabel htmlFor={`${id}`} className={fieldLabelClassname}>{label ?? "Field Label"}</FieldLabel>
-                    {(password && passwordStrength && passwordStrength?.label) && (
+                    {(showValidationRules && password && passwordStrength && passwordStrength?.label) && (
                         <div className="customPasswordInput-label-passwordStrength w-fit h-fit">
                             <span className="forgetPassword-newPassowrdInput-passwordStrength w-fit h-fit text-start text-sm font-medium tracking-normal flex justify-center items-center gap-2">
                                 <span className="text-gray-700">{`Strength: `}</span>
@@ -72,7 +73,7 @@ const CustomPasswordInputComponent = forwardRef<HTMLInputElement, InputPropsType
                 </div>
                 <div className="customPasswordInput-input-container relative">
                     <Input ref={ref} id={id} type={type} placeholder={placeholder ?? "Input Placeholder"} className={inputClassname} aria-invalid={error ? true : false} onChange={handlePasswordChange} onFocus={() => setPasswordFocused(true)} onBlur={() => setPasswordFocused(false)} {...rest} />
-                    {passwordFocused && (
+                    {(showValidationRules && passwordFocused) && (
                         <div className="forgetPassword-newPassowrdInput-validationRules w-full h-fit bg-white px-2 py-1 border border-gray-300 shadow-lg tracking-normal rounded-sm absolute top-16 sm:top-10 left-0 z-[9999]">
                             <PasswordValidationRules passwordValidationRules={passwordValidationRules} />
                         </div>
@@ -80,7 +81,7 @@ const CustomPasswordInputComponent = forwardRef<HTMLInputElement, InputPropsType
                     <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="w-fit! h-fit! absolute top-2 right-7 text-gray-500 hover:text-gray-700 cursor-pointer"
+                        className="w-fit! h-fit! absolute top-2 right-5 text-gray-500 hover:text-gray-700 cursor-pointer"
                         tabIndex={-1}
                     >
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}

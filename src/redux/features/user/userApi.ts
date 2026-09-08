@@ -1,5 +1,5 @@
 import { createApi, type BaseQueryFn } from '@reduxjs/toolkit/query/react'
-import { selectApplicaitonHeaders, selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
+import { selectApplicaitonHeaders, selectDnsConfigDetails, setAppliationHeaders, type applicationHeaderItemsType, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
 import type { rootStateType } from '@/redux/sotre'
 import { configApis } from '../config/configApi'
 import { USER_URL } from '@/configs/constants'
@@ -9,7 +9,8 @@ import mapToRtkError from '@/errorHandling/mapToRtkError'
 import { helperApis } from '../helper/helperApis'
 import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError'
 import executeBaseQuery from '../executeBaseQuery'
-import { setAuthenticated, setUserDetails, type UserDetailsType } from '@/redux/slice/user/userSlice'
+import { setAuthenticated } from '@/redux/slice/user/userSlice'
+import { rsaEncryption } from '@/utils/rsaEncryption'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 const dnsXApiKey = import.meta.env.VITE_DNS_X_API_KEY
@@ -50,13 +51,8 @@ const userApiHeaders = (state: rootStateType) => {
     const dynamicHeaders: Record<string, string> = {}
 
     if (applicationHeaders) {
-        dynamicHeaders['x-api-key'] = applicationHeaders['x-api-key'];
-        dynamicHeaders['agent-code'] = applicationHeaders['agent-code'];
-        dynamicHeaders['subagent-code'] = applicationHeaders['subagent-code'];
-        dynamicHeaders['program-id'] = applicationHeaders['program-id'];
-        dynamicHeaders['business-id'] = applicationHeaders['business-id'];
-        dynamicHeaders['client-id'] = applicationHeaders['client-id'];
-        dynamicHeaders['authorization'] = applicationHeaders['authorization'];
+        dynamicHeaders['x-api-key'] = applicationHeaders['x-api-key']!;
+        dynamicHeaders['authorization'] = applicationHeaders['authorization']!;
     }
     return dynamicHeaders;
 }
@@ -148,8 +144,6 @@ export const userApis = createApi({
         signIn: build.mutation<apiResponseType<apiResponseDataType>, signinRequestType>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
-                    const state = getState() as rootStateType
-
                     // Check backend session
                     const getSessionResult = await dispatch(
                         helperApis.endpoints.getSession.initiate(undefined, {
@@ -158,6 +152,8 @@ export const userApis = createApi({
                         })
                     )
                     const isSessionValid = (getSessionResult?.isSuccess && (getSessionResult?.data?.status?.toUpperCase() === "SUCCESS")) ? true : false
+
+                    let state = getState() as rootStateType
 
                     let dnsConfig = selectDnsConfigDetails(state)
                     if (!dnsConfig || !isSessionValid) {
@@ -176,6 +172,9 @@ export const userApis = createApi({
                         if (result.isError) {
                             throw new ApplicationServiceError("SIGN-IN - Failed to fetch DNS Config data")
                         }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
 
                         dnsConfig = result.data?.data as dnsConfigDataType
                     }
@@ -200,10 +199,75 @@ export const userApis = createApi({
                     // Store user email in session storage
                     sessionStorage.setItem('userEmail', payload.email);
 
-                    console.log("Sign in data: ", result?.data?.data);
                     // Set the user details in slice
                     if (result.data?.data) {
-                        dispatch(setUserDetails(result.data.data as UserDetailsType))
+                        const loginData = result.data.data;
+                        // ================================ Create Application Headers ================================ \\
+                        const loginHeaders = {
+                            "business-id": loginData.businessId,
+                            "program-id": loginData.programId,
+                            "agent-code": loginData.agentCode,
+                            "subagent-code": loginData.subagentCode,
+                        };
+
+                        // Encrypt Application Headers
+                        // ----------------------------- Get RSA Encryption Key ----------------------------- \\
+                        let rsaHeaderEncryptionPublicKey = sessionStorage.getItem('headerPublicKey');
+                        if (!rsaHeaderEncryptionPublicKey) {
+                            const headerKeyResult = await dispatch(
+                                configApis.endpoints.getHeaderRsaEncryptionPublicKey.initiate(
+                                    undefined,
+                                    {
+                                        forceRefetch: true,
+                                        subscribe: false,
+                                    }
+                                )
+                            );
+
+                            if (headerKeyResult.isError) {
+                                throw new ApplicationServiceError("SIGN-IN - Failed to get Header RSA encryption public key");
+                            }
+                            rsaHeaderEncryptionPublicKey = headerKeyResult.data?.data?.key ?? null;
+                            if (!rsaHeaderEncryptionPublicKey) {
+                                throw new ApplicationServiceError("SIGN-IN - Header RSA encryption public key is missing");
+                            }
+                        }
+                        // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
+                        // Encrypt header using RSA
+                        const encryptedLoginHeaders: Partial<Record<keyof applicationHeaderItemsType, string>> = {};
+
+                        for (const key of Object.keys(loginHeaders) as Array<keyof typeof loginHeaders>) {
+                            const value = loginHeaders[key];
+
+                            if (!value) continue;
+
+                            const response = await rsaEncryption({ value }, rsaHeaderEncryptionPublicKey);
+
+                            if (response?.status !== "SUCCESS") {
+                                throw new ApplicationServiceError(
+                                    "RSA Header Encryption facing unknown error",
+                                    "RsaHeaderEncryption"
+                                );
+                            }
+
+                            encryptedLoginHeaders[key] = response.ciphertextBase64;
+                        }
+                        // console.log("Encrypted headers: ", encryptedHeaders)
+                        dispatch(setAppliationHeaders(encryptedLoginHeaders as applicationHeaderItemsType))
+
+                        // ================================
+                        // Sanitize Login Response
+                        // ================================
+                        const {
+                            businessId,
+                            programId,
+                            agentCode,
+                            subagentCode,
+                            ...sanitizedLoginData
+                        } = loginData;
+
+                        // Replace response data with sanitized data
+                        result.data.data = sanitizedLoginData;
                     }
 
                     // Update authentication status of user

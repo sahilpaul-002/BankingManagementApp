@@ -186,7 +186,7 @@ export default function SignInComponent() {
 
             <div className="signinPage-signinForm-password-forgotPassword-container w-full h-fit flex flex-col justify-center items-end gap-1">
               {/* Password */}
-              <CustomPasswordInput id={"signinForm-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} showPassword={showPassword} setShowPassword={setShowPassword} password={password} error={errors?.password?.message} {...register("password")} />
+              <CustomPasswordInput id={"signinForm-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"Enter Password"} autoComplete="current-password" fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} showValidationRules={false} showPassword={showPassword} setShowPassword={setShowPassword} password={password} error={errors?.password?.message} {...register("password")} />
 
               {/* Forgot Password */}
               <div className="signinPage-signinForm-forgotPassword-container">
