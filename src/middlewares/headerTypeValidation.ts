@@ -22,8 +22,9 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
         // if (!fromPortal) {
         //     throw new InvalidHeaderError("'from-portal' MISSING OR NOT STRING")
         // }
+
         // Check if the api call is not from portal
-        if (fromPortal === "true") {
+        if (fromPortal?.toLowerCase() === "true") {
             if (!req.session.headerKeys?.publicKey || !req.session.headerKeys.privateKey) {
                 throw new UnauthenticatedError("Unauthenticated session");
             }
@@ -32,7 +33,9 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
             let encryptedHeaderKeys: string[];
             if (req.path === "/login" || req.path.startsWith("/login/")) {
                 encryptedHeaderKeys = [
-                    "x-device-id"
+                    'x-api-key',
+                    'authorization',
+                    "x-device-id",
                 ];
             } else {
                 encryptedHeaderKeys = [
@@ -41,7 +44,6 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
                     'subagent-code',
                     'program-id',
                     'business-id',
-                    'client-id',
                     "x-device-id",
                     'authorization'
                 ];
@@ -53,8 +55,9 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
 
                     const encryptedValue = req.headers[headerKey] as string;
 
-                    // Skip if header not present
-                    if (!encryptedValue) continue;
+                    if (!encryptedValue || typeof encryptedValue !== "string") {
+                        throw new InvalidHeaderError(`'${headerKey}' MISSING OR NOT STRING`);
+                    }
 
                     // Decrypt header
                     const decryptionResponse = headerAsymmetricDecryptionMsg(req, encryptedValue);
@@ -142,6 +145,7 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
             }
         }
 
+        // -------------------- Type Validation For Common Headers -------------------- \\
         // Validate the device-id type header
         const devideId: string | null = checkStringHeader(req.headers, "x-device-id");
         if (!devideId) {
@@ -154,6 +158,13 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
             throw new InvalidHeaderError("'x-api-key' MISSING OR NOT STRING")
         }
 
+        // Validation Authorization header
+        const authorizationHeader = checkStringHeader(req.headers, "authorization");
+        if (!authorizationHeader) {
+            throw new InvalidHeaderError("'authorization' MISSING OR NOT STRING");
+        }
+        // ---------------------------- XXXXXXXXXXXXXXXXXXXX ---------------------------- \\
+
         // Skip user existance check for selcted pathes
         const excludedPaths: string[] = ["/login"];
         if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
@@ -161,10 +172,10 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
         }
         else {
             // Validate Authorization header
-            const authorizationHeader: string | null = checkStringHeader(req.headers, "authorization");
-            if (!authorizationHeader) {
-                throw new InvalidHeaderError("'authorization' MISSING OR NOT STRING")
-            }
+            // const authorizationHeader: string | null = checkStringHeader(req.headers, "authorization");
+            // if (!authorizationHeader) {
+            //     throw new InvalidHeaderError("'authorization' MISSING OR NOT STRING")
+            // }
 
             // Validate Agent Code header
             const agentCode: string | null = checkStringHeader(req.headers, "agent-code")
@@ -188,12 +199,6 @@ const headerTypeValidation = (req: Request, res: Response, next: NextFunction): 
             const businessId: string | null = checkStringHeader(req.headers, "business-id")
             if (!businessId) {
                 throw new InvalidHeaderError("'business-id' MISSING OR NOT STRING")
-            }
-
-            // Validate Client ID header
-            const clientId: string | null = checkStringHeader(req.headers, "client-id")
-            if (!clientId) {
-                throw new InvalidHeaderError("'client-id' MISSING OR NOT STRING")
             }
         }
 

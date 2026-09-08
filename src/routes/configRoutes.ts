@@ -32,7 +32,6 @@ const router: Router = express.Router();
  *         description: Failed to fetch DNS configuration
  */
 router.get("/getDnsConfig", getDnsConfig);
-router.get("/getDnsConfig", getDnsConfig);
 router.get("/getEncryptionKey", getEncryptionKey);
 router.get("/getPublicKey", getPublicKey);
 router.get("/getHeaderPublicKey", getHeaderPublicKey);

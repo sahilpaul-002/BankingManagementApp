@@ -91,7 +91,7 @@ export const getDnsConfigService = async (req: Request, aesDecryptedQueryData: R
         }
 
         // Fetch DNS configuration data from database
-        const dnsData: portalConfigurationSchemaTypes | null = await portal_configurations.findOne({ dns_x_api_key: xApiKey, domain_name: domainName }, { _id: 0, __v: 0, createdAt: 0, updatedAt: 0 }).lean();
+        const dnsData: portalConfigurationSchemaTypes | null = await portal_configurations.findOne({ dns_x_api_key: xApiKey, domain_name: domainName }, { _id: 0, dns_x_api_key: 0, __v: 0, createdAt: 0, updatedAt: 0 }).lean();
 
         // Cehck DNS Config Data
         if (!dnsData) {
