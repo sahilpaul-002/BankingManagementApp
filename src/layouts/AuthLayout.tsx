@@ -5,7 +5,7 @@ import { useGetDnsConfigQuery, useLazyGetDnsConfigQuery } from "@/redux/features
 import { useNavigate } from "react-router";
 import { useSelector } from "react-redux";
 import { selectDnsConfigDetails } from "@/redux/slice/config/configSlice";
-import ApplicationLoader from "@/components/common/loaders/ApplicationLoaderComponent";
+import ApplicationLoaderComponent from "@/components/common/loaders/ApplicationLoaderComponent";
 
 
 export default function AuthLayout() {
@@ -20,12 +20,12 @@ export default function AuthLayout() {
   const domainName = window.location.hostname;
   const [triggerDnsConfig, { isFetching, isLoading, isSuccess, isError, data }] = useLazyGetDnsConfigQuery();
   useEffect(() => {
-    if (!dnsData && !isLoading && !isFetching) {
+    if (!dnsData && !isError) {
       triggerDnsConfig({
-        domainName: domainName,
+        domainName,
       });
     }
-  }, [dnsData, isLoading, isFetching, triggerDnsConfig]);
+  }, [dnsData, isError, triggerDnsConfig, domainName]);
 
   useEffect(() => {
     if (!isLoading && !isFetching && isSuccess) {
@@ -97,7 +97,7 @@ export default function AuthLayout() {
       {/* Display Page Loader */}
       <Activity mode={displayPageLoader ? 'visible' : 'hidden'}>
         <div className="applicationPageLoader-wrapper w-full h-screen">
-          <ApplicationLoader />
+          <ApplicationLoaderComponent />
         </div>
       </Activity>
 

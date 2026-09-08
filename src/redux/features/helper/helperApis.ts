@@ -115,6 +115,91 @@ export const helperApis = createApi({
                 };
             },
         }),
+
+        // =======================================================
+        // DESTROY SESSION
+        // =======================================================
+        destroySession: build.query<apiResponseType<getSessionResponseType>, void>({
+            query: () => ({
+                url: `${HELPER_URL}/destroy-session`,
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }),
+
+            transformResponse: (response: apiResponseType<getSessionResponseType>) => response,
+
+            transformErrorResponse: (
+                response: FetchBaseQueryError
+            ): apiErrorType => {
+                const error = response as any;
+
+                const url =
+                    error?.data?.url ||
+                    error?.url ||
+                    "UNKNOWN_URL";
+
+                logError("ERROR", {
+                    message: "DestroySession query failed",
+                    error: response,
+                    context: url,
+                });
+
+                const rtkQueryErrors = [
+                    "FETCH_ERROR",
+                    "PARSING_ERROR",
+                    "TIMEOUT_ERROR",
+                    "CUSTOM_ERROR"
+                ] as const;
+
+                // HTTP errors
+                if (typeof response.status === 'number') {
+                    return {
+                        status: response.status,
+                        data: {
+                            status:
+                                (response.data as any)?.status ??
+                                "INTERNAL_APPLICATION_ERROR",
+
+                            message:
+                                (response.data as any)?.message ??
+                                "DestroySession faced external application service error",
+
+                            error:
+                                (response.data as any)?.error ?? null,
+                        }
+                    };
+                }
+
+                // RTK internal errors
+                else if (
+                    typeof response.status === "string" &&
+                    rtkQueryErrors.includes(response.status as any)
+                ) {
+                    return {
+                        status: 500,
+                        data: {
+                            status: response.status,
+                            message:
+                                "DestroySession faced internal RTK query error",
+                            error: response.error
+                        }
+                    };
+                }
+
+                // Unknown fallback
+                return {
+                    status: 500,
+                    data: {
+                        status: "INTERNAL_APPLICATION_ERROR",
+                        message:
+                            "DestroySession faced unknown internal application service error",
+                        error: response
+                    }
+                };
+            },
+        }),
     }),
 })
 

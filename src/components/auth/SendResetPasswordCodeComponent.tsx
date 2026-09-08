@@ -42,7 +42,7 @@ export default function SendResetPasswordCodeComponent() {
     })
 
     // SignIn Api Mutation
-    const [sendResetPasswordCode, { isLoading, error, data, isSuccess }] = useSendResetPasswordCodeMutation()
+    const [sendResetPasswordCode, { isLoading }] = useSendResetPasswordCodeMutation()
     // Function to handle form submission
     const onSendEmailVerificationCodeFormSubmit: SubmitHandler<sendResetPasswordCodeFormData> = async (formData) => {
         try {

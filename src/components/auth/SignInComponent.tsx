@@ -1,4 +1,4 @@
-import React, { Activity, useState } from 'react'
+import React, { Activity, useEffect, useState } from 'react'
 import CustomInput from '../common/CustomInputComponent'
 import CustomPasswordInput from '../common/CustomPasswordInputComponent'
 import CustomButton from '../common/CustomButtonComponent';
@@ -11,6 +11,11 @@ import { toast } from 'react-toastify';
 import ShowInConsole from '@/utils/ShowInConsole';
 
 export default function SignInComponent() {
+  // Restore email in session storage
+  useEffect(() => {
+    sessionStorage.removeItem("userEmail")
+  }, []);
+
   // Configure useNavigate
   const navigate = useNavigate();
 
@@ -52,14 +57,14 @@ export default function SignInComponent() {
   })
 
   // SignIn Api Mutation
-  const [signIn, { isLoading, error, data, isSuccess, reset: resetMutation }] = useSignInMutation()
+  const [signIn, { isLoading }] = useSignInMutation()
   // Function to handle form submission
   const onSigninFormSubmit: SubmitHandler<SigninFormData> = async (formData) => {
     const { email, password } = formData
     try {
-      let redirectionStep: "SEND-VERIFY-EMAIL" | "VERIFY-EMAIL" | "SELECT-2FA" | "SEND-EMAIL-OTP" | "VERIFY-TOTP" | "SMS-OTP" |  null = null;
+      let redirectionStep: "SEND-VERIFY-EMAIL" | "VERIFY-EMAIL" | "SELECT-2FA" | "SEND-EMAIL-OTP" | "VERIFY-TOTP" | "SMS-OTP" | null = null;
       const result = await signIn({ email, password }).unwrap()
-      
+
       ShowInConsole("Sign in response:", result);
       const successMessage = result?.message || ""
       const normalizedMessage = successMessage.toLowerCase();
@@ -89,7 +94,7 @@ export default function SignInComponent() {
             toast.success("Sign in successful! Redirecting to 2-factor-authentication using authenticator.");
             redirectionStep = "VERIFY-TOTP";
           }
-          else  {
+          else {
             toast.success("Sign in successful! Redirecting to 2-factor-authentication using SMS.");
             redirectionStep = "SMS-OTP";
           }
@@ -103,27 +108,27 @@ export default function SignInComponent() {
 
       if (redirectionStep === "SEND-VERIFY-EMAIL") {
         setTimeout(() => {
-          navigate("/sendVerifyEmailCode", {replace: true});
+          navigate("/sendVerifyEmailCode", { replace: true });
         }, 500)
       }
       else if (redirectionStep === "VERIFY-EMAIL") {
         setTimeout(() => {
-          navigate("/verifyEmail", {replace: true});
+          navigate("/verifyEmail", { replace: true });
         }, 500)
       }
       else if (redirectionStep === "SELECT-2FA") {
         setTimeout(() => {
-          navigate("/select2FaMethod", {replace: true});
+          navigate("/select2FaMethod", { replace: true });
         }, 500)
       }
       else if (redirectionStep === "SEND-EMAIL-OTP") {
         setTimeout(() => {
-          navigate("/send2FaCode/emailOtp", {replace: true});
+          navigate("/send2FaCode/emailOtp", { replace: true });
         }, 500)
       }
       else if (redirectionStep === "VERIFY-TOTP") {
         setTimeout(() => {
-          navigate("/verify2FaCode/totp", {replace: true});
+          navigate("/verify2FaCode/totp", { replace: true });
         }, 500)
       }
     }

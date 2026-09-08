@@ -128,7 +128,7 @@ export default function VerifyResetPasswordCodeComponent() {
 
     // ------------------------------------ Verify Code Submit ------------------------------------ \\
     // Send verify email code Api Mutation
-    const [verifyResetPasswordCode, { isLoading: isVerifyingCode, error: verifyCodeError, data: verifyCodeData, isSuccess: verifyCodeSuccess }] = useVerifyResetPasswordCodeMutation()
+    const [verifyResetPasswordCode, { isLoading: isVerifyingCode }] = useVerifyResetPasswordCodeMutation()
     // Function to handle onSubmit
     const onResetPasswordSubmit: SubmitHandler<ResetPasswordFormData> = async (formData) => {
         setOtpError("");
@@ -238,7 +238,7 @@ export default function VerifyResetPasswordCodeComponent() {
 
     // --------------------------------- Resend Code --------------------------------- \\
     // Send verify email code Api Mutation
-    const [sendResetPasswordCodeCode, { isLoading: isSendingCode, error: sendResetPasswordCodeError, data: sendResetPasswordCodeData, isSuccess: sendResetPasswordCodeSuccess }] = useSendResetPasswordCodeMutation()
+    const [sendResetPasswordCodeCode, { isLoading: isSendingCode }] = useSendResetPasswordCodeMutation()
 
     // Function to handle resend code
     const handleResendCode = async () => {

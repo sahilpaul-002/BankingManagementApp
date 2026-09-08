@@ -6,11 +6,13 @@ import { configApis } from './features/config/configApi.js'
 import { helperApis } from './features/helper/helperApis.js'
 import utilitySlice from './slice/utility/utilitySlice.js'
 import { twoFaApis } from './features/twoFa/twoFaApis.js'
+import appSessionSlice from './slice/appSession/appSessionSlice.js'
 
 // EXPORT RTK STORE
 export const store = configureStore({
     reducer: {
         // Redux Slice Reducer
+        appSession: appSessionSlice.reducer,
         config: configSlice.reducer,
         utility: utilitySlice.reducer,
         user: userSlice.reducer,

@@ -19,3 +19,20 @@ export const requireAuthorization = () => {
         return redirect("/")
     }
 }
+
+
+// export const requireKycApproval = () => {
+//     const email = sessionStorage.getItem('userEmail');
+
+//     const kycQueryState = email
+//         ? kycApis.endpoints.getKycDetails.select({ email, cardholderEmail: email })(store.getState())
+//         : null;
+
+//     const kycHasError = Boolean(kycQueryState?.isError);
+
+//     if (kycHasError) {
+//         return redirect("/dashboard");
+//     }
+
+//     return null;
+// }

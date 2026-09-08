@@ -86,7 +86,7 @@ export default function Verify2FaCodeComponent() {
 
     // ------------------------------------ Verify Code Submit ------------------------------------ \\
     // Send verify email code Api Mutation
-    const [verify2FaCode, { isLoading: isVerifying2FaCode, error: verify2FaCodeError, data: verify2FaCodeData, isSuccess: verify2FaCodeSuccess }] = useVerifyTwoFaCodeMutation()
+    const [verify2FaCode, { isLoading: isVerifying2FaCode }] = useVerifyTwoFaCodeMutation()
     // Function to handle onSubmit
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -219,7 +219,7 @@ export default function Verify2FaCodeComponent() {
 
     // --------------------------------- Resend Code --------------------------------- \\
     // Send verify email code Api Mutation
-    const [send2FaCode, { isLoading: isSendingCode, error: send2FaCodeError, data: send2FaCodeData, isSuccess: send2FaCodeSuccess }] = useSendTwoFaCodeMutation()
+    const [send2FaCode, { isLoading: isSendingCode }] = useSendTwoFaCodeMutation()
     // Function to handle resend code
     const handleResendCode = async () => {
         setOtpError("");

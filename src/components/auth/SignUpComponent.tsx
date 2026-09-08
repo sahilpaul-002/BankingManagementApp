@@ -135,7 +135,7 @@ export default function SignUpComponent() {
     const onValid: SubmitHandler<SignupFormData> = async (formData) => {
         try {
             const result = await signUp(formData).unwrap()
-            console.log('Sign up success', result?.data)
+            ShowInConsole('Sign up success', result?.data)
 
             if (result?.status?.toUpperCase() !== "SUCCESS") {
                 toast.error("Sign up service failed.");
@@ -351,6 +351,7 @@ export default function SignUpComponent() {
                                                     fieldLabelClassName={"text-[var(--line-strong)]"}
                                                     popoverTriggerButtonClassName={"px-4! text-[var(--line-strong)] bg-[var(--navy-bg)]"}
                                                     max={new Date()}
+                                                    restrictTo18Years={true}
                                                     hint={"* Date of birth must be above 18 years"}
                                                     error={errors?.dateOfBirth?.message}
                                                 />

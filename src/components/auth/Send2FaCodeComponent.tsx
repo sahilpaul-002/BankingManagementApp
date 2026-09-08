@@ -57,7 +57,7 @@ export default function Send2FaCodeComponent() {
     }, [storedEmail, resetReactHookForm])
 
     // SignIn Api Mutation
-    const [send2FaCode, { isLoading, error, data, isSuccess }] = useSendTwoFaCodeMutation()
+    const [send2FaCode, { isLoading }] = useSendTwoFaCodeMutation()
     // Function to handle form submission
     const onSend2FaCodeFormSubmit: SubmitHandler<send2FaCodeFormData> = async (formData) => {
         try {

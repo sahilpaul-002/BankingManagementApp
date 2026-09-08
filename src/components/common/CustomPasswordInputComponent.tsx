@@ -65,7 +65,7 @@ const CustomPasswordInputComponent = forwardRef<HTMLInputElement, InputPropsType
                     {(showValidationRules && password && passwordStrength && passwordStrength?.label) && (
                         <div className="customPasswordInput-label-passwordStrength w-fit h-fit">
                             <span className="forgetPassword-newPassowrdInput-passwordStrength w-fit h-fit text-start text-sm font-medium tracking-normal flex justify-center items-center gap-2">
-                                <span className="text-gray-700">{`Strength: `}</span>
+                                <span className="text-gray-400">{`Strength: `}</span>
                                 <span className={`${passwordStrength?.color}`}>{passwordStrength?.label}</span>
                             </span>
                         </div>

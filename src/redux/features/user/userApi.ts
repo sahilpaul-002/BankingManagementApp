@@ -76,8 +76,6 @@ export const userApis = createApi({
         signUp: build.mutation<apiResponseType<apiResponseDataType>, signupRequestType>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
-                    const state = getState() as rootStateType
-
                     // Check backend session
                     const getSessionResult = await dispatch(
                         helperApis.endpoints.getSession.initiate(undefined, {
@@ -86,6 +84,8 @@ export const userApis = createApi({
                         })
                     )
                     const isSessionValid = (getSessionResult?.isSuccess && (getSessionResult?.data?.status?.toUpperCase() === "SUCCESS")) ? true : false
+
+                    let state = getState() as rootStateType
 
                     let dnsConfig = selectDnsConfigDetails(state)
                     if (!dnsConfig || !isSessionValid) {
@@ -104,6 +104,9 @@ export const userApis = createApi({
                         if (result.isError) {
                             throw new ApplicationServiceError("SIGN-UP - Failed to fetch DNS Config data")
                         }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
 
                         dnsConfig = result.data?.data as dnsConfigDataType
                     }

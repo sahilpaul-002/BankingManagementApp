@@ -63,12 +63,10 @@ const router = createBrowserRouter([
                     },
                     {
                         path: "sendResetPasswordCode",
-                        loader: requireAuthentication,
                         Component: SendResetPasswordCodeComponent,
                     },
                     {
                         path: "verifyForgotPasswordCode",
-                        loader: requireAuthentication,
                         Component: VerifyResetPasswordCodeComponent,
                     },
                 ],

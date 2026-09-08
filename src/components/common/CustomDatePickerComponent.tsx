@@ -1,4 +1,4 @@
-import React, { Activity, forwardRef, type ButtonHTMLAttributes, type InputHTMLAttributes } from 'react'
+import React, { Activity, forwardRef, useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes } from 'react'
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -19,15 +19,33 @@ interface DatePickerPropsTypes extends ButtonHTMLAttributes<HTMLButtonElement> {
     max?: Date
     fieldLabelClassName?: string
     popoverTriggerButtonClassName?: string
+    restrictTo18Years?: boolean
     error?: string | undefined,
     hint?: string,
 }
 
 const CustomDatePickerComponent = forwardRef<HTMLButtonElement, DatePickerPropsTypes>((props, ref) => {
     // Destructure props
-    const { id, label, date, setDate, fieldLabelClassName, popoverTriggerButtonClassName, max, error, hint, ...restAttributes } = props
+    const { id, label, date, setDate, fieldLabelClassName, popoverTriggerButtonClassName, max, restrictTo18Years = false, error, hint, ...restAttributes } = props
 
     const [open, setOpen] = React.useState(false)
+
+    // ---------------------------- Function to handle 18 years limit ---------------------------- \\
+    const eighteenYearsAgo = React.useMemo(() => {
+        const today = new Date()
+
+        return new Date(
+            today.getFullYear() - 18,
+            today.getMonth(),
+            today.getDate()
+        )
+    }, [])
+    // useEffect(() => {
+    //     if (restrictTo18Years && !date) {
+    //         setDate(eighteenYearsAgo)
+    //     }
+    // }, [restrictTo18Years, date, eighteenYearsAgo, setDate])
+    // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
 
     return (
         <div className="customDatePicker-container w-full h-full">
@@ -56,11 +74,13 @@ const CustomDatePickerComponent = forwardRef<HTMLButtonElement, DatePickerPropsT
                         <Calendar
                             mode="single"
                             selected={date ?? undefined}
-                            {...(date ? { defaultMonth: date } : {})}
-                            disabled={
-                                max
-                                    ? { after: max }
-                                    : undefined
+                            {...(date
+                                ? { defaultMonth: date }
+                                : restrictTo18Years
+                                    ? { defaultMonth: eighteenYearsAgo }
+                                    : {}
+                            )}
+                            disabled={restrictTo18Years ? { after: eighteenYearsAgo } : max ? { after: max } : undefined
                             }
                             captionLayout="dropdown"
                             onSelect={(date) => {
