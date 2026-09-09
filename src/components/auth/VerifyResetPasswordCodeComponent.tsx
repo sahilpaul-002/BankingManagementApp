@@ -333,6 +333,7 @@ export default function VerifyResetPasswordCodeComponent() {
                                 autoComplete="new-password"
                                 fieldLabelClassname={"text-[var(--line-strong)]"}
                                 inputClassname={"px-4! text-[var(--line-strong)]"}
+                                showValidationRules={false}
                                 showPassword={showConfirmPassword}
                                 setShowPassword={setShowConfirmPassword}
                                 password={watch("confirmPassword")}
