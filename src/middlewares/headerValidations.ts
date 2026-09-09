@@ -32,7 +32,7 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
         const xApiKey: string = req.headers["x-api-key"] as string;
 
         if (xApiKey !== req.session?.sessiondata?.requestXApiKey) {
-            throw new UnauthorizedError("INVALID 'x-api-key'")
+            throw new ForbiddenError("INVALID 'x-api-key'")
         }
 
         // Validate Authorization header

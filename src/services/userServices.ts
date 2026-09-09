@@ -102,23 +102,18 @@ export const userSignUpService = async (req: Request, res: Response, aesDecrypte
         });
         if (emailExists) {
             const destroySessionResponse = await destroySession(req.session, res);
-            throw new ForbiddenError("User already exists");
+            throw new ServiceError("User already exists");
         }
 
         // Check Business Nmae / Type
         const businessNameExist = await user_details.exists({
             business_name: validationResult.data.business_name
         })
-        if (validationResult?.data?.business_type === "EXISTING" && !businessNameExist) {
-            throw new ForbiddenError(`Business name does not exist for the specified type`)
+        if (validationResult?.data?.business_type === "NEW" && businessNameExist) {
+            throw new ServiceError(`Business name already exist, use 'EXISTING' type`)
         }
-        if (validationResult?.data?.business_type === "NEW") {
-            const businessNameExist = await user_details.exists({
-                business_name: validationResult.data.business_name
-            })
-            if (businessNameExist) {
-                throw new ForbiddenError(`Business name already exist, use 'EXISTING' type`)
-            }
+        if (validationResult?.data?.business_type === "EXISTING" && !businessNameExist) {
+            throw new ServiceError(`Business name does not exist for the specified business type`)
         }
 
         // Check primary user (admin) exist and program type
