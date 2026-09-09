@@ -1,5 +1,5 @@
 // export default router
-import { createBrowserRouter } from "react-router";
+import { createBrowserRouter, redirect } from "react-router";
 import App from "../App";
 import AuthLayout from "../layouts/AuthLayout";
 import SignInComponent from "../components/auth/SignInComponent";
@@ -80,6 +80,11 @@ const router = createBrowserRouter([
                         Component: DashboardPage,
                     },
                 ],
+            },
+            // Catch-all route
+            {
+                path: "*",
+                loader: () => redirect("/"),
             },
         ],
     },

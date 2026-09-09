@@ -112,6 +112,19 @@ export default function SignUpComponent() {
             }, {
                 message: "You must be at least 18 years old",
             }),
+        businessName: z
+            .string()
+            .min(1, "Business name is required"),
+
+        businessType: z
+            .enum(["NEW", "EXISTING"], {
+                error: "Please select a business type"
+            }),
+
+        programType: z
+            .enum(["MASTER", "VISA"], {
+                error: "Please select a program type"
+            }),
     }).refine((d) => d.password === d.confirmPassword, {
         message: ('Password do not match'),
         path: ['confirmPassword'],
@@ -130,6 +143,17 @@ export default function SignUpComponent() {
         resolver: zodResolver(signupFormValidationSchema),
         mode: 'onTouched',
         reValidateMode: 'onChange',
+        defaultValues: {
+            fullName: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+            gender: "",
+            dialCode: "",
+            countryCode: "",
+            phoneNumber: "",
+            businessName: "",
+        },
     })
 
     const onValid: SubmitHandler<SignupFormData> = async (formData) => {
@@ -138,18 +162,46 @@ export default function SignUpComponent() {
             ShowInConsole('Sign up success', result?.data)
 
             if (result?.status?.toUpperCase() !== "SUCCESS") {
-                toast.error("Sign up service failed.");
+                toast.error("Sign up service is facing issue. Please try again later. If issue persist please contact support.");
                 return
             }
 
             toast.success("Sign up successfull.");
             setTimeout(() => {
-                navigate("/", {replace: true});
+                navigate("/", { replace: true });
             }, 1000)
         }
         catch (error: any) {
-            ShowInConsole('Sign up error', error)
-            toast.error("Sign up service failed.");
+            ShowInConsole('Sign in error:', error)
+
+            const errorMessage =
+                error?.data?.message ||
+                error?.message ||
+                "Sign up service is facing issue. Please try again later. If issue persist please contact support.";
+
+            const normalizedMessage = errorMessage.toLowerCase();
+
+            switch (true) {
+                case normalizedMessage.includes("user already exist"):
+                    toast.error("User already exist with provided email.");
+                    break;
+
+                case normalizedMessage.includes("business name already exist, use 'existing' type"):
+                    toast.error("Busines with provided business name already exist. Switch to existing business type");
+                    break;
+
+                case normalizedMessage.includes("business name does not exist for the specified business type"):
+                    toast.error("Business does not exist for the specified business type.");
+                    break;
+
+                case normalizedMessage.includes("is registerd for") || normalizedMessage.includes("register with different business name"):
+                    toast.error(errorMessage);
+                    break;
+
+                default:
+                    toast.error("Sign up service is facing issue. Please try again later. If issue persist please contact support.");
+                    break;
+            }
         }
     };
 
@@ -159,25 +211,41 @@ export default function SignUpComponent() {
             "email",
             "password",
             "confirmPassword",
+            "gender",
         ] as const;
 
         const hasStep1Error = step1Fields.some((field) => errors[field]);
 
         if (hasStep1Error) {
             setFormStep(1);
-        };
+            return;
+        }
 
         const step2Fields = [
             "dialCode",
             "countryCode",
             "phoneNumber",
+            "dateOfBirth",
         ] as const;
 
         const hasStep2Error = step2Fields.some((field) => errors[field]);
 
         if (hasStep2Error) {
             setFormStep(2);
-        };
+            return;
+        }
+
+        const step3Fields = [
+            "businessName",
+            "businessType",
+            "programType",
+        ] as const;
+
+        const hasStep3Error = step3Fields.some((field) => errors[field]);
+
+        if (hasStep3Error) {
+            setFormStep(3);
+        }
     };
 
     const onSignupFormSubmit = handleSubmit(onValid, onError);
@@ -223,7 +291,31 @@ export default function SignUpComponent() {
                                 <CustomPasswordInput id={"signupForm1-input-password"} label={"Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.password?.message} password={password} {...register("password")} />
 
                                 {/* Confirm Password */}
-                                <CustomPasswordInput id={"signupForm1-input-confirmPassword"} label={"Confirm Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.confirmPassword?.message} {...register("confirmPassword")} />
+                                <CustomPasswordInput id={"signupForm1-input-confirmPassword"} label={"Confirm Password"} type={showPassword ? "text" : "password"} placeholder={"••••••••"} autoComplete="current-password" fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} showValidationRules={false} showPassword={showPassword} setShowPassword={setShowPassword} error={errors?.confirmPassword?.message} {...register("confirmPassword")} />
+
+                                {/* Gender */}
+                                <Controller
+                                    name="gender"
+                                    control={control}
+                                    defaultValue=""
+                                    render={({ field }) => (
+                                        <>
+                                            <div className="signupForm2-genderSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
+                                                <span className="signupForm1-genderSelect-text text-sm text-[var(--line-strong)] font-semibold tracking-normal">Gender</span>
+                                                <CustomSelect
+                                                    id="signupForm1-input-select-gender"
+                                                    label="Select Gender"
+                                                    labels={["Male", "Female", "Other"]}
+                                                    selectTriggerClassName="w-full h-fit px-4! text-[var(--line-strong)]"
+                                                    selectGroupClassName="w-full h-fit px-4! text-[var(--line-strong)]"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={errors?.gender?.message}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                />
 
                                 {/* Button */}
                                 <div className="signupPage-signupForm1-button-wrapper w-full h-fit flex justify-center items-center mb-[30px]!">
@@ -285,6 +377,31 @@ export default function SignUpComponent() {
                                     )}
                                 />
 
+                                {/* DOB */}
+                                <Controller
+                                    name="dateOfBirth"
+                                    control={control}
+                                    // defaultValue={""}
+                                    render={({ field }) => (
+                                        <>
+                                            <div className="signupForm2-dateOfBirthSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
+                                                <CustomDatePicker
+                                                    id="signupForm2-input-select-dateOfBirth"
+                                                    label="Date of Birth"
+                                                    date={field.value}
+                                                    setDate={field.onChange}
+                                                    fieldLabelClassName={"text-[var(--line-strong)]"}
+                                                    popoverTriggerButtonClassName={"px-4! text-[var(--line-strong)] bg-[var(--navy-bg)]"}
+                                                    max={new Date()}
+                                                    restrictTo18Years={true}
+                                                    hint={"* Date of birth must be above 18 years"}
+                                                    error={errors?.dateOfBirth?.message}
+                                                />
+                                            </div>
+                                        </>
+                                    )}
+                                />
+
                                 {/* Phone Number */}
                                 <CustomInput id={"signupForm2-input-phoneNumber"} label={"Phone Number"} type={"text"} placeholder={"Enter phone number"} fieldLabelClassname={"text-[var(--line-strong)]"} inputClassname={"px-4! text-[var(--line-strong)]"} hint={"* Enter number without country code"} error={errors?.phoneNumber?.message} {...register("phoneNumber")} />
 
@@ -311,52 +428,99 @@ export default function SignUpComponent() {
                         <Activity mode={formStep === 3 ? 'visible' : 'hidden'}>
                             <div className="signupPage-signupForm2-container w-full h-fit space-y-2!">
 
-                                {/* Gender */}
+                                {/* Business Name */}
+                                <CustomInput
+                                    id={"signupForm3-input-businessName"}
+                                    label={"Business Name"}
+                                    type={"text"}
+                                    placeholder={"Enter business name"}
+                                    fieldLabelClassname={"text-[var(--line-strong)]"}
+                                    inputClassname={"px-4! text-[var(--line-strong)]"}
+                                    error={errors?.businessName?.message}
+                                    {...register("businessName")}
+                                />
+
+                                {/* Business Type */}
                                 <Controller
-                                    name="gender"
+                                    name="businessType"
                                     control={control}
-                                    defaultValue=""
                                     render={({ field }) => (
-                                        <>
-                                            <div className="signupForm2-genderSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
-                                                <span className="signupForm1-genderSelect-text text-sm text-[var(--line-strong)] font-semibold tracking-normal">Gender</span>
-                                                <CustomSelect
-                                                    id="signupForm1-input-select-gender"
-                                                    label="Select Gender"
-                                                    labels={["Male", "Female", "Other"]}
-                                                    selectTriggerClassName="w-full h-fit px-4! text-[var(--line-strong)]"
-                                                    selectGroupClassName="w-full h-fit px-4! text-[var(--line-strong)]"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    error={errors?.gender?.message}
-                                                />
-                                            </div>
-                                        </>
+                                        <div className="signupForm3-businessTypeSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
+                                            <span className="text-sm text-[var(--line-strong)] font-semibold tracking-normal">
+                                                Business Type
+                                            </span>
+
+                                            <CustomSelect
+                                                id={"signupForm3-input-select-businessType"}
+                                                label={"Select Business Type"}
+                                                labels={["New", "Existing"]}
+                                                selectTriggerClassName={
+                                                    "w-full h-fit px-4! text-[var(--line-strong)]"
+                                                }
+                                                selectGroupClassName={
+                                                    "w-full h-fit px-4! text-[var(--line-strong)]"
+                                                }
+                                                value={
+                                                    field.value === "NEW"
+                                                        ? "New"
+                                                        : field.value === "EXISTING"
+                                                            ? "Existing"
+                                                            : ""
+                                                }
+                                                onChange={(value) => {
+                                                    field.onChange(
+                                                        value === "New"
+                                                            ? "NEW"
+                                                            : value === "Existing"
+                                                                ? "EXISTING"
+                                                                : value
+                                                    );
+                                                }}
+                                                error={errors?.businessType?.message}
+                                            />
+                                        </div>
                                     )}
                                 />
 
-                                {/* DOB */}
+                                {/* Program Type */}
                                 <Controller
-                                    name="dateOfBirth"
+                                    name="programType"
                                     control={control}
-                                    // defaultValue={""}
                                     render={({ field }) => (
-                                        <>
-                                            <div className="signupForm2-dateOfBirthSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
-                                                <CustomDatePicker
-                                                    id="signupForm2-input-select-dateOfBirth"
-                                                    label="Date of Birth"
-                                                    date={field.value}
-                                                    setDate={field.onChange}
-                                                    fieldLabelClassName={"text-[var(--line-strong)]"}
-                                                    popoverTriggerButtonClassName={"px-4! text-[var(--line-strong)] bg-[var(--navy-bg)]"}
-                                                    max={new Date()}
-                                                    restrictTo18Years={true}
-                                                    hint={"* Date of birth must be above 18 years"}
-                                                    error={errors?.dateOfBirth?.message}
-                                                />
-                                            </div>
-                                        </>
+                                        <div className="signupForm3-programTypeSelect-wrapper w-full h-fit flex flex-col justify-center items-start gap-2">
+                                            <span className="text-sm text-[var(--line-strong)] font-semibold tracking-normal">
+                                                Program Type
+                                            </span>
+
+                                            <CustomSelect
+                                                id={"signupForm3-input-select-programType"}
+                                                label={"Select Program Type"}
+                                                labels={["Master", "Visa"]}
+                                                selectTriggerClassName={
+                                                    "w-full h-fit px-4! text-[var(--line-strong)]"
+                                                }
+                                                selectGroupClassName={
+                                                    "w-full h-fit px-4! text-[var(--line-strong)]"
+                                                }
+                                                value={
+                                                    field.value === "MASTER"
+                                                        ? "Master"
+                                                        : field.value === "VISA"
+                                                            ? "Visa"
+                                                            : ""
+                                                }
+                                                onChange={(value) => {
+                                                    field.onChange(
+                                                        value === "Master"
+                                                            ? "MASTER"
+                                                            : value === "Visa"
+                                                                ? "VISA"
+                                                                : value
+                                                    );
+                                                }}
+                                                error={errors?.programType?.message}
+                                            />
+                                        </div>
                                     )}
                                 />
 
