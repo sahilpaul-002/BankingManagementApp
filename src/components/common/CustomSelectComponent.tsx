@@ -23,11 +23,12 @@ interface SelectPropsTypes {
     onChange: (value: string) => void
     error?: string | undefined,
     hint?: string,
+    disabled?: boolean
 }
 
 const CustomSelectComponent = forwardRef<HTMLButtonElement, SelectPropsTypes>((props, ref) => {
     // Destructure props
-    const { id, label, labelCategory, labels, selectTriggerClassName, selectGroupClassName, value, hint, error, onChange, ...restAttributes } = props
+    const { id, label, labelCategory, labels, selectTriggerClassName, selectGroupClassName, value, hint, error, onChange, disabled, ...restAttributes } = props
 
     // Get the selected item
     const selectedItem = labels?.find((item) => {
@@ -47,6 +48,7 @@ const CustomSelectComponent = forwardRef<HTMLButtonElement, SelectPropsTypes>((p
                     id={id}
                     ref={ref}
                     className={clsx(`w-full h-full min-w-36 ${error ? "border-destructive ring-3 ring-destructive/20" : ""} cursor-pointer`, selectTriggerClassName)}
+                    disabled={disabled}
                     {...restAttributes}
                 >
                     <SelectValue placeholder={label}>

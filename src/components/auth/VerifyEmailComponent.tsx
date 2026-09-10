@@ -159,7 +159,7 @@ export default function VerifyEmailComponent() {
 
     // --------------------------------- Resend Code --------------------------------- \\
     // Send verify email code Api Mutation
-    const [sendVerifyEmailCode, { isLoading: isSendingCode, error: sendVerificationCodeError, data: sendVerificationCodeData, isSuccess: sendVerificationCodeSuccess }] = useSendEmailVerificationCodeMutation()
+    const [sendEmailVerificationCode, { isLoading: isSendingCode, error: sendVerificationCodeError, data: sendVerificationCodeData, isSuccess: sendVerificationCodeSuccess }] = useSendEmailVerificationCodeMutation()
 
     // Function to handle resend code
     const handleResendCode = async () => {
@@ -172,7 +172,7 @@ export default function VerifyEmailComponent() {
             const payload = {
                 email: storedEmail || ""
             };
-            const result = await sendVerifyEmailCode(payload).unwrap();
+            const result = await sendEmailVerificationCode(payload).unwrap();
 
             ShowInConsole("Send email verification code response:", result);
             if (result?.status?.toUpperCase() !== "SUCCESS") {

@@ -81,7 +81,7 @@ export const twoFaApis = createApi({
                     }
 
                     const result = await executeBaseQuery(baseQuery, {
-                        url: `${TWO_FA_URL}/sendVerifyEmailCode`,
+                        url: `${TWO_FA_URL}/sendEmailVerificationCode`,
                         method: 'POST',
                         headers,
                         data: payload,

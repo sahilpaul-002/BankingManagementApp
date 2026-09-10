@@ -70,12 +70,12 @@ export default function SignInComponent() {
       const normalizedMessage = successMessage.toLowerCase();
 
       switch (true) {
-        case normalizedMessage.includes("user login successfull, verification code sent to the email"):
+        case normalizedMessage.includes("user login successfull, email verification code sent to the email"):
           toast.success("Sign in successful! Redirecting to email verification.");
           redirectionStep = "VERIFY-EMAIL";
           break;
 
-        case normalizedMessage.includes("user login successfull, but failed to send verification code"):
+        case normalizedMessage.includes("user login successfull, but failed to send email verification code"):
           toast.success("Sign in successful but failed to generate email verification code.");
           redirectionStep = "SEND-VERIFY-EMAIL";
           break;
@@ -108,7 +108,7 @@ export default function SignInComponent() {
 
       if (redirectionStep === "SEND-VERIFY-EMAIL") {
         setTimeout(() => {
-          navigate("/sendVerifyEmailCode");
+          navigate("/sendEmailVerificationCode");
         }, 500)
       }
       else if (redirectionStep === "VERIFY-EMAIL") {

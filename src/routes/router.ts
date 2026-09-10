@@ -15,6 +15,9 @@ import SendResetPasswordCodeComponent from "@/components/auth/SendResetPasswordC
 import VerifyResetPasswordCodeComponent from "@/components/auth/VerifyResetPasswordCodeComponent";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import DashboardPage from "@/pages/DashboardPage";
+import SettingsLayout from "@/layouts/SettingsLayout";
+import UserDetailsPage from "@/pages/UserDetailsPage";
+import UserVerificationPage from "@/pages/UserVerificationPage";
 
 const router = createBrowserRouter([
     {
@@ -79,6 +82,21 @@ const router = createBrowserRouter([
                         path: "dashboard",
                         Component: DashboardPage,
                     },
+                    {
+                      path: "settings",
+                      Component: SettingsLayout,
+                      children: [
+                        {
+                          index: true,
+                          Component: UserDetailsPage,
+                        },
+                        {
+                          path: "userVerification",
+                          Component: UserVerificationPage,
+                        //   loader: requireKycApproval,
+                        }
+                      ]
+                    }
                 ],
             },
             // Catch-all route
