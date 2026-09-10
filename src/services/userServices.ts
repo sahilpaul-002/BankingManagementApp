@@ -451,6 +451,65 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
 }
 // -------------------------------------  XXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
 
+
+// ------------------------------------- GET APPLICATION HEADERS SERVICE -------------------------------------  \\
+export const getApplicationHeadersService = async (req: Request, res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check email present in request body
+        const email: string | null = checkStringQueryParams(aesDecryptedQueryData, "email")
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not present in the request body");
+        }
+        if (email !== req.session.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email found")
+        }
+
+        // Check application headers
+        if (!req.session?.sessiondata?.accessToken || !req.session?.sessiondata?.requestXApiKey || !req.session?.userConfiguration?.agentCode || !req.session?.userConfiguration?.subAgentCode || !req.session.userConfiguration?.businessId || !req.session.userConfiguration?.programId) {
+            throw new UnauthenticatedError("Unauthenticated session detected - application headers not present in the session")
+        }
+
+        const returnData = {
+            xApiKey: req.session.sessiondata.requestXApiKey,
+            accessToken: req.session.sessiondata.accessToken,
+            agentCode: req.session.userConfiguration.agentCode,
+            subAgentCode: req.session.userConfiguration.subAgentCode,
+            businessId: req.session.userConfiguration.businessId,
+            programId: req.session.userConfiguration.programId,
+        }
+
+        return { status: "SUCCESS", message: "Application headers fetched successfully", data: returnData }
+
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetApplicationHeaderService",
+            // url: url,
+            // method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+        throw new ServiceError(
+            `GetApplicationHeaderService facing issue`,
+            sanitizedError
+        );
+    }
+}
+// -------------------------------------  XXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
+
+
 // ------------------------------------- USER ONBOARDING SERVICE -------------------------------------  \\
 export const userOnboardingService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, any> | undefined) => {
     try {

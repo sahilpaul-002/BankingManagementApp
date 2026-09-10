@@ -1,7 +1,7 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestQueryError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { getUserFundingAccountsBalancesService, prefundUserCryptoFundingAccountService, prefundUserFiatFundingAccountService, sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService } from "../services/userServices.js";
+import { getUserFundingAccountsBalancesService, prefundUserCryptoFundingAccountService, prefundUserFiatFundingAccountService, sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService, getApplicationHeadersService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
@@ -121,6 +121,40 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             throw error
         }
         throw new ServiceError(`UserLoginController facing issue`, sanitizedError);
+    }
+}
+// ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
+
+// ------------------------------ FUNCTION TO GET APPLICATION HEADER ------------------------------ \\
+export const getApplicationHeaders = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query
+        const getApplicationHeaderServiceResponse = await getApplicationHeadersService(req, res, aesDecryptedQueryData);
+
+        if (getApplicationHeaderServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Get application header service is facing issue", 400);
+        }
+
+        return res.success("Application headers fetched successfully.", getApplicationHeaderServiceResponse?.data, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetApplicationHeadersController",
+            url: req.path,
+            method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(`GetApplicationHeadersController facing issue`, sanitizedError);
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\

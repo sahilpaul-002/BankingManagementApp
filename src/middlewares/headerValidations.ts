@@ -20,7 +20,7 @@ const headerValidations = async (req: Request, res: Response, next: NextFunction
         }
 
         // Skip portal header check for selcted pathes
-        const excludedPaths: string[] = ["/signUp", "/sendVerifyEmailCode", "/sendResetPasswordCode", "/verifyResetPasswordCode"];
+        const excludedPaths: string[] = ["/signUp", "/applicationHeaders", "/sendVerifyEmailCode", "/sendResetPasswordCode", "/verifyResetPasswordCode"];
         if (excludedPaths.some(path => req.path === path || req.path.startsWith(path + "/"))) {
             return next();
         }
