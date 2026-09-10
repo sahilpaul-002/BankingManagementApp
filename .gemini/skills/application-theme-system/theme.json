@@ -1,0 +1,190 @@
+{
+  "themes": {
+    "midnight": {
+      "name": "Midnight Navy + Gold",
+      "description": "Current BMA frontend theme with deep navy navigation, warm gold brand accents, cool neutral application surfaces, and shadcn semantic tokens.",
+      "colors": {
+        "surfaces": {
+          "app": "#f4f6fa",
+          "surface": "#ffffff",
+          "subtle": "#f8f9fc",
+          "hover": "#f0f3f9"
+        },
+        "navigation": {
+          "bg": "#0c1830",
+          "bg2": "#0a1428",
+          "active": "#16264a",
+          "text": "#c8d2e6",
+          "textMute": "#6b7a99",
+          "textStrong": "#ffffff"
+        },
+        "ink": {
+          "primary": "#0c1830",
+          "secondary": "#2a3450",
+          "soft": "#4a5673",
+          "mute": "#8a93a8",
+          "mute2": "#b4bbcc"
+        },
+        "lines": {
+          "default": "#e6e8ee",
+          "strong": "#d2d6de",
+          "faint": "#f0f1f5"
+        },
+        "brand": {
+          "gold": "#d49a4d",
+          "gold2": "#e2b06b",
+          "goldSoft": "#f5e6cc"
+        },
+        "status": {
+          "ok": "#1f8a5b",
+          "okBg": "#e6f3ec",
+          "warn": "#c47a1a",
+          "warnBg": "#fbecd3",
+          "danger": "#b03333",
+          "dangerBg": "#fbe7e7",
+          "info": "#2a6fdb",
+          "infoBg": "#e8f0fd"
+        },
+        "links": {
+          "link1": "#9193f7",
+          "link2": "#383acf",
+          "link3": "#2e30a3"
+        }
+      },
+      "typography": {
+        "fonts": {
+          "sans": "'Orbitron', 'Geist Variable', sans-serif",
+          "display": "'Orbitron', 'DM Sans', 'Plus Jakarta Sans', system-ui, sans-serif",
+          "geisFallback": "'Geist Variable', sans-serif"
+        },
+        "sizes": {
+          "base": "14px",
+          "lineHeight": "1.5",
+          "fontWeight": "400"
+        },
+        "imports": [
+          "@fontsource-variable/geist",
+          "@fontsource/orbitron"
+        ]
+      },
+      "sizing": {
+        "borderRadius": "6px",
+        "shadcnRadius": "0.625rem",
+        "radiusSm": "calc(var(--radius) * 0.6)",
+        "radiusMd": "calc(var(--radius) * 0.8)",
+        "radiusLg": "var(--radius)",
+        "radiusXl": "calc(var(--radius) * 1.4)",
+        "radius2xl": "calc(var(--radius) * 1.8)",
+        "radius3xl": "calc(var(--radius) * 2.2)",
+        "radius4xl": "calc(var(--radius) * 2.6)"
+      },
+      "shadows": {},
+      "scrollbar": {
+        "width": "4px",
+        "height": "4px",
+        "track": "transparent",
+        "thumb": "linear-gradient(to bottom, var(--gold), var(--ink-2), var(--ink), var(--ink-2), var(--gold))",
+        "thumbHover": "linear-gradient(to bottom, var(--ink-soft), var(--ink-2), var(--ink), var(--ink-2), var(--ink-soft))"
+      },
+      "animations": {
+        "float": "6s ease-in-out infinite",
+        "floatSlow": "9s ease-in-out infinite",
+        "pulseGlow": "4s ease-in-out infinite",
+        "spinSlow": "18s linear infinite",
+        "rise": "0.8s cubic-bezier(0.22, 1, 0.36, 1) both",
+        "shimmer": "3s linear infinite",
+        "shrink": "6s linear forwards",
+        "pulseLine": "2s ease-in-out infinite",
+        "fadeIn": "1.5s ease-out forwards"
+      },
+      "formFeedback": {
+        "inputHint": {
+          "fontSize": "11px",
+          "color": "#ca8a04",
+          "letterSpacing": "-0.01em",
+          "fontWeight": "400"
+        },
+        "inputError": {
+          "fontSize": "11px",
+          "color": "var(--color-destructive)",
+          "letterSpacing": "-0.01em",
+          "fontWeight": "400"
+        },
+        "authInputError": {
+          "fontSize": "11px",
+          "color": "rgba(255, 69, 69, 1)",
+          "fontWeight": "400"
+        }
+      }
+    }
+  },
+  "semanticTokens": {
+    "light": {
+      "background": "oklch(1 0 0)",
+      "foreground": "oklch(0.145 0 0)",
+      "card": "oklch(1 0 0)",
+      "cardForeground": "oklch(0.145 0 0)",
+      "popover": "oklch(1 0 0)",
+      "popoverForeground": "oklch(0.145 0 0)",
+      "primary": "oklch(0.205 0 0)",
+      "primaryForeground": "oklch(0.985 0 0)",
+      "secondary": "oklch(0.97 0 0)",
+      "secondaryForeground": "oklch(0.205 0 0)",
+      "muted": "oklch(0.97 0 0)",
+      "mutedForeground": "oklch(0.556 0 0)",
+      "accent": "oklch(0.97 0 0)",
+      "accentForeground": "oklch(0.205 0 0)",
+      "destructive": "oklch(0.577 0.245 27.325)",
+      "border": "oklch(0.922 0 0)",
+      "input": "oklch(0.922 0 0)",
+      "ring": "oklch(0.708 0 0)"
+    },
+    "dark": {
+      "background": "oklch(0.145 0 0)",
+      "foreground": "oklch(0.985 0 0)",
+      "card": "oklch(0.205 0 0)",
+      "cardForeground": "oklch(0.985 0 0)",
+      "popover": "oklch(0.205 0 0)",
+      "popoverForeground": "oklch(0.985 0 0)",
+      "primary": "oklch(0.922 0 0)",
+      "primaryForeground": "oklch(0.205 0 0)",
+      "secondary": "oklch(0.269 0 0)",
+      "secondaryForeground": "oklch(0.985 0 0)",
+      "muted": "oklch(0.269 0 0)",
+      "mutedForeground": "oklch(0.708 0 0)",
+      "accent": "oklch(0.269 0 0)",
+      "accentForeground": "oklch(0.985 0 0)",
+      "destructive": "oklch(0.704 0.191 22.216)",
+      "border": "oklch(1 0 0 / 10%)",
+      "input": "oklch(1 0 0 / 15%)",
+      "ring": "oklch(0.556 0 0)"
+    }
+  },
+  "tailwind": {
+    "imports": [
+      "tailwindcss",
+      "tw-animate-css",
+      "shadcn/tailwind.css"
+    ],
+    "customVariant": "dark (&:is(.dark *))"
+  },
+  "metadata": {
+    "version": "2.0.0",
+    "system": "BMA Design System",
+    "theme": "Midnight Navy + Gold",
+    "defaultTheme": "midnight",
+    "themeModes": [
+      "light",
+      "dark"
+    ],
+    "fontSystem": [
+      "Orbitron",
+      "Geist Variable"
+    ],
+    "styling": "Tailwind CSS v4",
+    "componentSystem": "shadcn/ui",
+    "animationSystem": "tw-animate-css + custom keyframes",
+    "source": "Current BMA / Banking Management frontend global stylesheet",
+    "lastUpdated": "2026-09-10"
+  }
+}
