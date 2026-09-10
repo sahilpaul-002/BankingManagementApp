@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import CustomButton from '../common/CustomButtonComponent'
 import CustomOtpInput from '../common/CustomOtpInputComponent'
 import { toast } from 'react-toastify';
-import { useSendTwoFaCodeMutation, useSendVerifyEmailCodeMutation, useVerifyEmailCodeMutation, useVerifyTwoFaCodeMutation } from '@/redux/features/twoFa/twoFaApis';
+import { useSendTwoFaCodeMutation, useVerifyTwoFaCodeMutation } from '@/redux/features/twoFa/twoFaApis';
 import { replace, useLocation, useNavigate, useParams } from 'react-router';
 import ShowInConsole from '@/utils/ShowInConsole';
 

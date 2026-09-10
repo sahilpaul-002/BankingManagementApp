@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import CustomButton from '../common/CustomButtonComponent'
 import CustomOtpInput from '../common/CustomOtpInputComponent'
 import { toast } from 'react-toastify';
-import { useSendResetPasswordCodeMutation, useSendVerifyEmailCodeMutation, useVerifyResetPasswordCodeMutation } from '@/redux/features/twoFa/twoFaApis';
+import { useSendResetPasswordCodeMutation, useVerifyResetPasswordCodeMutation } from '@/redux/features/twoFa/twoFaApis';
 import { useLocation, useNavigate } from 'react-router';
 import ShowInConsole from '@/utils/ShowInConsole';
 import CustomPasswordInputComponent from '../common/CustomPasswordInputComponent';

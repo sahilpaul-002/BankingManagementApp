@@ -8,6 +8,7 @@ import executeBaseQuery from "../executeBaseQuery";
 import rtkQueryCatchError from "@/errorHandling/rtkQueryCatchError";
 import { configApis } from "../config/configApi";
 import { setAuthorized } from "@/redux/slice/user/userSlice";
+import { userApis } from "../user/userApi";
 
 type apiResponseDataType = Record<string, any>
 type apiResponseType<T> = {
@@ -24,7 +25,7 @@ const twoFaApiHeaders = (state: rootStateType) => {
     const applicationHeaders = selectApplicaitonHeaders(state);
 
     // Build user api headers
-    const dynamicHeaders: Record<string, string> = {}
+    const dynamicHeaders: Record<string, string | null> = {}
 
     if (applicationHeaders) {
         dynamicHeaders['x-api-key'] = applicationHeaders['x-api-key'];
@@ -32,7 +33,6 @@ const twoFaApiHeaders = (state: rootStateType) => {
         dynamicHeaders['subagent-code'] = applicationHeaders['subagent-code'];
         dynamicHeaders['program-id'] = applicationHeaders['program-id'];
         dynamicHeaders['business-id'] = applicationHeaders['business-id'];
-        dynamicHeaders['client-id'] = applicationHeaders['client-id'];
         dynamicHeaders['authorization'] = applicationHeaders['authorization'];
     }
     return dynamicHeaders;
@@ -51,22 +51,19 @@ export const twoFaApis = createApi({
     baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // =======================================================
-        // SEND VERIFY EMAIL CODE
+        // SEND EMAIL VERIFICATION CODE
         // =======================================================
-        sendVerifyEmailCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string }>({
+        sendEmailVerificationCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
-                    const state = getState() as rootStateType
-
+                    let state = getState() as rootStateType;
                     // Get user api headers
                     let headers = twoFaApiHeaders(state)
                     if (!headers || Object.keys(headers).length === 0) {
-                        // throw new ApplicationServiceError("Verify2FaCode - Missing required dynamic api headers");
-                        const domainName = window.location.hostname;
                         const result = await dispatch(
-                            configApis.endpoints.getDnsConfig.initiate(
+                            userApis.endpoints.getApplicationHeaders.initiate(
                                 {
-                                    domainName: domainName,
+                                    email: payload.email,
                                 },
                                 {
                                     forceRefetch: true  // Force RTK to refetch the query
@@ -74,8 +71,11 @@ export const twoFaApis = createApi({
                             )
                         )
                         if (result.isError) {
-                            throw new ApplicationServiceError("SEND-EMAIL-CODE - Failed to fetch DNS Config data")
+                            throw new ApplicationServiceError("SEND-EMAIL-CODE - Failed to fetch application headers")
                         }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
 
                         headers = twoFaApiHeaders(state)
                     }
@@ -107,17 +107,14 @@ export const twoFaApis = createApi({
         verifyEmailCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string, code: string }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
-                    const state = getState() as rootStateType
-
+                    let state = getState() as rootStateType;
                     // Get user api headers
                     let headers = twoFaApiHeaders(state)
                     if (!headers || Object.keys(headers).length === 0) {
-                        // throw new ApplicationServiceError("Verify2FaCode - Missing required dynamic api headers");
-                        const domainName = window.location.hostname;
                         const result = await dispatch(
-                            configApis.endpoints.getDnsConfig.initiate(
+                            userApis.endpoints.getApplicationHeaders.initiate(
                                 {
-                                    domainName: domainName,
+                                    email: payload.email,
                                 },
                                 {
                                     forceRefetch: true  // Force RTK to refetch the query
@@ -125,8 +122,11 @@ export const twoFaApis = createApi({
                             )
                         )
                         if (result.isError) {
-                            throw new ApplicationServiceError("VERIFY-EMAIL-CODE - Failed to fetch DNS Config data")
+                            throw new ApplicationServiceError("SEND-EMAIL-CODE - Failed to fetch application headers")
                         }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
 
                         headers = twoFaApiHeaders(state)
                     }
@@ -161,26 +161,27 @@ export const twoFaApis = createApi({
         sendTwoFaCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
-                    const state = getState() as rootStateType
-
+                    let state = getState() as rootStateType;
                     // Get user api headers
                     let headers = twoFaApiHeaders(state)
                     if (!headers || Object.keys(headers).length === 0) {
-                        // throw new ApplicationServiceError("Verify2FaCode - Missing required dynamic api headers");
-                        const domainName = window.location.hostname;
                         const result = await dispatch(
-                            configApis.endpoints.getDnsConfig.initiate(
+                            userApis.endpoints.getApplicationHeaders.initiate(
                                 {
-                                    domainName: domainName,
+                                    email: payload.email,
                                 },
                                 {
                                     forceRefetch: true  // Force RTK to refetch the query
                                 }
                             )
                         )
+
                         if (result.isError) {
-                            throw new ApplicationServiceError("SEND-2FA-CODE - Failed to fetch DNS Config data")
+                            throw new ApplicationServiceError("SEND-EMAIL-CODE - Failed to fetch application headers")
                         }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
 
                         headers = twoFaApiHeaders(state)
                     }
@@ -212,26 +213,27 @@ export const twoFaApis = createApi({
         verifyTwoFaCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string, code: string }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
-                    const state = getState() as rootStateType
-
+                    let state = getState() as rootStateType;
                     // Get user api headers
                     let headers = twoFaApiHeaders(state)
                     if (!headers || Object.keys(headers).length === 0) {
-                        // throw new ApplicationServiceError("Verify2FaCode - Missing required dynamic api headers");
-                        const domainName = window.location.hostname;
                         const result = await dispatch(
-                            configApis.endpoints.getDnsConfig.initiate(
+                            userApis.endpoints.getApplicationHeaders.initiate(
                                 {
-                                    domainName: domainName,
+                                    email: payload.email,
                                 },
                                 {
                                     forceRefetch: true  // Force RTK to refetch the query
                                 }
                             )
                         )
+
                         if (result.isError) {
-                            throw new ApplicationServiceError("VERIFY-2FA-CODE - Failed to fetch DNS Config data")
+                            throw new ApplicationServiceError("SEND-EMAIL-CODE - Failed to fetch application headers")
                         }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
 
                         headers = twoFaApiHeaders(state)
                     }
@@ -266,26 +268,27 @@ export const twoFaApis = createApi({
         sendResetPasswordCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
-                    const state = getState() as rootStateType
-
+                    let state = getState() as rootStateType;
                     // Get user api headers
                     let headers = twoFaApiHeaders(state)
                     if (!headers || Object.keys(headers).length === 0) {
-                        // throw new ApplicationServiceError("Verify2FaCode - Missing required dynamic api headers");
-                        const domainName = window.location.hostname;
                         const result = await dispatch(
-                            configApis.endpoints.getDnsConfig.initiate(
+                            userApis.endpoints.getApplicationHeaders.initiate(
                                 {
-                                    domainName: domainName,
+                                    email: payload.email,
                                 },
                                 {
                                     forceRefetch: true  // Force RTK to refetch the query
                                 }
                             )
                         )
+
                         if (result.isError) {
-                            throw new ApplicationServiceError("SEND-RESET-PASSWORD-CODE - Failed to fetch DNS Config data")
+                            throw new ApplicationServiceError("SEND-EMAIL-CODE - Failed to fetch application headers")
                         }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
 
                         headers = twoFaApiHeaders(state)
                     }
@@ -320,26 +323,27 @@ export const twoFaApis = createApi({
         verifyResetPasswordCode: build.mutation<apiResponseType<apiResponseDataType>, { email: string, password: string, code: string }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
-                    const state = getState() as rootStateType
-
+                    let state = getState() as rootStateType;
                     // Get user api headers
                     let headers = twoFaApiHeaders(state)
                     if (!headers || Object.keys(headers).length === 0) {
-                        // throw new ApplicationServiceError("Verify2FaCode - Missing required dynamic api headers");
-                        const domainName = window.location.hostname;
                         const result = await dispatch(
-                            configApis.endpoints.getDnsConfig.initiate(
+                            userApis.endpoints.getApplicationHeaders.initiate(
                                 {
-                                    domainName: domainName,
+                                    email: payload.email,
                                 },
                                 {
                                     forceRefetch: true  // Force RTK to refetch the query
                                 }
                             )
                         )
+
                         if (result.isError) {
-                            throw new ApplicationServiceError("VERIFY-2FA-CODE - Failed to fetch DNS Config data")
+                            throw new ApplicationServiceError("SEND-EMAIL-CODE - Failed to fetch application headers")
                         }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
 
                         headers = twoFaApiHeaders(state)
                     }
@@ -370,4 +374,4 @@ export const twoFaApis = createApi({
     })
 })
 
-export const { useSendVerifyEmailCodeMutation, useVerifyEmailCodeMutation, useSendTwoFaCodeMutation, useVerifyTwoFaCodeMutation, useSendResetPasswordCodeMutation, useVerifyResetPasswordCodeMutation } = twoFaApis
+export const { useSendEmailVerificationCodeMutation, useVerifyEmailCodeMutation, useSendTwoFaCodeMutation, useVerifyTwoFaCodeMutation, useSendResetPasswordCodeMutation, useVerifyResetPasswordCodeMutation } = twoFaApis

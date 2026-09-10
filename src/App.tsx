@@ -17,11 +17,19 @@ const AUTH_ROUTES = [
   "/sendEmailVerificationCode",
   "/verifyEmail",
   "/select2FaMethod",
-  "/send2FaCode/:twoFatype",
-  "/verify2FaCode/:twoFatype",
+  "/send2FaCode",
+  "/verify2FaCode",
   "/sendResetPasswordCode",
   "/verifyForgotPasswordCode",
 ];
+
+const isAuthRoute = (pathname: string): boolean => {
+  return (
+    AUTH_ROUTES.includes(pathname) ||
+    pathname.startsWith("/send2FaCode/") ||
+    pathname.startsWith("/verify2FaCode/")
+  );
+};
 
 const SESSION_IDLE_TIME = 5 * 60 * 1000;
 
@@ -67,9 +75,9 @@ function App() {
     const previousPath = previousPathRef.current;
     const currentPath = location.pathname;
     const wasAuthenticatedRoute = !AUTH_ROUTES.includes(previousPath);
-    const isAuthRoute = AUTH_ROUTES.includes(currentPath);
+    const currentIsAuthRoute = isAuthRoute(currentPath);
 
-    if (navigationType === 'POP' && wasAuthenticatedRoute && isAuthRoute && (isAuthenticated || isAuthorized)) {
+    if (navigationType === 'POP' && wasAuthenticatedRoute && currentIsAuthRoute && (isAuthenticated || isAuthorized)) {
       appDispatch(logoutUser());
     }
 

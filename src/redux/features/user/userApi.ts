@@ -29,11 +29,6 @@ interface signupRequestType {
     dateOfBirth: Date
 }
 
-interface signinRequestType {
-    email: string
-    password: string
-}
-
 interface apiResponseType<T> {
     status: string;
     message: string;
@@ -144,7 +139,7 @@ export const userApis = createApi({
         // ======================================
         // Sign In Api
         // ======================================
-        signIn: build.mutation<apiResponseType<apiResponseDataType>, signinRequestType>({
+        signIn: build.mutation<apiResponseType<apiResponseDataType>, { email: string, password: string }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     // Check backend session
@@ -286,7 +281,100 @@ export const userApis = createApi({
                 }
             },
         }),
+
+
+        // ======================================
+        // GET APPLICATION HEADERS
+        // ======================================
+        getApplicationHeaders: build.query<apiResponseType<apiResponseDataType>, { email: string }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${USER_URL}/applicationHeaders`,
+                        method: 'GET',
+                        params: { email: payload.email },
+                        data: payload,
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    // Set the user details in slice
+                    if (result.data?.data) {
+                        const applicationHeaderData = result.data.data;
+                        // ================================ Create Application Headers ================================ \\
+                        const applicationHeaders = {
+                            "x-api-key": applicationHeaderData.xApiKey,
+                            'authorization': `Bearer ${applicationHeaderData?.accessToken}`,
+                            "agent-code": applicationHeaderData.agentCode,
+                            "subagent-code": applicationHeaderData.subAgentCode,
+                            "business-id": applicationHeaderData.businessId,
+                            "program-id": applicationHeaderData.programId,
+                        };
+
+                        // Encrypt Application Headers
+                        // ----------------------------- Get RSA Encryption Key ----------------------------- \\
+                        let rsaHeaderEncryptionPublicKey = sessionStorage.getItem('headerPublicKey');
+                        if (!rsaHeaderEncryptionPublicKey) {
+                            const headerKeyResult = await dispatch(
+                                configApis.endpoints.getHeaderRsaEncryptionPublicKey.initiate(
+                                    undefined,
+                                    {
+                                        forceRefetch: true,
+                                        subscribe: false,
+                                    }
+                                )
+                            );
+
+                            if (headerKeyResult.isError) {
+                                throw new ApplicationServiceError("GET-APPLICATION-HEADER - Failed to get Header RSA encryption public key");
+                            }
+                            rsaHeaderEncryptionPublicKey = headerKeyResult.data?.data?.key ?? null;
+                            if (!rsaHeaderEncryptionPublicKey) {
+                                throw new ApplicationServiceError("GET-APPLICATION-HEADER - Header RSA encryption public key is missing");
+                            }
+                        }
+                        // ----------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
+                        // Encrypt header using RSA
+                        const encryptedApplicationHeaders: Partial<Record<keyof applicationHeaderItemsType, string>> = {};
+
+                        for (const key of Object.keys(applicationHeaders) as Array<keyof typeof applicationHeaders>) {
+                            const value = applicationHeaders[key];
+
+                            if (!value) continue;
+
+                            const response = await rsaEncryption({ value }, rsaHeaderEncryptionPublicKey);
+
+                            if (response?.status !== "SUCCESS") {
+                                throw new ApplicationServiceError(
+                                    "RSA Header Encryption facing unknown error",
+                                    "RsaHeaderEncryption"
+                                );
+                            }
+
+                            encryptedApplicationHeaders[key] = response.ciphertextBase64;
+                        }
+                        // console.log("Encrypted headers: ", encryptedHeaders)
+                        dispatch(setAppliationHeaders(encryptedApplicationHeaders as applicationHeaderItemsType))
+
+                        // Replace response data with sanitized data
+                        result.data.data = encryptedApplicationHeaders;
+                    }
+
+                    // Update authentication status of user
+                    dispatch(setAuthenticated(true));
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    }
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, "GET-APPLICATION-HEADER faced appilcation error ");
+                    return rtkError;
+                }
+            },
+        }),
     }),
 })
 
-export const { useSignInMutation, useSignUpMutation } = userApis
+export const { useSignInMutation, useSignUpMutation, useGetApplicationHeadersQuery, useLazyGetApplicationHeadersQuery } = userApis

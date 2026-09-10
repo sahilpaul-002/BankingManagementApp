@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import CustomButton from '../common/CustomButtonComponent'
 import CustomOtpInput from '../common/CustomOtpInputComponent'
 import { toast } from 'react-toastify';
-import { useSendVerifyEmailCodeMutation, useVerifyEmailCodeMutation } from '@/redux/features/twoFa/twoFaApis';
+import { useSendEmailVerificationCodeMutation, useVerifyEmailCodeMutation } from '@/redux/features/twoFa/twoFaApis';
 import { useNavigate } from 'react-router';
 import ShowInConsole from '@/utils/ShowInConsole';
 
@@ -161,7 +161,7 @@ export default function VerifyEmailComponent() {
 
     // --------------------------------- Resend Code --------------------------------- \\
     // Send verify email code Api Mutation
-    const [sendVerifyEmailCode, { isLoading: isSendingCode, error: sendVerificationCodeError, data: sendVerificationCodeData, isSuccess: sendVerificationCodeSuccess }] = useSendVerifyEmailCodeMutation()
+    const [sendVerifyEmailCode, { isLoading: isSendingCode, error: sendVerificationCodeError, data: sendVerificationCodeData, isSuccess: sendVerificationCodeSuccess }] = useSendEmailVerificationCodeMutation()
 
     // Function to handle resend code
     const handleResendCode = async () => {

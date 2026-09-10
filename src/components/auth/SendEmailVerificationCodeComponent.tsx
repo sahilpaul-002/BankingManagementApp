@@ -7,7 +7,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'react-toastify';
 import ShowInConsole from '@/utils/ShowInConsole';
-import { useSendVerifyEmailCodeMutation } from '@/redux/features/twoFa/twoFaApis';
+import { useSendEmailVerificationCodeMutation } from '@/redux/features/twoFa/twoFaApis';
 
 export default function SendEmailVerificationCodeComponent() {
     // Configure useNavigate
@@ -42,7 +42,7 @@ export default function SendEmailVerificationCodeComponent() {
     })
 
     // SignIn Api Mutation
-    const [sendVerificationCode, { isLoading, error, data, isSuccess }] = useSendVerifyEmailCodeMutation()
+    const [sendVerificationCode, { isLoading, error, data, isSuccess }] = useSendEmailVerificationCodeMutation()
     // Function to handle form submission
     const onSendEmailVerificationCodeFormSubmit: SubmitHandler<sendEmailVerificationCodeFormData> = async (formData) => {
         try {
