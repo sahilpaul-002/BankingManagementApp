@@ -98,11 +98,10 @@ export default function Send2FaCodeComponent() {
 
             setTimeout(() => {
                 if (twoFatype === "emailOtp") {
-                    navigate("/verify2FaCode/emailOtp", {replace: true})
+                    navigate("/verify2FaCode/emailOtp")
                 }
                 else if (twoFatype === "totp") {
                     navigate("/verify2FaCode/totp", {
-                        replace: true,
                         state: {
                             secretKey: result?.data?.secretKey,
                             qrCodeUrl: result?.data?.qrCodeUrl,
@@ -111,7 +110,7 @@ export default function Send2FaCodeComponent() {
                     })
                 }
                 else {
-                    navigate("/verify2FaCode/smsOtp", {replace: true})
+                    navigate("/verify2FaCode/smsOtp")
                 }
             }, 500);
         }

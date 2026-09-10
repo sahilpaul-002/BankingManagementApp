@@ -108,27 +108,27 @@ export default function SignInComponent() {
 
       if (redirectionStep === "SEND-VERIFY-EMAIL") {
         setTimeout(() => {
-          navigate("/sendVerifyEmailCode", { replace: true });
+          navigate("/sendVerifyEmailCode");
         }, 500)
       }
       else if (redirectionStep === "VERIFY-EMAIL") {
         setTimeout(() => {
-          navigate("/verifyEmail", { replace: true });
+          navigate("/verifyEmail");
         }, 500)
       }
       else if (redirectionStep === "SELECT-2FA") {
         setTimeout(() => {
-          navigate("/select2FaMethod", { replace: true });
+          navigate("/select2FaMethod");
         }, 500)
       }
       else if (redirectionStep === "SEND-EMAIL-OTP") {
         setTimeout(() => {
-          navigate("/send2FaCode/emailOtp", { replace: true });
+          navigate("/send2FaCode/emailOtp");
         }, 500)
       }
       else if (redirectionStep === "VERIFY-TOTP") {
         setTimeout(() => {
-          navigate("/verify2FaCode/totp", { replace: true });
+          navigate("/verify2FaCode/totp");
         }, 500)
       }
     }

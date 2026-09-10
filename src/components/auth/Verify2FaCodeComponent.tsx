@@ -22,7 +22,7 @@ export default function Verify2FaCodeComponent() {
     // UseEffect to check is session storage email is present
     useEffect(() => {
         if (!storedEmail) {
-            navigate(`/send2FaCode/${twoFatype}`, { replace: true })
+            navigate(`/send2FaCode/${twoFatype}`)
 
             return;
         }
@@ -38,10 +38,7 @@ export default function Verify2FaCodeComponent() {
                 !location.state?.qrCodeUrl
 
             if (missingSecret || missingQr) {
-                navigate(
-                    "/send2FaCode/totp",
-                    { replace: true }
-                )
+                navigate("/send2FaCode/totp")
             }
         }
     }, [location.state, navigate])
@@ -109,7 +106,7 @@ export default function Verify2FaCodeComponent() {
         try {
             // Check email stored in session storage
             if (!storedEmail) {
-                navigate(`/send2FaCode/${twoFatype}`, { replace: true })
+                navigate(`/send2FaCode/${twoFatype}`)
             }
             let codeType
             if (twoFatype === "emailOtp") {
@@ -137,7 +134,7 @@ export default function Verify2FaCodeComponent() {
             toast.success("2-factor-authentication code verified successfully.")
 
             setTimeout(() => {
-                navigate("/dashBoard", {replace: true})
+                navigate("/dashBoard")
             }, 500);
         }
         catch (err: any) {
@@ -152,21 +149,21 @@ export default function Verify2FaCodeComponent() {
                 case normalizedMessage.includes("email not in the valid state for 2 factor authentication using email - 2fa not enabled"):
                     toast.error("2-factor-authentication service failed due to icorrect account email state. Please restart the verification process.");
                     setTimeout(() => {
-                        navigate("/select2FaMethod", { replace: true })
+                        navigate("/select2FaMethod")
                     }, 500)
                     break;
 
                 case normalizedMessage.includes("email not in the valid state for 2 factor authentication using authenticator - 2fa not configured for authenticator"):
                     toast.error("2-factor-authentication service failed due to icorrect account email state. Please restart the verification process.");
                     setTimeout(() => {
-                        navigate("/select2FaMethod", { replace: true })
+                        navigate("/select2FaMethod")
                     }, 500)
                     break;
 
                 case normalizedMessage.includes("verifiEmailService is facing issue - email not in the correct state for two factor auth verification"):
                     toast.error("2-factor-authentication service failed due to icorrect account email state. Please restart the verification process.");
                     setTimeout(() => {
-                        navigate("/select2FaMethod", { replace: true })
+                        navigate("/select2FaMethod")
                     }, 500)
                     break;
 
@@ -226,7 +223,7 @@ export default function Verify2FaCodeComponent() {
         try {
             // Check email stored in session storage
             if (!storedEmail) {
-                navigate(`/send2FaCode/${twoFatype}`, { replace: true })
+                navigate(`/send2FaCode/${twoFatype}`)
             }
             const payload = {
                 email: storedEmail as string,
@@ -333,7 +330,7 @@ export default function Verify2FaCodeComponent() {
                             <div className="verify2FaCode-verify2FaCodeForm-backToSignin-button-container w-fit h-fit">
                                 <CustomButton id={"verify2FaCode-verify2FaCodeForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
-                                    onClick={() => { navigate("/", {replace: true}) }} showButtonLoader={false} variant={"authLink"}
+                                    onClick={() => { navigate("/") }} showButtonLoader={false} variant={"authLink"}
                                 />
                             </div>
                         </div>

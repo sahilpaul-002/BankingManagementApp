@@ -58,7 +58,6 @@ export default function SendResetPasswordCodeComponent() {
 
             setTimeout(() => {
                 navigate("/verifyForgotPasswordCode", {
-                    replace: true,
                     state: {
                         email: formData?.email,
                         previousPath: location.pathname
@@ -122,7 +121,7 @@ export default function SendResetPasswordCodeComponent() {
                             <div className="sendResetPasswordCode-sendResetPasswordCodeForm-backToSignin-button-container w-fit h-fit">
                                 <CustomButton id={"sendResetPasswordCode-sendResetPasswordCodeForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
-                                    onClick={() => { navigate("/", {replace: true}) }} showButtonLoader={false} variant={"authLink"}
+                                    onClick={() => { navigate("/") }} showButtonLoader={false} variant={"authLink"}
                                 />
                             </div>
                         </div>

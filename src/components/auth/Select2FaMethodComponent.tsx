@@ -29,12 +29,12 @@ export default function Select2FaMethodComponent() {
         setSelect2FaMMethodError("")
 
         if (twoFaMethodType === "TOTP") {
-            navigate("/send2FaCode/totp", {replace: true})
+            navigate("/send2FaCode/totp")
             return
         }
 
         if (twoFaMethodType === "EMAIL-OTP") {
-            navigate("/send2FaCode/emailOtp", {replace: true})
+            navigate("/send2FaCode/emailOtp")
         }
     }
     // -------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXx -------------------------------- \\

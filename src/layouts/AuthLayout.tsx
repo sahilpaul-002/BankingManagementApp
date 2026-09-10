@@ -33,7 +33,7 @@ export default function AuthLayout() {
     }
 
     if (!isLoading && !isFetching && isError) {
-      navigate("/serviceUnavailable", { replace: true });
+      navigate("/serviceUnavailable");
     }
   }, [isLoading, isFetching, data, isSuccess, isError, navigate])
 

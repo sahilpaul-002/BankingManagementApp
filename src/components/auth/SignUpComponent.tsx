@@ -168,7 +168,7 @@ export default function SignUpComponent() {
 
             toast.success("Sign up successfull.");
             setTimeout(() => {
-                navigate("/", { replace: true });
+                navigate("/");
             }, 1000)
         }
         catch (error: any) {

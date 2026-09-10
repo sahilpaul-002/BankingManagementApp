@@ -16,9 +16,7 @@ export default function VerifyEmailComponent() {
     // UseEffect to check is session storage email is present
     useEffect(() => {
         if (!storedEmail) {
-            navigate("/sendEmailVerificationCode", {
-                replace: true
-            });
+            navigate("/sendEmailVerificationCode");
 
             return;
         }
@@ -87,7 +85,7 @@ export default function VerifyEmailComponent() {
         try {
             // Check email stored in session storage
             if (!storedEmail) {
-                navigate("/sendEmailVerificationCode", {replace: true})
+                navigate("/sendEmailVerificationCode")
             }
             const payload = {
                 email: storedEmail || "",
@@ -104,7 +102,7 @@ export default function VerifyEmailComponent() {
             toast.success("Email verified successfully.")
 
             setTimeout(() => {
-                navigate("/select2FaMethod", {replace: true})
+                navigate("/select2FaMethod")
             }, 500);
         }
         catch (err: any) {
@@ -169,7 +167,7 @@ export default function VerifyEmailComponent() {
         try {
             // Check email stored in session storage
             if (!storedEmail) {
-                navigate("/sendEmailVerificationCode", {replace: true})
+                navigate("/sendEmailVerificationCode")
             }
             const payload = {
                 email: storedEmail || ""
@@ -249,7 +247,7 @@ export default function VerifyEmailComponent() {
                             <div className="verifyEmail-verifyEmailForm-backToSignin-button-container w-fit h-fit">
                                 <CustomButton id={"verifyEmail-verifyEmailForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
-                                    onClick={() => { navigate("/", {replace: true}) }} showButtonLoader={false} variant={"authLink"}
+                                    onClick={() => { navigate("/") }} showButtonLoader={false} variant={"authLink"}
                                 />
                             </div>
                         </div>

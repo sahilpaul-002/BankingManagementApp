@@ -29,10 +29,7 @@ export default function VerifyResetPasswordCodeComponent() {
             previousPath !== "/sendResetPasswordCode";
 
         if (invalidAccess) {
-            navigate(
-                "/sendResetPasswordCode",
-                { replace: true }
-            );
+            navigate("/sendResetPasswordCode");
         }
     }, [location.state, navigate]);
 
@@ -150,9 +147,7 @@ export default function VerifyResetPasswordCodeComponent() {
         try {
             // Check email stored in session storage
             if (!storedEmail) {
-                navigate("/sendResetPasswordCode"),
-                    { replace: true }
-            }
+                navigate("/sendResetPasswordCode")}
             const payload = {
                 email: storedEmail || "",
                 code: otpValue,
@@ -183,13 +178,13 @@ export default function VerifyResetPasswordCodeComponent() {
             if (normalizedMessage.includes("user with the provided email does not exist")) {
                 toast.error("Password resset failed due non-existing account. Please try with another email.");
                 setTimeout(() => {
-                    navigate("/sendResetPasswordCode", { replace: true });
+                    navigate("/sendResetPasswordCode");
                 }, 500)
             }
             else if (normalizedMessage.includes("email not in the correct state for reset password code verification")) {
                 toast.error("Password resset failed due to incorrect account state. Please try again with another email.");
                 setTimeout(() => {
-                    navigate("/sendResetPasswordCode", { replace: true });
+                    navigate("/sendResetPasswordCode");
                 }, 500)
             }
             else if (normalizedMessage.includes("invalid verification code")) {
@@ -246,9 +241,7 @@ export default function VerifyResetPasswordCodeComponent() {
         try {
             // Check email stored in session storage
             if (!storedEmail) {
-                navigate("/sendResetPasswordCode"),
-                    { replace: true }
-            }
+                navigate("/sendResetPasswordCode")}
             const payload = {
                 email: storedEmail || ""
             };
@@ -374,7 +367,7 @@ export default function VerifyResetPasswordCodeComponent() {
                             <div className="resetPassword-resetPasswordForm-backToSignin-button-container w-fit h-fit">
                                 <CustomButton id={"resetPassword-resetPasswordForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
-                                    onClick={() => { navigate("/", { replace: true }) }} showButtonLoader={false} variant={"authLink"}
+                                    onClick={() => { navigate("/") }} showButtonLoader={false} variant={"authLink"}
                                 />
                             </div>
                         </div>

@@ -60,7 +60,7 @@ export default function SendEmailVerificationCodeComponent() {
             sessionStorage.setItem("userEmail", formData?.email);
 
             setTimeout(() => {
-                navigate("/verifyEmail", {replace: true})
+                navigate("/verifyEmail")
             }, 500);
         }
         catch (err: any) {
@@ -108,7 +108,7 @@ export default function SendEmailVerificationCodeComponent() {
                             <div className="sendEmailVerificationCode-sendEmailVerificationCodeForm-backToSignin-button-container w-fit h-fit">
                                 <CustomButton id={"sendEmailVerificationCode-sendEmailVerificationCodeForm-backToSignin-button"} type={"button"}
                                     label={"Sign In"}
-                                    onClick={() => { navigate("/", {replace: true}) }} showButtonLoader={false} variant={"authLink"}
+                                    onClick={() => { navigate("/") }} showButtonLoader={false} variant={"authLink"}
                                 />
                             </div>
                         </div>
