@@ -153,10 +153,10 @@ export const getBeneficiaryDetailsService = async (requestSession: Request["sess
             {
                 account_number: 1,
                 account_holder_name: 1,
+                account_currency: 1,
                 swift_code: 1,
                 iban_code: 1,
                 bank_name: 1,
-                is_verified: 1
             }
         ).lean();
 

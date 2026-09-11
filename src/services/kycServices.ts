@@ -103,6 +103,31 @@ interface kycMulterFiles {
     poa_document?: Express.Multer.File[];
 }
 
+const MAX_KYC_FILE_SIZE = 5 * 1024 * 1024;
+
+const allowedKycMimeTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png"
+];
+
+const validateKycDocument = (
+    file: Express.Multer.File,
+    documentName: string
+) => {
+    if (file.size > MAX_KYC_FILE_SIZE) {
+        throw new BadRequestError(
+            `${documentName} size must not exceed 5 MB`
+        );
+    }
+
+    if (!allowedKycMimeTypes.includes(file.mimetype)) {
+        throw new BadRequestError(
+            `${documentName} must be a PDF, JPEG, JPG, or PNG file`
+        );
+    }
+};
+
 const uploadKycDocuments = async (poiDocumentFile: Express.Multer.File, poaDocumentFile: Express.Multer.File, session: Request["session"], userId: string) => {
     // Upload Documents To Cloudinary
     const [poiUploadResponse, poaUploadResponse] = await Promise.all([
@@ -169,6 +194,10 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
         }
         const poiDocumentFile = files.poi_document[0];
         const poaDocumentFile = files.poa_document[0];
+
+        // Validate documents
+        validateKycDocument(poiDocumentFile, "POI document");
+        validateKycDocument(poaDocumentFile, "POA document");
 
         // Check collection existance
         const isCollectionPresent1 = await checkMongoDbCollectionExist("user_kyc_details");
