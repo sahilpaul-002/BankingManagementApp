@@ -15,9 +15,20 @@ import SendResetPasswordCodeComponent from "@/components/auth/SendResetPasswordC
 import VerifyResetPasswordCodeComponent from "@/components/auth/VerifyResetPasswordCodeComponent";
 import DashboardLayout from "@/layouts/DashboardLayout";
 import DashboardPage from "@/pages/DashboardPage";
-import SettingsLayout from "@/layouts/SettingsLayout";
+import UserInfoLayout from "@/layouts/UserInfoLayout";
 import UserDetailsPage from "@/pages/UserDetailsPage";
 import UserVerificationPage from "@/pages/UserVerificationPage";
+import WalletsLayout from "@/layouts/WalletsLayout";
+import PayablesLayout from "@/layouts/PayablesLayout";
+import CardsLayout from "@/layouts/CardsLayout";
+import DepositWalletsPage from "@/pages/DepositWalletsPage";
+import CurrencyConversionPage from "@/pages/CurrencyConversionPage";
+import WalletsStatementsPage from "@/pages/WalletsStatementsPage";
+import BeneficiariesPage from "@/pages/BeneficiariesPage";
+import PayoutPage from "@/pages/PayoutPage";
+import CardholdersPage from "@/pages/CardholdersPage";
+import ManageCardsPage from "@/pages/ManageCardsPage";
+import CardDetailsPage from "@/pages/CardDetailsPage";
 
 const router = createBrowserRouter([
     {
@@ -83,19 +94,72 @@ const router = createBrowserRouter([
                         Component: DashboardPage,
                     },
                     {
-                      path: "settings",
-                      Component: SettingsLayout,
-                      children: [
-                        {
-                          index: true,
-                          Component: UserDetailsPage,
-                        },
-                        {
-                          path: "userVerification",
-                          Component: UserVerificationPage,
-                        //   loader: requireKycApproval,
-                        }
-                      ]
+                        path: "wallets",
+                        Component: WalletsLayout,
+                        // loader: requireKycApproval,
+                        children: [
+                            {
+                                path: "deposit",
+                                Component: DepositWalletsPage,
+                            },
+                            {
+                                path: "currencyConversion",
+                                Component: CurrencyConversionPage,
+                            },
+                            {
+                                path: "statements",
+                                Component: WalletsStatementsPage,
+                            },
+                        ]
+                    },
+                    {
+                        path: "payables",
+                        Component: PayablesLayout,
+                        // loader: requireKycApproval,
+                        children: [
+                            {
+                                path: "beneficiaries",
+                                Component: BeneficiariesPage,
+                            },
+                            {
+                                path: "payout/:id?",
+                                Component: PayoutPage,
+                            }
+                        ]
+                    },
+                    {
+                        path: "cards",
+                        Component: CardsLayout,
+                        // loader: requireKycApproval,
+                        children: [
+                            {
+                                path: "cardholders",
+                                Component: CardholdersPage,
+                            },
+                            {
+                              path: "manageCards",
+                              Component: ManageCardsPage,
+                            },
+                            {
+                                path: "manageCards/:id",
+                                Component: CardDetailsPage,
+                            },
+                        ]
+                    },
+                    {
+                        path: "user",
+                        Component: UserInfoLayout,
+                        children: [
+                            {
+                                index: true,
+                                Component: UserDetailsPage,
+                            },
+                            {
+                                path: "verification",
+                                Component: UserVerificationPage,
+                                //   loader: requireKycApproval,
+                            }
+                        ]
                     }
                 ],
             },

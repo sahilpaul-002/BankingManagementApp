@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ChevronDown, LayoutDashboard, Building2, Coins, Send, CreditCard, Settings, LogOut } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, LayoutDashboard, Building2, Coins, Send, CreditCard, Settings, LogOut, UserCog, WalletMinimal } from 'lucide-react';
 import { useappDispatchType } from '@/redux/hooks/reduxHooks';
 import { logoutUser } from '@/redux/thunks/userThunks';
 import { useSelector } from 'react-redux';
@@ -25,35 +25,30 @@ const navigationData: NavSection[] = [
     items: ["Dashboard"]
   },
   {
-    section: "Account",
-    items: ["Deposit Accounts", "Currency Conversion", "Statements"]
-  },
-  {
-    section: "Stablecoins",
-    items: ["Buy / Sell", "Earn", "Swap"]
+    section: "Wallets",
+    items: ["Deposit Wallets", "Currency Conversion", "Statements"]
   },
   {
     section: "Payables",
-    items: ["Beneficiaries", "Send Money"]
+    items: ["Beneficiaries", "Payout"]
   },
   {
     section: "Cards",
-    items: ["Cardholders", "Manage Cards", "Funding Sources"]
+    items: ["Cardholders", "Manage Cards"]
   },
   {
-    section: "Settings",
-    items: ["Verification", "Settings"]
+    section: "User",
+    items: ["Details", "Verification"]
   }
 ];
 
 const getSectionIcon = (section: string) => {
   const iconMap: Record<string, React.ReactNode> = {
     "Overview": <LayoutDashboard className="w-5 h-5" />,
-    "Account": <Building2 className="w-5 h-5" />,
-    "Stablecoins": <Coins className="w-5 h-5" />,
+    "Wallets": <WalletMinimal className="w-5 h-5" />,
     "Payables": <Send className="w-5 h-5" />,
     "Cards": <CreditCard className="w-5 h-5" />,
-    "Settings": <Settings className="w-5 h-5" />
+    "User": <UserCog className="w-5 h-5" />
   };
   return iconMap[section] || <LayoutDashboard className="w-5 h-5" />;
 };
@@ -62,19 +57,15 @@ const getSectionIcon = (section: string) => {
 const getSectionForPath = (pathname: string): string => {
   const pathMap: Record<string, string> = {
     "/dashboard": "Overview",
-    "/accounts/depositAccounts": "Account",
-    "/accounts/currencyConversion": "Account",
-    "/accounts/statements": "Account",
-    "/stablecoins/buysell": "Stablecoins",
-    "/stablecoins/earn": "Stablecoins",
-    "/stablecoins/swap": "Stablecoins",
+    "/wallets/deposit": "Wallets",
+    "/wallets/currencyConversion": "Wallets",
+    "/wallets/statements": "Wallets",
     "/payables/beneficiaries": "Payables",
-    "/payables/sendMoney": "Payables",
+    "/payables/payout": "Payables",
     "/cards/cardholders": "Cards",
     "/cards/manageCards": "Cards",
-    "/cards/fundingSources": "Cards",
-    "/settings/verification": "Settings",
-    "/settings": "Settings"
+    "/user": "User",
+    "/user/verification": "User"
   };
   return pathMap[pathname] || "Overview";
 };
@@ -155,19 +146,15 @@ export default function NavbarComponent() {
     // Simple path mapping
     const pathMap: Record<string, string> = {
       "Dashboard": "/dashboard",
-      "Deposit Accounts": "/accounts/depositAccounts",
-      "Currency Conversion": "/accounts/currencyConversion",
-      "Statements": "/accounts/statements",
-      "Buy / Sell": "/stablecoins/buysell",
-      "Earn": "/stablecoins/earn",
-      "Swap": "/stablecoins/swap",
+      "Deposit Wallets": "/wallets/deposit",
+      "Currency Conversion": "/wallets/currencyConversion",
+      "Statements": "/wallets/statements",
       "Beneficiaries": "/payables/beneficiaries",
-      "Send Money": "/payables/sendMoney",
+      "Payout": "/payables/payout",
       "Cardholders": "/cards/cardholders",
       "Manage Cards": "/cards/manageCards",
-      "Funding Sources": "/cards/fundingSources",
-      "Verification": "/settings/verification",
-      "Settings": "/settings"
+      "Details": "/user",
+      "Verification": "/user/verification",
     };
 
     const path = pathMap[item] || "/dashboard";
@@ -178,19 +165,15 @@ export default function NavbarComponent() {
   const isItemActive = (item: string) => {
     const pathMap: Record<string, string> = {
       "Dashboard": "/dashboard",
-      "Deposit Accounts": "/accounts/depositAccounts",
-      "Currency Conversion": "/accounts/currencyConversion",
-      "Statements": "/accounts/statements",
-      "Buy / Sell": "/stablecoins/buysell",
-      "Earn": "/stablecoins/earn",
-      "Swap": "/stablecoins/swap",
+      "Deposit Wallets": "/wallets/deposit",
+      "Currency Conversion": "/wallets/currencyConversion",
+      "Statements": "/wallets/statements",
       "Beneficiaries": "/payables/beneficiaries",
-      "Send Money": "/payables/sendMoney",
+      "Payout": "/payables/payout",
       "Cardholders": "/cards/cardholders",
       "Manage Cards": "/cards/manageCards",
-      "Funding Sources": "/cards/fundingSources",
-      "Verification": "/settings/verification",
-      "Settings": "/settings"
+      "Details": "/user",
+      "Verification": "/user/verification",
     };
 
     return location.pathname === pathMap[item];
