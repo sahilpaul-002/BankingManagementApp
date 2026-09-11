@@ -1,7 +1,7 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestQueryError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { getUserFundingAccountsBalancesService, prefundUserCryptoFundingAccountService, prefundUserFiatFundingAccountService, sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService, getApplicationHeadersService } from "../services/userServices.js";
+import { getUserFundingAccountsBalancesService, prefundUserCryptoFundingAccountService, prefundUserFiatFundingAccountService, sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService, getApplicationHeadersService, userOnboardingDetailsService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
@@ -88,11 +88,11 @@ export const userLogin = async (req: Request, res: Response): Promise<Response<s
             return res.fail("SERVICE_ERROR", "UserLogin is facing issue", 400);
         }
 
-        if (userLoginServiceResponse?.message?.includes("verification code sent to email")) {
-            return res.success("User login successfull, verification code sent to the email", userLoginServiceResponse?.data, 200)
+        if (userLoginServiceResponse?.message?.includes("email verification code sent to email")) {
+            return res.success("User login successfull, email verification code sent to the email", userLoginServiceResponse?.data, 200)
         }
-        else if (userLoginServiceResponse?.message?.includes("failed to send verification code")) {
-            return res.success("User login successfull, but failed to send verification code.", userLoginServiceResponse?.data, 200)
+        else if (userLoginServiceResponse?.message?.includes("failed to send email verification code")) {
+            return res.success("User login successfull, but failed to send email verification code.", userLoginServiceResponse?.data, 200)
         }
         else if (userLoginServiceResponse?.message?.includes("2fa not enabled")) {
             return res.success("User login successfull, 2fa not enabled.", userLoginServiceResponse?.data, 200)
@@ -155,6 +155,49 @@ export const getApplicationHeaders = async (req: Request, res: Response): Promis
             throw error
         }
         throw new ServiceError(`GetApplicationHeadersController facing issue`, sanitizedError);
+    }
+}
+// ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
+
+// ------------------------------------- FUNCTION TO GET USER ONBOARDING STATUS ------------------------------------- \\
+export const userOnboardingDetails = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+        const onboardingStatusServiceResponse = await userOnboardingDetailsService(requestSession, aesDecryptedQueryData);
+        if (onboardingStatusServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Get user onboarding status is facing issue", 400);
+        }
+
+        if (onboardingStatusServiceResponse?.message?.toLowerCase()?.includes("User bank details not verified")) {
+            return res.success("User bank details not verified", onboardingStatusServiceResponse?.data, 200)
+        }
+        else {
+            return res.success("User onboarding status fetched", onboardingStatusServiceResponse?.data, 200)
+        }
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "UserOnboardingStatusController",
+            url: req.path,
+            method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(`UserOnboardingStatusController facing issue`, sanitizedError);
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\

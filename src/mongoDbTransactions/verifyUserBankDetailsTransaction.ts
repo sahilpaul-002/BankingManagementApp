@@ -195,12 +195,12 @@ const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
                 }
             ];
             const createdCryptoAccounts = await user_crypto_deposit_account_details.create(
-                    cryptoDepositAccounts,
-                    {
-                        session: mongoSession,
-                        ordered: true
-                    }
-                );
+                cryptoDepositAccounts,
+                {
+                    session: mongoSession,
+                    ordered: true
+                }
+            );
             if (createdCryptoAccounts?.length !== 4) {
                 throw new ServiceError("Failed to create user crypto deposit accounts");
             }

@@ -23,6 +23,7 @@ import { generateVerificationCodeService } from "./generateVerificationCodeServi
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import { sendVerificationEmailService } from "./twoFaService.js";
 import { userBankDetailsModel as user_bank_details } from "../models/user_bank_details.js";
+import { userAddressDetailsModel as user_address_details } from "../models/user_addresses_details.js";
 import { userOnboardingDetailsValidationSchema } from "../validations/userOnboardingDetailsValidation.js";
 import mongoose, { Types } from "mongoose";
 import jwt, { type JwtPayload } from "jsonwebtoken";
@@ -406,15 +407,15 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
             is2FaEnabled: userDetails?.is_2fa_enabled,
             twoFaType: userDetails?.two_fa_type,
             cardholderId: userDetails?.cardholder_id?.toString(),
-            authenticatorSecret: userDetails?.authenticator_secret
+            // authenticatorSecret: userDetails?.authenticator_secret
         }
 
         // Check if user email verified
         if (userDetails?.is_email_verified === "N" && sendEmailResponse?.status === "SUCCESS" && userMetaDetailsDoc?.verification_code && userMetaDetailsDoc?.verification_code_expires_at) {
-            return { status: "SUCCESS", message: "User login successful, verification code sent to email", data: frontendUserDetails }
+            return { status: "SUCCESS", message: "User login successful, email verification code sent to email", data: frontendUserDetails }
         }
         else if (userDetails?.is_email_verified === "N" && (sendEmailResponse?.status !== "SUCCESS" || !userMetaDetailsDoc?.verification_code || !userMetaDetailsDoc?.verification_code_expires_at)) {
-            return { status: "SUCCESS", message: "User login successfull, but failed to send verification code", data: frontendUserDetails }
+            return { status: "SUCCESS", message: "User login successfull, but failed to send email verification code", data: frontendUserDetails }
         }
         else if (userDetails?.is_email_verified === "Y" && (userDetails.is_2fa_enabled !== "Y" || !userDetails?.two_fa_type)) {
             return { status: "SUCCESS", message: "User login successfull, 2fa not enabled", data: frontendUserDetails }
@@ -425,7 +426,6 @@ export const userLoginService = async (req: Request, res: Response, aesDecrypted
         else {
             return { status: "SERVICE_ERROR", message: "User login failed" }
         }
-
     }
     catch (err) {
         const error = err as any;
@@ -509,6 +509,89 @@ export const getApplicationHeadersService = async (req: Request, res: Response, 
 }
 // -------------------------------------  XXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
 
+// ------------------------------------- USER ONBOARDING STATUS SERVICE -------------------------------------  \\
+export const userOnboardingDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email")
+        if (!email) {
+            throw new InvalidRequestQueryError("Email not present in query params")
+        }
+
+        // Check if collection exist in MongoDB
+        const isCollection1Present = await checkMongoDbCollectionExist("user_details");
+        if (isCollection1Present.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist in MongoDB");
+        }
+        const isCollection2Present = await checkMongoDbCollectionExist("user_bank_details");
+        if (isCollection2Present.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist in MongoDB");
+        }
+        const isCollection3Present = await checkMongoDbCollectionExist("user_address_details");
+        if (isCollection3Present.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist in MongoDB");
+        }
+
+        // Validate email
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError("Unauthorized session detected - invalid user id");
+        }
+        const userId = new Types.ObjectId(sessionUserId)
+
+        // Check user onboarding details exist
+        const [addressDetailsDoc, bankDetailsDoc] = await Promise.all([
+            user_address_details
+                .findOne({ user_id: userId })
+                .select("user_id billing_address delivery_address")
+                .lean(),
+
+            user_bank_details
+                .findOne({ user_id: userId })
+                .select(
+                    "user_id account_holder_name account_number swift_code iban_code bank_name is_verified"
+                )
+                .lean()
+        ]);
+        if (!addressDetailsDoc || !bankDetailsDoc) {
+            throw new NotFoundError("User onboarding details not found");
+        }
+        if (!addressDetailsDoc || !bankDetailsDoc) {
+            throw new NotFoundError("User onboarding details not found")
+        }
+        if (!bankDetailsDoc?.is_verified) {
+            return { status: "SUCCESS", message: "User bank details not verified", data: { userId: userId, addressDetails: addressDetailsDoc, bankDetails: bankDetailsDoc } }
+        }
+        else {
+            return { status: "SUCCESS", message: "User onboarding details fetched successfully", data: { userId: userId, addressDetails: addressDetailsDoc, bankDetails: bankDetailsDoc } }
+        }
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "UserOnboardingService",
+            // url: url,
+            // method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+        throw new ServiceError(
+            `UserOnboardingService facing issue`,
+            sanitizedError
+        );
+    }
+}
+// -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
 
 // ------------------------------------- USER ONBOARDING SERVICE -------------------------------------  \\
 export const userOnboardingService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, any> | undefined) => {
