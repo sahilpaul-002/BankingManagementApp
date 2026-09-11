@@ -6,7 +6,7 @@ import { Pencil } from 'lucide-react';
 import { toast } from 'react-toastify';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import { BANK_DETAILS_FALLBACK } from '@/fallbacks/settings/userDetails/bankDetailsFallbacks';
+import { BANK_DETAILS_FALLBACK } from '@/fallbacks/user/userDetails/bankDetailsFallbacks';
 
 // ── Zod Schema ──────────────────────────────────────────────────────────────
 const bankDetailsSchema = z.object({

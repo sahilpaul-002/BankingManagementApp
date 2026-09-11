@@ -8,7 +8,7 @@ import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import mobileCountryCodesLists from '@/utils/mobileCountryCodesList';
-import { PERSONAL_DETAILS_FALLBACK } from '@/fallbacks/settings/userDetails/personalDetailsFallbacks';
+import { PERSONAL_DETAILS_FALLBACK } from '@/fallbacks/user/userDetails/personalDetailsFallbacks';
 
 // ── Zod Schema ──────────────────────────────────────────────────────────────
 const personalDetailsSchema = z.object({

@@ -6,6 +6,7 @@ import { configApis } from './features/config/configApi.js'
 import { helperApis } from './features/helper/helperApis.js'
 import utilitySlice from './slice/utility/utilitySlice.js'
 import { twoFaApis } from './features/twoFa/twoFaApis.js'
+import { payablesApis } from './features/payables/payablesApi.js'
 import appSessionSlice from './slice/appSession/appSessionSlice.js'
 
 // EXPORT RTK STORE
@@ -22,11 +23,12 @@ export const store = configureStore({
         [helperApis.reducerPath]: helperApis.reducer,
         [userApis.reducerPath]: userApis.reducer,
         [twoFaApis.reducerPath]: twoFaApis.reducer,
+        [payablesApis.reducerPath]: payablesApis.reducer,
     },
 
     // 🔥 RTK Query middleware
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware, twoFaApis.middleware),
+        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware, twoFaApis.middleware, payablesApis.middleware),
 })
 
 // EXPORT STORE DISPATCH

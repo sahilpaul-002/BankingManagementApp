@@ -6,7 +6,7 @@ import { Pencil } from 'lucide-react';
 import { toast } from 'react-toastify';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import { ADDRESS_DETAILS_FALLBACK, type AddressType } from '@/fallbacks/settings/userDetails/addressDetailsFallbacks';
+import { ADDRESS_DETAILS_FALLBACK, type AddressType } from '@/fallbacks/user/userDetails/addressDetailsFallbacks';
 
 // ── Zod Schema ──────────────────────────────────────────────────────────────
 const addressSchema = z.object({

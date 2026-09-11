@@ -1,7 +1,7 @@
 import { Activity, useState } from 'react';
-import PersonalDetailsComponent from '@/components/settings/userDetails/PersonalDetailsComponent';
-import AddressDetailsComponent from '@/components/settings/userDetails/AddressDetailsComponent';
-import BankDetailsComponent from '@/components/settings/userDetails/BankDetailsComponent';
+import PersonalDetailsComponent from '@/components/user/userDetails/PersonalDetailsComponent';
+import AddressDetailsComponent from '@/components/user/userDetails/AddressDetailsComponent';
+import BankDetailsComponent from '@/components/user/userDetails/BankDetailsComponent';
 
 type TabId = 'personal' | 'address' | 'bank';
 
