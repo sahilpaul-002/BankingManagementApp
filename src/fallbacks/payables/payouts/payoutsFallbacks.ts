@@ -151,3 +151,164 @@ export const EXECUTE_PAYOUT_QUOTE_FALLBACK: ExecutePayoutQuoteData = {
     },
     status: "PENDING"
 };
+
+// ── 5. Payout Transaction Item Interface ──────────────────────────────────────
+export interface PayoutTransactionItem {
+    _id: string;
+    quote_id: string;
+    beneficiary_id: string;
+    source_currency: string;
+    source_amount: {
+        $numberDecimal: string;
+    };
+    destination_currency: string;
+    destination_amount: {
+        $numberDecimal: string;
+    };
+    exchange_rate: {
+        $numberDecimal: string;
+    };
+    fee_amount: {
+        $numberDecimal: string;
+    };
+    status: string;
+    processing_started_at: string;
+    completed_at: string | null;
+    provider_reference: string;
+    remarks: string;
+    __v?: number;
+}
+
+export interface PayoutTransactionsPagination {
+    current_page: number;
+    page_size: number;
+    total_records: number;
+    total_pages: number;
+    has_next_page: boolean;
+    has_previous_page: boolean;
+}
+
+export interface PayoutTransactionsListResponseData {
+    user_id: string;
+    pagination: PayoutTransactionsPagination;
+    transactions: PayoutTransactionItem[];
+}
+
+export interface PayoutTransactionsListResponse {
+    status: string;
+    message: string;
+    data: PayoutTransactionsListResponseData;
+}
+
+export interface PayoutTransactionDetailsResponseData {
+    transaction: PayoutTransactionItem;
+}
+
+export interface PayoutTransactionDetailsResponse {
+    status: string;
+    message: string;
+    data: PayoutTransactionDetailsResponseData;
+}
+
+// ── 6. Payout Transactions List Fallback Data ───────────────────────────────
+export const PAYOUT_TRANSACTIONS_LIST_FALLBACK: PayoutTransactionItem[] = [
+    {
+        _id: "6aa68deb7c65f7a9f987bc38",
+        quote_id: "6aa68d9f7c65f7a9f987bc32",
+        beneficiary_id: "6a994f40ea3940d9bc444b0b",
+        source_currency: "USD",
+        source_amount: {
+            $numberDecimal: "100.0000"
+        },
+        destination_currency: "USD",
+        destination_amount: {
+            $numberDecimal: "92.0000"
+        },
+        exchange_rate: {
+            $numberDecimal: "1.00000000"
+        },
+        fee_amount: {
+            $numberDecimal: "8.0000"
+        },
+        status: "PROCESSING",
+        processing_started_at: "2026-09-13T12:00:00.100Z",
+        completed_at: null,
+        provider_reference: "MOCK-BANK-98434c99-1557-4ee7-8ff2-d0d784c71404",
+        remarks: "Payout submitted to mock external bank and is being processed"
+    },
+    {
+        _id: "6a9a903c0cedff87fc991393",
+        quote_id: "6a9a90370cedff87fc99138d",
+        beneficiary_id: "6a994f40ea3940d9bc444b0b",
+        source_currency: "USD",
+        source_amount: {
+            $numberDecimal: "100.0000"
+        },
+        destination_currency: "USD",
+        destination_amount: {
+            $numberDecimal: "92.0000"
+        },
+        exchange_rate: {
+            $numberDecimal: "1.00000000"
+        },
+        fee_amount: {
+            $numberDecimal: "8.0000"
+        },
+        status: "SUCCESS",
+        processing_started_at: "2026-09-04T09:34:00.046Z",
+        completed_at: "2026-09-04T09:50:00.200Z",
+        provider_reference: "MOCK-BANK-67d574aa-f33d-4e08-8ba1-1cdb812a6e68",
+        remarks: "Payout successfully completed by mock external bank"
+    },
+    {
+        _id: "6a9a80290f284fea6c4b3101",
+        quote_id: "6a9a80210f284fea6c4b30fb",
+        beneficiary_id: "6a994f40ea3940d9bc444b0b",
+        source_currency: "USD",
+        source_amount: {
+            $numberDecimal: "100.0000"
+        },
+        destination_currency: "USD",
+        destination_amount: {
+            $numberDecimal: "92.0000"
+        },
+        exchange_rate: {
+            $numberDecimal: "1.00000000"
+        },
+        fee_amount: {
+            $numberDecimal: "8.0000"
+        },
+        status: "SUCCESS",
+        processing_started_at: "2026-09-04T08:30:00.063Z",
+        completed_at: "2026-09-04T09:26:42.379Z",
+        provider_reference: "MOCK-BANK-227359b3-07cb-4f4e-acdb-4000517c3ba1",
+        remarks: "Payout successfully completed by mock external bank"
+    }
+];
+
+// ── 7. Payout Transaction Details Fallback Data ─────────────────────────────
+export const PAYOUT_TRANSACTION_DETAILS_FALLBACK: PayoutTransactionItem = {
+    _id: "6a9a903c0cedff87fc991393",
+    quote_id: "6a9a90370cedff87fc99138d",
+    beneficiary_id: "6a994f40ea3940d9bc444b0b",
+    source_currency: "USD",
+    source_amount: {
+        $numberDecimal: "100.0000"
+    },
+    destination_currency: "USD",
+    destination_amount: {
+        $numberDecimal: "92.0000"
+    },
+    exchange_rate: {
+        $numberDecimal: "1.00000000"
+    },
+    fee_amount: {
+        $numberDecimal: "8.0000"
+    },
+    status: "SUCCESS",
+    processing_started_at: "2026-09-04T09:34:00.046Z",
+    completed_at: "2026-09-04T09:50:00.200Z",
+    provider_reference: "MOCK-BANK-67d574aa-f33d-4e08-8ba1-1cdb812a6e68",
+    remarks: "Payout successfully completed by mock external bank",
+    __v: 0
+};

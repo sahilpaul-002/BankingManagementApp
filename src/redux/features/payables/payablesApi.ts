@@ -16,6 +16,8 @@ import type {
     CreatePayoutQuoteResponse,
     ExecutePayoutQuoteRequestBody,
     ExecutePayoutQuoteResponse,
+    PayoutTransactionsListResponse,
+    PayoutTransactionDetailsResponse,
 } from '@/fallbacks/payables/payouts/payoutsFallbacks';
 
 const payablesApiHeaders = (state: rootStateType) => {
@@ -205,6 +207,69 @@ export const payablesApis = createApi({
             },
             invalidatesTags: ['Payouts'],
         }),
+
+        // =======================================================
+        // GET PAYOUT TRANSACTIONS LIST
+        // =======================================================
+        getPayoutTransactions: build.query<PayoutTransactionsListResponse, void>({
+            async queryFn(_payload, { getState }, _extraOptions, baseQuery) {
+                try {
+                    const state = getState() as rootStateType;
+                    const headers = payablesApiHeaders(state);
+
+                    const result = (await executeBaseQuery(baseQuery, {
+                        url: `${PAYABLES_URL}/payouts/transactions`,
+                        method: 'GET',
+                        headers,
+                    })) as {
+                        data?: PayoutTransactionsListResponse;
+                        error?: unknown;
+                    };
+
+                    return {
+                        data: result.data as PayoutTransactionsListResponse,
+                    };
+                } catch (error) {
+                    const rtkError = rtkQueryCatchError(
+                        error,
+                        'GET-PAYOUT-TRANSACTIONS faced application error '
+                    );
+                    return rtkError;
+                }
+            },
+            providesTags: ['Payouts'],
+        }),
+
+        // =======================================================
+        // GET PAYOUT TRANSACTION DETAILS BY ID
+        // =======================================================
+        getPayoutTransactionDetails: build.query<PayoutTransactionDetailsResponse, string>({
+            async queryFn(id, { getState }, _extraOptions, baseQuery) {
+                try {
+                    const state = getState() as rootStateType;
+                    const headers = payablesApiHeaders(state);
+
+                    const result = (await executeBaseQuery(baseQuery, {
+                        url: `${PAYABLES_URL}/payouts/transactions/${id}`,
+                        method: 'GET',
+                        headers,
+                    })) as {
+                        data?: PayoutTransactionDetailsResponse;
+                        error?: unknown;
+                    };
+
+                    return {
+                        data: result.data as PayoutTransactionDetailsResponse,
+                    };
+                } catch (error) {
+                    const rtkError = rtkQueryCatchError(
+                        error,
+                        'GET-PAYOUT-TRANSACTION-DETAILS faced application error '
+                    );
+                    return rtkError;
+                }
+            },
+        }),
     }),
 });
 
@@ -214,5 +279,7 @@ export const {
     useAddBeneficiaryMutation,
     useCreatePayoutQuoteMutation,
     useExecutePayoutQuoteMutation,
+    useGetPayoutTransactionsQuery,
+    useGetPayoutTransactionDetailsQuery,
 } = payablesApis;
 
