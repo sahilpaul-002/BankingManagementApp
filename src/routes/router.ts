@@ -29,6 +29,7 @@ import PayoutPage from "@/pages/PayoutPage";
 import CardholdersPage from "@/pages/CardholdersPage";
 import ManageCardsPage from "@/pages/ManageCardsPage";
 import CardDetailsPage from "@/pages/CardDetailsPage";
+import PayoutTransactionsPage from "@/pages/PayoutTransactionsPage";
 
 const router = createBrowserRouter([
     {
@@ -124,6 +125,10 @@ const router = createBrowserRouter([
                             {
                                 path: "payout/:id?",
                                 Component: PayoutPage,
+                            },
+                            {
+                                path: "transactions",
+                                Component: PayoutTransactionsPage,
                             }
                         ]
                     },

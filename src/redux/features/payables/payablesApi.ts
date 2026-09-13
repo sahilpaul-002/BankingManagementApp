@@ -11,6 +11,12 @@ import type {
     BeneficiaryDetailsResponse,
     BeneficiaryItem,
 } from '@/fallbacks/payables/beneficiaries/beneficiariesFallbacks';
+import type {
+    CreatePayoutQuoteRequestBody,
+    CreatePayoutQuoteResponse,
+    ExecutePayoutQuoteRequestBody,
+    ExecutePayoutQuoteResponse,
+} from '@/fallbacks/payables/payouts/payoutsFallbacks';
 
 const payablesApiHeaders = (state: rootStateType) => {
     const applicationHeaders = selectApplicaitonHeaders(state);
@@ -28,7 +34,7 @@ const axiosInstance = getAxiosInstance();
 export const payablesApis = createApi({
     reducerPath: 'payablesApis',
     baseQuery: axiosBaseQuery(axiosInstance),
-    tagTypes: ['Beneficiaries'],
+    tagTypes: ['Beneficiaries', 'Payouts'],
     endpoints: (build) => ({
         // =======================================================
         // GET BENEFICIARIES LIST
@@ -128,6 +134,77 @@ export const payablesApis = createApi({
             },
             invalidatesTags: ['Beneficiaries'],
         }),
+
+        // =======================================================
+        // CREATE PAYOUT QUOTE
+        // =======================================================
+        createPayoutQuote: build.mutation<
+            CreatePayoutQuoteResponse,
+            CreatePayoutQuoteRequestBody
+        >({
+            async queryFn(payload, { getState }, _extraOptions, baseQuery) {
+                try {
+                    const state = getState() as rootStateType;
+                    const headers = payablesApiHeaders(state);
+
+                    const result = (await executeBaseQuery(baseQuery, {
+                        url: `${PAYABLES_URL}/payouts/quote`,
+                        method: 'POST',
+                        headers,
+                        data: payload,
+                    })) as {
+                        data?: CreatePayoutQuoteResponse;
+                        error?: unknown;
+                    };
+
+                    return {
+                        data: result.data as CreatePayoutQuoteResponse,
+                    };
+                } catch (error) {
+                    const rtkError = rtkQueryCatchError(
+                        error,
+                        'CREATE-PAYOUT-QUOTE faced application error '
+                    );
+                    return rtkError;
+                }
+            },
+        }),
+
+        // =======================================================
+        // EXECUTE PAYOUT QUOTE
+        // =======================================================
+        executePayoutQuote: build.mutation<
+            ExecutePayoutQuoteResponse,
+            ExecutePayoutQuoteRequestBody
+        >({
+            async queryFn(payload, { getState }, _extraOptions, baseQuery) {
+                try {
+                    const state = getState() as rootStateType;
+                    const headers = payablesApiHeaders(state);
+
+                    const result = (await executeBaseQuery(baseQuery, {
+                        url: `${PAYABLES_URL}/payouts/execute`,
+                        method: 'POST',
+                        headers,
+                        data: payload,
+                    })) as {
+                        data?: ExecutePayoutQuoteResponse;
+                        error?: unknown;
+                    };
+
+                    return {
+                        data: result.data as ExecutePayoutQuoteResponse,
+                    };
+                } catch (error) {
+                    const rtkError = rtkQueryCatchError(
+                        error,
+                        'EXECUTE-PAYOUT-QUOTE faced application error '
+                    );
+                    return rtkError;
+                }
+            },
+            invalidatesTags: ['Payouts'],
+        }),
     }),
 });
 
@@ -135,4 +212,7 @@ export const {
     useGetBeneficiariesQuery,
     useGetBeneficiaryDetailsQuery,
     useAddBeneficiaryMutation,
+    useCreatePayoutQuoteMutation,
+    useExecutePayoutQuoteMutation,
 } = payablesApis;
+

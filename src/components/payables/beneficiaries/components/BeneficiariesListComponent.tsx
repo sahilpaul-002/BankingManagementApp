@@ -32,9 +32,9 @@ export default function BeneficiariesListComponent({
 
     const getInitials = (name: string) => {
         if (!name) return 'B';
-        const parts = name.trim().split(' ');
-        if (parts.length >= 2) {
-            return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+        const parts = name.trim().split(' ').filter(Boolean);
+        if (parts.length >= 2 && parts[0] && parts[1]) {
+            return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
         }
         return name.slice(0, 2).toUpperCase();
     };
