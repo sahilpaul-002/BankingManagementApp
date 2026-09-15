@@ -5,7 +5,7 @@ import AuthLayout from "../layouts/AuthLayout";
 import SignInComponent from "../components/auth/SignInComponent";
 import SignUpComponent from "@/components/auth/SignUpComponent";
 import ServiceUnavailable503 from "@/pages/ServiceUnavailable503";
-import { requireAuthentication, requireAuthorization } from "./gaurds/requireAuthentication";
+import { requireAuthentication, requireAuthorization, requireKycAndKybApproval } from "./gaurds/requireAuthentication";
 import VerifyEmailComponent from "@/components/auth/VerifyEmailComponent";
 import SendEmailVerificationCodeComponent from "@/components/auth/SendEmailVerificationCodeComponent";
 import Select2FaMethodComponent from "@/components/auth/Select2FaMethodComponent";
@@ -97,7 +97,7 @@ const router = createBrowserRouter([
                     {
                         path: "wallets",
                         Component: WalletsLayout,
-                        // loader: requireKycApproval,
+                        loader: requireKycAndKybApproval,
                         children: [
                             {
                                 path: "deposit",
@@ -116,7 +116,7 @@ const router = createBrowserRouter([
                     {
                         path: "payables",
                         Component: PayablesLayout,
-                        // loader: requireKycApproval,
+                        loader: requireKycAndKybApproval,
                         children: [
                             {
                                 path: "beneficiaries",
@@ -135,7 +135,7 @@ const router = createBrowserRouter([
                     {
                         path: "cards",
                         Component: CardsLayout,
-                        // loader: requireKycApproval,
+                        loader: requireKycAndKybApproval,
                         children: [
                             {
                                 path: "cardholders",
@@ -162,7 +162,6 @@ const router = createBrowserRouter([
                             {
                                 path: "verification",
                                 Component: UserVerificationPage,
-                                //   loader: requireKycApproval,
                             }
                         ]
                     }

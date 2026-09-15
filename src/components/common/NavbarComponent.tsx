@@ -7,6 +7,10 @@ import { useSelector } from 'react-redux';
 import { selectDnsConfigDetails } from '@/redux/slice/config/configSlice';
 import { useLazyGetDnsConfigQuery } from '@/redux/features/config/configApi';
 import CustomButtonComponent from './CustomButtonComponent';
+import { useGetKycDetailsQuery } from '@/redux/features/kyc/kycApis';
+import { useGetUserOnboardingDetailsQuery } from '@/redux/features/user/userApi';
+import { isKycApproved } from '@/utils/kycHelper';
+import { isKybApproved } from '@/utils/kybHelper';
 
 interface NavItem {
   label: string;
@@ -30,7 +34,7 @@ const navigationData: NavSection[] = [
   },
   {
     section: "Payables",
-    items: ["Beneficiaries", "Payout"]
+    items: ["Beneficiaries", "Payout", "Transactions"]
   },
   {
     section: "Cards",
@@ -62,6 +66,7 @@ const getSectionForPath = (pathname: string): string => {
     "/wallets/statements": "Wallets",
     "/payables/beneficiaries": "Payables",
     "/payables/payout": "Payables",
+    "/payables/transactions": "Payables",
     "/cards/cardholders": "Cards",
     "/cards/manageCards": "Cards",
     "/user": "User",
@@ -69,6 +74,9 @@ const getSectionForPath = (pathname: string): string => {
   };
   return pathMap[pathname] || "Overview";
 };
+
+// Allowed routes for In-Complete Kyc
+const ALLOWED_ITEMS_WHEN_VERIFICATION_PENDING = ["Dashboard", "Details", "Verification"];
 
 export default function NavbarComponent() {
   const location = useLocation();
@@ -99,6 +107,17 @@ export default function NavbarComponent() {
       });
     }
   }, [dnsData, isFetching, triggerDnsConfig]);
+  // ----------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------------------- \\
+
+  // ----------------------------------- Get User KYC/KYB Verification Status ----------------------------------- \\
+  // Get Kyc Verification Status
+  const { data: kycData } = useGetKycDetailsQuery({ email: userEmail! }, { skip: !userEmail });
+
+  // Get User Onboarding Details (Onboarding Verification Status)
+  const { data: onboardingData } = useGetUserOnboardingDetailsQuery({ email: userEmail! }, { skip: !userEmail });
+
+  const kycApproved = isKycApproved(kycData?.data);
+  const kybApproved = isKybApproved(onboardingData?.data);
   // ----------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------------------- \\
 
   // Initialize with the section that matches the current route
@@ -141,9 +160,16 @@ export default function NavbarComponent() {
     );
   };
 
+  const isItemDisabled = (item: string): boolean => {
+    if (!kycApproved || !kybApproved) {
+      return !ALLOWED_ITEMS_WHEN_VERIFICATION_PENDING.includes(item);
+    }
+
+    return false;
+  };
+
   // Function to handle section navigation
   const handleNavigation = (item: string) => {
-    // Simple path mapping
     const pathMap: Record<string, string> = {
       "Dashboard": "/dashboard",
       "Deposit Wallets": "/wallets/deposit",
@@ -151,14 +177,18 @@ export default function NavbarComponent() {
       "Statements": "/wallets/statements",
       "Beneficiaries": "/payables/beneficiaries",
       "Payout": "/payables/payout",
+      "Transactions": "/payables/transactions",
       "Cardholders": "/cards/cardholders",
       "Manage Cards": "/cards/manageCards",
       "Details": "/user",
       "Verification": "/user/verification",
     };
 
-    const path = pathMap[item] || "/dashboard";
-    navigate(path);
+    const path = pathMap[item];
+
+    if (path) {
+      navigate(path);
+    }
   };
 
   // Function to havle active navbar items
@@ -170,6 +200,7 @@ export default function NavbarComponent() {
       "Statements": "/wallets/statements",
       "Beneficiaries": "/payables/beneficiaries",
       "Payout": "/payables/payout",
+      "Transactions": "/payables/transactions",
       "Cardholders": "/cards/cardholders",
       "Manage Cards": "/cards/manageCards",
       "Details": "/user",
@@ -194,8 +225,8 @@ export default function NavbarComponent() {
           (!dnsData?.dashboard_name) ? (
             <div className="flex items-center gap-2">
               <span className="text-xl font-semibold text-[var(--nav-text-strong)]">
-                UQP
-                <span className='text-[var(--gold)]'>ay</span>
+                Banking
+                <span className='text-[var(--gold)]'>App</span>
               </span>
             </div>
           ) : (
@@ -247,20 +278,61 @@ export default function NavbarComponent() {
             </button>
 
             {/* Section Items */}
+            {/* {!isCollapsed && expandedSections.includes(section.section) && (
+              <div className="mt-1!">
+                {section.items.map((item) => {
+                  const active = isItemActive(item);
+                  const disabled = isItemDisabled(item);
+
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => handleNavigation(item)}
+                      className={`w-full text-left px-4! py-2! pl-12! text-sm transition-colors ${disabled
+                        ? "cursor-not-allowed opacity-50"
+                        : active
+                          ? "cursor-pointer bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]"
+                          : "cursor-pointer bg-transparent font-normal text-[var(--nav-text)]"
+                        }`}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
+              </div>
+            )} */}
             {!isCollapsed && expandedSections.includes(section.section) && (
               <div className="mt-1!">
                 {section.items.map((item) => {
                   const active = isItemActive(item);
+                  const disabled = isItemDisabled(item);
+
                   return (
                     <button
                       key={item}
+                      type="button"
+                      disabled={disabled}
+                      aria-disabled={disabled}
                       onClick={() => handleNavigation(item)}
-                      className={`w-full text-left px-4! py-2! pl-12! text-sm transition-colors cursor-pointer ${active
-                        ? 'bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]'
-                        : 'bg-transparent font-normal text-[var(--nav-text)]'
+                      className={`w-full text-left px-4! py-2! pl-12! text-sm transition-colors
+            ${disabled
+                          ? "cursor-not-allowed text-[var(--nav-text-mute)] opacity-40"
+                          : active
+                            ? "cursor-pointer bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]"
+                            : "cursor-pointer bg-transparent font-normal text-[var(--nav-text)] hover:bg-white/10"
                         }`}
                     >
-                      {item}
+                      <div className="flex items-center justify-between">
+                        <span>{item}</span>
+
+                        {disabled && (
+                          <span className="text-[10px] uppercase tracking-wide text-[var(--nav-text-mute)]">
+                            Locked
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -276,11 +348,19 @@ export default function NavbarComponent() {
                   </div>
                   {section.items.map((item) => {
                     const active = isItemActive(item);
+                    const disabled = isItemDisabled(item);
+
                     return (
                       <button
                         key={item}
-                        onClick={() => { handleNavigation(item) }}
-                        className={`w-full text-left px-4! py-2! text-sm transition-colors hover:bg-opacity-10 hover:bg-white/10 ${active ? 'bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]' : 'bg-transparent font-normal text-[var(--nav-text)]'
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => handleNavigation(item)}
+                        className={`w-full text-left px-4! py-2! text-sm transition-colors ${disabled
+                          ? "cursor-not-allowed opacity-50"
+                          : active
+                            ? "cursor-pointer bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]"
+                            : "cursor-pointer bg-transparent font-normal text-[var(--nav-text)] hover:bg-opacity-10 hover:bg-white/10"
                           }`}
                       >
                         {item}
@@ -311,9 +391,20 @@ export default function NavbarComponent() {
         <div className="separator-container w-full h-[2px] bg-[var(--gold)] rounded-[100%] mt-3! mb-3!"></div>
 
         {/* Signout Button */}
+        {/* Signout Button */}
         <div className="navbar-signout-button-wrapper w-full h-fit flex justify-center items-center mt-6!">
           <div className="navbar-signout-button-container w-full h-[30px] sm:h-[40px]">
-            <CustomButtonComponent id={"navbar-signout-button"} label={!isCollapsed ? "Sign Out" : <LogOut className="w-5 h-5" />} type="submit" variant={"navy"} />
+            <CustomButtonComponent
+              id="navbar-signout-button"
+              label={
+                !isCollapsed
+                  ? "Sign Out"
+                  : <LogOut className="w-5 h-5" />
+              }
+              type="button"
+              variant="navy"
+              onClick={handleSignOut}
+            />
           </div>
         </div>
       </div>

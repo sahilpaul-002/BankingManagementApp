@@ -19,7 +19,7 @@ type apiResponseType<T> = {
 }
 
 // =============================
-// SET UP USER API HEADERS
+// SET UP TWO FA API HEADERS
 // =============================
 const twoFaApiHeaders = (state: rootStateType) => {
     const applicationHeaders = selectApplicaitonHeaders(state);

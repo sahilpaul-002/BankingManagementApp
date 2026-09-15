@@ -28,10 +28,7 @@ const serializeError = (err: unknown) => {
     }
 };
 
-const isZodValidationError = (
-    error: unknown
-): error is ZodErrorShape => {
-
+const isZodValidationError = (error: unknown): error is ZodErrorShape => {
     if (
         typeof error !== "object" ||
         error === null
@@ -48,9 +45,7 @@ const isZodValidationError = (
     );
 };
 
-const getZodErrorMessages = (
-    zodError: ZodErrorShape
-): string | string[] => {
+const getZodErrorMessages = (zodError: ZodErrorShape): string | string[] => {
 
     const messages = [
         ...Object.values(zodError.fieldErrors).flat(),

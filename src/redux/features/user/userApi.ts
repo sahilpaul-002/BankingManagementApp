@@ -29,6 +29,40 @@ interface signupRequestType {
     dateOfBirth: Date
 }
 
+interface userOnboardingRequestType {
+    email: string;
+    address_details: {
+        email: string;
+        billing_address: {
+            line1: string;
+            line2?: string;
+            city: string;
+            state: string;
+            postal_code: string;
+            country: string;
+            type: string;
+        };
+        delivery_address: {
+            line1: string;
+            line2?: string;
+            city: string;
+            state: string;
+            postal_code: string;
+            country: string;
+            type: string;
+        };
+    };
+    bank_details: {
+        email: string;
+        account_holder_name: string;
+        account_number: string;
+        swift_code: string;
+        iban_code: string;
+        bank_name: string;
+        is_verified: boolean;
+    };
+}
+
 interface apiResponseType<T> {
     status: string;
     message: string;
@@ -48,6 +82,26 @@ const userApiHeaders = (state: rootStateType) => {
     if (applicationHeaders) {
         dynamicHeaders['x-api-key'] = applicationHeaders['x-api-key']!;
         dynamicHeaders['authorization'] = applicationHeaders['authorization']!;
+    }
+    return dynamicHeaders;
+}
+
+// =============================
+// SET UP ONBOARDING API HEADERS
+// =============================
+const onboardingApiHeaders = (state: rootStateType) => {
+    const applicationHeaders = selectApplicaitonHeaders(state);
+
+    // Build user api headers
+    const dynamicHeaders: Record<string, string | null> = {}
+
+    if (applicationHeaders) {
+        dynamicHeaders['x-api-key'] = applicationHeaders['x-api-key'];
+        dynamicHeaders['agent-code'] = applicationHeaders['agent-code'];
+        dynamicHeaders['subagent-code'] = applicationHeaders['subagent-code'];
+        dynamicHeaders['program-id'] = applicationHeaders['program-id'];
+        dynamicHeaders['business-id'] = applicationHeaders['business-id'];
+        dynamicHeaders['authorization'] = applicationHeaders['authorization'];
     }
     return dynamicHeaders;
 }
@@ -293,7 +347,6 @@ export const userApis = createApi({
                         url: `${USER_URL}/applicationHeaders`,
                         method: 'GET',
                         params: { email: payload.email },
-                        data: payload,
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown
@@ -361,8 +414,7 @@ export const userApis = createApi({
                         result.data.data = encryptedApplicationHeaders;
                     }
 
-                    // Update authentication status of user
-                    dispatch(setAuthenticated(true));
+                    console.log("Application headers", result.data)
 
                     return {
                         data: result.data as apiResponseType<apiResponseDataType>,
@@ -374,7 +426,126 @@ export const userApis = createApi({
                 }
             },
         }),
+
+
+        // =======================================================
+        // GET USER ONBOARDING DETAILS
+        // =======================================================
+        getUserOnboardingDetails: build.query<apiResponseType<apiResponseDataType>, { email: string }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    // Get user api headers
+                    let headers = onboardingApiHeaders(state)
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                {
+                                    email: payload.email,
+                                },
+                                {
+                                    forceRefetch: true  // Force RTK to refetch the query
+                                }
+                            )
+                        )
+                        if (result.isError) {
+                            throw new ApplicationServiceError("GET-USER-ONBOARDING-DETAILS - Failed to fetch application headers")
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = onboardingApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${USER_URL}/onboardingDetails`,
+                        method: 'GET',
+                        headers,
+                        params: { email: payload.email },
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, "GET-USER-ONBOARDING-DETAILS faced application error ");
+                    return rtkError;
+                }
+            },
+        }),
+
+
+        // =======================================================
+        // USER ONBOARDING
+        // =======================================================
+        userOnboarding: build.mutation<apiResponseType<apiResponseDataType>, userOnboardingRequestType>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+
+                    // Get user API headers
+                    let headers = onboardingApiHeaders(state);
+
+                    // Fetch application headers if they are not available
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                {
+                                    email: payload.email,
+                                },
+                                {
+                                    forceRefetch: true,
+                                    subscribe: false,
+                                }
+                            )
+                        );
+
+                        if (result.isError) {
+                            throw new ApplicationServiceError(
+                                'USER-ONBOARDING - Failed to fetch application headers'
+                            );
+                        }
+
+                        // Get latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = onboardingApiHeaders(state);
+                    }
+
+                    if (!headers || Object.keys(headers).length === 0) {
+                        throw new ApplicationServiceError('USER-ONBOARDING - Missing required dynamic api headers');
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${USER_URL}/onboarding`,
+                        method: 'POST',
+                        headers,
+                        params: {
+                            email: payload.email,
+                        },
+                        data: {
+                            address_details: payload.address_details,
+                            bank_details: payload.bank_details,
+                        },
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>;
+                        error?: unknown;
+                    };
+
+                    return {data: result.data as apiResponseType<apiResponseDataType>};
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, 'USER-ONBOARDING faced application error');
+                    return rtkError;
+                }
+            },
+        }),
     }),
 })
 
-export const { useSignInMutation, useSignUpMutation, useGetApplicationHeadersQuery, useLazyGetApplicationHeadersQuery } = userApis
+export const { useSignInMutation, useSignUpMutation, useGetApplicationHeadersQuery, useLazyGetApplicationHeadersQuery, useGetUserOnboardingDetailsQuery, useLazyGetUserOnboardingDetailsQuery, useUserOnboardingMutation } = userApis
