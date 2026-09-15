@@ -174,8 +174,9 @@ export default function SignUpComponent() {
         catch (error: any) {
             ShowInConsole('Sign in error:', error)
 
-            const errorMessage =
-                error?.data?.message ||
+            const errorMessage = Array.isArray(error?.data?.message)
+                ? error.data.message[0]
+                : error?.data?.message ||
                 error?.message ||
                 "Sign up service is facing issue. Please try again later. If issue persist please contact support.";
 
@@ -195,6 +196,10 @@ export default function SignUpComponent() {
                     break;
 
                 case normalizedMessage.includes("is registerd for") || normalizedMessage.includes("register with different business name"):
+                    toast.error(errorMessage);
+                    break;
+
+                case normalizedMessage.includes("phone number is not valid"):
                     toast.error(errorMessage);
                     break;
 

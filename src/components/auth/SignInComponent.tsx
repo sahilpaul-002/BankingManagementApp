@@ -135,8 +135,9 @@ export default function SignInComponent() {
     catch (err: any) {
       ShowInConsole('Sign in error:', err)
 
-      const errorMessage =
-        err?.data?.message ||
+      const errorMessage = Array.isArray(err?.data?.message)
+        ? err.data.message[0]
+        : err?.data?.message ||
         err?.message ||
         "Sign in service is facing issue. Please try again later. If issue persist please contact support.";
 
@@ -154,6 +155,22 @@ export default function SignInComponent() {
         case normalizedMessage.includes("user configuration does not match"):
           toast.error("Account is not authorized to access this application. Please check your email or contact support.");
           break;
+
+        // case normalizedMessage.includes("password must contain at least one uppercase letter (a-z)"):
+        //   toast.error("Password must contain at least one uppercase letter (A-Z)");
+        //   break;
+
+        // case normalizedMessage.includes("password must contain at least one number (0-9)"):
+        //   toast.error("password must contain at least one number (0-9)");
+        //   break;
+
+        // case normalizedMessage.includes("password must contain at least one special character (@ $ ! % * ? & # ^ ( ) _ + - = < >)"):
+        //   toast.error("password must contain at least one special character (@ $ ! % * ? & # ^ ( ) _ + - = < >)");
+        //   break;
+
+        // case normalizedMessage.includes("password contains invalid characters. allowed special characters are: @ $ ! % * ? & # ^ ( ) _ + - = < >"):
+        //   toast.error("Password contains invalid characters. Allowed special characters are: @ $ ! % * ? & # ^ ( ) _ + - = < >");
+        //   break;
 
         default:
           toast.error("Sign in service is facing issue. Please try again later. If issue persist please contact support.");

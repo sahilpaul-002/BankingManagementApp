@@ -116,6 +116,22 @@ export default function Send2FaCodeComponent() {
         }
         catch (err: any) {
             ShowInConsole('Get 2fa code error:', err)
+
+            const errorMessage = Array.isArray(err?.data?.message)
+                ? err.data.message[0]
+                : err?.data?.message ||
+                err?.message ||
+                "Get 2-factor-authentication code service is facing issue. Please try again later. If issue persist please contact support.";
+
+            const normalizedMessage = errorMessage.toLowerCase();
+
+            if (normalizedMessage === "email not verified") {
+                toast.error("User email not verified for receiving 2-factor authentication code. Please verify the email.")
+
+                setTimeout(() => {
+                    navigate("/sendEmailVerificationCode");
+                }, 1000);
+            }
             toast.error("Get 2-factor-authentication code service is facing issue. Please try again later. If issue persist please contact support.")
         }
     };

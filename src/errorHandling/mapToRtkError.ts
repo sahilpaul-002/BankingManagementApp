@@ -1,6 +1,11 @@
 import { AxiosError } from "axios";
 import { AppErrorClass } from "./appError";
 
+type ZodErrorShape = {
+    fieldErrors: Record<string, string[]>;
+    formErrors: string[];
+};
+
 const serializeError = (err: unknown) => {
     if (!err) return undefined;
 
@@ -23,6 +28,45 @@ const serializeError = (err: unknown) => {
     }
 };
 
+const isZodValidationError = (
+    error: unknown
+): error is ZodErrorShape => {
+
+    if (
+        typeof error !== "object" ||
+        error === null
+    ) {
+        return false;
+    }
+
+    const zodError = error as Record<string, unknown>;
+
+    return (
+        typeof zodError.fieldErrors === "object" &&
+        zodError.fieldErrors !== null &&
+        Array.isArray(zodError.formErrors)
+    );
+};
+
+const getZodErrorMessages = (
+    zodError: ZodErrorShape
+): string | string[] => {
+
+    const messages = [
+        ...Object.values(zodError.fieldErrors).flat(),
+        ...zodError.formErrors,
+    ].filter(
+        (message): message is string =>
+            typeof message === "string"
+    );
+
+    if (messages.length === 1) {
+        return messages[0]!;
+    }
+
+    return messages;
+};
+
 const mapToRtkError = (err: unknown) => {
 
     const error = err as any;
@@ -36,8 +80,24 @@ const mapToRtkError = (err: unknown) => {
         "status" in error &&
         "data" in error
     ) {
+
+        const zodError = error.data?.error?.error;
+
+        if (isZodValidationError(zodError)) {
+            return {
+                error: {
+                    ...error,
+                    data: {
+                        ...error.data,
+                        message: getZodErrorMessages(zodError),
+                    },
+                },
+            };
+        }
+
+        // Normal RTK error → don't modify it
         return {
-            error
+            error,
         };
     }
 
@@ -46,23 +106,28 @@ const mapToRtkError = (err: unknown) => {
     // =========================================
     if (error instanceof AxiosError) {
 
+        const responseData = error.response?.data;
+        const zodError = responseData?.error?.error;
+
         return {
             error: {
                 status: error.response?.status || 500,
+
                 data: {
                     status:
-                        error.response?.data?.status ||
+                        responseData?.status ||
                         "EXTERNAL_SERVICE_ERROR",
 
-                    message:
-                        error.response?.data?.message ||
-                        error.message,
+                    message: isZodValidationError(zodError)
+                        ? getZodErrorMessages(zodError)
+                        : responseData?.message ||
+                          error.message,
 
-                    error:
-                        serializeError(error.response?.data) ||
+                    error: serializeError(responseData?.error) ||
+                        serializeError(responseData) ||
                         serializeError(error),
-                }
-            }
+                },
+            },
         };
     }
 
@@ -71,15 +136,22 @@ const mapToRtkError = (err: unknown) => {
     // =========================================
     if (error instanceof AppErrorClass) {
 
+        const zodError = error.error?.error;
+
         return {
             error: {
                 status: error.statusCode,
+
                 data: {
                     status: error.status,
-                    message: error.message,
+
+                    message: isZodValidationError(zodError)
+                        ? getZodErrorMessages(zodError)
+                        : error.message,
+
                     error: serializeError(error.error),
-                }
-            }
+                },
+            },
         };
     }
 
@@ -89,15 +161,17 @@ const mapToRtkError = (err: unknown) => {
     return {
         error: {
             status: 500,
+
             data: {
                 status: "INTERNAL_APPLICATION_ERROR",
+
                 message:
                     error?.message ||
                     "Unknown internal application error",
 
                 error: serializeError(error),
-            }
-        }
+            },
+        },
     };
 };
 

@@ -24,8 +24,7 @@ const handleErrors = (error: unknown, dispatch: any): never => {
         const statusCode = err.response?.status;
         const data = err.response?.data;
         const status = data?.status
-        const message =
-            data?.message || err.message || 'Internal Application Error';
+        const message = data?.message || err.message || 'Internal Application Error';
 
         switch (statusCode) {
             case 400:
