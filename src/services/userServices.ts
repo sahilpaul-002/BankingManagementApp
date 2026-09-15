@@ -559,9 +559,6 @@ export const userOnboardingDetailsService = async (requestSession: Request["sess
         if (!addressDetailsDoc || !bankDetailsDoc) {
             throw new NotFoundError("User onboarding details not found");
         }
-        if (!addressDetailsDoc || !bankDetailsDoc) {
-            throw new NotFoundError("User onboarding details not found")
-        }
         if (!bankDetailsDoc?.is_verified) {
             return { status: "SUCCESS", message: "User bank details not verified", data: { userId: userId, addressDetails: addressDetailsDoc, bankDetails: bankDetailsDoc } }
         }
