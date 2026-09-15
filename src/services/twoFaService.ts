@@ -288,6 +288,20 @@ export const send2FaCodeService = async (requestSession: Request["session"], aes
         }
         const userId = new Types.ObjectId(sessionUserId)
 
+        // Check user email verified
+        const emailVerifiedUserExist = await user_details.findOne(
+                {
+                    _id: userId,
+                    email: userEmail,
+                    is_email_verified: "Y"
+                }
+                // ,
+                // { _id: 1 }
+            ).lean();
+        if (!emailVerifiedUserExist) {
+            throw new ServiceError("Email not verified");
+        }
+
         // Generate verificaiton code and its expiry time
         const verificationData = await generateVerificationCodeService();
         // HashVerification code

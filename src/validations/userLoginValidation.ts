@@ -36,48 +36,47 @@ const userLoginValidationSchema = z.object({
 
     password: z
         .string("Password is required and must be a string")
-        .min(8, "Password must be at least 8 characters")
-        .max(50, "Password cannot exceed 50 characters")
-        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=<>])[A-Za-z\d@$!%*?&#^()_+\-=<>]{8,}$/, "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
-        .superRefine((password, ctx) => {
-            if (!/[A-Z]/.test(password)) {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Password must contain at least one uppercase letter (A-Z)"
-                });
-            }
+        // .min(8, "Password must be at least 8 characters")
+        // .max(50, "Password cannot exceed 50 characters")
+        // .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#^()_+\-=<>])[A-Za-z\d@$!%*?&#^()_+\-=<>]{8,}$/, "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character.")
+        // .superRefine((password, ctx) => {
+        //     if (!/[A-Z]/.test(password)) {
+        //         ctx.addIssue({
+        //             code: "custom",
+        //             message: "Password must contain at least one uppercase letter (A-Z)"
+        //         });
+        //     }
 
-            if (!/[a-z]/.test(password)) {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Password must contain at least one lowercase letter (a-z)"
-                });
-            }
+        //     if (!/[a-z]/.test(password)) {
+        //         ctx.addIssue({
+        //             code: "custom",
+        //             message: "Password must contain at least one lowercase letter (a-z)"
+        //         });
+        //     }
 
-            if (!/\d/.test(password)) {
-                ctx.addIssue({
-                    code: "custom",
-                    message: "Password must contain at least one number (0-9)"
-                });
-            }
+        //     if (!/\d/.test(password)) {
+        //         ctx.addIssue({
+        //             code: "custom",
+        //             message: "Password must contain at least one number (0-9)"
+        //         });
+        //     }
 
-            if (!/[@$!%*?&#^()_+\-=<>]/.test(password)) {
-                ctx.addIssue({
-                    code: "custom",
-                    message:
-                        "Password must contain at least one special character (@ $ ! % * ? & # ^ ( ) _ + - = < >)"
-                });
-            }
+        //     if (!/[@$!%*?&#^()_+\-=<>]/.test(password)) {
+        //         ctx.addIssue({
+        //             code: "custom",
+        //             message:
+        //                 "Password must contain at least one special character (@ $ ! % * ? & # ^ ( ) _ + - = < >)"
+        //         });
+        //     }
 
-            if (!/^[A-Za-z\d@$!%*?&#^()_+\-=<>]+$/.test(password)) {
-                ctx.addIssue({
-                    code: "custom",
-                    message:
-                        "Password contains invalid characters. Allowed special characters are: @ $ ! % * ? & # ^ ( ) _ + - = < >"
-                });
-            }
-
-        })
+        //     if (!/^[A-Za-z\d@$!%*?&#^()_+\-=<>]+$/.test(password)) {
+        //         ctx.addIssue({
+        //             code: "custom",
+        //             message:
+        //                 "Password contains invalid characters. Allowed special characters are: @ $ ! % * ? & # ^ ( ) _ + - = < >"
+        //         });
+        //     }
+        // })
 })
 
 export default userLoginValidationSchema;
