@@ -1,4 +1,2 @@
-For subtle error show a disclaimer in the top saying report to admin
-For specific error - do as intented
-kyc approoval authentication for routes in requireAuthentication file
-kyc check will happen in the navbar and dashboard
+Email verification is needed before using 2fa
+Check if user perform different actions before kyc and kyb verification

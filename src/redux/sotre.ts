@@ -9,6 +9,7 @@ import { twoFaApis } from './features/twoFa/twoFaApis.js'
 import { payablesApis } from './features/payables/payablesApi.js'
 import appSessionSlice from './slice/appSession/appSessionSlice.js'
 import { kycApis } from './features/kyc/kycApis.js'
+import { walletApis } from './features/wallet/walletApis.js'
 
 // EXPORT RTK STORE
 export const store = configureStore({
@@ -25,12 +26,13 @@ export const store = configureStore({
         [userApis.reducerPath]: userApis.reducer,
         [twoFaApis.reducerPath]: twoFaApis.reducer,
         [kycApis.reducerPath]: kycApis.reducer,
+        [walletApis.reducerPath]: walletApis.reducer,
         [payablesApis.reducerPath]: payablesApis.reducer,
     },
 
     // 🔥 RTK Query middleware
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware, twoFaApis.middleware, kycApis.middleware, payablesApis.middleware),
+        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware, twoFaApis.middleware, kycApis.middleware, walletApis.middleware, payablesApis.middleware),
 })
 
 // EXPORT STORE DISPATCH

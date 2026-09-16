@@ -248,9 +248,6 @@ export const userApis = createApi({
                         error?: unknown
                     }
 
-                    // Store user email in session storage
-                    sessionStorage.setItem('userEmail', payload.email);
-
                     // Set the user details in slice
                     if (result.data?.data) {
                         const loginData = result.data.data;
@@ -317,6 +314,11 @@ export const userApis = createApi({
                             subagentCode,
                             ...sanitizedLoginData
                         } = loginData;
+
+                        // Store user email in session storage
+                        sessionStorage.setItem('userEmail', sanitizedLoginData.userEmail);
+                        sessionStorage.setItem("userId", sanitizedLoginData.userId)
+                        sessionStorage.setItem('cardholderId', sanitizedLoginData.cardholderId)
 
                         // Replace response data with sanitized data
                         result.data.data = sanitizedLoginData;
@@ -537,7 +539,7 @@ export const userApis = createApi({
                         error?: unknown;
                     };
 
-                    return {data: result.data as apiResponseType<apiResponseDataType>};
+                    return { data: result.data as apiResponseType<apiResponseDataType> };
                 }
                 catch (error) {
                     const rtkError = rtkQueryCatchError(error, 'USER-ONBOARDING faced application error');
