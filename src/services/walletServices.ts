@@ -7,7 +7,7 @@ import checkStringBody from "../utils/checkStringBody.js";
 import logger from "../utils/logger.js";
 import mongoose, { Types } from "mongoose";
 import type { ParsedQs } from "qs";
-import type { userWalletDetailsSchemaTypes, walletDetailsType } from "../types/schemaTypes.js";
+import type { userWalletDetailsSchemaTypes, walletCurrencyType, walletDetailsType } from "../types/schemaTypes.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
 import z from "zod";
@@ -138,6 +138,144 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// ------------------------------------- GET ALL WALLET BALANCES SERVICE ------------------------------------- \\
+
+export const getAllWalletBalancesService = async (requestSession: Request["session"], aesDecryptedQueryData:| Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_wallet_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist in MongoDB");
+        }
+
+        // Validate Email
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request query");
+        }
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email");
+        }
+
+        // Validate User Configuration
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
+        const sessionProgramId = requestSession?.userConfiguration?.programId;
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
+        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
+            throw new ForbiddenError("User configuration is not valid to access wallet details");
+        }
+
+        const sessionCardholderId = requestSession?.cardholderId;
+        if (!sessionCardholderId || !Types.ObjectId.isValid(sessionCardholderId)) {
+            throw new InvalidRequestBodyError("Invalid cardholder-id in user session");
+        }
+        const cardholderObjectId = new Types.ObjectId(sessionCardholderId);
+
+        // Validate Cardholder Exist
+        const cardHolderExist = await user_details.exists({
+            cardholder_id: cardholderObjectId,
+            business_id: sessionBusinessId,
+            program_id: sessionProgramId,
+            agent_code: sessionAgentCode,
+            subagent_code: sessionSubAgentCode,
+        });
+        if (!cardHolderExist) {
+            throw new ForbiddenError("Cardholder Id provided is invalid or does not belong to the current user configuration");
+        }
+
+        // Get Wallet Details
+        const userWalletDetails = await user_wallet_details.findOne({
+                    user_id: new Types.ObjectId(
+                        requestSession.userId
+                    ),
+                    cardholder_id: cardholderObjectId,
+                }).lean();
+        if (!userWalletDetails) {
+            throw new NotFoundError("User wallet details not found");
+        }
+
+        // Calculate USD Equivalent Total Balance
+        let totalUsdEquivalent = new Decimal(0);
+
+        const walletsDetails = await Promise.all(
+            userWalletDetails.wallets_details.map(
+                async (wallet) => {
+                    const walletCurrency = wallet.wallet_currency as walletCurrencyType;
+
+                    const accountBalance = new Decimal(wallet.account_balance?.toString() ?? "0");
+                    if (!accountBalance.isFinite() || accountBalance.isNegative()) {
+                        throw new ServiceError(`Invalid ${walletCurrency} wallet account balance`);
+                    }
+
+                    // USD does not require an FX conversion.
+                    let usdEquivalent = accountBalance;
+                    if (walletCurrency !== "USD") {
+                        const fxRateDetails = await getWalletFxRate(
+                            walletCurrency,
+                            "USD"
+                        );
+                        const exchangeRate = new Decimal(fxRateDetails.exchange_rate.toString());
+                        if (!exchangeRate.isFinite() || exchangeRate.lessThanOrEqualTo(0)) {
+                            throw new ServiceError(`Invalid USD FX rate received for ${walletCurrency}`);
+                        }
+
+                        usdEquivalent = accountBalance.mul(exchangeRate).toDecimalPlaces(4);
+                    }
+
+                    // Add to total portfolio value.
+                    totalUsdEquivalent = totalUsdEquivalent.plus(usdEquivalent);
+
+                    return {
+                        _id: wallet._id,
+                        wallet_status: wallet.wallet_status,
+                        account_balance: accountBalance.toFixed(4),
+                        available_balance: new Decimal(
+                            wallet.available_balance?.toString() ?? "0"
+                        ).toFixed(4),
+                        holding_amount: new Decimal(
+                            wallet.holding_amount?.toString() ?? "0"
+                        ).toFixed(4),
+                        wallet_type: wallet.wallet_type,
+                        wallet_currency: wallet.wallet_currency,
+                        usd_equivalent: usdEquivalent.toFixed(4),
+                    };
+                }
+            )
+        );
+
+
+        return {
+            status: "SUCCESS",
+            data: {
+                walletId: userWalletDetails._id,
+                wallets_details: walletsDetails,
+                total_usd_equivalent: totalUsdEquivalent.toDecimalPlaces(4).toFixed(4),
+            },
+            message: "All wallet balances fetched successfully",
+        };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, {serviceName: "GetAllWalletBalancesService"});
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError("GetAllWalletBalancesService facing issue", sanitizedError);
+    }
+};
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
 
 // ------------------------------------- CREATE WALLET SERVICE -------------------------------------  \\
 export const createWalletService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {

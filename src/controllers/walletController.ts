@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createWalletCurrencyConversionQuoteService, createWalletService, executeWalletCurrencyConversionQuoteService, getWalletService, getWalletTransactionDetailsService, getWalletTransactionsService, loadWalletService, withdrawWalletService } from "../services/walletServices.js";
+import { createWalletCurrencyConversionQuoteService, createWalletService, executeWalletCurrencyConversionQuoteService, getAllWalletBalancesService, getWalletService, getWalletTransactionDetailsService, getWalletTransactionsService, loadWalletService, withdrawWalletService } from "../services/walletServices.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
@@ -47,6 +47,51 @@ export const getWallet = async (req: Request, res: Response): Promise<Response<s
             throw error
         }
         throw new ServiceError("GetWalletController is facing unknown issue.", sanitizedError)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+// ------------------------------------------ FUNCTION TO GET ALL WALLETS BALANCES ------------------------------------------ \\
+export const getAllWalletsBalances = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const getAllWalletsBalancesServiceResponse = await getAllWalletBalancesService(requestSession, aesDecryptedQueryData, userConfigurations)
+        if (getAllWalletsBalancesServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to fetch all wallets balances details", 400);
+        }
+        return res.success("All wallets balances details fetched successfully", getAllWalletsBalancesServiceResponse?.data || {}, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetAllWalletsBalancesController",
+            // url: req.path,
+            // method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError("GetAllWalletsBalancesController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

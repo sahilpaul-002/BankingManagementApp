@@ -80,10 +80,32 @@ const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
             {
                 session: mongoSession,
             }
-        ).select("email").lean();
+        ).select("email kyc_status").lean();
 
         if (!userDoc) {
             throw new NotFoundError("User details not found");
+        }
+        // Check kyc status
+        const kycStatus = userDoc.kyc_status?.toUpperCase();
+        switch (kycStatus) {
+            case "COMPLETED":
+                break;
+            case "PENDING":
+                throw new ServiceError(
+                    "User KYC verification has not been submitted. Please complete and submit KYC verification."
+                );
+            case "IN-PROGRESS":
+                throw new ServiceError(
+                    "User KYC verification is under review. Please wait for admin verification."
+                );
+            case "RFI":
+                throw new ServiceError(
+                    "User KYC verification requires additional information or document re-upload. Please complete the required changes."
+                );
+            default:
+                throw new ServiceError(
+                    "User KYC verification is not completed. Please complete KYC verification before proceeding."
+                );
         }
 
         let updatedBankDoc = null;

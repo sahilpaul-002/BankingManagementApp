@@ -1,10 +1,11 @@
 import express from "express"
 import type { Router } from "express";
-import { createWallet, createWalletCurrencyConversionPayoutQuote, executeWalletCurrencyConversionPayoutQuote, getWallet, getWalletTransactionDetails, getWalletTransactions, loadWallet, withdrAawWallet } from "../controllers/walletController.js";
+import { createWallet, createWalletCurrencyConversionPayoutQuote, executeWalletCurrencyConversionPayoutQuote, getAllWalletsBalances, getWallet, getWalletTransactionDetails, getWalletTransactions, loadWallet, withdrAawWallet } from "../controllers/walletController.js";
 
 const router: Router = express.Router()
 
 router.get("/", getWallet)
+router.get("/balances", getAllWalletsBalances);
 router.post("/create", createWallet)
 router.post("/load", loadWallet)
 router.post("/withdraw", withdrAawWallet)

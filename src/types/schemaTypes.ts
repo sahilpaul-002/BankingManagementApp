@@ -202,6 +202,7 @@ export interface userKycDetailsSchemaTypes extends Document {
 // Types for User Wallet Details Model Schema
 export type walletCurrencyType = "USD" | "EUR" | "SGD" | "USDC" | "USDT";
 export type walletDetailsType = {
+    _id?: Types.ObjectId,
     wallet_status?: "ACTIVE" | "INACTIVE";
     account_balance?: mongoose.Types.Decimal128;
     available_balance?: mongoose.Types.Decimal128;
