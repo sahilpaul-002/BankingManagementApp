@@ -6,7 +6,7 @@ import { Pencil } from 'lucide-react';
 import { toast } from 'react-toastify';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import { ADDRESS_DETAILS_FALLBACK, type AddressType } from '@/fallbacks/user/userDetails/addressDetailsFallbacks';
+import type { AddressDetailsType, AddressType } from '@/types/user/userDetailsPageTypes';
 
 // ── Zod Schema ──────────────────────────────────────────────────────────────
 const addressSchema = z.object({
@@ -21,7 +21,7 @@ const addressSchema = z.object({
 type AddressFormData = z.infer<typeof addressSchema>;
 
 // ── Single Address Sub-Form ──────────────────────────────────────────────────
-interface AddressSubFormProps {
+interface AddressSubFormPropsType {
     title: string;
     description: string;
     formId: string;
@@ -29,7 +29,7 @@ interface AddressSubFormProps {
     onSave: (data: AddressFormData) => Promise<void>;
 }
 
-function AddressSubForm({ title, description, formId, defaultValues, onSave }: AddressSubFormProps) {
+function AddressSubForm({ title, description, formId, defaultValues, onSave }: AddressSubFormPropsType) {
     const [isEditing, setIsEditing] = useState(false);
 
     const {
@@ -192,7 +192,11 @@ function AddressSubForm({ title, description, formId, defaultValues, onSave }: A
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function AddressDetailsComponent() {
+interface AddressDetailsComponentProps {
+    addressDetails: AddressDetailsType;
+}
+
+export default function AddressDetailsComponent({addressDetails}: AddressDetailsComponentProps) {
     const handleBillingSave = async (data: AddressFormData) => {
         try {
             // TODO: wire up actual API mutation
@@ -226,7 +230,7 @@ export default function AddressDetailsComponent() {
                 title="Billing Address"
                 description="Your registered billing address"
                 formId="billingAddress-form"
-                defaultValues={ADDRESS_DETAILS_FALLBACK.billing_address}
+                defaultValues={addressDetails.billing_address}
                 onSave={handleBillingSave}
             />
 
@@ -238,7 +242,7 @@ export default function AddressDetailsComponent() {
                 title="Delivery Address"
                 description="Your registered delivery address"
                 formId="deliveryAddress-form"
-                defaultValues={ADDRESS_DETAILS_FALLBACK.delivery_address}
+                defaultValues={addressDetails.delivery_address}
                 onSave={handleDeliverySave}
             />
         </div>

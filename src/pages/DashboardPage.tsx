@@ -41,9 +41,7 @@ export default function DashboardPage() {
     useEffect(() => {
         // Validate email once
         if (!userEmail || !userId || !userCardholderId) {
-            dispatch(
-                setShowInfoBanner("Application facing issue, necessary user details not present in session storage. Please re-login.")
-            );
+            dispatch(setShowInfoBanner("Application facing issue, necessary user details not present in session storage. Please re-login."));
             return;
         }
     }, [userEmail, userId, userCardholderId]);
@@ -69,7 +67,6 @@ export default function DashboardPage() {
     // Get Kyc Verification Status
     const { data: getKycData, isLoading: getKycDetailsIsLoading, isFetching: getKycDetailsIsFetching, isError: getKycDetailsIsError, error: getKycDetailsError, isSuccess: getKycDetailsIsSuccess, refetch: refetchGetKycDetails } = useGetKycDetailsQuery({ email: userEmail! }, { skip: !userEmail });
     const userKycDetails = getKycData?.data as Record<string, any>;
-    console.log("Kyc error:", getKycDetailsError)
 
     // Kyc not found error
     const isKycNotFound =
@@ -110,6 +107,13 @@ export default function DashboardPage() {
         !getOnboardingDetailsIsError;
 
     const shouldFetchDependentApis = verificationApisCompleted;
+
+    useEffect(() => {
+        ShowInConsole("User kyc details", userKycDetails);
+    }, [userKycDetails])
+    useEffect(() => {
+        ShowInConsole("User onboarding details", userOnboardingDetails);
+    }, [userOnboardingDetails])
     // ----------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------------------- \\
 
     // -------------------------------- Wallet Details / Cards List / Wallet Transaction -------------------------------- \\
@@ -133,10 +137,7 @@ export default function DashboardPage() {
     // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
 
     // ---------------------------------------- DASHBOARD ACCESS / FAILURE HANDLING ---------------------------------------- \\
-    const isInitialPageLoading =
-        getKycDetailsIsLoading ||
-        getOnboardingDetailsLoading ||
-        getUserWalletsListLoading;
+    const isInitialPageLoading = getKycDetailsIsLoading || getOnboardingDetailsLoading
 
     const isPageFetching =
         getKycDetailsIsFetching ||
@@ -221,11 +222,11 @@ export default function DashboardPage() {
             {/* Page Loader */}
             {/* Initial Page Loader */}
             {loaderType === "initial" && (
-                <DashboardPageLoaderComponent showPageLoader />
+                <DashboardPageLoaderComponent showPageLoader={showInitialPageLoader} />
             )}
             {/* Regular Page Loader */}
             {loaderType === "fetching" && (
-                <PageLoaderComponent showPageLoader />
+                <PageLoaderComponent showPageLoader={showPageFetchingLoader} />
             )}
 
             {/* Refresh Page */}

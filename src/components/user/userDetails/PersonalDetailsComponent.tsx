@@ -8,7 +8,7 @@ import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import mobileCountryCodesLists from '@/utils/mobileCountryCodesList';
-import { PERSONAL_DETAILS_FALLBACK } from '@/fallbacks/user/userDetails/personalDetailsFallbacks';
+import type { UserDetailsType } from '@/types/user/userDetailsPageTypes';
 
 // ── Zod Schema ──────────────────────────────────────────────────────────────
 const personalDetailsSchema = z.object({
@@ -43,7 +43,11 @@ function StatusBadge({ value, trueLabel = 'Yes', falseLabel = 'No' }: { value: s
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function PersonalDetailsComponent() {
+interface PersonalDetailsComponentProps {
+    userDetails: UserDetailsType;
+}
+
+export default function PersonalDetailsComponent({ userDetails }: PersonalDetailsComponentProps) {
     const [isEditing, setIsEditing] = useState(false);
 
     // ── Country codes lists ──
@@ -68,14 +72,14 @@ export default function PersonalDetailsComponent() {
         mode: 'onTouched',
         reValidateMode: 'onChange',
         defaultValues: {
-            fullName: PERSONAL_DETAILS_FALLBACK.fullName,
-            userEmail: PERSONAL_DETAILS_FALLBACK.userEmail,
-            gender: PERSONAL_DETAILS_FALLBACK.gender,
-            isEmailVerified: PERSONAL_DETAILS_FALLBACK.isEmailVerified,
-            isAdmin: PERSONAL_DETAILS_FALLBACK.isAdmin,
-            mobileCountryCode: PERSONAL_DETAILS_FALLBACK.mobileCountryCode,
-            mobileCountryName: PERSONAL_DETAILS_FALLBACK.mobileCountryName,
-            twoFaType: PERSONAL_DETAILS_FALLBACK.twoFaType,
+            fullName: userDetails.full_name,
+            userEmail: userDetails.email,
+            gender: userDetails.gender,
+            isEmailVerified: userDetails.is_email_verified,
+            isAdmin: userDetails.is_admin,
+            mobileCountryCode: userDetails.mobile_country_code,
+            mobileCountryName: userDetails.mobile_country_name,
+            twoFaType: userDetails.two_fa_type
         },
     });
 
@@ -103,7 +107,7 @@ export default function PersonalDetailsComponent() {
                     <h2 className="text-base font-semibold text-[var(--ink)] tracking-normal">Personal Details</h2>
                     <p className="text-xs text-[var(--mute)] mt-0.5!">Manage your personal account information</p>
                 </div>
-                <Activity mode={!isEditing ? 'visible' : 'hidden'}>
+                {/* <Activity mode={!isEditing ? 'visible' : 'hidden'}>
                     <div className="w-[90px] h-[34px]">
                         <CustomButtonComponent
                             id="personalDetails-edit-btn"
@@ -113,7 +117,7 @@ export default function PersonalDetailsComponent() {
                             onClick={() => setIsEditing(true)}
                         />
                     </div>
-                </Activity>
+                </Activity> */}
             </div>
 
             {/* Form */}
@@ -251,7 +255,11 @@ export default function PersonalDetailsComponent() {
                             Email Verified
                         </span>
                         <div className="w-full h-10 flex items-center px-3! border border-[var(--line)] rounded-md bg-[var(--bg-subtle)]">
-                            <StatusBadge value={PERSONAL_DETAILS_FALLBACK.isEmailVerified} trueLabel="Verified" falseLabel="Not Verified" />
+                            <StatusBadge
+                                value={userDetails.is_email_verified}
+                                trueLabel="Verified"
+                                falseLabel="Not Verified"
+                            />
                         </div>
                     </div>
 
@@ -261,13 +269,17 @@ export default function PersonalDetailsComponent() {
                             Admin Access
                         </span>
                         <div className="w-full h-10 flex items-center px-3! border border-[var(--line)] rounded-md bg-[var(--bg-subtle)]">
-                            <StatusBadge value={PERSONAL_DETAILS_FALLBACK.isAdmin} trueLabel="Admin" falseLabel="Not Admin" />
+                            <StatusBadge
+                                value={userDetails.is_admin}
+                                trueLabel="Admin"
+                                falseLabel="Not Admin"
+                            />
                         </div>
                     </div>
                 </div>
 
                 {/* Action Buttons — only shown in edit mode */}
-                <Activity mode={isEditing ? 'visible' : 'hidden'}>
+                {/* <Activity mode={isEditing ? 'visible' : 'hidden'}>
                     <div className="flex items-center justify-end gap-3 mt-6! pt-4! border-t border-[var(--line)]">
                         <div className="w-[100px] h-[36px]">
                             <CustomButtonComponent
@@ -287,7 +299,7 @@ export default function PersonalDetailsComponent() {
                             />
                         </div>
                     </div>
-                </Activity>
+                </Activity> */}
             </form>
         </div>
     );

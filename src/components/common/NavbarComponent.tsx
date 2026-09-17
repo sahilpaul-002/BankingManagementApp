@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ChevronDown, LayoutDashboard, Building2, Coins, Send, CreditCard, Settings, LogOut, UserCog, WalletMinimal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, LayoutDashboard, Send, CreditCard, LogOut, UserCog, WalletMinimal } from 'lucide-react';
 import { useappDispatchType } from '@/redux/hooks/reduxHooks';
 import { logoutUser } from '@/redux/thunks/userThunks';
 import { useSelector } from 'react-redux';
@@ -278,31 +278,6 @@ export default function NavbarComponent() {
             </button>
 
             {/* Section Items */}
-            {/* {!isCollapsed && expandedSections.includes(section.section) && (
-              <div className="mt-1!">
-                {section.items.map((item) => {
-                  const active = isItemActive(item);
-                  const disabled = isItemDisabled(item);
-
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => handleNavigation(item)}
-                      className={`w-full text-left px-4! py-2! pl-12! text-sm transition-colors ${disabled
-                        ? "cursor-not-allowed opacity-50"
-                        : active
-                          ? "cursor-pointer bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]"
-                          : "cursor-pointer bg-transparent font-normal text-[var(--nav-text)]"
-                        }`}
-                    >
-                      {item}
-                    </button>
-                  );
-                })}
-              </div>
-            )} */}
             {!isCollapsed && expandedSections.includes(section.section) && (
               <div className="mt-1!">
                 {section.items.map((item) => {

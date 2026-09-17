@@ -65,7 +65,7 @@ const handleErrors = (error: unknown, dispatch: any): never => {
             case 404:
                 console.error("NOT_FOUND", err);
                 // toast.error("Request resorce or service not found")
-                dispatch(setShowInfoBanner("Application facing issue , request resource might not be availbale"))
+                // dispatch(setShowInfoBanner("Application facing issue , request resource might not be availbale"))
                 throw error
 
             case 406:

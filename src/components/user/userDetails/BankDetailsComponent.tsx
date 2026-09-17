@@ -6,7 +6,7 @@ import { Pencil } from 'lucide-react';
 import { toast } from 'react-toastify';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import { BANK_DETAILS_FALLBACK } from '@/fallbacks/user/userDetails/bankDetailsFallbacks';
+import type { BankDetailsType } from '@/types/user/userDetailsPageTypes';
 
 // ── Zod Schema ──────────────────────────────────────────────────────────────
 const bankDetailsSchema = z.object({
@@ -40,7 +40,11 @@ function VerificationBadge({ verified }: { verified: boolean }) {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function BankDetailsComponent() {
+interface BankDetailsComponentProps {
+    bankDetails: BankDetailsType;
+}
+
+export default function BankDetailsComponent({ bankDetails }: BankDetailsComponentProps) {
     const [isEditing, setIsEditing] = useState(false);
 
     // ── React Hook Form ──
@@ -54,11 +58,11 @@ export default function BankDetailsComponent() {
         mode: 'onTouched',
         reValidateMode: 'onChange',
         defaultValues: {
-            account_holder_name: BANK_DETAILS_FALLBACK.account_holder_name,
-            account_number: BANK_DETAILS_FALLBACK.account_number,
-            swift_code: BANK_DETAILS_FALLBACK.swift_code,
-            iban_code: BANK_DETAILS_FALLBACK.iban_code,
-            bank_name: BANK_DETAILS_FALLBACK.bank_name,
+            account_holder_name: bankDetails.account_holder_name,
+            account_number: bankDetails.account_number,
+            swift_code: bankDetails.swift_code,
+            iban_code: bankDetails.iban_code,
+            bank_name: bankDetails.bank_name,
         },
     });
 
@@ -173,7 +177,7 @@ export default function BankDetailsComponent() {
                             Verification Status
                         </span>
                         <div className="w-full h-10 flex items-center px-3! border border-[var(--line)] rounded-md bg-[var(--bg-subtle)]">
-                            <VerificationBadge verified={BANK_DETAILS_FALLBACK.is_verified} />
+                            <VerificationBadge verified={bankDetails.is_verified} />
                         </div>
                     </div>
                 </div>
