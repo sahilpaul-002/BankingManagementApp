@@ -1,5 +1,5 @@
 import React, { type CSSProperties } from 'react'
-import { HashLoader  } from 'react-spinners';
+import { HashLoader } from 'react-spinners';
 
 interface HashLoaderProps {
     visible?: boolean;
@@ -9,7 +9,7 @@ interface HashLoaderProps {
 }
 
 export default function HashLoaderComponent(props: HashLoaderProps) {
-  // Destructure props
+    // Destructure props
     const { visible, size, color, wrapperStyle } = props;
 
     // const loaderColor = getComputedStyle(document.documentElement).getPropertyValue(color ?? '#000000').trim();
@@ -17,7 +17,7 @@ export default function HashLoaderComponent(props: HashLoaderProps) {
 
     return (
         <div className="hashLoader-container w-full h-full flex justify-center items-center">
-            <HashLoader 
+            <HashLoader
                 loading={visible ?? true}
                 size={size ?? 30}
                 cssOverride={wrapperStyle ?? {}}

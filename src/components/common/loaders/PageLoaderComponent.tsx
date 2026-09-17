@@ -6,7 +6,7 @@ type PageLoaderComponentProps = {
   showPageLoader: boolean;
 };
 
-export default function PageLoaderContainer({
+export default function PageLoaderComponent({
   showPageLoader,
 }: PageLoaderComponentProps) {
   // Dynamic loader size
@@ -17,12 +17,10 @@ export default function PageLoaderContainer({
   }, []);
 
   // Navy loader color
-  const loaderColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--nav-bg")
-    .trim();
+  const loaderColor = getComputedStyle(document.documentElement).getPropertyValue("--nav-bg").trim();
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999999] flex items-center justify-center overflow-hidden bg-white/40">
+    <div className="fixed inset-0 z-[9999999] flex items-center justify-center overflow-hidden bg-white/85">
       <div className="w-full h-full hashLoaderContainer relative z-10 flex items-center justify-center animate-fade-in">
         <HashLoaderComponent
           visible={showPageLoader}

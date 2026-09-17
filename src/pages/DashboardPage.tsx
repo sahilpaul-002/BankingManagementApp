@@ -23,6 +23,7 @@ import ShowInConsole from '@/utils/ShowInConsole';
 import DashboardPageLoaderComponent from '@/components/common/loaders/DashboardPageLoaderComponent';
 import RefreshPageFallback from '@/components/common/RefreshPageFallback';
 import VerificationRequiredBanner from '@/components/dashboard/VerificationRequiredBanner';
+import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 
 export default function DashboardPage() {
     // Configure useNavigate
@@ -80,7 +81,6 @@ export default function DashboardPage() {
         getKycDetailsError?.data !== null &&
         "status" in getKycDetailsError?.data &&
         getKycDetailsError?.data?.status === "NOT_FOUND";
-    console.log("IsKycNotFound", isKycNotFound)
 
     // Get User Onboarding Details (Onboarding Verification Status)
     const { data: getOnboardingData, isLoading: getOnboardingDetailsLoading, isFetching: getOnboardingDetailsIsFetching, isError: getOnboardingDetailsIsError, error: getOnboardingDetailsError, isSuccess: getOnboardingDetailsIsSuccess, refetch: refetchGetOnboardingDetails } = useGetUserOnboardingDetailsQuery({ email: userEmail! }, { skip: !userEmail });
@@ -96,7 +96,6 @@ export default function DashboardPage() {
         getOnboardingDetailsError?.data !== null &&
         "status" in getOnboardingDetailsError?.data &&
         getOnboardingDetailsError?.data.status === "NOT_FOUND";
-    console.log("isOnboardingNotFound", isOnboardingNotFound)
 
     const kycApproved = isKycApproved(getKycData?.data);
     const kybApproved = isKybApproved(getOnboardingData?.data);
@@ -134,15 +133,30 @@ export default function DashboardPage() {
     // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
 
     // ---------------------------------------- DASHBOARD ACCESS / FAILURE HANDLING ---------------------------------------- \\
-    const isInitialDashboardLoading = getKycDetailsIsLoading || getOnboardingDetailsLoading || getUserWalletsListLoading;
-    const isDashboardFetching = getKycDetailsIsFetching || getOnboardingDetailsIsFetching || getUserWalletsListIsFetching;
-    const showInitialLoader = isInitialDashboardLoading;
-    const showRefetchLoader = !isInitialDashboardLoading && isDashboardFetching;
-    const showPageLoader = getKycDetailsIsLoading || getOnboardingDetailsLoading || getUserWalletsListLoading;
+    const isInitialPageLoading =
+        getKycDetailsIsLoading ||
+        getOnboardingDetailsLoading ||
+        getUserWalletsListLoading;
+
+    const isPageFetching =
+        getKycDetailsIsFetching ||
+        getOnboardingDetailsIsFetching ||
+        getUserWalletsListIsFetching;
+
+    // Mutually exclusive loader states
+    const showInitialPageLoader = isInitialPageLoading;
+
+    const showPageFetchingLoader =
+        !isInitialPageLoading && isPageFetching;
+    const loaderType =
+        showInitialPageLoader
+            ? "initial"
+            : showPageFetchingLoader
+                ? "fetching"
+                : null;
     const hasBlockingApiFailure = (getKycDetailsIsError && !isKycNotFound) || (getOnboardingDetailsIsError && !isOnboardingNotFound);
-    console.log("Has blocking error", hasBlockingApiFailure)
     const hasDashboardUiApiFaliure = getUserWalletsListIsError
-    const canRenderDashboard = !showPageLoader && !hasBlockingApiFailure;
+    const canRenderDashboard = !showInitialPageLoader && !hasBlockingApiFailure;
     const canAccessDashboard = kycApproved && kybApproved;
 
     useEffect(() => {
@@ -206,17 +220,17 @@ export default function DashboardPage() {
         <>
             {/* Page Loader */}
             {/* Initial Page Loader */}
-            <Activity mode={showInitialLoader ? "visible" : "hidden"}>
-                <DashboardPageLoaderComponent showPageLoader={showInitialLoader} />
-            </Activity>
+            {loaderType === "initial" && (
+                <DashboardPageLoaderComponent showPageLoader />
+            )}
             {/* Regular Page Loader */}
-            <Activity mode={showRefetchLoader ? "visible" : "hidden"}>
-                <PageLoaderComponent />
-            </Activity>
+            {loaderType === "fetching" && (
+                <PageLoaderComponent showPageLoader />
+            )}
 
             {/* Refresh Page */}
-            <Activity mode={!showPageLoader && hasBlockingApiFailure ? "visible" : "hidden"}>
-                <RefreshPageFallback visible={!showPageLoader && hasBlockingApiFailure} onRetry={handleRetryFailedRequests} isLoading={getKycDetailsIsLoading || getOnboardingDetailsLoading} />
+            <Activity mode={!showInitialPageLoader && hasBlockingApiFailure ? "visible" : "hidden"}>
+                <RefreshPageFallback visible={!showInitialPageLoader && hasBlockingApiFailure} onRetry={handleRetryFailedRequests} isLoading={getKycDetailsIsLoading || getOnboardingDetailsLoading} />
             </Activity>
 
             <Activity mode={canRenderDashboard ? "visible" : "hidden"}>
@@ -225,16 +239,17 @@ export default function DashboardPage() {
                     <Activity mode={!kycApproved ? "visible" : "hidden"}>
                         <VerificationRequiredBanner
                             title="User Details Verification Required"
-                            description="Your business verification (KYB) is incomplete. You can continue accessing the Dashboard and Settings, but financial features such as Accounts, Stablecoins, Payables, Cards, and Transfers will remain unavailable until your business verification is completed."
-                            buttonText="Complete Business Verification"
+                            description="Your user details verification is incomplete. Please complete your verification to access financial features such as Accounts, Stablecoins, Payables, Cards, and Transfers."
+                            buttonText="Complete User Verification"
                             onAction={() => navigate("/user/verification")}
                         />
                     </Activity>
+
                     <Activity mode={!kybApproved ? "visible" : "hidden"}>
                         <VerificationRequiredBanner
-                            title="Banking Details Verification Required"
-                            description="Your business verification (KYB) is incomplete. You can continue accessing the Dashboard and Settings, but financial features such as Accounts, Stablecoins, Payables, Cards, and Transfers will remain unavailable until your business verification is completed."
-                            buttonText="Complete Business Verification"
+                            title="User Bank Details Verification Required"
+                            description="Your bank details verification is incomplete. Please complete your bank details verification to access financial features such as Accounts, Stablecoins, Payables, Cards, and Transfers."
+                            buttonText="Complete Bank Details Verification"
                             onAction={() => navigate("/user")}
                         />
                     </Activity>
