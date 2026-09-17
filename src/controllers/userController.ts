@@ -1,7 +1,7 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestQueryError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { getUserFundingAccountsBalancesService, prefundUserCryptoFundingAccountService, prefundUserFiatFundingAccountService, sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService, getApplicationHeadersService, userOnboardingDetailsService } from "../services/userServices.js";
+import { getUserFundingAccountsBalancesService, prefundUserCryptoFundingAccountService, prefundUserFiatFundingAccountService, sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService, getApplicationHeadersService, userOnboardingDetailsService, userDetailsService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
@@ -155,6 +155,44 @@ export const getApplicationHeaders = async (req: Request, res: Response): Promis
             throw error
         }
         throw new ServiceError(`GetApplicationHeadersController facing issue`, sanitizedError);
+    }
+}
+// ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
+
+// ------------------------------------- FUNCTION TO GET USER DETAILS ------------------------------------- \\
+export const userDetails = async (req: Request, res: Response): Promise<Response<successResponseJson | failedResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+        const userDetailsServiceResponse = await userDetailsService(requestSession, aesDecryptedQueryData);
+        if (userDetailsServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Get user details service is facing issue", 400);
+        }
+
+        return res.success("User details fetched", userDetailsServiceResponse?.data, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "UserDetailsController",
+            url: req.path,
+            method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(`UserDetailsController facing issue`, sanitizedError);
     }
 }
 // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\

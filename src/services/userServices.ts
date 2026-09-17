@@ -509,6 +509,63 @@ export const getApplicationHeadersService = async (req: Request, res: Response, 
 }
 // -------------------------------------  XXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
 
+// ------------------------------------- USER DETALS SERVICE -------------------------------------  \\
+export const userDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email")
+        if (!email) {
+            throw new InvalidRequestQueryError("Email not present in query params")
+        }
+
+        // Check if collection exist in MongoDB
+        const isCollection1Present = await checkMongoDbCollectionExist("user_details");
+        if (isCollection1Present.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist in MongoDB");
+        }
+
+        // Validate email
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError("Unauthorized session detected - invalid user id");
+        }
+        const userId = new Types.ObjectId(sessionUserId)
+
+        // Get User Details
+        const userDetailsDoc = await user_details.findOne({ _id: userId }).select("_id full_name business_name program_type  email mobile_country_code mobile_country_name phone_number date_of_birth gender is_admin cardholder_id status is_active is_email_verified two_fa_type").lean();          
+        if (!userDetailsDoc) {
+            throw new NotFoundError("User details not found");
+        }
+        
+        return { status: "SUCCESS", message: "User details fetched successfully", data: userDetailsDoc }
+    }
+    catch (err) {
+        const error = err as any;
+        // const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "UserOnboardingService",
+            // url: url,
+            // method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+        throw new ServiceError(
+            `UserOnboardingService facing issue`,
+            sanitizedError
+        );
+    }
+}
+// -------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------------  \\
+
 // ------------------------------------- USER ONBOARDING STATUS SERVICE -------------------------------------  \\
 export const userOnboardingDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined): Promise<successResponseJson | failedResponseJson> => {
     try {
@@ -650,21 +707,13 @@ export const userOnboardingService = async (requestSession: Request["session"], 
             case "COMPLETED":
                 break;
             case "PENDING":
-                throw new ServiceError(
-                    "User KYC verification has not been submitted. Please complete and submit KYC verification."
-                );
+                throw new ServiceError("User KYC verification has not been submitted. Please complete and submit KYC verification.");
             case "IN-PROGRESS":
-                throw new ServiceError(
-                    "User KYC verification is under review. Please wait for admin verification."
-                );
+                throw new ServiceError("User KYC verification is under review. Please wait for admin verification.");
             case "RFI":
-                throw new ServiceError(
-                    "User KYC verification requires additional information or document re-upload. Please complete the required changes."
-                );
+                throw new ServiceError("User KYC verification requires additional information or document re-upload. Please complete the required changes.");
             default:
-                throw new ServiceError(
-                    "User KYC verification is not completed. Please complete KYC verification before proceeding."
-                );
+                throw new ServiceError("User KYC verification is not completed. Please complete KYC verification before proceeding.");
         }
 
         // =========================================
