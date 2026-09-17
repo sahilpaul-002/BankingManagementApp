@@ -70,7 +70,7 @@ export default function KycStatusComponent({ kycData, onOpenSidebar }: KycStatus
 
                 {/* Action Button (Update KYC for PENDING & RFI) */}
                 {canUpdateKyc && (
-                    <div className="w-full md:w-[160px] h-[40px] shrink-0">
+                    <div className="w-full shrink-0">
                         <CustomButtonComponent
                             id="kycStatus-update-btn"
                             label={
@@ -89,17 +89,17 @@ export default function KycStatusComponent({ kycData, onOpenSidebar }: KycStatus
 
             {/* Status Informational Callout Messages */}
             {isInProgress && (
-                <div className="p-4 rounded-lg bg-[var(--info-bg)] border border-[var(--info)]/20 text-xs text-[var(--info)] leading-relaxed">
+                <div className="p-4! rounded-lg bg-[var(--info-bg)] border border-[var(--info)]/20 text-xs text-[var(--info)] leading-relaxed">
                     <strong>Note:</strong> Your KYC documents are currently under review by our compliance team. You will not be able to update or upload new documents while verification is in progress.
                 </div>
             )}
             {isCompleted && (
-                <div className="p-4 rounded-lg bg-[var(--ok-bg)] border border-[var(--ok)]/20 text-xs text-[var(--ok)] leading-relaxed">
+                <div className="p-4! rounded-lg bg-[var(--ok-bg)] border border-[var(--ok)]/20 text-xs text-[var(--ok)] leading-relaxed">
                     <strong>Verified:</strong> Your identity and address documents have been successfully verified and approved.
                 </div>
             )}
             {canUpdateKyc && (
-                <div className="p-4 rounded-lg bg-[var(--warn-bg)] border border-[var(--warn)]/20 text-xs text-[var(--warn)] leading-relaxed">
+                <div className="p-4! rounded-lg bg-[var(--warn-bg)] border border-[var(--warn)]/20 text-xs text-[var(--warn)] leading-relaxed">
                     <strong>Action Required:</strong> Please click the <strong>Update Kyc</strong> button above to resubmit or update your Proof of Address (POA) and Proof of Identity (POI) documents.
                 </div>
             )}

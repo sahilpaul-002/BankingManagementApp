@@ -116,7 +116,7 @@ const axiosInstance = getAxiosInstance();
 // ==============================
 export const userApis = createApi({
     reducerPath: 'userApis',
-    // baseQuery: axiosBaseQuery(),
+    tagTypes: ['User'],
     baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // =====================================
@@ -479,6 +479,7 @@ export const userApis = createApi({
                     return rtkError;
                 }
             },
+            providesTags: [{ type: 'User', id: 'DETAILS' }],
         }),
 
 
@@ -531,6 +532,7 @@ export const userApis = createApi({
                     return rtkError;
                 }
             },
+            providesTags: [{ type: 'User', id: 'ONBOARDING-DETAILS' }],
         }),
 
 
@@ -598,6 +600,7 @@ export const userApis = createApi({
                     return rtkError;
                 }
             },
+            invalidatesTags: [{ type: 'User', id: 'ONBOARDING-DETAILS' }],
         }),
     }),
 })

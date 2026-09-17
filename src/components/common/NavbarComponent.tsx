@@ -366,7 +366,6 @@ export default function NavbarComponent() {
         <div className="separator-container w-full h-[2px] bg-[var(--gold)] rounded-[100%] mt-3! mb-3!"></div>
 
         {/* Signout Button */}
-        {/* Signout Button */}
         <div className="navbar-signout-button-wrapper w-full h-fit flex justify-center items-center mt-6!">
           <div className="navbar-signout-button-container w-full h-[30px] sm:h-[40px]">
             <CustomButtonComponent

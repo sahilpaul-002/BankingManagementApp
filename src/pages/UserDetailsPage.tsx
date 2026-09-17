@@ -11,7 +11,9 @@ import ShowInConsole from '@/utils/ShowInConsole';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import DetailsEmptyState from '@/components/user/userDetails/DetailsEmptyState';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
-import type { UserDetailsType } from '@/types/user/userDetailsPageTypes';
+import type { UserDetailsType, UserOnboardingDetailsType } from '@/types/user/userDetailsPageTypes';
+import OnboardingDetailsEmptyState from '@/components/user/userDetails/OnboardingDetailsEmptyState';
+import AddOnboardingDetailsSidebarComponent from '@/components/user/userDetails/AddOnboardingDetailsSidebarComponent';
 
 type TabId = 'personal' | 'address' | 'bank';
 
@@ -46,7 +48,7 @@ export default function UserDetailsPage() {
     // ----------------------------------- Get User Details ----------------------------------- \\
     // Get User  Details
     const { data: getUserData, isFetching: getUserDetailsIsFetching, isError: getUserDetailsIsError, error: getUserDetailsError, isSuccess: getUserDetailsIsSuccess, refetch: refetchGetUserDetails } = useGetUserDetailsQuery({ email: userEmail! }, { skip: !userEmail });
-    const userDetails = getUserData?.data as UserDetailsType ?? {};
+    const userDetails = getUserData?.data as UserDetailsType | undefined;
 
     useEffect(() => {
         ShowInConsole("User onboarding details", userDetails);
@@ -56,7 +58,7 @@ export default function UserDetailsPage() {
     // ----------------------------------- Get User Onboarding Details ----------------------------------- \\
     // Get User Onboarding Details
     const { data: getOnboardingData, isFetching: getOnboardingDetailsIsFetching, isError: getOnboardingDetailsIsError, error: getOnboardingDetailsError, isSuccess: getOnboardingDetailsIsSuccess, refetch: refetchGetOnboardingDetails } = useGetUserOnboardingDetailsQuery({ email: userEmail! }, { skip: !userEmail });
-    const userOnboardingDetails = getOnboardingData?.data as Record<string, any> ?? {};
+    const userOnboardingDetails = getOnboardingData?.data as UserOnboardingDetailsType | undefined;
     const addressDetails = userOnboardingDetails?.addressDetails;
     const bankDetails = userOnboardingDetails?.bankDetails;
 
@@ -102,23 +104,17 @@ export default function UserDetailsPage() {
                 <PageLoaderComponent showPageLoader={showUserDetailsPageLoader} />
             </Activity>
 
-            {/* Main Content */}
-            <Activity>
-                <div className="userDetailsPage-container w-full h-fit flex flex-col justify-start items-stretch gap-4 p-4! sm:p-6!">
-                    {/* Page Header */}
-                    <div className="mb-2!">
-                        <h1 className="text-2xl font-semibold text-[var(--ink)] tracking-normal">Account Settings</h1>
-                        <p className="text-sm text-[var(--mute)] mt-1!">
-                            View and manage your profile, address and banking information.
-                        </p>
-                    </div>
-
-                    {/* Card */}
-                    <div className="w-full bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl shadow-sm overflow-hidden">
+            {/* Main Content Card */}
+            <div className="w-full bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl shadow-sm overflow-hidden">
+                {isOnboardingDetailsNotFound ? (
+                    <OnboardingDetailsEmptyState onAddOnboarding={handleOpenOnboardingSidebar}/>
+                ) : (
+                    <>
                         {/* Tab Navigation */}
                         <div className="flex items-end border-b border-[var(--line)] px-6!">
                             {TABS.map((tab) => {
                                 const isActive = activeTab === tab.id;
+
                                 return (
                                     <button
                                         key={tab.id}
@@ -126,7 +122,10 @@ export default function UserDetailsPage() {
                                         type="button"
                                         onClick={() => setActiveTab(tab.id)}
                                         className={`w-full relative px-5! py-3.5! text-sm font-semibold tracking-normal transition-colors duration-150 cursor-pointer border-b-2 -mb-px!
-                                    ${isActive ? 'text-[var(--ink)] border-[var(--gold)]' : 'text-[var(--mute)] border-transparent hover:text-[var(--ink-soft)] hover:border-[var(--line-strong)]'}`}
+                                ${isActive
+                                                ? 'text-[var(--ink)] border-[var(--gold)]'
+                                                : 'text-[var(--mute)] border-transparent hover:text-[var(--ink-soft)] hover:border-[var(--line-strong)]'
+                                            }`}
                                     >
                                         {tab.label}
                                     </button>
@@ -136,51 +135,75 @@ export default function UserDetailsPage() {
 
                         {/* Tab Content */}
                         <div className="p-6! sm:p-8!">
-                            <Activity mode={activeTab === 'personal' ? 'visible' : 'hidden'}>
+                            <Activity
+                                mode={activeTab === 'personal' ? 'visible' : 'hidden'}
+                            >
                                 {getUserDetailsIsFetching ? (
                                     <div className="w-full h-full hashLoaderContainer relative z-10 animate-fade-in">
-                                        <RingSpinnerLoaderComponent visible={getUserDetailsIsFetching} size={30} color={getComputedStyle(document.documentElement).getPropertyValue("--nav-bg").trim()} />
+                                        <RingSpinnerLoaderComponent
+                                            visible={getUserDetailsIsFetching}
+                                            size={30}
+                                            color={getComputedStyle(document.documentElement)
+                                                .getPropertyValue('--nav-bg')
+                                                .trim()}
+                                        />
                                     </div>
                                 ) : userDetails ? (
-                                    <PersonalDetailsComponent userDetails={userDetails} />
+                                    <PersonalDetailsComponent userDetails={userDetails}/>
                                 ) : (
-                                    <div className="text-sm text-[var(--mute)]">
-                                        <DetailsEmptyState type="personal" />
-                                    </div>
+                                    <DetailsEmptyState type="personal" />
                                 )}
                             </Activity>
 
-                            <Activity mode={activeTab === 'address' ? 'visible' : 'hidden'}>
+                            <Activity
+                                mode={activeTab === 'address' ? 'visible' : 'hidden'}
+                            >
                                 {getOnboardingDetailsIsFetching ? (
                                     <div className="w-full h-full hashLoaderContainer relative z-10 animate-fade-in">
-                                        <RingSpinnerLoaderComponent visible={getOnboardingDetailsIsFetching} size={30} color={getComputedStyle(document.documentElement).getPropertyValue("--nav-bg").trim()} />
+                                        <RingSpinnerLoaderComponent
+                                            visible={getOnboardingDetailsIsFetching}
+                                            size={30}
+                                            color={getComputedStyle(document.documentElement)
+                                                .getPropertyValue('--nav-bg')
+                                                .trim()}
+                                        />
                                     </div>
                                 ) : addressDetails ? (
-                                    <AddressDetailsComponent addressDetails={addressDetails} />
+                                    <AddressDetailsComponent addressDetails={addressDetails}/>
                                 ) : (
-                                    <div className="text-sm text-[var(--mute)]">
-                                        <DetailsEmptyState type="address" />
-                                    </div>
+                                    <DetailsEmptyState type="address" />
                                 )}
                             </Activity>
 
-                            <Activity mode={activeTab === 'bank' ? 'visible' : 'hidden'}>
+                            <Activity
+                                mode={activeTab === 'bank' ? 'visible' : 'hidden'}
+                            >
                                 {getOnboardingDetailsIsFetching ? (
                                     <div className="w-full h-full hashLoaderContainer relative z-10 animate-fade-in">
-                                        <RingSpinnerLoaderComponent visible={getOnboardingDetailsIsFetching} size={30} color={getComputedStyle(document.documentElement).getPropertyValue("--nav-bg").trim()} />
+                                        <RingSpinnerLoaderComponent
+                                            visible={getOnboardingDetailsIsFetching}
+                                            size={30}
+                                            color={getComputedStyle(document.documentElement)
+                                                .getPropertyValue('--nav-bg')
+                                                .trim()}
+                                        />
                                     </div>
                                 ) : bankDetails ? (
-                                    <BankDetailsComponent bankDetails={bankDetails} />
+                                    <BankDetailsComponent bankDetails={bankDetails}/>
                                 ) : (
-                                    <div className="text-sm text-[var(--mute)]">
-                                        <DetailsEmptyState type="bank" />
-                                    </div>
+                                    <DetailsEmptyState type="bank" />
                                 )}
                             </Activity>
                         </div>
-                    </div>
-                </div>
-            </Activity>
+                    </>
+                )}
+            </div>
+
+            {/* Add Onboarding Details Sidebar */}
+            <AddOnboardingDetailsSidebarComponent
+                isOpen={isOnboardingSidebarOpen}
+                onClose={handleCloseOnboardingSidebar}
+            />
         </>
     );
 }

@@ -156,7 +156,7 @@ export default function KycUploadSidebarComponent({
                             {KYC_UPLOAD_SIDEBAR_FALLBACK.title}
                         </h3>
                         <p className="text-xs text-[var(--mute)] mt-1!">
-                            Upload Proof of Address (POA) and Proof of Identity (POI)
+                            Upload KYC Documents
                         </p>
                     </div>
                     <button
@@ -176,7 +176,7 @@ export default function KycUploadSidebarComponent({
                     onSubmit={handleSubmit(handleFormSubmit)}
                     className="p-6! flex-1 flex flex-col gap-6"
                 >
-                    <div className="p-3.5 rounded-lg bg-[var(--bg-subtle)] border border-[var(--line)] text-xs text-[var(--ink-soft)] leading-relaxed">
+                    <div className="p-3.5! rounded-lg bg-[var(--bg-subtle)] border border-[var(--line)] text-xs text-[var(--ink-soft)] leading-relaxed">
                         {KYC_UPLOAD_SIDEBAR_FALLBACK.description}
                     </div>
 
@@ -189,7 +189,7 @@ export default function KycUploadSidebarComponent({
                             {KYC_UPLOAD_SIDEBAR_FALLBACK.poaLabel} <span className="text-[var(--danger)]">*</span>
                         </label>
 
-                        <div className="relative border-2 border-dashed border-[var(--line-strong)] hover:border-[var(--gold)] rounded-xl p-4 bg-[var(--bg-subtle)] transition-colors text-center cursor-pointer flex flex-col items-center justify-center gap-2">
+                        <div className="relative border-2 border-dashed border-[var(--line-strong)] hover:border-[var(--gold)] rounded-xl p-4! bg-[var(--bg-subtle)] transition-colors text-center cursor-pointer flex flex-col items-center justify-center gap-2">
                             <input
                                 id="kycUpload-poa"
                                 type="file"
@@ -232,7 +232,7 @@ export default function KycUploadSidebarComponent({
                             {KYC_UPLOAD_SIDEBAR_FALLBACK.poiLabel} <span className="text-[var(--danger)]">*</span>
                         </label>
 
-                        <div className="relative border-2 border-dashed border-[var(--line-strong)] hover:border-[var(--gold)] rounded-xl p-4 bg-[var(--bg-subtle)] transition-colors text-center cursor-pointer flex flex-col items-center justify-center gap-2">
+                        <div className="relative border-2 border-dashed border-[var(--line-strong)] hover:border-[var(--gold)] rounded-xl p-4! bg-[var(--bg-subtle)] transition-colors text-center cursor-pointer flex flex-col items-center justify-center gap-2">
                             <input
                                 id="kycUpload-poi"
                                 type="file"
@@ -269,7 +269,7 @@ export default function KycUploadSidebarComponent({
 
                 {/* Footer Buttons */}
                 <div className="p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end gap-3">
-                    <div className="w-[100px] h-[38px]">
+                    <div className="w-fit h-fit">
                         <CustomButtonComponent
                             id="kycUploadSidebar-cancel-btn"
                             label="Cancel"
@@ -279,7 +279,7 @@ export default function KycUploadSidebarComponent({
                             disabled={isSubmitting}
                         />
                     </div>
-                    <div className="w-[140px] h-[38px]">
+                    <div className="w-fit h-fit">
                         <CustomButtonComponent
                             id="kycUploadSidebar-submit-btn"
                             label="Submit KYC"

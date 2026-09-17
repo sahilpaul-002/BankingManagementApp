@@ -30,6 +30,10 @@ const CustomSelectComponent = forwardRef<HTMLButtonElement, SelectPropsTypes>((p
     // Destructure props
     const { id, label, labelCategory, labels, selectTriggerClassName, selectGroupClassName, value, hint, error, onChange, disabled, ...restAttributes } = props
 
+    // Get window pathname
+    const windowPathname = window.location.pathname
+    const authPathnames = ["/", "/signup", "/verifyEmail", "/send2FaCode", "/verify2FaCode", "/sendForgotPasswordCode", "/verifyForgotPasswordCode"]
+
     // Get the selected item
     const selectedItem = labels?.find((item) => {
         // console.log("Item:", item);
@@ -131,7 +135,9 @@ const CustomSelectComponent = forwardRef<HTMLButtonElement, SelectPropsTypes>((p
 
 
                 <Activity mode={error ? "visible" : "hidden"}>
-                    <p className="input-error mt-1.5!">{error}</p>
+                    <p className={`${authPathnames.includes(windowPathname) ? "auth-input-error" : "input-error"} mt-1.5!`}>
+                        {error}
+                    </p>
                 </Activity>
                 <Activity mode={(hint && !error) ? "visible" : "hidden"}>
                     <p className="input-hint mt-1.5!">{hint}</p>

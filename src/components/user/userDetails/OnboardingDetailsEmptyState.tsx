@@ -24,7 +24,7 @@ export default function OnboardingDetailsEmptyState({
                     Add your onboarding details to complete your account setup.
                 </p>
 
-                <div className="w-[180px] h-[38px] mt-5!">
+                <div className="w-fit h-fit mt-5!">
                     <CustomButtonComponent
                         id="userDetailsPage-add-onboarding-btn"
                         label="Add Onboarding Details"

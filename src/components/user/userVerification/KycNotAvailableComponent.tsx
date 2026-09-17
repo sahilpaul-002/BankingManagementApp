@@ -9,7 +9,7 @@ interface KycNotAvailableComponentProps {
 
 export default function KycNotAvailableComponent({ onOpenSidebar }: KycNotAvailableComponentProps) {
     return (
-        <div className="kycNotAvailable-container w-full h-fit flex flex-col justify-center items-center gap-6 p-8 border border-[var(--line)] bg-[var(--bg-subtle)] rounded-xl text-center shadow-xs">
+        <div className="kycNotAvailable-container w-full h-fit flex flex-col justify-center items-center gap-6 p-8! border border-[var(--line)] bg-[var(--bg-subtle)] rounded-xl text-center shadow-xs">
             <div className="w-14 h-14 rounded-full bg-[var(--warn-bg)] flex items-center justify-center text-[var(--warn)] shadow-inner">
                 <ShieldAlert className="w-7 h-7" />
             </div>

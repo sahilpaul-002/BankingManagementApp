@@ -1,10 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import KycNotAvailableComponent from '@/components/user/userVerification/KycNotAvailableComponent';
 import KycStatusComponent from '@/components/user/userVerification/KycStatusComponent';
 import KycUploadSidebarComponent from '@/components/user/userVerification/KycUploadSidebarComponent';
 import { KYC_STATUS_FALLBACK, type KycDataType } from '@/fallbacks/user/userVerification/kycStatusFallbacks';
+import { useNavigate } from 'react-router';
+import { useDispatch } from 'react-redux';
+import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 
 export default function UserVerificationPage() {
+    // Configure useNavigate
+    const navigate = useNavigate();
+
+    // Configure useDispatch
+    const dispatch = useDispatch();
+
+    // ------------------------------- GET EMAL FROM SESSION STORAGE ---------------------------------- \\
+    // Get necessary user details from session storage
+    const userEmail = sessionStorage.getItem('userEmail');
+    const userId = sessionStorage.getItem("userId")
+    const userCardholderId = sessionStorage.getItem("cardholderId")
+
+    useEffect(() => {
+        // Validate email once
+        if (!userEmail || !userId || !userCardholderId) {
+            dispatch(setShowInfoBanner("Application facing issue, necessary user details not present in session storage. Please re-login."));
+            return;
+        }
+    }, [userEmail, userId, userCardholderId]);
+    // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
     // KYC data state (null represents "Not Available / Not Found" state)
     const [kycData, setKycData] = useState<KycDataType | null>(KYC_STATUS_FALLBACK);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -19,7 +43,7 @@ export default function UserVerificationPage() {
 
     const handleUploadSuccess = (data: { poaName: string; poiName: string }) => {
         setKycData((prev) => ({
-            email: prev?.email || sessionStorage.getItem('userEmail') || 'bmatest01@yopmail.com',
+            email: prev?.email || userEmail!,
             kyc_request_id: prev?.kyc_request_id || 'b491418c-9877-4a8c-afed-3de42e6b5a1a',
             kyc_status: 'PENDING',
             poa_document_name: data.poaName,
@@ -44,45 +68,40 @@ export default function UserVerificationPage() {
                     <button
                         type="button"
                         onClick={() => setKycData(null)}
-                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${
-                            kycData === null ? 'bg-[var(--warn-bg)] text-[var(--warn)] font-bold' : 'hover:bg-[var(--bg-hover)]'
-                        }`}
+                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${kycData === null ? 'bg-[var(--warn-bg)] text-[var(--warn)] font-bold' : 'hover:bg-[var(--bg-hover)]'
+                            }`}
                     >
                         Not Available
                     </button>
                     <button
                         type="button"
                         onClick={() => setKycData({ ...KYC_STATUS_FALLBACK, kyc_status: 'PENDING' })}
-                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${
-                            kycData?.kyc_status === 'PENDING' ? 'bg-[var(--warn-bg)] text-[var(--warn)] font-bold' : 'hover:bg-[var(--bg-hover)]'
-                        }`}
+                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${kycData?.kyc_status === 'PENDING' ? 'bg-[var(--warn-bg)] text-[var(--warn)] font-bold' : 'hover:bg-[var(--bg-hover)]'
+                            }`}
                     >
                         Pending
                     </button>
                     <button
                         type="button"
                         onClick={() => setKycData({ ...KYC_STATUS_FALLBACK, kyc_status: 'IN-PROGRESS' })}
-                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${
-                            kycData?.kyc_status === 'IN-PROGRESS' ? 'bg-[var(--info-bg)] text-[var(--info)] font-bold' : 'hover:bg-[var(--bg-hover)]'
-                        }`}
+                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${kycData?.kyc_status === 'IN-PROGRESS' ? 'bg-[var(--info-bg)] text-[var(--info)] font-bold' : 'hover:bg-[var(--bg-hover)]'
+                            }`}
                     >
                         In Progress
                     </button>
                     <button
                         type="button"
                         onClick={() => setKycData({ ...KYC_STATUS_FALLBACK, kyc_status: 'RFI' })}
-                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${
-                            kycData?.kyc_status === 'RFI' ? 'bg-[var(--warn-bg)] text-[var(--warn)] font-bold' : 'hover:bg-[var(--bg-hover)]'
-                        }`}
+                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${kycData?.kyc_status === 'RFI' ? 'bg-[var(--warn-bg)] text-[var(--warn)] font-bold' : 'hover:bg-[var(--bg-hover)]'
+                            }`}
                     >
                         RFI
                     </button>
                     <button
                         type="button"
                         onClick={() => setKycData({ ...KYC_STATUS_FALLBACK, kyc_status: 'COMPLETED' })}
-                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${
-                            kycData?.kyc_status === 'COMPLETED' ? 'bg-[var(--ok-bg)] text-[var(--ok)] font-bold' : 'hover:bg-[var(--bg-hover)]'
-                        }`}
+                        className={`px-2 py-1 rounded cursor-pointer transition-colors ${kycData?.kyc_status === 'COMPLETED' ? 'bg-[var(--ok-bg)] text-[var(--ok)] font-bold' : 'hover:bg-[var(--bg-hover)]'
+                            }`}
                     >
                         Completed
                     </button>
