@@ -48,10 +48,11 @@ function VerificationBadge({ verified }: { verified: boolean }) {
 interface BankDetailsComponentProps {
     bankDetails: BankDetailsType;
     addressDetails: AddressDetailsType;
+    kybApproved: boolean;
     userEmail: string;
 }
 
-export default function BankDetailsComponent({bankDetails, addressDetails, userEmail}: BankDetailsComponentProps) {
+export default function BankDetailsComponent({bankDetails, addressDetails, kybApproved, userEmail}: BankDetailsComponentProps) {
     const [isEditing, setIsEditing] = useState(false);
 
     // Trigger User Onboarding Mutatation
@@ -181,7 +182,7 @@ export default function BankDetailsComponent({bankDetails, addressDetails, userE
                     </p>
                 </div>
 
-                <Activity mode={!isEditing ? 'visible' : 'hidden'}>
+                <Activity mode={!isEditing && !kybApproved ? 'visible' : 'hidden'}>
                     <div className="w-[90px] h-[34px]">
                         <CustomButtonComponent
                             id="bankDetails-edit-btn"
@@ -194,6 +195,7 @@ export default function BankDetailsComponent({bankDetails, addressDetails, userE
                             type="button"
                             variant="outline"
                             onClick={() => setIsEditing(true)}
+                            disabled={kybApproved}
                         />
                     </div>
                 </Activity>

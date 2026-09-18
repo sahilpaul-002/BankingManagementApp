@@ -30,9 +30,10 @@ interface AddressSubFormPropsType {
     defaultValues: AddressType;
     onSave: (data: AddressFormData) => Promise<boolean>;
     isSaving: boolean;
+    kybApproved: boolean;
 }
 
-function AddressSubForm({ title, description, formId, defaultValues, onSave, isSaving }: AddressSubFormPropsType) {
+function AddressSubForm({ title, description, formId, defaultValues, onSave, isSaving, kybApproved }: AddressSubFormPropsType) {
     const [isEditing, setIsEditing] = useState(false);
 
     const {
@@ -75,7 +76,7 @@ function AddressSubForm({ title, description, formId, defaultValues, onSave, isS
                     <h3 className="text-sm font-semibold text-[var(--ink)] tracking-normal">{title}</h3>
                     <p className="text-xs text-[var(--mute)] mt-0.5!">{description}</p>
                 </div>
-                <Activity mode={!isEditing ? 'visible' : 'hidden'}>
+                <Activity mode={!isEditing && !kybApproved ? 'visible' : 'hidden'}>
                     <div className="w-[90px] h-[34px]">
                         <CustomButtonComponent
                             id={`${formId}-edit-btn`}
@@ -83,6 +84,7 @@ function AddressSubForm({ title, description, formId, defaultValues, onSave, isS
                             type="button"
                             variant="outline"
                             onClick={() => setIsEditing(true)}
+                            disabled={kybApproved}
                         />
                     </div>
                 </Activity>
@@ -204,10 +206,11 @@ function AddressSubForm({ title, description, formId, defaultValues, onSave, isS
 interface AddressDetailsComponentProps {
     addressDetails: AddressDetailsType;
     bankDetails: BankDetailsType;
+    kybApproved: boolean;
     userEmail: string;
 }
 
-export default function AddressDetailsComponent({ addressDetails, bankDetails, userEmail }: AddressDetailsComponentProps) {
+export default function AddressDetailsComponent({ addressDetails, bankDetails, kybApproved, userEmail }: AddressDetailsComponentProps) {
     const [triggerUserOnboarding, { isLoading: isUpdating }] = useUserOnboardingMutation();
 
     const bankDetailsPayload = {
@@ -392,6 +395,7 @@ export default function AddressDetailsComponent({ addressDetails, bankDetails, u
                 defaultValues={addressDetails.billing_address}
                 onSave={handleBillingSave}
                 isSaving={isUpdating}
+                kybApproved={kybApproved}
             />
 
             <div className="border-t border-[var(--line-faint)]" />
@@ -403,6 +407,7 @@ export default function AddressDetailsComponent({ addressDetails, bankDetails, u
                 defaultValues={addressDetails.delivery_address}
                 onSave={handleDeliverySave}
                 isSaving={isUpdating}
+                kybApproved={kybApproved}
             />
         </div>
     );

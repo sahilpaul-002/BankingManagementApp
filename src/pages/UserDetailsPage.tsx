@@ -173,6 +173,7 @@ export default function UserDetailsPage() {
                                     <AddressDetailsComponent
                                         addressDetails={addressDetails}
                                         bankDetails={bankDetails!}
+                                        kybApproved={kybApproved}
                                         userEmail={userEmail!}
                                     />
                                 ) : (
@@ -197,6 +198,7 @@ export default function UserDetailsPage() {
                                     <BankDetailsComponent
                                         bankDetails={bankDetails}
                                         addressDetails={addressDetails!}
+                                        kybApproved={kybApproved}
                                         userEmail={userEmail!}
                                     />
                                 ) : (
