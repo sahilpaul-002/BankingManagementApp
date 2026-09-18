@@ -47,7 +47,7 @@ export default function UserDetailsPage() {
 
     // ----------------------------------- Get User Details ----------------------------------- \\
     // Get User  Details
-    const { data: getUserData, isFetching: getUserDetailsIsFetching, isError: getUserDetailsIsError, error: getUserDetailsError, isSuccess: getUserDetailsIsSuccess, refetch: refetchGetUserDetails } = useGetUserDetailsQuery({ email: userEmail! }, { skip: !userEmail });
+    const { data: getUserData, isLoading: getUserDetailsIsLoading, isFetching: getUserDetailsIsFetching, isError: getUserDetailsIsError, error: getUserDetailsError, isSuccess: getUserDetailsIsSuccess, refetch: refetchGetUserDetails } = useGetUserDetailsQuery({ email: userEmail! }, { skip: !userEmail });
     const userDetails = getUserData?.data as UserDetailsType | undefined;
 
     useEffect(() => {
@@ -57,7 +57,7 @@ export default function UserDetailsPage() {
 
     // ----------------------------------- Get User Onboarding Details ----------------------------------- \\
     // Get User Onboarding Details
-    const { data: getOnboardingData, isFetching: getOnboardingDetailsIsFetching, isError: getOnboardingDetailsIsError, error: getOnboardingDetailsError, isSuccess: getOnboardingDetailsIsSuccess, refetch: refetchGetOnboardingDetails } = useGetUserOnboardingDetailsQuery({ email: userEmail! }, { skip: !userEmail });
+    const { data: getOnboardingData, isLoading: getOnboardingDetailsIsLoading, isFetching: getOnboardingDetailsIsFetching, isError: getOnboardingDetailsIsError, error: getOnboardingDetailsError, isSuccess: getOnboardingDetailsIsSuccess, refetch: refetchGetOnboardingDetails } = useGetUserOnboardingDetailsQuery({ email: userEmail! }, { skip: !userEmail });
     const userOnboardingDetails = getOnboardingData?.data as UserOnboardingDetailsType | undefined;
     const addressDetails = userOnboardingDetails?.addressDetails;
     const bankDetails = userOnboardingDetails?.bankDetails;
@@ -79,7 +79,8 @@ export default function UserDetailsPage() {
         ShowInConsole("User onboarding details", userOnboardingDetails);
     }, [userOnboardingDetails])
     // ----------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------------------- \\
-    const showUserDetailsPageLoader = getOnboardingDetailsIsFetching || getUserDetailsIsFetching
+    // const showUserDetailsPageLoader = getOnboardingDetailsIsFetching || getUserDetailsIsFetching
+    const showUserDetailsPageLoader = getOnboardingDetailsIsLoading || getUserDetailsIsLoading
 
     // ------------------------------ Add Onboarding Detials Helpers ------------------------------ \\
     // Sidebar state for unavailbale onboarding details 
@@ -107,7 +108,7 @@ export default function UserDetailsPage() {
             {/* Main Content Card */}
             <div className="w-full bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl shadow-sm overflow-hidden">
                 {isOnboardingDetailsNotFound ? (
-                    <OnboardingDetailsEmptyState onAddOnboarding={handleOpenOnboardingSidebar}/>
+                    <OnboardingDetailsEmptyState onAddOnboarding={handleOpenOnboardingSidebar} />
                 ) : (
                     <>
                         {/* Tab Navigation */}
@@ -139,7 +140,7 @@ export default function UserDetailsPage() {
                                 mode={activeTab === 'personal' ? 'visible' : 'hidden'}
                             >
                                 {getUserDetailsIsFetching ? (
-                                    <div className="w-full h-full hashLoaderContainer relative z-10 animate-fade-in">
+                                    <div className="w-full h-full hashLoaderContainer py-10! relative z-10 animate-fade-in">
                                         <RingSpinnerLoaderComponent
                                             visible={getUserDetailsIsFetching}
                                             size={30}
@@ -149,7 +150,7 @@ export default function UserDetailsPage() {
                                         />
                                     </div>
                                 ) : userDetails ? (
-                                    <PersonalDetailsComponent userDetails={userDetails}/>
+                                    <PersonalDetailsComponent userDetails={userDetails} />
                                 ) : (
                                     <DetailsEmptyState type="personal" />
                                 )}
@@ -159,7 +160,7 @@ export default function UserDetailsPage() {
                                 mode={activeTab === 'address' ? 'visible' : 'hidden'}
                             >
                                 {getOnboardingDetailsIsFetching ? (
-                                    <div className="w-full h-full hashLoaderContainer relative z-10 animate-fade-in">
+                                    <div className="w-full h-full hashLoaderContainer py-10! relative z-10 animate-fade-in">
                                         <RingSpinnerLoaderComponent
                                             visible={getOnboardingDetailsIsFetching}
                                             size={30}
@@ -168,8 +169,12 @@ export default function UserDetailsPage() {
                                                 .trim()}
                                         />
                                     </div>
-                                ) : addressDetails ? (
-                                    <AddressDetailsComponent addressDetails={addressDetails}/>
+                                ) : addressDetails && bankDetails ? (
+                                    <AddressDetailsComponent
+                                        addressDetails={addressDetails}
+                                        bankDetails={bankDetails!}
+                                        userEmail={userEmail!}
+                                    />
                                 ) : (
                                     <DetailsEmptyState type="address" />
                                 )}
@@ -179,7 +184,7 @@ export default function UserDetailsPage() {
                                 mode={activeTab === 'bank' ? 'visible' : 'hidden'}
                             >
                                 {getOnboardingDetailsIsFetching ? (
-                                    <div className="w-full h-full hashLoaderContainer relative z-10 animate-fade-in">
+                                    <div className="w-full h-full hashLoaderContainer py-10! relative z-10 animate-fade-in">
                                         <RingSpinnerLoaderComponent
                                             visible={getOnboardingDetailsIsFetching}
                                             size={30}
@@ -188,8 +193,12 @@ export default function UserDetailsPage() {
                                                 .trim()}
                                         />
                                     </div>
-                                ) : bankDetails ? (
-                                    <BankDetailsComponent bankDetails={bankDetails}/>
+                                ) : bankDetails && addressDetails ? (
+                                    <BankDetailsComponent
+                                        bankDetails={bankDetails}
+                                        addressDetails={addressDetails!}
+                                        userEmail={userEmail!}
+                                    />
                                 ) : (
                                     <DetailsEmptyState type="bank" />
                                 )}

@@ -6,7 +6,9 @@ import { Pencil } from 'lucide-react';
 import { toast } from 'react-toastify';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type { AddressDetailsType, AddressType } from '@/types/user/userDetailsPageTypes';
+import type { AddressDetailsType, AddressType, BankDetailsType } from '@/types/user/userDetailsPageTypes';
+import { useUserOnboardingMutation } from '@/redux/features/user/userApi';
+import ShowInConsole from '@/utils/ShowInConsole';
 
 // ── Zod Schema ──────────────────────────────────────────────────────────────
 const addressSchema = z.object({
@@ -26,10 +28,11 @@ interface AddressSubFormPropsType {
     description: string;
     formId: string;
     defaultValues: AddressType;
-    onSave: (data: AddressFormData) => Promise<void>;
+    onSave: (data: AddressFormData) => Promise<boolean>;
+    isSaving: boolean;
 }
 
-function AddressSubForm({ title, description, formId, defaultValues, onSave }: AddressSubFormPropsType) {
+function AddressSubForm({ title, description, formId, defaultValues, onSave, isSaving }: AddressSubFormPropsType) {
     const [isEditing, setIsEditing] = useState(false);
 
     const {
@@ -52,8 +55,11 @@ function AddressSubForm({ title, description, formId, defaultValues, onSave }: A
     });
 
     const onValid: SubmitHandler<AddressFormData> = async (formData) => {
-        await onSave(formData);
-        setIsEditing(false);
+        const isSaved = await onSave(formData);
+
+        if (isSaved) {
+            setIsEditing(false);
+        }
     };
 
     const handleCancel = () => {
@@ -167,21 +173,24 @@ function AddressSubForm({ title, description, formId, defaultValues, onSave }: A
                 {/* Action Buttons — only shown in edit mode */}
                 <Activity mode={isEditing ? 'visible' : 'hidden'}>
                     <div className="flex items-center justify-end gap-3 mt-5! pt-4! border-t border-[var(--line)]">
-                        <div className="w-[100px] h-[36px]">
+                        <div className="w-fit h-fit">
                             <CustomButtonComponent
                                 id={`${formId}-cancel-btn`}
                                 label="Cancel"
                                 type="button"
                                 variant="outline"
                                 onClick={handleCancel}
+                                disabled={isSaving}
                             />
                         </div>
-                        <div className="w-[130px] h-[36px]">
+                        <div className="w-fit h-fit">
                             <CustomButtonComponent
                                 id={`${formId}-submit-btn`}
                                 label="Save Changes"
                                 type="submit"
                                 variant="navy"
+                                disabled={isSaving}
+                                showButtonLoader={isSaving}
                             />
                         </div>
                     </div>
@@ -194,56 +203,206 @@ function AddressSubForm({ title, description, formId, defaultValues, onSave }: A
 // ── Main Component ────────────────────────────────────────────────────────────
 interface AddressDetailsComponentProps {
     addressDetails: AddressDetailsType;
+    bankDetails: BankDetailsType;
+    userEmail: string;
 }
 
-export default function AddressDetailsComponent({addressDetails}: AddressDetailsComponentProps) {
-    const handleBillingSave = async (data: AddressFormData) => {
+export default function AddressDetailsComponent({ addressDetails, bankDetails, userEmail }: AddressDetailsComponentProps) {
+    const [triggerUserOnboarding, { isLoading: isUpdating }] = useUserOnboardingMutation();
+
+    const bankDetailsPayload = {
+        email: userEmail,
+        account_holder_name: bankDetails.account_holder_name,
+        account_number: bankDetails.account_number,
+        swift_code: bankDetails.swift_code,
+        iban_code: bankDetails.iban_code,
+        bank_name: bankDetails.bank_name,
+        is_verified: bankDetails.is_verified,
+    };
+
+    const handleBillingSave = async (data: AddressFormData): Promise<boolean> => {
+        if (!userEmail) {
+            toast.error('Email not available. Please try again.');
+            return false;
+        }
+
+        if (!bankDetails) {
+            toast.error('Bank details are unavailable. Please try again.');
+            return false;
+        }
+
+        const payload = {
+            email: userEmail,
+            address_details: {
+                email: userEmail,
+                billing_address: {
+                    ...data,
+                    type: 'Billing',
+                },
+                delivery_address: {
+                    ...addressDetails.delivery_address,
+                    type: 'Delivery',
+                },
+            },
+            bank_details: bankDetailsPayload,
+        };
+
         try {
-            // TODO: wire up actual API mutation
-            console.log('Billing address submit:', data);
+            const result = await triggerUserOnboarding(payload).unwrap();
+
+            if (result?.status?.toUpperCase() !== 'SUCCESS') {
+                toast.error('Update user onboarding service is facing issue. Please try again later.');
+                return false;
+            }
+
+            ShowInConsole('Update user onboarding response:', result);
+
+            const normalizedMessage = result?.message?.toLowerCase();
+            if (normalizedMessage?.includes('failed to sent user bank verification mail')) {
+                toast.success('Address updated successfully, but the onboarding verification mail could not be sent. Please contact admin.');
+                return true;
+            }
+
             toast.success('Billing address updated successfully.');
-        } catch {
-            toast.error('Failed to update billing address. Please try again.');
+            return true;
+        } catch (err: any) {
+            ShowInConsole('Update billing address / user onboarding error:', err);
+
+            const errorMessage = Array.isArray(err?.data?.message)
+                ? err.data.message[0]
+                : err?.data?.message ||
+                err?.message ||
+                'Update user onboarding service is facing issue. Please try again later.';
+
+            const normalizedMessage = errorMessage.toLowerCase();
+            if (normalizedMessage.includes('user kyc verification has not been submitted')) {
+                toast.error('User KYC verification has not been completed. Please submit KYC details before updating onboarding details.');
+                return false;
+            }
+            if (normalizedMessage.includes('user kyc verification is under review')) {
+                toast.error('User KYC details are under review. Please contact admin for further information.');
+                return false;
+            }
+            if (normalizedMessage.includes('user kyc verification requires additional information or document re-upload')) {
+                toast.error('User KYC verification requires additional information or document re-upload. Please complete the required changes before updating onboarding details.');
+                return false;
+            }
+            if (normalizedMessage.includes('bank details already exist with the same account number')) {
+                toast.error('Bank details already exist with the same account number.');
+                return false;
+            }
+            toast.error('Update user onboarding service is facing issue. Please try again later.');
+
+            return false;
         }
     };
 
-    const handleDeliverySave = async (data: AddressFormData) => {
+    const handleDeliverySave = async (data: AddressFormData): Promise<boolean> => {
+        if (!userEmail) {
+            toast.error('Email not available. Please try again.');
+            return false;
+        }
+
+        if (!bankDetails) {
+            toast.error('Bank details are unavailable. Please try again.');
+            return false;
+        }
+
+        const payload = {
+            email: userEmail,
+            address_details: {
+                email: userEmail,
+                billing_address: {
+                    ...addressDetails.billing_address,
+                    type: 'Billing',
+                },
+                delivery_address: {
+                    ...data,
+                    type: 'Delivery',
+                },
+            },
+            bank_details: bankDetailsPayload,
+        };
+
         try {
-            // TODO: wire up actual API mutation
-            console.log('Delivery address submit:', data);
+            const result = await triggerUserOnboarding(payload).unwrap();
+
+            if (result?.status?.toUpperCase() !== 'SUCCESS') {
+                toast.error('Update user onboarding service is facing issue. Please try again later.');
+                return false;
+            }
+
+            ShowInConsole('Update user onboarding response:', result);
+
+            const normalizedMessage = result?.message?.toLowerCase();
+            if (normalizedMessage?.includes('failed to sent user bank verification mail')) {
+                toast.success('Address updated successfully, but the onboarding verification mail could not be sent. Please contact admin.');
+                return true;
+            }
+
             toast.success('Delivery address updated successfully.');
-        } catch {
-            toast.error('Failed to update delivery address. Please try again.');
+            return true;
+        } catch (err: any) {
+            ShowInConsole('Update delivery address / user onboarding error:', err);
+
+            const errorMessage = Array.isArray(err?.data?.message)
+                ? err.data.message[0]
+                : err?.data?.message ||
+                err?.message ||
+                'Update user onboarding service is facing issue. Please try again later.';
+
+            const normalizedMessage = errorMessage.toLowerCase();
+            if (normalizedMessage.includes('user kyc verification has not been submitted')) {
+                toast.error('User KYC verification has not been completed. Please submit KYC details before updating onboarding details.');
+                return false;
+            }
+            if (normalizedMessage.includes('user kyc verification is under review')) {
+                toast.error('User KYC details are under review. Please contact admin for further information.');
+                return false;
+            }
+            if (normalizedMessage.includes('user kyc verification requires additional information or document re-upload')) {
+                toast.error('User KYC verification requires additional information or document re-upload. Please complete the required changes before updating onboarding details.');
+                return false;
+            }
+            if (normalizedMessage.includes('bank details already exist with the same account number')) {
+                toast.error('Bank details already exist with the same account number.');
+                return false;
+            }
+            toast.error('Update user onboarding service is facing issue. Please try again later.');
+            return false;
         }
     };
 
     return (
         <div className="addressDetails-wrapper w-full h-fit space-y-8!">
-            {/* Section Header */}
             <div className="mb-5!">
-                <h2 className="text-base font-semibold text-[var(--ink)] tracking-normal">Address Details</h2>
-                <p className="text-xs text-[var(--mute)] mt-0.5!">Manage your billing and delivery addresses</p>
+                <h2 className="text-base font-semibold text-[var(--ink)] tracking-normal">
+                    Address Details
+                </h2>
+
+                <p className="text-xs text-[var(--mute)] mt-0.5!">
+                    Manage your billing and delivery addresses
+                </p>
             </div>
 
-            {/* Billing Address Sub-Form */}
             <AddressSubForm
                 title="Billing Address"
                 description="Your registered billing address"
                 formId="billingAddress-form"
                 defaultValues={addressDetails.billing_address}
                 onSave={handleBillingSave}
+                isSaving={isUpdating}
             />
 
-            {/* Divider */}
             <div className="border-t border-[var(--line-faint)]" />
 
-            {/* Delivery Address Sub-Form */}
             <AddressSubForm
                 title="Delivery Address"
                 description="Your registered delivery address"
                 formId="deliveryAddress-form"
                 defaultValues={addressDetails.delivery_address}
                 onSave={handleDeliverySave}
+                isSaving={isUpdating}
             />
         </div>
     );

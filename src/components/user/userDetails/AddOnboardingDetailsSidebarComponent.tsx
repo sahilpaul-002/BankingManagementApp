@@ -113,15 +113,6 @@ export default function AddOnboardingDetailsSidebarComponent({ isOpen, onClose }
     // Configure useNavigate
     const navigate = useNavigate();
 
-    // Lock background scrolling while sidebar is open.
-    useEffect(() => {
-        document.body.style.overflow = isOpen ? 'hidden' : 'unset';
-
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [isOpen]);
-
     // ----------------------------- Country Codes ----------------------------- \\
     const [mobileCountryCodes, setMobileCountryCodes] = useState<
         Array<{
@@ -229,6 +220,7 @@ export default function AddOnboardingDetailsSidebarComponent({ isOpen, onClose }
             const result = await triggerUserOnboarding(payload).unwrap();
             if (result?.status?.toUpperCase() !== "SUCCESS") {
                 toast.error("Add user onboarding service is facing issue. Please try again later.")
+                return
             }
 
             ShowInConsole("Sign in response:", result);
@@ -237,6 +229,7 @@ export default function AddOnboardingDetailsSidebarComponent({ isOpen, onClose }
 
             if (normalizedMessage?.includes("failed to sent user bank verification mail")) {
                 toast.success("User onboarding details submitted succesfully but failed to send onboarding verification mail. Please contact admin")
+                return
             }
 
 
@@ -273,6 +266,9 @@ export default function AddOnboardingDetailsSidebarComponent({ isOpen, onClose }
                     navigate("/user/verification")
                 }, 1000)
             }
+            else if (normalizedMessage?.includes("bank details already exist with the same account number")) {
+                toast.error("Bank details already exist with the same account number.")
+            }
             else {
                 toast.error("Add user onboarding service is facing issue. Please try again later.")
             }
@@ -288,6 +284,15 @@ export default function AddOnboardingDetailsSidebarComponent({ isOpen, onClose }
         reset();
         onClose();
     };
+
+    // Lock background scrolling while sidebar is open.
+    useEffect(() => {
+        document.body.style.overflow = isOpen ? 'hidden' : 'unset';
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
 
     if (!isOpen) {
         return null;

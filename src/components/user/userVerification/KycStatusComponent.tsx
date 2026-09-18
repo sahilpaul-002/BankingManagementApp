@@ -1,11 +1,13 @@
 import React from 'react';
 import { CheckCircle2, Clock, AlertTriangle, RefreshCw, Mail } from 'lucide-react';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import { type KycDataType, type KycStatusOption } from '@/fallbacks/user/userVerification/kycStatusFallbacks';
+import type { KycStatusDataType, KycStatusOption } from '@/types/user/userVerificationPageTypes';
 
 interface KycStatusComponentProps {
-    kycData: KycDataType;
+    kycData: KycStatusDataType;
     onOpenSidebar: () => void;
+    onRefresh: () => void;
+    isRefreshing: boolean;
 }
 
 // ── KYC Status Badge ────────────────────────────────────────────────────────
@@ -43,7 +45,7 @@ function KycStatusBadge({ status }: { status: KycStatusOption }) {
     }
 }
 
-export default function KycStatusComponent({ kycData, onOpenSidebar }: KycStatusComponentProps) {
+export default function KycStatusComponent({ kycData, onOpenSidebar, onRefresh, isRefreshing }: KycStatusComponentProps) {
     const isCompleted = kycData.kyc_status === 'COMPLETED';
     const isInProgress = kycData.kyc_status === 'IN-PROGRESS';
     const canUpdateKyc = kycData.kyc_status === 'PENDING' || kycData.kyc_status === 'RFI';
@@ -51,12 +53,14 @@ export default function KycStatusComponent({ kycData, onOpenSidebar }: KycStatus
     return (
         <div className="kycStatus-wrapper w-full h-fit flex flex-col gap-6">
             {/* Main Status Information Display Box (Non-form UI) */}
-            <div className="w-full p-6! border border-[var(--line)] bg-[var(--bg-subtle)] rounded-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-xs">
-                <div className="flex flex-col gap-3">
+            <div className="w-full p-6! border border-[var(--line)] bg-[var(--bg-subtle)] rounded-xl flex flex-col md:flex-row items-start md:items-baseline-last justify-start md:justify-between gap-6 shadow-xs">
+                <div className="flex flex-col gap-6">
                     {/* User Email */}
                     <div className="flex items-center gap-2 text-sm text-[var(--ink-soft)]">
                         <Mail className="w-4 h-4 text-[var(--mute)] shrink-0" />
-                        <span className="font-medium text-[var(--ink)]">{kycData.email}</span>
+                        <span className="font-medium text-sm text-[var(--ink)]">
+                            {kycData.email}
+                        </span>
                     </div>
 
                     {/* Status Badge */}
@@ -64,27 +68,47 @@ export default function KycStatusComponent({ kycData, onOpenSidebar }: KycStatus
                         <span className="text-xs font-semibold uppercase tracking-wider text-[var(--mute)]">
                             KYC Status:
                         </span>
+
                         <KycStatusBadge status={kycData.kyc_status} />
                     </div>
                 </div>
 
-                {/* Action Button (Update KYC for PENDING & RFI) */}
-                {canUpdateKyc && (
-                    <div className="w-full shrink-0">
+                {/* Actions */}
+                <div className="w-fit md:w-auto flex flex-col md:flex-row justify-end items-start md:justify-between md:items-center gap-3">
+                    {/* Refresh KYC */}
+                    <div className="w-fit h-fit">
                         <CustomButtonComponent
-                            id="kycStatus-update-btn"
+                            id="kycStatus-refresh-btn"
                             label={
                                 <span className="flex items-center justify-center gap-2">
-                                    <RefreshCw className="w-4 h-4" />
-                                    Update Kyc
+                                    <RefreshCw
+                                        className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''
+                                            }`}
+                                    />
+                                    Refresh
                                 </span>
                             }
                             type="button"
-                            variant="navy"
-                            onClick={onOpenSidebar}
+                            variant="outline"
+                            onClick={onRefresh}
+                            disabled={isRefreshing}
+                            showButtonLoader={false}
                         />
                     </div>
-                )}
+
+                    {/* Update KYC */}
+                    {canUpdateKyc && (
+                        <div className="w-fit h-fit">
+                            <CustomButtonComponent
+                                id="kycStatus-update-btn"
+                                label={"Update Kyc"}
+                                type="button"
+                                variant="navy"
+                                onClick={onOpenSidebar}
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Status Informational Callout Messages */}

@@ -1,7 +1,18 @@
 import React from 'react';
 import { ShieldAlert, UploadCloud } from 'lucide-react';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import { KYC_NOT_AVAILABLE_FALLBACK } from '@/fallbacks/user/userVerification/kycNotAvailableFallbacks';
+
+interface KycNotAvailableFallbackType {
+    title: string;
+    message: string;
+    actionLabel: string;
+}
+
+const KYC_NOT_AVAILABLE_FALLBACK: KycNotAvailableFallbackType = {
+    title: "KYC Verification Not Available",
+    message: "Your KYC verification details are currently not available. Please upload your Proof of Address (POA) and Proof of Identity (POI) documents to initiate verification.",
+    actionLabel: "Upload Kyc",
+};
 
 interface KycNotAvailableComponentProps {
     onOpenSidebar: () => void;

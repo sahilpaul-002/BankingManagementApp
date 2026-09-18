@@ -102,6 +102,14 @@ const setupInterceptors = (instance: AxiosInstance) => {
 
                 // RSA encrypt IV
                 const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
+
+                // SKIP PAYLOAD ENCRYPTION FOR FORMDATA
+                if (req.data instanceof FormData) {
+                    req.headers["Content-Type"] = "multipart/form-data";
+
+                    return req;
+                }
+
                 // ENCRYPT BODY & PARAMS (POST/PUT/PATCH)
                 if (req.data && req.params) {
                     const aesRes1 = await aesEncryption(aesKey as string, req.data, ivHex);
