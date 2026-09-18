@@ -128,6 +128,10 @@ const validateKycDocument = (
     }
 };
 
+const isNumericString = (value: string): boolean => {
+    return /^\d+$/.test(value);
+};
+
 const uploadKycDocuments = async (poiDocumentFile: Express.Multer.File, poaDocumentFile: Express.Multer.File, session: Request["session"], userId: string) => {
     // Upload Documents To Cloudinary
     const [poiUploadResponse, poaUploadResponse] = await Promise.all([
@@ -183,6 +187,14 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
         // Extract validated values
         const poiNumber = validatedData.poi_number;
         const poaNumber = validatedData.poa_number;
+
+        // Validate POI and POA as number
+        if (!isNumericString(poiNumber!)) {
+            throw new InvalidRequestBodyError("POI number must contain only numeric digits");
+        }
+        if (!isNumericString(poaNumber!)) {
+            throw new InvalidRequestBodyError("POA number must contain only numeric digits");
+        }
 
         // Validate Uploaded Files
         const files = req.files as kycMulterFiles;
@@ -287,14 +299,7 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
                 throw new ServiceError("Failed to add KYC details");
             }
             else {
-                // Send Kyc Verification Email
-                const sendBankVerificationMailServiceResponse = await sendKycVerificationMailService(req.session, { email })
-                if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
-                    return { status: "SUCCESS", message: "User kyc details uploaded - but failed to sent user kyc verification mail.", data: kycDetails }
-                }
-                else {
-                    return { status: "SUCCESS", message: "User kyc details uploaded - kyc verification mail sent to admin.", data: kycDetails }
-                }
+                return { status: "SUCCESS", message: "User kyc details uploaded.", data: kycDetails }
             }
         }
         else {
@@ -302,14 +307,7 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
                 throw new ServiceError("Failed to update RFI KYC details");
             }
             else {
-                // Send Kyc Verification Email
-                const sendBankVerificationMailServiceResponse = await sendKycVerificationMailService(req.session, { email })
-                if (sendBankVerificationMailServiceResponse?.status !== "SUCCESS") {
-                    return { status: "SUCCESS", message: "User kyc details updated - but failed to sent user kyc verification mail.", data: kycDetails }
-                }
-                else {
-                    return { status: "SUCCESS", message: "User kyc details updated - kyc verification mail sent to admin.", data: kycDetails }
-                }
+                return { status: "SUCCESS", message: "User kyc details updated.", data: kycDetails }
             }
         }
     }

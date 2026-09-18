@@ -72,46 +72,75 @@ const userOnboardingTransaction = async (userId: Types.ObjectId, addressDocument
         ).lean();
 
         // Check bank details existance
-        const existingBank = await user_bank_details.findOne({ user_id: userId }, null, { session: mongoSession }).select("_id is_verified").lean();
+        const existingUserBank = await user_bank_details
+            .findOne(
+                { user_id: userId },
+                null,
+                { session: mongoSession }
+            )
+            .select("_id is_verified account_holder_name account_number swift_code iban_code bank_name")
+            .lean();
+
+        const existingAccountNumber = await user_bank_details
+            .findOne(
+                {
+                    account_number: bankDocument.account_number,
+                    ...(existingUserBank
+                        ? { _id: { $ne: existingUserBank._id } }
+                        : {}),
+                },
+                null,
+                { session: mongoSession }
+            )
+            .select("_id user_id account_number")
+            .lean();
+        if (existingAccountNumber) {
+            throw new ServiceError(
+                "Bank details already exist with the same account number"
+            );
+        }
 
         let bankResult;
         // BANK UPSERT
-        if (!existingBank) {
+        if (!existingUserBank) {
             bankResult = await user_bank_details.create([bankDocument], { session: mongoSession });
             bankResult = bankResult[0]?.toObject();
         }
-        else {
-            if (!existingBank.is_verified) {
-                const { user_id, ...bankUpdate } = bankDocument;
+        else if (!existingUserBank.is_verified) {
+            const { user_id, ...bankUpdate } = bankDocument;
 
-                bankResult = await user_bank_details.findOneAndUpdate(
-                    {
-                        user_id: userId,
-                    },
-                    {
+            bankResult = await user_bank_details.findOneAndUpdate(
+                {
+                    user_id: userId,
+                },
+                {
+                    $set: {
                         ...bankUpdate,
                         is_verified: false,
                     },
-                    {
-                        new: true,
-                        runValidators: true,
-                        session: mongoSession,
-                    }
-                ).lean();
-            }
+                },
+                {
+                    new: true,
+                    runValidators: true,
+                    session: mongoSession,
+                }
+            ).lean();
+        }
+        else {
+            bankResult = existingUserBank;
         }
 
         let message: string;
-        if (!existingAddress && !existingBank) {
+        if (!existingAddress && !existingUserBank) {
             message = "User address and bank details added successfully"
         }
-        else if (!existingAddress && existingBank) {
+        else if (!existingAddress && existingUserBank) {
             message = "Address added and bank details updated successfully"
         }
-        else if (existingAddress && !existingBank) {
+        else if (existingAddress && !existingUserBank) {
             message = "Bank details added and address updated successfully"
         }
-        else if (existingAddress && existingBank && existingBank?.is_verified) {
+        else if (existingAddress && existingUserBank && existingUserBank?.is_verified) {
             message = "Address details updated successfully and Bank details already verified - cannot be updated "
         }
         else {

@@ -50,14 +50,24 @@ export const uploadKyc = async (req: Request, res: Response): Promise<Response<s
 
         const uploadKycServiceResponse = await uploadKycService(req, aesDecryptedBodyData)
         if (uploadKycServiceResponse?.status !== "SUCCESS") {
-            return res.fail("SERVICE_ERROR", "Failed to fetch user kyc details", 400);
+            return res.fail("SERVICE_ERROR", "Failed to upload user kyc details", 400);
         }
         const sendKycVerificationMailServiceResponse = await sendKycVerificationMailService(req.session, { email: aesDecryptedBodyData?.email })
         if (sendKycVerificationMailServiceResponse?.status !== "SUCCESS") {
-            return res.success("User kyc details uploaded successfully but failed to sent user kyc verification mail", uploadKycServiceResponse?.data, 200);
+            if (uploadKycServiceResponse?.message?.toLowerCase()?.includes("uploaded")) {
+                return res.success("User kyc details uploaded successfully but failed to sent user kyc verification mail", uploadKycServiceResponse?.data, 200);
+            }
+            else {
+                return res.success("User kyc details updated successfully but failed to sent user kyc verification mail", uploadKycServiceResponse?.data, 200);
+            }
         }
         else {
-            return res.success("User kyc details uploaded successfully and kyc verification mail sent to admin", uploadKycServiceResponse?.data, 200)
+            if (uploadKycServiceResponse?.message?.toLowerCase()?.includes("uploaded")) {
+                return res.success("User kyc details uploaded successfully and kyc verification mail sent to admin", uploadKycServiceResponse?.data, 200)
+            }
+            else {
+                return res.success("User kyc details updated successfully and kyc verification mail sent to admin", uploadKycServiceResponse?.data, 200);
+            }
         }
     }
     catch (err) {
