@@ -30,6 +30,7 @@ import CardholdersPage from "@/pages/CardholdersPage";
 import ManageCardsPage from "@/pages/ManageCardsPage";
 import CardDetailsPage from "@/pages/CardDetailsPage";
 import PayoutTransactionsPage from "@/pages/PayoutTransactionsPage";
+import UserPrefundAccountsPage from "@/pages/UserPrefundAccountsPage";
 
 const router = createBrowserRouter([
     {
@@ -162,6 +163,10 @@ const router = createBrowserRouter([
                             {
                                 path: "verification",
                                 Component: UserVerificationPage,
+                            },
+                            {
+                                path: "prefundAccounts",
+                                Component: UserPrefundAccountsPage,
                             }
                         ]
                     }

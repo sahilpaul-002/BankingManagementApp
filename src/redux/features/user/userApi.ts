@@ -602,7 +602,60 @@ export const userApis = createApi({
             },
             invalidatesTags: [{ type: 'User', id: 'ONBOARDING-DETAILS' }],
         }),
+
+
+        // =======================================================
+        // GET USER PREFUNDING ACCOUNTS DETAILS
+        // =======================================================
+        getUserPrefundAccountsDetails: build.query<apiResponseType<apiResponseDataType>, { email: string, userId: string }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    // Get user api headers
+                    let headers = onboardingApiHeaders(state)
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                {
+                                    email: payload.email,
+                                },
+                                {
+                                    forceRefetch: true  // Force RTK to refetch the query
+                                }
+                            )
+                        )
+                        if (result.isError) {
+                            throw new ApplicationServiceError("GET-USER-PREFUND-ACCOUNTS-DETAILS - Failed to fetch application headers")
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = onboardingApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${USER_URL}/accountsBalances`,
+                        method: 'GET',
+                        headers,
+                        params: { user_id: payload.userId },
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, "GET-USER-PREFUND-ACCOUNTS-DETAILS faced application error ");
+                    return rtkError;
+                }
+            },
+            providesTags: [{ type: 'User', id: 'PREFUND-ACCOUNTS-DETAILS' }],
+        }),
     }),
 })
 
-export const { useSignInMutation, useSignUpMutation, useGetApplicationHeadersQuery, useLazyGetApplicationHeadersQuery, useGetUserDetailsQuery, useLazyGetUserDetailsQuery, useGetUserOnboardingDetailsQuery, useLazyGetUserOnboardingDetailsQuery, useUserOnboardingMutation } = userApis
+export const { useSignInMutation, useSignUpMutation, useGetApplicationHeadersQuery, useLazyGetApplicationHeadersQuery, useGetUserDetailsQuery, useLazyGetUserDetailsQuery, useGetUserOnboardingDetailsQuery, useLazyGetUserOnboardingDetailsQuery, useUserOnboardingMutation, useGetUserPrefundAccountsDetailsQuery, useLazyGetUserPrefundAccountsDetailsQuery } = userApis
