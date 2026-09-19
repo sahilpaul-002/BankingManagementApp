@@ -1,15 +1,15 @@
+import type { PrefundCryptoAccountType } from '@/types/user/userPrefundAccountsDetailsTypes';
+import { groupCryptoAccountsByNetwork } from '@/utils/userPrefundAccounts/prefundAccountsHelper';
 import { useMemo, useState } from 'react';
-import type { PrefundCryptoAccountType } from '@/types/user/userPrefundingAccountsPageTypes';
-import { groupCryptoAccountsByNetwork } from '@/utils/prefundingAccountsHelper';
-import PrefundingTabsComponent from '@/components/user/userPrefundingAccounts/PrefundingTabsComponent';
-import PrefundingEmptyState from '@/components/user/userPrefundingAccounts/PrefundingEmptyState';
-import CryptoAssetCardComponent from '@/components/user/userPrefundingAccounts/CryptoAssetCardComponent';
+import PrefundAccountsEmptyStateComponent from './PrefundAccountsEmptyStateComponent';
+import PrefundAccountsTabsComponent from './PrefundAccountTabsComponent';
+import CryptoAssetCardComponent from './CryptoAssetCardComponent';
 
 interface CryptoAccountDetailsComponentProps {
-    cryptoDetails?: PrefundCryptoAccountType[] | null;
+    cryptoDetails?: PrefundCryptoAccountType[] | null | undefined;
 }
 
-export default function CryptoAccountDetailsComponent({ cryptoDetails }: CryptoAccountDetailsComponentProps) {
+export default function CryptoPrefundAccountsDetailsComponent({ cryptoDetails }: CryptoAccountDetailsComponentProps) {
     // { ETHEREUM: [{...}, {...}], POLYGON: [{...}, {...}] }
     const cryptoAccountsByNetwork = useMemo(() => groupCryptoAccountsByNetwork(cryptoDetails), [cryptoDetails]);
     const networks = Object.keys(cryptoAccountsByNetwork);
@@ -18,11 +18,11 @@ export default function CryptoAccountDetailsComponent({ cryptoDetails }: CryptoA
 
     // crypto can be `[]` / null / undefined
     if (networks.length === 0) {
-        return <PrefundingEmptyState type="crypto" />;
+        return <PrefundAccountsEmptyStateComponent type="crypto" />;
     }
 
     // Fallback to first network if nothing selected yet or the selected one no longer exists (after refetch)
-    const selectedNetwork = networks.includes(activeNetwork) ? activeNetwork : networks[0];
+    const selectedNetwork = networks.includes(activeNetwork) ? activeNetwork : networks[0]!;
     const selectedNetworkAccounts = cryptoAccountsByNetwork[selectedNetwork] ?? [];
 
     return (
@@ -36,7 +36,7 @@ export default function CryptoAccountDetailsComponent({ cryptoDetails }: CryptoA
             </div>
 
             {/* Network Sub Tabs */}
-            <PrefundingTabsComponent
+            <PrefundAccountsTabsComponent
                 tabs={networks.map((network) => ({ id: network, label: network }))}
                 activeTab={selectedNetwork}
                 onTabChange={setActiveNetwork}

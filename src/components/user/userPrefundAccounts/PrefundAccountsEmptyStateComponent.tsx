@@ -21,7 +21,7 @@ interface PrefundingEmptyStateProps {
     type: PrefundingEmptyStateType;
 }
 
-export default function PrefundingEmptyState({ type }: PrefundingEmptyStateProps) {
+export default function PrefundAccountsEmptyStateComponent({ type }: PrefundingEmptyStateProps) {
     const { title, description } = EMPTY_STATE_CONTENT[type];
 
     return (

@@ -1,9 +1,5 @@
-import type {
-    CryptoAccountsByNetworkType,
-    NumberDecimalType,
-    PrefundCryptoAccountType,
-    PrefundFiatAccountType,
-} from '@/types/user/userPrefundingAccountsPageTypes';
+import type { CryptoAccountsByNetworkType, NumberDecimalType, PrefundCryptoAccountType, PrefundFiatAccountType } from "@/types/user/userPrefundAccountsDetailsTypes";
+
 
 /**
  * Groups the flat crypto accounts array by network.
@@ -22,7 +18,7 @@ export function groupCryptoAccountsByNetwork(
             acc[account.network] = [];
         }
 
-        acc[account.network].push(account);
+        acc[account.network]!.push(account);
         return acc;
     }, {});
 }
@@ -39,7 +35,7 @@ export function formatNumberDecimal(value?: NumberDecimalType | string | number 
     const str = String(raw).trim();
     if (!/^-?\d+(\.\d+)?$/.test(str)) return str;
 
-    const [integerPart, decimalPart] = str.split('.');
+    const [integerPart = '', decimalPart] = str.split('.');
     const withCommas = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
     return decimalPart ? `${withCommas}.${decimalPart}` : withCommas;

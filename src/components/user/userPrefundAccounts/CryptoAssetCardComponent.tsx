@@ -1,6 +1,7 @@
-import type { PrefundCryptoAccountType } from '@/types/user/userPrefundingAccountsPageTypes';
-import { formatNumberDecimal } from '@/utils/prefundingAccountsHelper';
-import PrefundingDetailItemComponent from '@/components/user/userPrefundingAccounts/PrefundingDetailItemComponent';
+import type { PrefundCryptoAccountType } from "@/types/user/userPrefundAccountsDetailsTypes";
+import PrefundAccountItemDetailsComponent from "./PrefundAccountItemDetailsComponent";
+import { formatNumberDecimal } from "@/utils/userPrefundAccounts/prefundAccountsHelper";
+
 
 interface CryptoAssetCardComponentProps {
     account: PrefundCryptoAccountType;
@@ -23,21 +24,21 @@ export default function CryptoAssetCardComponent({ account }: CryptoAssetCardCom
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 {/* Network */}
-                <PrefundingDetailItemComponent
+                <PrefundAccountItemDetailsComponent
                     id={`${idPrefix}-value-network`}
                     label="Network"
                     value={account.network}
                 />
 
                 {/* Asset */}
-                <PrefundingDetailItemComponent
+                <PrefundAccountItemDetailsComponent
                     id={`${idPrefix}-value-asset`}
                     label="Asset"
                     value={account.asset}
                 />
 
                 {/* Balance */}
-                <PrefundingDetailItemComponent
+                <PrefundAccountItemDetailsComponent
                     id={`${idPrefix}-value-balance`}
                     label="Balance"
                     value={`${formatNumberDecimal(account.balance)} ${account.asset ?? ''}`.trim()}
@@ -45,7 +46,7 @@ export default function CryptoAssetCardComponent({ account }: CryptoAssetCardCom
                 />
 
                 {/* Deposit Address */}
-                <PrefundingDetailItemComponent
+                <PrefundAccountItemDetailsComponent
                     id={`${idPrefix}-value-depositAddress`}
                     label="Deposit Address"
                     value={account.deposit_address}

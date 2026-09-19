@@ -1,7 +1,8 @@
-import type { PrefundFiatAccountType } from '@/types/user/userPrefundingAccountsPageTypes';
-import { formatNumberDecimal, hasFiatAccount } from '@/utils/prefundingAccountsHelper';
-import PrefundingDetailItemComponent from '@/components/user/userPrefundingAccounts/PrefundingDetailItemComponent';
-import PrefundingEmptyState from '@/components/user/userPrefundingAccounts/PrefundingEmptyState';
+import type { PrefundFiatAccountType } from "@/types/user/userPrefundAccountsDetailsTypes";
+import { formatNumberDecimal, hasFiatAccount } from "@/utils/userPrefundAccounts/prefundAccountsHelper";
+import PrefundAccountsEmptyStateComponent from "./PrefundAccountsEmptyStateComponent";
+import PrefundAccountItemDetailsComponent from "./PrefundAccountItemDetailsComponent";
+
 
 // ── Status Badge ─────────────────────────────────────────────────────────────
 function ActiveStatusBadge({ isActive }: { isActive: boolean }) {
@@ -19,13 +20,13 @@ function ActiveStatusBadge({ isActive }: { isActive: boolean }) {
 
 // ── Component ────────────────────────────────────────────────────────────────
 interface FiatAccountDetailsComponentProps {
-    fiatDetails?: PrefundFiatAccountType | null;
+    fiatDetails?: PrefundFiatAccountType | null | undefined;
 }
 
-export default function FiatAccountDetailsComponent({ fiatDetails }: FiatAccountDetailsComponentProps) {
+export default function FiatPrefundAccountDetailsComponent({ fiatDetails }: FiatAccountDetailsComponentProps) {
     // fiat can be `{}` / null / undefined
     if (!hasFiatAccount(fiatDetails)) {
-        return <PrefundingEmptyState type="fiat" />;
+        return <PrefundAccountsEmptyStateComponent type="fiat" />;
     }
 
     return (
@@ -40,31 +41,31 @@ export default function FiatAccountDetailsComponent({ fiatDetails }: FiatAccount
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 {/* Account Number */}
-                <PrefundingDetailItemComponent
+                <PrefundAccountItemDetailsComponent
                     id="fiatAccount-value-accountNumber"
                     label="Account Number"
-                    value={fiatDetails.account_number}
+                    value={fiatDetails?.account_number}
                     copyable
                 />
 
                 {/* Account Currency */}
-                <PrefundingDetailItemComponent
+                <PrefundAccountItemDetailsComponent
                     id="fiatAccount-value-accountCurrency"
                     label="Account Currency"
-                    value={fiatDetails.account_currency}
+                    value={fiatDetails?.account_currency}
                 />
 
                 {/* Account Balance */}
-                <PrefundingDetailItemComponent
+                <PrefundAccountItemDetailsComponent
                     id="fiatAccount-value-accountBalance"
                     label="Account Balance"
-                    value={`${fiatDetails.account_currency ?? ''} ${formatNumberDecimal(fiatDetails.account_balance)}`.trim()}
+                    value={`${fiatDetails?.account_currency ?? ''} ${formatNumberDecimal(fiatDetails?.account_balance)}`.trim()}
                 />
 
                 {/* Status */}
-                <PrefundingDetailItemComponent id="fiatAccount-value-status" label="Account Status">
-                    <ActiveStatusBadge isActive={!!fiatDetails.is_active} />
-                </PrefundingDetailItemComponent>
+                <PrefundAccountItemDetailsComponent id="fiatAccount-value-status" label="Account Status">
+                    <ActiveStatusBadge isActive={!!fiatDetails?.is_active} />
+                </PrefundAccountItemDetailsComponent>
             </div>
         </div>
     );

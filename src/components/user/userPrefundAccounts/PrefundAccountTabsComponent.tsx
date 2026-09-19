@@ -6,7 +6,7 @@ interface PrefundingTabsComponentProps<T extends string> {
     containerClassName?: string;
 }
 
-export default function PrefundingTabsComponent<T extends string>({
+export default function PrefundAccountsTabsComponent<T extends string>({
     tabs,
     activeTab,
     onTabChange,

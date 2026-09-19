@@ -2,18 +2,17 @@ import React, { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-interface PrefundingDetailItemComponentProps {
+interface PrefundAccountItemDetailsComponentProps {
     id: string;
     label: string;
-    value?: string | null;
-    // Use `children` for custom content such as badges
+    value?: string | null | undefined;
     children?: React.ReactNode;
     copyable?: boolean;
     breakAll?: boolean;
     className?: string;
 }
 
-export default function PrefundingDetailItemComponent({
+export default function PrefundAccountItemDetailsComponent({
     id,
     label,
     value,
@@ -21,7 +20,7 @@ export default function PrefundingDetailItemComponent({
     copyable = false,
     breakAll = false,
     className = '',
-}: PrefundingDetailItemComponentProps) {
+}: PrefundAccountItemDetailsComponentProps) {
     const [isCopied, setIsCopied] = useState(false);
 
     const displayValue = value && value.trim() !== '' ? value : '—';

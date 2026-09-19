@@ -5,11 +5,11 @@ import { useGetUserPrefundAccountsDetailsQuery } from '@/redux/features/user/use
 import ShowInConsole from '@/utils/ShowInConsole';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
-import type { UserPrefundAccountsDetailsType } from '@/types/user/userPrefundingAccountsPageTypes';
-import PrefundingTabsComponent from '@/components/user/userPrefundingAccounts/PrefundingTabsComponent';
-import PrefundingEmptyState from '@/components/user/userPrefundingAccounts/PrefundingEmptyState';
-import FiatAccountDetailsComponent from '@/components/user/userPrefundingAccounts/FiatAccountDetailsComponent';
-import CryptoAccountDetailsComponent from '@/components/user/userPrefundingAccounts/CryptoAccountDetailsComponent';
+import type { UserPrefundAccountsDetailsType } from '@/types/user/userPrefundAccountsDetailsTypes';
+import PrefundAccountsEmptyStateComponent from '@/components/user/userPrefundAccounts/PrefundAccountsEmptyStateComponent';
+import PrefundAccountsTabsComponent from '@/components/user/userPrefundAccounts/PrefundAccountTabsComponent';
+import FiatPrefundAccountDetailsComponent from '@/components/user/userPrefundAccounts/FiatPrefundAccountDetailsComponent';
+import CryptoPrefundAccountsDetailsComponent from '@/components/user/userPrefundAccounts/CryptoPrefundAccountsDetailsComponent';
 
 type TabId = 'fiat' | 'crypto';
 
@@ -73,11 +73,11 @@ export default function UserPrefundingAccountsPage() {
       {/* Main Content Card */}
       <div className="w-full bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl shadow-sm overflow-hidden">
         {userPrefundAccountsDetailsNotFound ? (
-          <PrefundingEmptyState type="notFound" />
+          <PrefundAccountsEmptyStateComponent type="notFound" />
         ) : (
           <>
             {/* Tab Navigation */}
-            <PrefundingTabsComponent
+            <PrefundAccountsTabsComponent
               tabs={TABS}
               activeTab={activeTab}
               onTabChange={setActiveTab}
@@ -101,7 +101,7 @@ export default function UserPrefundingAccountsPage() {
                     />
                   </div>
                 ) : (
-                  <FiatAccountDetailsComponent fiatDetails={userFiatDetails} />
+                  <FiatPrefundAccountDetailsComponent fiatDetails={userFiatDetails} />
                 )}
               </Activity>
 
@@ -119,7 +119,7 @@ export default function UserPrefundingAccountsPage() {
                     />
                   </div>
                 ) : (
-                  <CryptoAccountDetailsComponent cryptoDetails={userCryptoDetails} />
+                  <CryptoPrefundAccountsDetailsComponent cryptoDetails={userCryptoDetails} />
                 )}
               </Activity>
             </div>
