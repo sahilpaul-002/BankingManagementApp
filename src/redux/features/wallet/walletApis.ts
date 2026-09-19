@@ -52,6 +52,59 @@ export const walletApis = createApi({
     baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // =======================================================
+        // GET ALL WALLET BALANCES
+        // =======================================================
+        getAllWalletBalances: build.query<apiResponseType<apiResponseDataType>, { email: string, cardholderId: string }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    // Get user api headers
+                    let headers = walletApiHeaders(state)
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                {
+                                    email: payload.email,
+                                },
+                                {
+                                    forceRefetch: true  // Force RTK to refetch the query
+                                }
+                            )
+                        )
+                        if (result.isError) {
+                            throw new ApplicationServiceError("GET-WALLET-DETAILS - Failed to fetch application headers")
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = walletApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${WALLET_URL}/balances`,
+                        method: 'GET',
+                        headers,
+                        params: {email: payload.email, cardholder_id: payload.cardholderId},
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, "GET-WALLET-DETAILS faced application error ");
+                    return rtkError;
+                }
+            },
+            providesTags: [{ type: 'Wallet', id: 'DETAILS' }],
+        }),
+
+
+        // =======================================================
         // GET WALLET DETAILS
         // =======================================================
         getWalletDetails: build.query<apiResponseType<apiResponseDataType>, { email: string, cardholderId: string }>({
@@ -105,4 +158,4 @@ export const walletApis = createApi({
     }),
 })
 
-export const { useGetWalletDetailsQuery, useLazyGetWalletDetailsQuery } = walletApis
+export const { useGetAllWalletBalancesQuery, useLazyGetAllWalletBalancesQuery, useGetWalletDetailsQuery, useLazyGetWalletDetailsQuery } = walletApis

@@ -15,14 +15,12 @@ interface Balance {
 interface WalletBalanceSectionProps {
   totalUSD: number;
   changePercent: number;
-  lastRefreshed: string;
   balances: Balance[];
 }
 
 export default function WalletBalanceSection({
   totalUSD,
   changePercent,
-  lastRefreshed,
   balances
 }: WalletBalanceSectionProps) {
   const navigate = useNavigate();
@@ -42,12 +40,6 @@ export default function WalletBalanceSection({
               USD
             </span>
           </div>
-        </div>
-
-        <div className="text-xs sm:text-sm text-[var(--ink-soft)]">
-          <span >
-            refreshed {lastRefreshed}
-          </span>
         </div>
       </div>
 

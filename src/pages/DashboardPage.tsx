@@ -18,7 +18,7 @@ import { useGetKycDetailsQuery } from '@/redux/features/kyc/kycApis';
 import { useGetUserOnboardingDetailsQuery } from '@/redux/features/user/userApi';
 import { isKycApproved } from '@/utils/kycHelper';
 import { isKybApproved } from '@/utils/kybHelper';
-import { useGetWalletDetailsQuery } from '@/redux/features/wallet/walletApis';
+import { useGetAllWalletBalancesQuery } from '@/redux/features/wallet/walletApis';
 import ShowInConsole from '@/utils/ShowInConsole';
 import DashboardPageLoaderComponent from '@/components/common/loaders/DashboardPageLoaderComponent';
 import RefreshPageFallback from '@/components/common/RefreshPageFallback';
@@ -116,11 +116,21 @@ export default function DashboardPage() {
     }, [userOnboardingDetails])
     // ----------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------------------- \\
 
-    // -------------------------------- Wallet Details / Cards List / Wallet Transaction -------------------------------- \\
-    // User Wallets
-    const { data: getUserWalletsListData, isLoading: getUserWalletsListLoading, isFetching: getUserWalletsListIsFetching, isError: getUserWalletsListIsError, refetch: refetchUserWalletsList } = useGetWalletDetailsQuery({ email: userEmail!, cardholderId: userCardholderId! }, { skip: !userEmail || !shouldFetchDependentApis, refetchOnMountOrArgChange: true, }
+    // -------------------------------- All Wallet Balances / Cards List / Wallet Transaction -------------------------------- \\
+    // User All Wallets Balances
+    const { data: getAllWalletsBalancesData, isLoading: getUserWalletsListLoading, isFetching: getAllWalletsBanalcesIsFetching, isError: getAllWalletsBalancesIsError, error: getAllWalletsBalancesError, refetch: refetchGetAllWalletsBalances } = useGetAllWalletBalancesQuery({ email: userEmail!, cardholderId: userCardholderId! }, { skip: !userEmail || !shouldFetchDependentApis, refetchOnMountOrArgChange: true, }
     );
-    const userWalletsList = getUserWalletsListData?.data ?? [];
+    const userWalletsList = getAllWalletsBalancesData?.data ?? [];
+    const isAllWalletsBalancesNotFound =
+        getAllWalletsBalancesIsError &&
+        getAllWalletsBalancesIsError &&
+        getAllWalletsBalancesError != null &&
+        "status" in getAllWalletsBalancesError &&
+        getAllWalletsBalancesError?.status === 404 &&
+        typeof getAllWalletsBalancesError?.data === "object" &&
+        getAllWalletsBalancesError?.data !== null &&
+        "status" in getAllWalletsBalancesError?.data &&
+        getAllWalletsBalancesError?.data.status === "NOT_FOUND";
 
     // // Business Cards List
     // const { data: getCardsListData, isFetching: getCardsListLoading, isError: getCardsListIsError, refetch: refetchCardsList } = useGetCardsListQuery({ email: email! }, { skip: !email || !shouldFetchDependentApis }
@@ -137,26 +147,16 @@ export default function DashboardPage() {
     // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
 
     // ---------------------------------------- DASHBOARD ACCESS / FAILURE HANDLING ---------------------------------------- \\
+    // Page Loading Logic
     const isInitialPageLoading = getKycDetailsIsLoading || getOnboardingDetailsLoading
-
-    const isPageFetching =
-        getKycDetailsIsFetching ||
-        getOnboardingDetailsIsFetching ||
-        getUserWalletsListIsFetching;
-
+    const isPageFetching = getKycDetailsIsFetching || getOnboardingDetailsIsFetching || getAllWalletsBanalcesIsFetching;
     // Mutually exclusive loader states
     const showInitialPageLoader = isInitialPageLoading;
-
-    const showPageFetchingLoader =
-        !isInitialPageLoading && isPageFetching;
-    const loaderType =
-        showInitialPageLoader
-            ? "initial"
-            : showPageFetchingLoader
-                ? "fetching"
-                : null;
+    const showPageFetchingLoader = !isInitialPageLoading && isPageFetching;
+    // xxxxxxxxxxxxxxxxxx
+    const loaderType = showInitialPageLoader ? "initial" : showPageFetchingLoader ? "fetching" : null;
     const hasBlockingApiFailure = (getKycDetailsIsError && !isKycNotFound) || (getOnboardingDetailsIsError && !isOnboardingNotFound);
-    const hasDashboardUiApiFaliure = getUserWalletsListIsError
+    const hasDashboardUiApiFaliure = getAllWalletsBalancesIsError
     const canRenderDashboard = !showInitialPageLoader && !hasBlockingApiFailure;
     const canAccessDashboard = kycApproved && kybApproved;
 
@@ -184,8 +184,8 @@ export default function DashboardPage() {
             refetchGetOnboardingDetails();
         }
 
-        if (getUserWalletsListIsError) {
-            refetchUserWalletsList();
+        if (getAllWalletsBalancesIsError) {
+            refetchGetAllWalletsBalances();
         }
     };
     // ----------------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------------- \\
@@ -292,7 +292,6 @@ export default function DashboardPage() {
                             <WalletBalanceSection
                                 totalUSD={totalUSD}
                                 changePercent={2.4}
-                                lastRefreshed="2 min ago"
                                 balances={DEMO.balances}
                             />
                             {/* Cards Section */}

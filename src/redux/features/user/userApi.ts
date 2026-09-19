@@ -600,7 +600,7 @@ export const userApis = createApi({
                     return rtkError;
                 }
             },
-            invalidatesTags: [{ type: 'User', id: 'ONBOARDING-DETAILS' }],
+            invalidatesTags: [{ type: 'User', id: 'ONBOARDING-DETAILS' }, {type: "User", id: "PREFUND-ACCOUNTS-DETAILS"}],
         }),
 
 
