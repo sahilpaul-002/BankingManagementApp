@@ -1,7 +1,7 @@
 import type { Request, Response } from "express"
 import type { failedResponseJson, successResponseJson } from "../types/responseJson.js"
 import { AppErrorClass, BadRequestError, ForbiddenError, InvalidRequestQueryError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
-import { getUserFundingAccountsBalancesService, prefundUserCryptoFundingAccountService, prefundUserFiatFundingAccountService, sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService, getApplicationHeadersService, userOnboardingDetailsService, userDetailsService } from "../services/userServices.js";
+import { getUserFundingAccountsBalancesService, prefundUserCryptoFundingAccountService, prefundUserFiatFundingAccountService, sendBankVerificationMailService, userBankVerificationWebhookService, userLoginService, userOnboardingService, userSignUpService, getApplicationHeadersService, userOnboardingDetailsService, userDetailsService, publicGetUserFundingAccountsBalancesService } from "../services/userServices.js";
 import { getRequestHeaders, getRequestSession } from "../utils/requestContext.js";
 import logger from "../utils/logger.js";
 import checkStringQueryParams from "../utils/checkStringQueryParams.js";
@@ -492,13 +492,56 @@ export const prefundUserCryptoFundingAccount = async (req: Request, res: Respons
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 
+// ------------------------------------- PUBLIC GET USER FUNDING ACCOUNT BALANCE ------------------------------------- \\
+export const publicGetUserFundingAccountsBalances = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body;
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+
+        const getUserFundingAccountsBalancesServiceResponse = await publicGetUserFundingAccountsBalancesService(aesDecryptedQueryData);
+        if (getUserFundingAccountsBalancesServiceResponse?.status !== "SUCCESS") {
+            return res.status(400).json({
+                message: "Failed to fetch funding account balance"
+            });
+        }
+
+        return res.status(200).json({ message: "Funding account balance fetched successfully", data: getUserFundingAccountsBalancesServiceResponse?.data ?? {} });
+    }
+    catch (err) {
+        const error = err as any;
+
+        const errorStatus =
+            error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetUserFundingAccountsBalancesController",
+            url: req.path,
+            method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError(`GetUserFundingAccountsBalancesController facing issue`, sanitizedError);
+    }
+};
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
 // ------------------------------------- GET USER FUNDING ACCOUNT BALANCE ------------------------------------- \\
 export const getUserFundingAccountsBalances = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
     try {
         const aesDecryptedBodyData = req.body;
         const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
 
-        const getUserFundingAccountsBalancesServiceResponse = await getUserFundingAccountsBalancesService(aesDecryptedQueryData);
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        const getUserFundingAccountsBalancesServiceResponse = await getUserFundingAccountsBalancesService(requestSession, aesDecryptedQueryData);
         if (getUserFundingAccountsBalancesServiceResponse?.status !== "SUCCESS") {
             return res.status(400).json({
                 message: "Failed to fetch funding account balance"

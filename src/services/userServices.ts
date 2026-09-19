@@ -535,11 +535,11 @@ export const userDetailsService = async (requestSession: Request["session"], aes
         const userId = new Types.ObjectId(sessionUserId)
 
         // Get User Details
-        const userDetailsDoc = await user_details.findOne({ _id: userId }).select("_id full_name business_name program_type  email mobile_country_code mobile_country_name phone_number date_of_birth gender is_admin cardholder_id status is_active is_email_verified two_fa_type").lean();          
+        const userDetailsDoc = await user_details.findOne({ _id: userId }).select("_id full_name business_name program_type  email mobile_country_code mobile_country_name phone_number date_of_birth gender is_admin cardholder_id status is_active is_email_verified two_fa_type").lean();
         if (!userDetailsDoc) {
             throw new NotFoundError("User details not found");
         }
-        
+
         return { status: "SUCCESS", message: "User details fetched successfully", data: userDetailsDoc }
     }
     catch (err) {
@@ -1294,8 +1294,8 @@ export const prefundUserCryptoFundingAccountService = async (aesDecryptedBodyDat
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 
-// ------------------------------------- GET USER FUNDING ACCOUNTS BALANCES ------------------------------------- \\
-export const getUserFundingAccountsBalancesService = async (aesDecryptedQueryData: Record<string, any> | ParsedQs | undefined
+// ------------------------------------- PUBLIC GET USER FUNDING ACCOUNTS BALANCES ------------------------------------- \\
+export const publicGetUserFundingAccountsBalancesService = async (aesDecryptedQueryData: Record<string, any> | ParsedQs | undefined
 ): Promise<successResponseJson | void> => {
     try {
         if (!aesDecryptedQueryData) {
@@ -1329,25 +1329,30 @@ export const getUserFundingAccountsBalancesService = async (aesDecryptedQueryDat
                     "_id user_id cardholder_id account_holder_name account_number account_currency account_balance bank_name swift_code iban_code is_active"
                 )
                 .lean();
-            if (!fiatFundingAccount) {
-                throw new NotFoundError(
-                    "Active fiat funding account not found"
-                );
-            }
 
-            responseData.fiat = {
-                account_id: fiatFundingAccount._id,
-                account_number: fiatFundingAccount.account_number,
-                account_currency: fiatFundingAccount.account_currency,
-                account_balance: fiatFundingAccount.account_balance,
-                is_active: fiatFundingAccount.is_active
-            };
+            if (fiatFundingAccount) {
+                responseData.fiat = {
+                    account_id: fiatFundingAccount._id,
+                    account_number: fiatFundingAccount.account_number,
+                    account_currency: fiatFundingAccount.account_currency,
+                    account_balance: fiatFundingAccount.account_balance,
+                    is_active: fiatFundingAccount.is_active
+                };
+            }
+            else if (accountType === "FIAT") {
+                // If accout_type is specified for fiat instantly throw not found error
+                throw new NotFoundError("Active fiat funding account not found");
+            }
+            else {
+                // If accout_type is not specified and account not found then send empty
+                responseData.fiat = {};
+            }
         }
 
         // Get Crypto Account
         if (!accountType || accountType === "CRYPTO") {
-            const cryptoFundingAccounts = await user_crypto_deposit_account_details
-                .find({
+            const cryptoFundingAccounts = await user_crypto_deposit_account_details.find(
+                {
                     user_id: objectUserId,
                     is_active: true
                 })
@@ -1356,13 +1361,158 @@ export const getUserFundingAccountsBalancesService = async (aesDecryptedQueryDat
                 )
                 .lean();
 
-            responseData.crypto = cryptoFundingAccounts.map((account) => ({
-                account_id: account._id,
-                network: account.network,
-                asset: account.asset,
-                deposit_address: account.deposit_address,
-                balance: account.account_balance
-            }));
+            if (cryptoFundingAccounts.length > 0) {
+                responseData.crypto = cryptoFundingAccounts.map((account) => ({
+                    account_id: account._id,
+                    network: account.network,
+                    asset: account.asset,
+                    deposit_address: account.deposit_address,
+                    balance: account.account_balance
+                }));
+            }
+            else if (accountType === "CRYPTO") {
+                // If accout_type is specified for crypto instantly throw not found error
+                throw new NotFoundError("Active crypto funding account not found");
+            }
+            else {
+                // If accout_type is not specified and account not found then send empty
+                responseData.crypto = [];
+            }
+        }
+
+        // No accout found for accout_type not apecified
+        if (!accountType && Object.keys(responseData.fiat ?? {}).length === 0 && (responseData.crypto?.length ?? 0) === 0) {
+            throw new NotFoundError("No active fiat or crypto funding account found");
+        }
+
+
+        return {
+            status: "SUCCESS",
+            data: responseData,
+            message: "Funding account balance fetched successfully"
+        };
+    }
+    catch (err) {
+        const error = err as any;
+        const errorStatus =
+            error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetUserFundingAccountsBalancesService"
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(
+            "GetUserFundingAccountsBalancesService is unavailable as facing unknown issue.",
+            sanitizedError
+        );
+    }
+};
+
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// ------------------------------------- GET USER FUNDING ACCOUNTS BALANCES ------------------------------------- \\
+export const getUserFundingAccountsBalancesService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, any> | ParsedQs | undefined
+): Promise<successResponseJson | void> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid request query data");
+        }
+
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email")
+        if (!email) {
+            throw new InvalidRequestQueryError("Email not present in query params")
+        }
+
+        // Validate email
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError("Unauthorized session detected - invalid user id");
+        }
+        const objectUserId = new Types.ObjectId(sessionUserId)
+
+        // Check account type (optional)
+        const accountType = checkStringQueryParams(aesDecryptedQueryData, "account_type")?.toUpperCase();
+        if (accountType && accountType !== "FIAT" && accountType !== "CRYPTO") {
+            throw new InvalidRequestQueryError("Invalid account type. Account type must be fiat or crypto");
+        }
+
+        const responseData: Record<string, any> = {};
+
+        // Get Fiat Account
+        if (!accountType || accountType === "FIAT") {
+            const fiatFundingAccount = await user_funding_bank_account_details.findOne({
+                user_id: objectUserId,
+                is_active: true
+            })
+                .select(
+                    "_id user_id cardholder_id account_holder_name account_number account_currency account_balance bank_name swift_code iban_code is_active"
+                )
+                .lean();
+
+            if (fiatFundingAccount) {
+                responseData.fiat = {
+                    account_id: fiatFundingAccount._id,
+                    account_number: fiatFundingAccount.account_number,
+                    account_currency: fiatFundingAccount.account_currency,
+                    account_balance: fiatFundingAccount.account_balance,
+                    is_active: fiatFundingAccount.is_active
+                };
+            }
+            else if (accountType === "FIAT") {
+                // If accout_type is specified for fiat instantly throw not found error
+                throw new NotFoundError("Active fiat funding account not found");
+            }
+            else {
+                // If accout_type is not specified and account not found then send empty
+                responseData.fiat = {};
+            }
+        }
+
+        // Get Crypto Account
+        if (!accountType || accountType === "CRYPTO") {
+            const cryptoFundingAccounts = await user_crypto_deposit_account_details.find(
+                {
+                    user_id: objectUserId,
+                    is_active: true
+                })
+                .select(
+                    "_id user_id cardholder_id network asset deposit_address account_balance is_active"
+                )
+                .lean();
+
+            if (cryptoFundingAccounts.length > 0) {
+                responseData.crypto = cryptoFundingAccounts.map((account) => ({
+                    account_id: account._id,
+                    network: account.network,
+                    asset: account.asset,
+                    deposit_address: account.deposit_address,
+                    balance: account.account_balance
+                }));
+            }
+            else if (accountType === "CRYPTO") {
+                // If accout_type is specified for crypto instantly throw not found error
+                throw new NotFoundError("Active crypto funding account not found");
+            }
+            else {
+                // If accout_type is not specified and account not found then send empty
+                responseData.crypto = [];
+            }
+        }
+
+        // No accout found for accout_type not apecified
+        if (!accountType && Object.keys(responseData.fiat ?? {}).length === 0 && (responseData.crypto?.length ?? 0) === 0) {
+            throw new NotFoundError("No active fiat or crypto funding account found");
         }
 
 

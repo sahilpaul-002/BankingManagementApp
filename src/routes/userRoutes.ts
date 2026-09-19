@@ -1,6 +1,6 @@
 import express from "express";
 import type { Router } from "express";
-import { getApplicationHeaders, onboarding, sendBankVerificationMail, userDetails, userLogin, userOnboardingDetails, userSignUp } from "../controllers/userController.js";
+import { getApplicationHeaders, getUserFundingAccountsBalances, onboarding, sendBankVerificationMail, userDetails, userLogin, userOnboardingDetails, userSignUp } from "../controllers/userController.js";
 import jwtAuthTokenValidation from "../utils/jwtAuthTokenValidation.js";
 import validateUniqueRequests from "../middlewares/validateUniqueRequests.js";
 import sessionValidation from "../middlewares/sessionValidation.js";
@@ -15,5 +15,6 @@ router.get("/userDetails", userDetails)
 router.get("/onboardingDetails", userOnboardingDetails)
 router.post("/onboarding", asyncRequestHandler(jwtAuthTokenValidation), onboarding);
 router.post("/sendBankVerificationMail", asyncRequestHandler(jwtAuthTokenValidation), sendBankVerificationMail);
+router.get("/accountsBalances", asyncRequestHandler(jwtAuthTokenValidation), getUserFundingAccountsBalances)
 
 export default router;
