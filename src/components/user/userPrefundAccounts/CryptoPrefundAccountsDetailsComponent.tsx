@@ -2,14 +2,14 @@ import type { PrefundCryptoAccountType } from '@/types/user/userPrefundAccountsD
 import { groupCryptoAccountsByNetwork } from '@/utils/userPrefundAccounts/prefundAccountsHelper';
 import { useMemo, useState } from 'react';
 import PrefundAccountsEmptyStateComponent from './PrefundAccountsEmptyStateComponent';
-import PrefundAccountsTabsComponent from './PrefundAccountTabsComponent';
 import CryptoAssetCardComponent from './CryptoAssetCardComponent';
+import CryptoNetworkTabsComponent from './CryptoNetworkTabsComponent';
 
-interface CryptoAccountDetailsComponentProps {
+interface CryptoPrefundAccountsDetailsComponentPropsType {
     cryptoDetails?: PrefundCryptoAccountType[] | null | undefined;
 }
 
-export default function CryptoPrefundAccountsDetailsComponent({ cryptoDetails }: CryptoAccountDetailsComponentProps) {
+export default function CryptoPrefundAccountsDetailsComponent({ cryptoDetails }: CryptoPrefundAccountsDetailsComponentPropsType) {
     // { ETHEREUM: [{...}, {...}], POLYGON: [{...}, {...}] }
     const cryptoAccountsByNetwork = useMemo(() => groupCryptoAccountsByNetwork(cryptoDetails), [cryptoDetails]);
     const networks = Object.keys(cryptoAccountsByNetwork);
@@ -36,8 +36,12 @@ export default function CryptoPrefundAccountsDetailsComponent({ cryptoDetails }:
             </div>
 
             {/* Network Sub Tabs */}
-            <PrefundAccountsTabsComponent
-                tabs={networks.map((network) => ({ id: network, label: network }))}
+            <CryptoNetworkTabsComponent
+                tabs={networks.map((network) => ({
+                    id: network,
+                    label: network,
+                    count: cryptoAccountsByNetwork[network]?.length ?? 0,
+                }))}
                 activeTab={selectedNetwork}
                 onTabChange={setActiveNetwork}
                 idPrefix="userPrefundingAccountsPage-cryptoNetwork"

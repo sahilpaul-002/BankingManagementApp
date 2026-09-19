@@ -2,7 +2,7 @@ import { createApi, type BaseQueryFn } from '@reduxjs/toolkit/query/react'
 import { selectApplicaitonHeaders, selectDnsConfigDetails, setAppliationHeaders, type applicationHeaderItemsType, type dnsConfigDataType } from '@/redux/slice/config/configSlice'
 import type { rootStateType } from '@/redux/sotre'
 import { configApis } from '../config/configApi'
-import { USER_URL } from '@/configs/constants'
+import { USER_PUBLIC_URL, USER_URL } from '@/configs/constants'
 import { axiosBaseQuery, getAxiosInstance } from '@/configs/axiosConfig'
 import { ApplicationServiceError } from '@/errorHandling/error'
 import mapToRtkError from '@/errorHandling/mapToRtkError'
@@ -607,7 +607,7 @@ export const userApis = createApi({
         // =======================================================
         // GET USER PREFUNDING ACCOUNTS DETAILS
         // =======================================================
-        getUserPrefundAccountsDetails: build.query<apiResponseType<apiResponseDataType>, { email: string, userId: string }>({
+        getUserPrefundAccountsDetails: build.query<apiResponseType<apiResponseDataType>, { email: string }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -638,7 +638,7 @@ export const userApis = createApi({
                         url: `${USER_URL}/accountsBalances`,
                         method: 'GET',
                         headers,
-                        params: { user_id: payload.userId },
+                        params: { email: payload.email },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown

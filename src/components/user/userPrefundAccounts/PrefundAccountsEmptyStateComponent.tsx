@@ -17,11 +17,11 @@ const EMPTY_STATE_CONTENT: Record<PrefundingEmptyStateType, { title: string; des
     },
 };
 
-interface PrefundingEmptyStateProps {
+interface PrefundAccountsEmptyStateComponentPropsType {
     type: PrefundingEmptyStateType;
 }
 
-export default function PrefundAccountsEmptyStateComponent({ type }: PrefundingEmptyStateProps) {
+export default function PrefundAccountsEmptyStateComponent({ type }: PrefundAccountsEmptyStateComponentPropsType) {
     const { title, description } = EMPTY_STATE_CONTENT[type];
 
     return (

@@ -3,11 +3,11 @@ import PrefundAccountItemDetailsComponent from "./PrefundAccountItemDetailsCompo
 import { formatNumberDecimal } from "@/utils/userPrefundAccounts/prefundAccountsHelper";
 
 
-interface CryptoAssetCardComponentProps {
+interface CryptoAssetCardComponentPropsType {
     account: PrefundCryptoAccountType;
 }
 
-export default function CryptoAssetCardComponent({ account }: CryptoAssetCardComponentProps) {
+export default function CryptoAssetCardComponent({ account }: CryptoAssetCardComponentPropsType) {
     const idPrefix = `cryptoAccount-${account.network}-${account.asset}`;
 
     return (

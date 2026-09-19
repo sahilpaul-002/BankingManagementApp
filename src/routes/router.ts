@@ -166,6 +166,7 @@ const router = createBrowserRouter([
                             },
                             {
                                 path: "prefundAccounts",
+                                loader: requireKycAndKybApproval,
                                 Component: UserPrefundAccountsPage,
                             }
                         ]

@@ -42,7 +42,7 @@ const navigationData: NavSection[] = [
   },
   {
     section: "User",
-    items: ["Details", "Verification"]
+    items: ["Details", "Verification", "Prefund Accounts"]
   }
 ];
 
@@ -70,7 +70,8 @@ const getSectionForPath = (pathname: string): string => {
     "/cards/cardholders": "Cards",
     "/cards/manageCards": "Cards",
     "/user": "User",
-    "/user/verification": "User"
+    "/user/verification": "User",
+    "/user/prefundAccounts": "User"
   };
   return pathMap[pathname] || "Overview";
 };
@@ -182,6 +183,7 @@ export default function NavbarComponent() {
       "Manage Cards": "/cards/manageCards",
       "Details": "/user",
       "Verification": "/user/verification",
+      "Prefund Accounts": "/user/prefundAccounts"
     };
 
     const path = pathMap[item];
@@ -205,6 +207,7 @@ export default function NavbarComponent() {
       "Manage Cards": "/cards/manageCards",
       "Details": "/user",
       "Verification": "/user/verification",
+      "Prefund Accounts": "/user/prefundAccounts"
     };
 
     return location.pathname === pathMap[item];

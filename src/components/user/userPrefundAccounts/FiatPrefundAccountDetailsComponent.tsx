@@ -19,11 +19,11 @@ function ActiveStatusBadge({ isActive }: { isActive: boolean }) {
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
-interface FiatAccountDetailsComponentProps {
+interface FiatPrefundAccountDetailsComponentPropsType {
     fiatDetails?: PrefundFiatAccountType | null | undefined;
 }
 
-export default function FiatPrefundAccountDetailsComponent({ fiatDetails }: FiatAccountDetailsComponentProps) {
+export default function FiatPrefundAccountDetailsComponent({ fiatDetails }: FiatPrefundAccountDetailsComponentPropsType) {
     // fiat can be `{}` / null / undefined
     if (!hasFiatAccount(fiatDetails)) {
         return <PrefundAccountsEmptyStateComponent type="fiat" />;

@@ -56,6 +56,10 @@ const pageNameMap: Record<string, BreadcrumbData> = {
     section: "User",
     page: "Verification",
   },
+  "/user/prefundAccounts": {
+    section: "User",
+    page: "Prefund Accounts",
+  },
 };
 
 const getBreadcrumbData = (pathname: string): BreadcrumbData => {

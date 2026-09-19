@@ -22,23 +22,24 @@ export default function UserPrefundingAccountsPage() {
   // Configure useDispatch
   const dispatch = useDispatch();
 
-  // ------------------------------- GET DETAILS FROM SESSION STORAGE ---------------------------------- \\
+  // ------------------------------- GET EMAL FROM SESSION STORAGE ---------------------------------- \\
   // Get necessary user details from session storage
   const userEmail = sessionStorage.getItem('userEmail');
   const userId = sessionStorage.getItem("userId")
+  const userCardholderId = sessionStorage.getItem("cardholderId")
 
   useEffect(() => {
-    // Validate email and user id once
-    if (!userEmail || !userId) {
+    // Validate email once
+    if (!userEmail || !userId || !userCardholderId) {
       dispatch(setShowInfoBanner("Application facing issue, necessary user details not present in session storage. Please re-login."));
       return;
     }
-  }, [userEmail, userId]);
+  }, [userEmail, userId, userCardholderId]);
   // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
   // ----------------------------------- Get User Prefund Accounts Details ----------------------------------- \\
   // Get User Prefund Accounts Details
-  const { data: getPrefundAccountsData, isLoading: getPrefundAccountsDetailsIsLoading, isFetching: getPrefundAccountsDetailsIsFetching, isError: getPrefundAccountsDetailsIsError, error: getPrefundAccountsDetailsError, isSuccess: getPrefundAccountsDetailsIsSuccess } = useGetUserPrefundAccountsDetailsQuery({ email: userEmail!, userId: userId! }, { skip: !userEmail || !userId });
+  const { data: getPrefundAccountsData, isLoading: getPrefundAccountsDetailsIsLoading, isFetching: getPrefundAccountsDetailsIsFetching, isError: getPrefundAccountsDetailsIsError, error: getPrefundAccountsDetailsError, isSuccess: getPrefundAccountsDetailsIsSuccess } = useGetUserPrefundAccountsDetailsQuery({ email: userEmail! }, { skip: !userEmail || !userId });
   const userPrefundAccountsDetails = getPrefundAccountsData?.data as UserPrefundAccountsDetailsType | undefined;
   const userFiatDetails = userPrefundAccountsDetails?.fiat;
   const userCryptoDetails = userPrefundAccountsDetails?.crypto;
@@ -58,7 +59,7 @@ export default function UserPrefundingAccountsPage() {
     ShowInConsole("User prefund accounts details", userPrefundAccountsDetails);
   }, [userPrefundAccountsDetails])
   // ----------------------------------------- XXXXXXXXXXXXXXXXXXXXXX ----------------------------------------- \\
-  const showPrefundingAccountsPageLoader = getPrefundAccountsDetailsIsLoading
+  const showPrefundingAccountsPageLoader = getPrefundAccountsDetailsIsFetching
 
   // Active tab for available prefund accounts
   const [activeTab, setActiveTab] = useState<TabId>('fiat');

@@ -1,4 +1,4 @@
-interface PrefundingTabsComponentProps<T extends string> {
+interface PrefundAccountsTabsComponentPropsType<T extends string> {
     tabs: { id: T; label: string }[];
     activeTab: T;
     onTabChange: (tabId: T) => void;
@@ -12,9 +12,9 @@ export default function PrefundAccountsTabsComponent<T extends string>({
     onTabChange,
     idPrefix,
     containerClassName = '',
-}: PrefundingTabsComponentProps<T>) {
+}: PrefundAccountsTabsComponentPropsType<T>) {
     return (
-        <div className={`flex items-end border-b border-[var(--line)] overflow-x-auto ${containerClassName}`}>
+        <div className={`flex items-end border-b border-[var(--line)] ${containerClassName}`}>
             {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
 

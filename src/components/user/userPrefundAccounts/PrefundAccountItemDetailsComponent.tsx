@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-interface PrefundAccountItemDetailsComponentProps {
+interface PrefundAccountItemDetailsComponentPropsType {
     id: string;
     label: string;
     value?: string | null | undefined;
@@ -20,7 +20,7 @@ export default function PrefundAccountItemDetailsComponent({
     copyable = false,
     breakAll = false,
     className = '',
-}: PrefundAccountItemDetailsComponentProps) {
+}: PrefundAccountItemDetailsComponentPropsType) {
     const [isCopied, setIsCopied] = useState(false);
 
     const displayValue = value && value.trim() !== '' ? value : '—';
@@ -40,16 +40,18 @@ export default function PrefundAccountItemDetailsComponent({
     };
 
     return (
-        <div className={`w-full h-fit flex flex-col justify-center items-start gap-2 ${className}`}>
-            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
+        <div className={`w-full h-fit flex flex-col justify-center items-start gap-1.5 pb-3! border-b border-[var(--line-faint)] ${className}`}>
+            {/* Label */}
+            <span className="text-xs font-semibold uppercase tracking-wide text-[var(--mute)]">
                 {label}
             </span>
 
-            <div className="w-full min-h-10 flex items-center justify-between gap-3 px-3! py-2! border border-[var(--line)] rounded-md bg-[var(--bg-subtle)]">
+            {/* Value (plain text, no input-like container) */}
+            <div className="w-full min-h-6 flex items-center gap-2 min-w-0">
                 {children ?? (
                     <span
                         id={id}
-                        className={`text-sm text-[var(--ink)] ${breakAll ? 'break-all' : 'truncate'}`}
+                        className={`text-sm font-semibold text-[var(--ink)] ${breakAll ? 'break-all' : 'truncate'}`}
                     >
                         {displayValue}
                     </span>
