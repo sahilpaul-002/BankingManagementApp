@@ -6,7 +6,7 @@ import { AppErrorClass, ForbiddenError, InvalidSessionError, NotFoundError, Serv
 import streamifier from "streamifier";
 import sanitizeApiError from '../utils/sanitizeApiError.js';
 
-interface UploadCloudinaryResponse {
+export interface UploadCloudinaryResponse {
     status: "SUCCESS";
     secure_url: string;
     public_id: string;

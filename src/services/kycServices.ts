@@ -6,7 +6,7 @@ import checkMongoDbCollectionExist from "../utils/checkMongoDbCollectionExist.js
 import { userKycDetailsModel as user_kyc_details } from "../models/user_kyc_details.js";
 import type { Schema } from "mongoose";
 import checkStringBody from "../utils/checkStringBody.js";
-import uploadOnCloudinary from "../configs/claudinary.js";
+import uploadOnCloudinary, { type UploadCloudinaryResponse } from "../configs/claudinary.js";
 import { Types } from "mongoose";
 import jwt, { type JwtPayload } from "jsonwebtoken";
 import dotenv from "dotenv"
@@ -18,6 +18,7 @@ import checkStringQueryParams from "../utils/checkStringQueryParams.js";
 import UserKycVerifyUpdateTransaction from "../mongoDbTransactions/verifyUserKycDetailsTransaction.js";
 import crypto from "crypto";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
+import deleteFromCloudinary from "../configs/claudinaryDelete.js";
 
 dotenv.config();
 
@@ -133,38 +134,69 @@ const isNumericString = (value: string): boolean => {
 };
 
 const uploadKycDocuments = async (poiDocumentFile: Express.Multer.File, poaDocumentFile: Express.Multer.File, session: Request["session"], userId: string) => {
-    // Upload Documents To Cloudinary
-    const [poiUploadResponse, poaUploadResponse] = await Promise.all([
-        uploadOnCloudinary(
-            poiDocumentFile,
-            session?.userConfiguration?.businessId as string,
-            session?.userConfiguration?.programId as string,
-            session?.userConfiguration?.agentCode as string,
-            session?.userConfiguration?.subAgentCode as string,
-            userId as string
-        ),
-        uploadOnCloudinary(
-            poaDocumentFile,
-            session?.userConfiguration?.businessId as string,
-            session?.userConfiguration?.programId as string,
-            session?.userConfiguration?.agentCode as string,
-            session?.userConfiguration?.subAgentCode as string,
-            userId as string
-        )
-    ]);
+    let poiUploadResponse: UploadCloudinaryResponse | undefined;
+    let poaUploadResponse: UploadCloudinaryResponse | undefined;
 
-    if (poiUploadResponse?.status !== "SUCCESS") {
-        throw new ServiceError("Failed to upload POI file in cloud service")
+    try {
+        const uploadResults = await Promise.allSettled([
+            uploadOnCloudinary(
+                poiDocumentFile,
+                session?.userConfiguration?.businessId as string,
+                session?.userConfiguration?.programId as string,
+                session?.userConfiguration?.agentCode as string,
+                session?.userConfiguration?.subAgentCode as string,
+                userId
+            ),
+            uploadOnCloudinary(
+                poaDocumentFile,
+                session?.userConfiguration?.businessId as string,
+                session?.userConfiguration?.programId as string,
+                session?.userConfiguration?.agentCode as string,
+                session?.userConfiguration?.subAgentCode as string,
+                userId
+            )
+        ]);
+
+        const poiResult = uploadResults[0];
+        const poaResult = uploadResults[1];
+        if (poiResult.status === "fulfilled") {
+            poiUploadResponse = poiResult.value;
+        }
+        if (poaResult.status === "fulfilled") {
+            poaUploadResponse = poaResult.value;
+        }
+        // If either upload failed, cleanup whichever one succeeded
+        if (poiResult.status === "rejected" || poaResult.status === "rejected") {
+            await Promise.allSettled([
+                poiUploadResponse?.public_id
+                    ? deleteFromCloudinary(poiUploadResponse.public_id)
+                    : Promise.resolve(),
+
+                poaUploadResponse?.public_id
+                    ? deleteFromCloudinary(poaUploadResponse.public_id)
+                    : Promise.resolve(),
+            ]);
+
+            throw new ServiceError("Failed to upload KYC documents");
+        }
+
+        return {
+            status: "SUCCESS" as const,
+            data: {
+                poiUploadResponse,
+                poaUploadResponse,
+            }
+        };
     }
-
-    if (poaUploadResponse?.status !== "SUCCESS") {
-        throw new ServiceError("Failed to upload POA file in cloud service")
+    catch (err) {
+        throw err;
     }
-
-    return { status: "SUCCESS", data: { poiUploadResponse, poaUploadResponse } };
 };
 
 export const uploadKycService = async (req: Request, aesDecryptedBodyData: Record<string, string> | undefined): Promise<successResponseJson> => {
+    let poiPublicId: string | undefined;
+    let poaPublicId: string | undefined;
+
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -248,6 +280,31 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
             throw new ServiceError("KYC details already exist for this user");
         }
 
+        // Check if POI or POA number already exists
+        const existingDocument = await user_kyc_details
+            .findOne({
+                $or: [
+                    { "poi_document.poi_number": poiNumber! },
+                    { "poa_document.poa_number": poaNumber! },
+                ],
+            })
+            .select("poi_document poa_document")
+            .lean();
+
+        if (existingDocument) {
+            const poiExists = existingDocument.poi_document?.poi_number === poiNumber;
+            const poaExists = existingDocument.poa_document?.poa_number === poaNumber;
+            if (poiExists && poaExists) {
+                throw new ServiceError("POI number and POA number already exist");
+            }
+            if (poiExists) {
+                throw new ServiceError("POI number already exists");
+            }
+            if (poaExists) {
+                throw new ServiceError("POA number already exists");
+            }
+        }
+
         // Upload Kyc Documents
         const uploadKycDocumentsResponse = await uploadKycDocuments(poiDocumentFile, poaDocumentFile, req.session, userId.toString());
         if (uploadKycDocumentsResponse?.status !== "SUCCESS") {
@@ -255,6 +312,10 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
         }
         const poiUploadResponse = uploadKycDocumentsResponse.data.poiUploadResponse;
         const poaUploadResponse = uploadKycDocumentsResponse.data.poaUploadResponse;
+
+        // Keep track of uploaded Cloudinary files
+        poiPublicId = poiUploadResponse?.public_id;
+        poaPublicId = poaUploadResponse?.public_id;
 
         // Update DB with KYC Details
         const kycDetailsDoc = await user_kyc_details.findOneAndUpdate(
@@ -265,13 +326,13 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
                 kyc_status: "IN-PROGRESS",
                 poi_document: {
                     poi_number: poiNumber as string,
-                    secure_url: poiUploadResponse.secure_url,
-                    public_id: poiUploadResponse.public_id
+                    secure_url: poiUploadResponse?.secure_url,
+                    public_id: poiUploadResponse?.public_id
                 },
                 poa_document: {
                     poa_number: poaNumber as string,
-                    secure_url: poaUploadResponse.secure_url,
-                    public_id: poaUploadResponse.public_id
+                    secure_url: poaUploadResponse?.secure_url,
+                    public_id: poaUploadResponse?.public_id
                 },
                 kyc_request_id: crypto.randomUUID()
             },
@@ -321,6 +382,29 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
             // url: req.path,
             // method: req.method
         });
+
+        // Cleanup Cloudinary files if they were uploaded
+        const cleanupPromises: Promise<unknown>[] = [];
+        if (poiPublicId) {
+            cleanupPromises.push(deleteFromCloudinary(poiPublicId));
+        }
+        if (poaPublicId) {
+            cleanupPromises.push(deleteFromCloudinary(poaPublicId));
+        }
+        if (cleanupPromises.length > 0) {
+            const cleanupResults = await Promise.allSettled(cleanupPromises);
+
+            const cleanupFailed = cleanupResults.some(
+                (result) => result.status === "rejected"
+            );
+
+            if (cleanupFailed) {
+                logger.error(cleanupResults as any, {
+                    serviceName: "UploadKycService",
+                    message: "Failed to cleanup KYC documents from Cloudinary"
+                });
+            }
+        }
 
         const sanitizedError = sanitizeApiError(error);
 
