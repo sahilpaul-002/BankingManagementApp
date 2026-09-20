@@ -71,7 +71,10 @@ export default function UserDetailsPage() {
         typeof getOnboardingDetailsError?.data === "object" &&
         getOnboardingDetailsError?.data !== null &&
         "status" in getOnboardingDetailsError?.data &&
-        getOnboardingDetailsError?.data.status === "NOT_FOUND";
+        getOnboardingDetailsError?.data.status === "NOT_FOUND" &&
+        "message" in getOnboardingDetailsError.data &&
+        typeof getOnboardingDetailsError.data.message === "string" &&
+        getOnboardingDetailsError.data.message.toLowerCase() === "user onboarding details not found";
 
     const kybApproved = isKybApproved(getOnboardingData?.data);
 

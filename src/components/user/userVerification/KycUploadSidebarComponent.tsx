@@ -489,6 +489,18 @@ export default function KycUploadSidebarComponent({ isOpen, onClose }: KycUpload
                 toast.error("KYC details already exist for this user and are not currently eligible for an update.");
                 return
             }
+            else if (normalizedMessage?.includes("poi number and poa number already exist")) {
+                toast.error("POI number and POA number already exist.");
+                return
+            }
+            else if (normalizedMessage?.includes("poi number already exists")) {
+                toast.error("POI number already exists.");
+                return
+            }
+            else if (normalizedMessage?.includes("poa number already exists")) {
+                toast.error("POA number already exists.");
+                return
+            }
 
             toast.error("Add user kyc details service is facing issue. Please try again later.");
         }

@@ -77,7 +77,10 @@ export default function DashboardPage() {
         typeof getKycDetailsError?.data === "object" &&
         getKycDetailsError?.data !== null &&
         "status" in getKycDetailsError?.data &&
-        getKycDetailsError?.data?.status === "NOT_FOUND";
+        getKycDetailsError?.data?.status === "NOT_FOUND" &&
+        "message" in getKycDetailsError.data &&
+        typeof getKycDetailsError.data.message === "string" &&
+        getKycDetailsError.data.message.toLowerCase() === "user kyc details not found";
 
     // Get User Onboarding Details (Onboarding Verification Status)
     const { data: getOnboardingData, isLoading: getOnboardingDetailsLoading, isFetching: getOnboardingDetailsIsFetching, isError: getOnboardingDetailsIsError, error: getOnboardingDetailsError, isSuccess: getOnboardingDetailsIsSuccess, refetch: refetchGetOnboardingDetails } = useGetUserOnboardingDetailsQuery({ email: userEmail! }, { skip: !userEmail });
@@ -92,7 +95,10 @@ export default function DashboardPage() {
         typeof getOnboardingDetailsError?.data === "object" &&
         getOnboardingDetailsError?.data !== null &&
         "status" in getOnboardingDetailsError?.data &&
-        getOnboardingDetailsError?.data.status === "NOT_FOUND";
+        getOnboardingDetailsError?.data.status === "NOT_FOUND" &&
+        "message" in getOnboardingDetailsError.data &&
+        typeof getOnboardingDetailsError.data.message === "string" &&
+        getOnboardingDetailsError.data.message.toLowerCase() === "user onboarding details not found";
 
     const kycApproved = isKycApproved(getKycData?.data);
     const kybApproved = isKybApproved(getOnboardingData?.data);

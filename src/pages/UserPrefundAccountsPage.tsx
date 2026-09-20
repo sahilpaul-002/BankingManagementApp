@@ -53,7 +53,10 @@ export default function UserPrefundingAccountsPage() {
     typeof getPrefundAccountsDetailsError?.data === "object" &&
     getPrefundAccountsDetailsError?.data !== null &&
     "status" in getPrefundAccountsDetailsError?.data &&
-    getPrefundAccountsDetailsError?.data.status === "NOT_FOUND";
+    getPrefundAccountsDetailsError?.data.status === "NOT_FOUND" &&
+    "message" in getPrefundAccountsDetailsError.data &&
+    typeof getPrefundAccountsDetailsError.data.message === "string" &&
+    getPrefundAccountsDetailsError.data.message.toLowerCase() === "no active fiat or crypto funding account found";
 
   useEffect(() => {
     ShowInConsole("User prefund accounts details", userPrefundAccountsDetails);

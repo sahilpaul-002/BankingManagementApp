@@ -51,10 +51,17 @@ export default function UserVerificationPage() {
         typeof getKycDetailsError?.data === "object" &&
         getKycDetailsError?.data !== null &&
         "status" in getKycDetailsError?.data &&
-        getKycDetailsError?.data?.status === "NOT_FOUND";
+        getKycDetailsError?.data?.status === "NOT_FOUND" &&
+        "message" in getKycDetailsError.data &&
+        typeof getKycDetailsError.data.message === "string" &&
+        getKycDetailsError.data.message.toLowerCase() === "user kyc details not found";
 
     const kycApproved = isKycApproved(getKycData?.data);
     // ------------------------------ XXXXXXXXXXXXXXXXXXXXXXX ------------------------------ \\
+    const showKycPageLoader =
+        getKycDetailsIsLoading ||
+        getKycDetailsIsFetching ||
+        (!getKycData?.data && !isKycNotFound);
 
     // ------------------------------ Add Kyc Detials Helpers ------------------------------ \\
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -71,12 +78,12 @@ export default function UserVerificationPage() {
     return (
         <>
             {/* Page Loader */}
-            <Activity mode={getKycDetailsIsLoading ? "visible" : "hidden"}>
-                <PageLoaderComponent showPageLoader={getKycDetailsIsLoading} />
+            <Activity mode={showKycPageLoader ? "visible" : "hidden"}>
+                <PageLoaderComponent showPageLoader={showKycPageLoader} />
             </Activity>
 
             {/* Main Content */}
-            <Activity mode={!getKycDetailsIsLoading ? "visible" : "hidden"}>
+            <Activity mode={!showKycPageLoader ? "visible" : "hidden"}>
                 <div className="userVerificationPage-container w-full h-fit flex flex-col justify-start items-stretch gap-4 p-4! sm:p-6!">
                     {/* Page Header */}
                     <div className="mb-2! flex items-center justify-between flex-wrap gap-4">
