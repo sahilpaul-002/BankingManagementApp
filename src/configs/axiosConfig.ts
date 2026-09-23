@@ -5,7 +5,7 @@ import { logError } from '@/errorHandling/errorLogger';
 import handleErrors from '@/errorHandling/handleErrors';
 import { getAesEncryptionKey, getRsaHeaderPublicKey, getRsaPublicKey } from '@/services/getEncryptionKeys';
 import { aesDecryption } from '@/utils/aesDecryption';
-import { aesEncryption } from '@/utils/aesEncryption';
+import { aesEncryption, aesEncryptMultipartFile } from '@/utils/aesEncryption';
 import GetDeviceId from '@/utils/GetDeviceId';
 import { rsaEncryption } from '@/utils/rsaEncryption';
 import axios, { AxiosError, type AxiosInstance, type AxiosRequestConfig } from 'axios'
@@ -103,10 +103,117 @@ const setupInterceptors = (instance: AxiosInstance) => {
                 // RSA encrypt IV
                 const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
 
-                // SKIP PAYLOAD ENCRYPTION FOR FORMDATA
+                // ENCRYPT MULTIPART FORMDATA
                 if (req.data instanceof FormData) {
-                    req.headers["Content-Type"] = "multipart/form-data";
+                    const originalFormData = req.data;
 
+                    // New encrypted FormData
+                    const encryptedFormData = new FormData();
+
+                    // ---------------------------------------------
+                    // COLLECT NORMAL FORM FIELDS
+                    // ---------------------------------------------
+                    const formFields: Record<string, string> = {};
+
+                    // Keep track of file/blob entries separately
+                    const fileEntries: Array<{
+                        fieldName: string;
+                        file: File | Blob;
+                        fileName?: string;
+                    }> = [];
+
+                    for (const [fieldName, value] of originalFormData.entries()) {
+                        const formValue = value as string | File | Blob;
+
+                        // File / Blob
+                        if (formValue instanceof File) {
+                            fileEntries.push({
+                                fieldName,
+                                file: formValue,
+                                fileName: formValue.name,
+                            });
+
+                            continue;
+                        }
+
+                        if (formValue instanceof Blob) {
+                            fileEntries.push({
+                                fieldName,
+                                file: formValue,
+                            });
+
+                            continue;
+                        }
+
+                        // Normal Form Field
+                        formFields[fieldName] = formValue;
+                    }
+
+                    // Encrypt json form fields
+                    if (Object.keys(formFields).length > 0) {
+                        const aesFieldsResult = await aesEncryption(
+                            aesKey as string,
+                            formFields,
+                            ivHex
+                        );
+
+                        encryptedFormData.append(
+                            "encryptedPayload2",
+                            aesFieldsResult.ciphertextHex
+                        );
+                    }
+
+                    // Rsa encrypted IV
+                    encryptedFormData.append(
+                        "encryptedPayload1",
+                        rsaRes?.ciphertextBase64 ?? ""
+                    );
+
+                    // Encrypt all file  / Blob Entries
+                    for (const {
+                        fieldName,
+                        file,
+                        fileName,
+                    } of fileEntries) {
+                        const fileToEncrypt =
+                            file instanceof File
+                                ? file
+                                : new File([file], fileName ?? fieldName, {
+                                    type: file.type,
+                                });
+
+                        const encryptedFileResult = await aesEncryptMultipartFile(
+                            aesKey as string,
+                            fileToEncrypt,
+                            ivHex
+                        );
+
+                        encryptedFormData.append(
+                            fieldName,
+                            encryptedFileResult.encryptedFile.file,
+                            fileName ?? fieldName
+                        );
+                    }
+
+                    // Replace original FormData
+                    req.data = encryptedFormData;
+
+                    // Encrypt query params if present
+                    if (req.params) {
+                        const aesParamsResult = await aesEncryption(
+                            aesKey as string,
+                            req.params,
+                            ivHex
+                        );
+
+                        req.params = {
+                            encryptedQueryPayload1: rsaRes?.ciphertextBase64,
+                            encryptedQueryPayload2: aesParamsResult.ciphertextHex,
+                        };
+                    }
+
+                    // DO NOT manually set Content-Type.
+                    // Axios/browser will generate the multipart boundary.
                     return req;
                 }
 
