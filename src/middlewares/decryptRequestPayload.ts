@@ -8,6 +8,11 @@ import { skipEncryptionDecryptionRoutes } from '../utils/skipEncryptionDecryptio
 
 const decryptRequestPayload = (req: Request, res: Response, next: NextFunction) => {
     try {
+        // Skip Decryption for Multipart Form Data Request
+        if (req.is("multipart/form-data")) {
+            return next();
+        }
+
         // Skip Decryption For Specified Routes
         if (skipEncryptionDecryptionRoutes(req)) {
             return next();

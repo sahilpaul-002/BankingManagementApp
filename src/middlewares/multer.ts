@@ -41,19 +41,20 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024, // 5 MB
     },
 
-    fileFilter(req, file, cb) {
-        const allowedMimeTypes = [
-            "image/jpeg",
-            "image/png",
-            "application/pdf",
-        ];
+    // File type check not required due to decrypted payload file type becomes application/octet-stream
+    // fileFilter(req, file, cb) {
+    //     const allowedMimeTypes = [
+    //         "image/jpeg",
+    //         "image/png",
+    //         "application/pdf",
+    //     ];
 
-        if (!allowedMimeTypes.includes(file.mimetype)) {
-            return cb(new Error("Invalid file type upload detected - Allowed files types [jpeg | png | pdf]"));
-        }
+    //     if (!allowedMimeTypes.includes(file.mimetype)) {
+    //         return cb(new Error("Invalid file type upload detected - Allowed files types [jpeg | png | pdf]"));
+    //     }
 
-        cb(null, true);
-    },
+    //     cb(null, true);
+    // },
 });
 
 export default upload;

@@ -122,7 +122,46 @@ const validateKycDocument = (
         );
     }
 
-    if (!allowedKycMimeTypes.includes(file.mimetype)) {
+    // Mime type check not possible for encrypted payload files as mime becomes application/octet-stream
+    // if (!allowedKycMimeTypes.includes(file.mimetype)) {
+    //     throw new BadRequestError(
+    //         `${documentName} must be a PDF, JPEG, JPG, or PNG file`
+    //     );
+    // }
+
+    // File Type Check
+    const buffer = file.buffer;
+
+    if (!buffer || buffer.length === 0) {
+        throw new BadRequestError(
+            `${documentName} is empty or invalid`
+        );
+    }
+
+    const isPdf =
+        buffer.subarray(0, 5).toString("ascii") === "%PDF-";
+
+    const isJpeg =
+        buffer[0] === 0xff &&
+        buffer[1] === 0xd8 &&
+        buffer[2] === 0xff;
+
+    const isPng =
+        buffer.length >= 8 &&
+        buffer.subarray(0, 8).equals(
+            Buffer.from([
+                0x89,
+                0x50,
+                0x4e,
+                0x47,
+                0x0d,
+                0x0a,
+                0x1a,
+                0x0a,
+            ])
+        );
+
+    if (!isPdf && !isJpeg && !isPng) {
         throw new BadRequestError(
             `${documentName} must be a PDF, JPEG, JPG, or PNG file`
         );
@@ -288,10 +327,10 @@ export const uploadKycService = async (req: Request, aesDecryptedBodyData: Recor
                     { "poa_document.poa_number": poaNumber! },
                 ],
             })
-            .select("poi_document poa_document")
+            .select("user_id poi_document poa_document")
             .lean();
 
-        if (existingDocument) {
+        if (existingDocument && existingDocument.user_id.toString() !== userId.toString()) {
             const poiExists = existingDocument.poi_document?.poi_number === poiNumber;
             const poaExists = existingDocument.poa_document?.poa_number === poaNumber;
             if (poiExists && poaExists) {
