@@ -7,6 +7,16 @@ import { KYC_URL, WALLET_URL } from '@/configs/constants'
 import { selectApplicaitonHeaders } from '@/redux/slice/config/configSlice'
 import { ApplicationServiceError } from '@/errorHandling/error'
 import { userApis } from '../user/userApi'
+import type {
+    CreateConversionQuoteRequestBody,
+    CreateConversionQuoteResponse,
+    ExecuteConversionRequestBody,
+    ExecuteConversionResponse,
+} from '@/fallbacks/wallets/currencyConversion/currencyConversionFallbacks'
+import type {
+    WalletTransactionsListResponse,
+    WalletTransactionDetailsResponse,
+} from '@/fallbacks/wallets/walletStatements/walletStatementsFallbacks'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 
@@ -48,7 +58,7 @@ const axiosInstance = getAxiosInstance();
 // ==============================
 export const walletApis = createApi({
     reducerPath: 'walletApis',
-    tagTypes: ['Wallet'],
+    tagTypes: ['Wallet', 'WalletTransactions'],
     baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // =======================================================
@@ -155,7 +165,168 @@ export const walletApis = createApi({
             },
             providesTags: [{ type: 'Wallet', id: 'DETAILS' }],
         }),
+
+
+        // =======================================================
+        // CREATE CURRENCY CONVERSION QUOTE
+        // =======================================================
+        createConversionQuote: build.mutation<CreateConversionQuoteResponse, { email: string; cardholderId: string; body: CreateConversionQuoteRequestBody }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = walletApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('CREATE-CONVERSION-QUOTE - Failed to fetch application headers');
+                        }
+                        state = getState() as rootStateType;
+                        headers = walletApiHeaders(state);
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${WALLET_URL}/currency-conversion/quote`,
+                        method: 'POST',
+                        headers,
+                        data: payload.body,
+                        params: { email: payload.email, cardholder_id: payload.cardholderId },
+                    }) as { data?: CreateConversionQuoteResponse; error?: unknown };
+
+                    return { data: result.data as CreateConversionQuoteResponse };
+                } catch (error) {
+                    return rtkQueryCatchError(error, 'CREATE-CONVERSION-QUOTE faced application error');
+                }
+            },
+        }),
+
+
+        // =======================================================
+        // EXECUTE CURRENCY CONVERSION
+        // =======================================================
+        executeConversion: build.mutation<ExecuteConversionResponse, { email: string; cardholderId: string; body: ExecuteConversionRequestBody }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = walletApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('EXECUTE-CONVERSION - Failed to fetch application headers');
+                        }
+                        state = getState() as rootStateType;
+                        headers = walletApiHeaders(state);
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${WALLET_URL}/currency-conversion/execute`,
+                        method: 'POST',
+                        headers,
+                        data: payload.body,
+                        params: { email: payload.email, cardholder_id: payload.cardholderId },
+                    }) as { data?: ExecuteConversionResponse; error?: unknown };
+
+                    return { data: result.data as ExecuteConversionResponse };
+                } catch (error) {
+                    return rtkQueryCatchError(error, 'EXECUTE-CONVERSION faced application error');
+                }
+            },
+            invalidatesTags: [{ type: 'Wallet', id: 'DETAILS' }],
+        }),
+
+
+        // =======================================================
+        // GET WALLET TRANSACTIONS LIST
+        // =======================================================
+        getWalletTransactions: build.query<WalletTransactionsListResponse, { email: string; cardholderId: string }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = walletApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('GET-WALLET-TRANSACTIONS - Failed to fetch application headers');
+                        }
+                        state = getState() as rootStateType;
+                        headers = walletApiHeaders(state);
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${WALLET_URL}/transactions`,
+                        method: 'GET',
+                        headers,
+                        params: { email: payload.email, cardholder_id: payload.cardholderId },
+                    }) as { data?: WalletTransactionsListResponse; error?: unknown };
+
+                    return { data: result.data as WalletTransactionsListResponse };
+                } catch (error) {
+                    return rtkQueryCatchError(error, 'GET-WALLET-TRANSACTIONS faced application error');
+                }
+            },
+            providesTags: [{ type: 'WalletTransactions', id: 'LIST' }],
+        }),
+
+
+        // =======================================================
+        // GET WALLET TRANSACTION DETAILS BY ID
+        // =======================================================
+        getWalletTransactionDetails: build.query<WalletTransactionDetailsResponse, { email: string; cardholderId: string; transactionId: string }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = walletApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('GET-WALLET-TRANSACTION-DETAILS - Failed to fetch application headers');
+                        }
+                        state = getState() as rootStateType;
+                        headers = walletApiHeaders(state);
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${WALLET_URL}/transactions/${payload.transactionId}`,
+                        method: 'GET',
+                        headers,
+                        params: { email: payload.email, cardholder_id: payload.cardholderId },
+                    }) as { data?: WalletTransactionDetailsResponse; error?: unknown };
+
+                    return { data: result.data as WalletTransactionDetailsResponse };
+                } catch (error) {
+                    return rtkQueryCatchError(error, 'GET-WALLET-TRANSACTION-DETAILS faced application error');
+                }
+            },
+        }),
     }),
 })
 
-export const { useGetAllWalletBalancesQuery, useLazyGetAllWalletBalancesQuery, useGetWalletDetailsQuery, useLazyGetWalletDetailsQuery } = walletApis
+export const {
+    useGetAllWalletBalancesQuery,
+    useLazyGetAllWalletBalancesQuery,
+    useGetWalletDetailsQuery,
+    useLazyGetWalletDetailsQuery,
+    useCreateConversionQuoteMutation,
+    useExecuteConversionMutation,
+    useGetWalletTransactionsQuery,
+    useGetWalletTransactionDetailsQuery,
+} = walletApis

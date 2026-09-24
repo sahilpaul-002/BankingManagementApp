@@ -2,36 +2,36 @@ import React from 'react';
 import { Search } from 'lucide-react';
 import DepositWalletsTabsComponent from '@/components/wallets/depositWallets/DepositWalletsTabsComponent';
 
-type PayoutStatusTab = 'ALL' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+type WalletTransactionTypeTab = 'ALL' | 'LOAD' | 'WITHDRAW' | 'RELEASE';
 
-const STATUS_TABS: { id: PayoutStatusTab; label: string }[] = [
-    { id: 'ALL', label: 'All Statuses' },
-    { id: 'PROCESSING', label: 'Processing' },
-    { id: 'SUCCESS', label: 'Success' },
-    { id: 'FAILED', label: 'Failed' },
+const TYPE_TABS: { id: WalletTransactionTypeTab; label: string }[] = [
+    { id: 'ALL', label: 'All Types' },
+    { id: 'LOAD', label: 'Load' },
+    { id: 'WITHDRAW', label: 'Withdraw' },
+    { id: 'RELEASE', label: 'Release' },
 ];
 
-interface PayoutTransactionsFilterComponentProps {
+interface WalletStatementsFilterComponentProps {
     searchQuery: string;
     onSearchChange: (value: string) => void;
-    selectedStatus: string;
-    onStatusChange: (status: string) => void;
+    selectedType: string;
+    onTypeChange: (type: string) => void;
 }
 
-export default function PayoutTransactionsFilterComponent({
+export default function WalletStatementsFilterComponent({
     searchQuery,
     onSearchChange,
-    selectedStatus,
-    onStatusChange,
-}: PayoutTransactionsFilterComponentProps) {
+    selectedType,
+    onTypeChange,
+}: WalletStatementsFilterComponentProps) {
     return (
         <div className="w-full flex flex-col gap-4">
-            {/* Status Tabs */}
-            <DepositWalletsTabsComponent<PayoutStatusTab>
-                tabs={STATUS_TABS}
-                activeTab={selectedStatus as PayoutStatusTab}
-                onTabChange={onStatusChange}
-                idPrefix="payoutTransactions"
+            {/* Type Tabs */}
+            <DepositWalletsTabsComponent<WalletTransactionTypeTab>
+                tabs={TYPE_TABS}
+                activeTab={selectedType as WalletTransactionTypeTab}
+                onTabChange={onTypeChange}
+                idPrefix="walletStatements"
             />
 
             {/* Search Input Bar */}
@@ -40,11 +40,11 @@ export default function PayoutTransactionsFilterComponent({
                     <Search className="w-4 h-4" />
                 </div>
                 <input
-                    id="payoutTransactions-search-input"
+                    id="walletStatements-search-input"
                     type="text"
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    placeholder="Search by quote ID, currency, or remarks..."
+                    placeholder="Search by currency, type, or remarks..."
                     className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl text-sm text-[var(--ink)] placeholder:text-[var(--mute)] focus:outline-hidden focus:border-[var(--line-strong)] focus:ring-1 focus:ring-[var(--line-strong)] transition-all"
                 />
             </div>
