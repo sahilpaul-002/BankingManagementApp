@@ -59,7 +59,7 @@ export default function FiatPrefundAccountDetailsComponent({ fiatDetails }: Fiat
                 <PrefundAccountItemDetailsComponent
                     id="fiatAccount-value-accountBalance"
                     label="Account Balance"
-                    value={`${fiatDetails?.account_currency ?? ''} ${formatNumberDecimal(fiatDetails?.account_balance)}`.trim()}
+                    value={`${formatNumberDecimal(fiatDetails?.account_balance)} ${fiatDetails?.account_currency ?? ''}`.trim()}
                 />
 
                 {/* Status */}
