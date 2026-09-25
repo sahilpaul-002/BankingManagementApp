@@ -1441,6 +1441,11 @@ export const getUserFundingAccountsBalancesService = async (requestSession: Requ
         }
         const objectUserId = new Types.ObjectId(sessionUserId)
 
+        // Check Admin Authentication
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+            throw new ForbiddenError("Not authorized to access prefund accounts")
+        }
+
         // Check account type (optional)
         const accountType = checkStringQueryParams(aesDecryptedQueryData, "account_type")?.toUpperCase();
         if (accountType && accountType !== "FIAT" && accountType !== "CRYPTO") {

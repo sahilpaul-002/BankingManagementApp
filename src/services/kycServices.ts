@@ -642,7 +642,12 @@ export const kycVerificationWebhookService = async (aesDecryptedQueryData: Recor
 
         const userKycVerifyUpdateTransactionResult = await UserKycVerifyUpdateTransaction(decoded);
         if (userKycVerifyUpdateTransactionResult.status !== "SUCCESS") {
-            throw new ServiceError("UserKycVerifyUpdateTransaction is facing issue - failed to update kyc status");
+            if (userKycVerifyUpdateTransactionResult?.message?.toLowerCase()?.includes("expired verification link or rfi requested")) {
+                throw new ServiceError("Expired verification link or RFI requested")
+            }
+            else {
+                throw new ServiceError("UserKycVerifyUpdateTransaction is facing issue - failed to update kyc status");
+            }
         }
         const userDetailsDoc = userKycVerifyUpdateTransactionResult?.data?.userDetailsDoc
         const kycDetailsDoc = userKycVerifyUpdateTransactionResult?.data?.userKycDetailsDoc

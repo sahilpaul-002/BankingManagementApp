@@ -80,7 +80,7 @@ const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
             {
                 session: mongoSession,
             }
-        ).select("email kyc_status").lean();
+        ).select("email agent_code subagent_code kyc_status is_admin is_master_admin").lean();
 
         if (!userDoc) {
             throw new NotFoundError("User details not found");
@@ -149,83 +149,88 @@ const userBankVerifyTransaction = async (decoded: userBankVerificationJwtPayload
 
             updatedUserDoc = updatedUser;
 
-            // Create application-provided USD funding bank account
-            const fundingAccountNumber = crypto.randomInt(
-                1000000000,
-                9999999999
-            ).toString();
-            const fundingBankAccount = await user_funding_bank_account_details.create([
-                {
-                    user_id: userId,
-                    cardholder_id: cardholderId,
-                    account_holder_name: decoded.userName,
-                    account_number: fundingAccountNumber,
-                    account_currency: "USD",
-                    account_balance: mongoose.Types.Decimal128.fromString("0"),
-                    swift_code: "DEMOUS33XXX",
-                    iban_code: `US${fundingAccountNumber}`,
-                    bank_name: "DBS Financial Bank",
-                    is_active: true
+            // Prefund fiat accounts and crypto address only availbale for the admin and master admin
+            if (userDoc.agent_code === "01" && userDoc.subagent_code === "01" && userDoc.is_admin?.toUpperCase() === "Y" && userDoc.is_master_admin?.toUpperCase() === "Y") {
+                // Create application-provided USD funding bank account
+                const fundingAccountNumber = crypto.randomInt(
+                    1000000000,
+                    9999999999
+                ).toString();
+                const fundingBankAccount = await user_funding_bank_account_details.create([
+                    {
+                        user_id: userId,
+                        cardholder_id: cardholderId,
+                        account_holder_name: decoded.userName,
+                        account_number: fundingAccountNumber,
+                        account_currency: "USD",
+                        account_balance: mongoose.Types.Decimal128.fromString("0"),
+                        swift_code: "DEMOUS33XXX",
+                        iban_code: `US${fundingAccountNumber}`,
+                        bank_name: "DBS Financial Bank",
+                        is_active: true
+                    }
+                ],
+                    {
+                        session: mongoSession
+                    }
+                );
+                if (!fundingBankAccount?.length) {
+                    throw new ServiceError("Failed to create user funding bank account");
                 }
-            ],
-                {
-                    session: mongoSession
+
+                // Create application-provided crypto deposit account
+                const generateCryptoDepositAddress = (): string => { return `0x${crypto.randomBytes(20).toString("hex")}`; };
+                const cryptoDepositAccounts: userCryptoDepositAccountDetailsTypes[] = [
+                    {
+                        user_id: userId,
+                        cardholder_id: cardholderId,
+                        network: "ETHEREUM",
+                        asset: "USDT",
+                        deposit_address: generateCryptoDepositAddress(),
+                        account_balance: mongoose.Types.Decimal128.fromString("0"),
+                        is_active: true
+                    },
+                    {
+                        user_id: userId,
+                        cardholder_id: cardholderId,
+                        network: "ETHEREUM",
+                        asset: "USDC",
+                        deposit_address: generateCryptoDepositAddress(),
+                        account_balance: mongoose.Types.Decimal128.fromString("0"),
+                        is_active: true
+                    },
+                    {
+                        user_id: userId,
+                        cardholder_id: cardholderId,
+                        network: "POLYGON",
+                        asset: "USDT",
+                        deposit_address: generateCryptoDepositAddress(),
+                        account_balance: mongoose.Types.Decimal128.fromString("0"),
+                        is_active: true
+                    },
+                    {
+                        user_id: userId,
+                        cardholder_id: cardholderId,
+                        network: "POLYGON",
+                        asset: "USDC",
+                        deposit_address: generateCryptoDepositAddress(),
+                        account_balance: mongoose.Types.Decimal128.fromString("0"),
+                        is_active: true
+                    }
+                ];
+                const createdCryptoAccounts = await user_crypto_deposit_account_details.create(
+                    cryptoDepositAccounts,
+                    {
+                        session: mongoSession,
+                        ordered: true
+                    }
+                );
+                if (createdCryptoAccounts?.length !== 4) {
+                    throw new ServiceError("Failed to create user crypto deposit accounts");
                 }
-            );
-            if (!fundingBankAccount?.length) {
-                throw new ServiceError("Failed to create user funding bank account");
             }
 
-            // Create application-provided crypto deposit account
-            const generateCryptoDepositAddress = (): string => { return `0x${crypto.randomBytes(20).toString("hex")}`; };
-            const cryptoDepositAccounts: userCryptoDepositAccountDetailsTypes[] = [
-                {
-                    user_id: userId,
-                    cardholder_id: cardholderId,
-                    network: "ETHEREUM",
-                    asset: "USDT",
-                    deposit_address: generateCryptoDepositAddress(),
-                    account_balance: mongoose.Types.Decimal128.fromString("0"),
-                    is_active: true
-                },
-                {
-                    user_id: userId,
-                    cardholder_id: cardholderId,
-                    network: "ETHEREUM",
-                    asset: "USDC",
-                    deposit_address: generateCryptoDepositAddress(),
-                    account_balance: mongoose.Types.Decimal128.fromString("0"),
-                    is_active: true
-                },
-                {
-                    user_id: userId,
-                    cardholder_id: cardholderId,
-                    network: "POLYGON",
-                    asset: "USDT",
-                    deposit_address: generateCryptoDepositAddress(),
-                    account_balance: mongoose.Types.Decimal128.fromString("0"),
-                    is_active: true
-                },
-                {
-                    user_id: userId,
-                    cardholder_id: cardholderId,
-                    network: "POLYGON",
-                    asset: "USDC",
-                    deposit_address: generateCryptoDepositAddress(),
-                    account_balance: mongoose.Types.Decimal128.fromString("0"),
-                    is_active: true
-                }
-            ];
-            const createdCryptoAccounts = await user_crypto_deposit_account_details.create(
-                cryptoDepositAccounts,
-                {
-                    session: mongoSession,
-                    ordered: true
-                }
-            );
-            if (createdCryptoAccounts?.length !== 4) {
-                throw new ServiceError("Failed to create user crypto deposit accounts");
-            }
+
         }
 
         if (decoded.action === "REJECT") {

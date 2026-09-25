@@ -67,10 +67,6 @@ export const createCardService = async (requestSession: Request["session"], aesD
         if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
             throw new ForbiddenError("Not authorized to create card")
         }
-        // Validation M2P is allowed
-        if (!requestSession?.sessiondata?.m2pAllowed) {
-            throw new ServiceError("Wallet access is not allowed for this application - M2P is not allowed.")
-        }
         const sessionBusinessId = requestSession?.userConfiguration?.businessId
         const sessionProgramId = requestSession?.userConfiguration?.programId
         const sessionAgentCode = requestSession?.userConfiguration?.agentCode
