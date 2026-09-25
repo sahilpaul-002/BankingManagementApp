@@ -316,6 +316,18 @@ export const userApis = createApi({
                         } = loginData;
 
                         // Store user email in session storage
+                        const USER_SESSION_KEYS = [
+                            "userEmail",
+                            "userId",
+                            "cardholderId",
+                            "userWalletId",
+                        ] as const;
+                        const clearUserSessionStorage = () => {
+                            USER_SESSION_KEYS.forEach((key) => {
+                                sessionStorage.removeItem(key);
+                            });
+                        };
+                        clearUserSessionStorage();
                         sessionStorage.setItem('userEmail', sanitizedLoginData.userEmail);
                         sessionStorage.setItem("userId", sanitizedLoginData.userId)
                         sessionStorage.setItem('cardholderId', sanitizedLoginData.cardholderId)
@@ -600,7 +612,7 @@ export const userApis = createApi({
                     return rtkError;
                 }
             },
-            invalidatesTags: [{ type: 'User', id: 'ONBOARDING-DETAILS' }, {type: "User", id: "PREFUND-ACCOUNTS-DETAILS"}],
+            invalidatesTags: [{ type: 'User', id: 'ONBOARDING-DETAILS' }, { type: "User", id: "PREFUND-ACCOUNTS-DETAILS" }],
         }),
 
 

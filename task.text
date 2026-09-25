@@ -1,3 +1,6 @@
 Feature access based on user type (problem - cardholder id has not admin flag and thus api will fail, also the ui will prompt for bank verification on login but is this required for cardholder)
+
+For non-admin hide payables, cardholders, prefund accounts
+
 On bank details successfull verification cardholder id and prefunding acounnts are created. With out the prefunding accounts , no money can be deposited in the account which will eventually load the wallets for furthur transactions
 

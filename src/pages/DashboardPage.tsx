@@ -130,6 +130,17 @@ export default function DashboardPage() {
     );
     const userAllWalletsBalances = getAllWalletsBalancesData?.data as AllWalletBalancesResponseDataType ?? [];
     const userWalletId = (getAllWalletsBalancesData?.data as AllWalletBalancesResponseDataType | undefined)?.walletId;
+    useEffect(() => {
+        if (!getAllWalletsBalancesIsSuccess) {
+            return;
+        }
+
+        if (userWalletId) {
+            sessionStorage.setItem("userWalletId", userWalletId);
+        } else {
+            sessionStorage.removeItem("userWalletId");
+        }
+    }, [getAllWalletsBalancesIsSuccess, userWalletId]);
     const isAllWalletsBalancesNotFound =
         getAllWalletsBalancesIsError &&
         getAllWalletsBalancesError &&
