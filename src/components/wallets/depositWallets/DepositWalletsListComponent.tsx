@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Search, ChevronRight } from 'lucide-react';
+import { Search, ChevronRight, WalletCards } from 'lucide-react';
 import type { WalletItem, WalletType } from '@/fallbacks/wallets/depositWallets/depositWalletsFallbacks';
 import PrefundAccountsTabsComponent from '@/components/user/userPrefundAccounts/PrefundAccountTabsComponent';
 import DepositWalletsTabsComponent from './DepositWalletsTabsComponent';
+import type { WalletItemType } from '@/types/wallets/depositWalletsTypes';
+import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
 
 type WalletTabId = 'all' | 'fiat' | 'crypto';
 
@@ -29,17 +31,15 @@ const WALLET_TYPE_STYLES: Record<WalletType, string> = {
     CRYPTO: 'bg-[var(--gold-soft)] text-[var(--gold)]',
 };
 
-interface DepositWalletsListComponentProps {
-    wallets: WalletItem[];
+interface DepositWalletsListComponentPropsType {
+    wallets: WalletItemType[];
     onSelectWallet: (wallet: WalletItem) => void;
     selectedWalletId?: string | null | undefined;
+    walletsDetailsNotFound?: boolean | undefined;
+    getWalletsDetailsIsFetching: boolean;
 }
 
-export default function DepositWalletsListComponent({
-    wallets,
-    onSelectWallet,
-    selectedWalletId,
-}: DepositWalletsListComponentProps) {
+export default function DepositWalletsListComponent({ wallets, onSelectWallet, selectedWalletId, walletsDetailsNotFound, getWalletsDetailsIsFetching }: DepositWalletsListComponentPropsType) {
     const [activeTab, setActiveTab] = useState<WalletTabId>('all');
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -113,18 +113,52 @@ export default function DepositWalletsListComponent({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-[var(--line)] text-sm text-[var(--ink)]">
-                            {filteredWallets.length > 0 ? (
+                            {getWalletsDetailsIsFetching ? (
+                                <tr>
+                                    <td colSpan={7} className="py-12!">
+                                        <div className="w-full flex items-center justify-center py-6!">
+                                            <RingSpinnerLoaderComponent
+                                                visible={getWalletsDetailsIsFetching}
+                                                size={30}
+                                                color={getComputedStyle(document.documentElement)
+                                                    .getPropertyValue('--nav-bg')
+                                                    .trim()}
+                                            />
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : walletsDetailsNotFound ? (
+                                <tr>
+                                    <td colSpan={7} className="py-12!">
+                                        <div className="flex flex-col items-center justify-center gap-3">
+                                            <WalletCards
+                                                className="w-8 h-8 text-[var(--ink-soft)]"
+                                                strokeWidth={1.5}
+                                            />
+
+                                            <div className="flex flex-col items-center text-center gap-1">
+                                                <p className="text-sm font-semibold text-[var(--ink)]">
+                                                    No wallets found
+                                                </p>
+
+                                                <p className="text-xs text-[var(--ink-soft)] max-w-[240px] leading-relaxed">
+                                                    Deposit wallets will appear here once they are available.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : filteredWallets.length > 0 ? (
                                 filteredWallets.map((wallet) => {
                                     const isSelected = wallet._id === selectedWalletId;
                                     return (
                                         <tr
                                             key={wallet._id}
                                             onClick={() => onSelectWallet(wallet)}
-                                            className={`transition-colors cursor-pointer group ${
-                                                isSelected
-                                                    ? 'bg-[var(--bg-hover)] border-l-2 border-l-[var(--gold)]'
-                                                    : 'hover:bg-[var(--bg-hover)]'
-                                            }`}
+                                            className={`transition-colors cursor-pointer group ${isSelected
+                                                ? 'bg-[var(--bg-hover)] border-l-2 border-l-[var(--gold)]'
+                                                : 'hover:bg-[var(--bg-hover)]'
+                                                }`}
                                         >
                                             {/* CURRENCY */}
                                             <td className="py-4! px-6!">
@@ -183,7 +217,10 @@ export default function DepositWalletsListComponent({
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan={7} className="py-12 text-center text-[var(--mute)] text-sm">
+                                    <td
+                                        colSpan={7}
+                                        className="py-12! text-center text-[var(--mute)] text-sm"
+                                    >
                                         No wallets found matching your filter.
                                     </td>
                                 </tr>

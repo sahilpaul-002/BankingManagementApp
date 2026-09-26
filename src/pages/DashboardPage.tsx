@@ -34,7 +34,7 @@ export default function DashboardPage() {
     // Configure useDispatch
     const dispatch = useDispatch();
 
-    // ------------------------------- GET EMAL FROM SESSION STORAGE ---------------------------------- \\
+    // ------------------------------- GET EMAIL FROM SESSION STORAGE ---------------------------------- \\
     // Get necessary user details from session storage
     const userEmail = sessionStorage.getItem('userEmail');
     const userId = sessionStorage.getItem("userId")
