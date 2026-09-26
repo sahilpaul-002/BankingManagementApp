@@ -344,12 +344,12 @@ export const createWalletService = async (requestSession: Request["session"], ae
         }
 
         // Check wallet details present in request body
-        if (!aesDecryptedBodyData?.wallets_details) {
+        if (!aesDecryptedBodyData?.wallet_details) {
             throw new InvalidRequestBodyError("Wallet details not present in the request body");
         }
 
         // Check Validations
-        const validationResult: SafeParseResult<z.infer<typeof userWalletCreationValidationSchema>> = userWalletCreationValidationSchema.safeParse(aesDecryptedBodyData?.wallets_details);
+        const validationResult: SafeParseResult<z.infer<typeof userWalletCreationValidationSchema>> = userWalletCreationValidationSchema.safeParse(aesDecryptedBodyData?.wallet_details);
         if (!validationResult.success) {
             // return res.status(400).json({
             //     status: "SERVICE_ERROR",
