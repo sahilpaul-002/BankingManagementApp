@@ -62,6 +62,54 @@ export const walletApis = createApi({
     baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // =======================================================
+        // CREATE WALLET
+        // =======================================================
+        createWallet: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardholderId: string; walletDetails: {walletStatus: "ACTIVE" | "INACTIVE", walletType: "FIAT" | "CRYPTO", walletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC"} }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = walletApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('CREATE-WALLET - Failed to fetch application headers');
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = walletApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${WALLET_URL}/create`,
+                        method: 'POST',
+                        headers,
+                        data: {email: payload.email, cardholder_id: payload.cardholderId, wallet_details: {wallet_status: payload.walletDetails.walletStatus, wallet_type: payload.walletDetails.walletType, wallet_currency: payload.walletDetails.walletCurrency}},
+                        params: { email: payload.email, cardholder_id: payload.cardholderId },
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                } catch (error) {
+                    const rtkError = rtkQueryCatchError(error, 'CREATE-WALLET faced application error');
+                    return rtkError
+                }
+            },
+            invalidatesTags: [{ type: 'Wallet', id: 'DETAILS' }],
+        }),
+
+
+        // =======================================================
         // GET ALL WALLET BALANCES
         // =======================================================
         getAllWalletBalances: build.query<apiResponseType<apiResponseDataType>, { email: string, cardholderId: string }>({
@@ -291,7 +339,7 @@ export const walletApis = createApi({
                         url: `${WALLET_URL}/transactions`,
                         method: 'GET',
                         headers,
-                        params: { email: payload.email, cardholder_id: payload.cardholderId, wallet_id:payload.walletId, page: payload.pageNumber, page_size: payload.pageSize },
+                        params: { email: payload.email, cardholder_id: payload.cardholderId, wallet_id: payload.walletId, page: payload.pageNumber, page_size: payload.pageSize },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown
@@ -358,6 +406,7 @@ export const walletApis = createApi({
 })
 
 export const {
+    useCreateWalletMutation,
     useGetAllWalletBalancesQuery,
     useLazyGetAllWalletBalancesQuery,
     useGetWalletDetailsQuery,

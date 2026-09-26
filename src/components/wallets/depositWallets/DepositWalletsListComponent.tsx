@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, ChevronRight, WalletCards } from 'lucide-react';
 import type { WalletItem, WalletType } from '@/fallbacks/wallets/depositWallets/depositWalletsFallbacks';
-import PrefundAccountsTabsComponent from '@/components/user/userPrefundAccounts/PrefundAccountTabsComponent';
 import DepositWalletsTabsComponent from './DepositWalletsTabsComponent';
 import type { WalletItemType } from '@/types/wallets/depositWalletsTypes';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
@@ -69,7 +68,7 @@ export default function DepositWalletsListComponent({ wallets, onSelectWallet, s
 
     const formatDecimal = (val: string) => {
         const num = parseFloat(val);
-        return isNaN(num) ? val : num.toFixed(4);
+        return isNaN(num) ? val : num.toFixed(2);
     };
 
     return (
@@ -84,7 +83,7 @@ export default function DepositWalletsListComponent({ wallets, onSelectWallet, s
 
             {/* Search Filter */}
             <div className="relative w-full">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[var(--mute)]">
+                <div className="absolute inset-y-0 left-0 pl-3.5! flex items-center pointer-events-none text-[var(--mute)]">
                     <Search className="w-4 h-4" />
                 </div>
                 <input
@@ -93,7 +92,7 @@ export default function DepositWalletsListComponent({ wallets, onSelectWallet, s
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Filter by currency, type, or status..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl text-sm text-[var(--ink)] placeholder:text-[var(--mute)] focus:outline-hidden focus:border-[var(--line-strong)] focus:ring-1 focus:ring-[var(--line-strong)] transition-all"
+                    className="w-full pl-10 pr-4! py-2.5! bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl text-sm text-[var(--ink)] placeholder:text-[var(--mute)] focus:outline-hidden focus:border-[var(--line-strong)] focus:ring-1 focus:ring-[var(--line-strong)] transition-all"
                 />
             </div>
 
@@ -163,9 +162,6 @@ export default function DepositWalletsListComponent({ wallets, onSelectWallet, s
                                             {/* CURRENCY */}
                                             <td className="py-4! px-6!">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-9 h-9 rounded-full bg-[var(--bg-subtle)] border border-[var(--line)] flex items-center justify-center font-bold text-xs text-[var(--ink)] shrink-0">
-                                                        {wallet.wallet_currency.slice(0, 2)}
-                                                    </div>
                                                     <span className="font-semibold text-[var(--ink)] uppercase tracking-wide">
                                                         {wallet.wallet_currency}
                                                     </span>
@@ -175,7 +171,7 @@ export default function DepositWalletsListComponent({ wallets, onSelectWallet, s
                                             {/* TYPE */}
                                             <td className="py-4! px-4!">
                                                 <span
-                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide ${WALLET_TYPE_STYLES[wallet.wallet_type] ?? ''}`}
+                                                    className={`inline-flex items-center px-2.5! py-0.5! rounded-full text-[11px] font-semibold tracking-wide ${WALLET_TYPE_STYLES[wallet.wallet_type] ?? ''}`}
                                                 >
                                                     {wallet.wallet_type}
                                                 </span>

@@ -1,14 +1,16 @@
 import { useState, useEffect, Activity } from 'react';
 import { DEPOSIT_WALLETS_LIST_FALLBACK, type WalletItem } from '@/fallbacks/wallets/depositWallets/depositWalletsFallbacks';
-import { useGetWalletDetailsQuery } from '@/redux/features/wallet/walletApis';
+import { useCreateWalletMutation, useGetWalletDetailsQuery } from '@/redux/features/wallet/walletApis';
 import DepositWalletsListComponent from '@/components/wallets/depositWallets/DepositWalletsListComponent';
 import WalletDetailsSidebarComponent from '@/components/wallets/depositWallets/WalletDetailsSidebarComponent';
+import CreateWalletSidebarComponent from '@/components/wallets/depositWallets/CreateWalletSidebarComponent';
 import { useNavigate } from 'react-router';
 import { useDispatch } from 'react-redux';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import type { WalletsDetailsResponseDataType } from '@/types/wallets/depositWalletsTypes';
 import ShowInConsole from '@/utils/ShowInConsole';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
+import { Plus } from 'lucide-react';
 
 export default function DepositWalletsPage() {
     // Configure useNavigate
@@ -69,6 +71,33 @@ export default function DepositWalletsPage() {
         setSelectedWallet(null);
     };
 
+    // ------------------------------ Create Wallet Sidebar ------------------------------ \\
+    const [isCreateWalletOpen, setIsCreateWalletOpen] = useState(false);
+
+    const handleOpenCreateWallet = () => setIsCreateWalletOpen(true);
+    const handleCloseCreateWallet = () => setIsCreateWalletOpen(false);
+    const handleCreateWalletSuccess = () => {
+        setTimeout(() => {
+            setIsCreateWalletOpen(false);
+        },1000)
+    };
+
+    // All possible wallet type+currency combinations (5 total)
+    const ALL_WALLET_COMBINATIONS: { wallet_type: string; wallet_currency: string }[] = [
+        { wallet_type: 'FIAT', wallet_currency: 'USD' },
+        { wallet_type: 'FIAT', wallet_currency: 'SGD' },
+        { wallet_type: 'FIAT', wallet_currency: 'EUR' },
+        { wallet_type: 'CRYPTO', wallet_currency: 'USDT' },
+        { wallet_type: 'CRYPTO', wallet_currency: 'USDC' },
+    ];
+
+    const allWalletsCreated = ALL_WALLET_COMBINATIONS.every((combo) =>
+        userWalletsList.some(
+            (w) => w.wallet_type === combo.wallet_type && w.wallet_currency === combo.wallet_currency
+        )
+    );
+    // -------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX -------------------------------- \\
+
     return (
         <>
             {/* Page Loader */}
@@ -78,17 +107,26 @@ export default function DepositWalletsPage() {
 
             {/* Main Content */}
             <div className="depositWalletsPage-container w-full h-fit flex flex-col justify-start items-stretch gap-6 p-4! sm:p-6!">
-                {/* Breadcrumb & Header */}
+                {/* Header */}
                 <div className="flex flex-col gap-3">
-                    <p className="text-xs text-[var(--mute)] tracking-wide">
-                        Payables &gt; <span className="text-[var(--ink-soft)] font-medium">Deposit Wallets</span>
-                    </p>
-
                     <div className="flex items-center justify-between flex-wrap gap-4">
                         <h1 className="text-2xl sm:text-3xl text-[var(--ink)] tracking-normal">
                             <span className="font-serif font-medium">Deposit</span>{' '}
                             <span className="font-serif italic font-normal">Wallets</span>
                         </h1>
+
+                        {/* Add Wallet Button — hidden when all 5 combinations exist */}
+                        {!allWalletsCreated && (
+                            <button
+                                id="depositWalletsPage-addWallet-btn"
+                                type="button"
+                                onClick={handleOpenCreateWallet}
+                                className="inline-flex items-center gap-2 px-4! py-2! rounded-lg text-sm font-semibold bg-[var(--nav-bg)] text-white hover:opacity-90 transition-opacity cursor-pointer"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Wallet
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -106,6 +144,13 @@ export default function DepositWalletsPage() {
                     isOpen={isDetailsOpen}
                     onClose={handleCloseDetails}
                     wallet={selectedWallet}
+                />
+
+                {/* Create Wallet Sidebar */}
+                <CreateWalletSidebarComponent
+                    isOpen={isCreateWalletOpen}
+                    onClose={handleCloseCreateWallet}
+                    onSuccess={handleCreateWalletSuccess}
                 />
             </div>
         </>

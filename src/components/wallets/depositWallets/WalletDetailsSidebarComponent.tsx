@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, TrendingUp } from 'lucide-react';
-import type { WalletItem } from '@/fallbacks/wallets/depositWallets/depositWalletsFallbacks';
+import type { WalletItemType } from '@/types/wallets/depositWalletsTypes';
 
 type TransactionPeriod = 'daily' | 'monthly' | 'yearly';
 
@@ -22,16 +22,16 @@ const STATUS_DOT_STYLES: Record<string, string> = {
     SUSPENDED: 'bg-[var(--warn)]',
 };
 
-interface WalletDetailsSidebarComponentProps {
+interface WalletDetailsSidebarComponentPropsType {
     isOpen: boolean;
     onClose: () => void;
-    wallet: WalletItem | null;
+    wallet: WalletItemType | null;
 }
 
 // ─── Helper: format decimal string ───────────────────────────────────────────
-function fmt(val: string, currency = '') {
+function formatDecimal(val: string, currency = '') {
     const num = parseFloat(val);
-    const formatted = isNaN(num) ? val : num.toFixed(4);
+    const formatted = isNaN(num) ? val : num.toFixed(2);
     return currency ? `${formatted} ${currency}` : formatted;
 }
 
@@ -45,11 +45,7 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
     );
 }
 
-export default function WalletDetailsSidebarComponent({
-    isOpen,
-    onClose,
-    wallet,
-}: WalletDetailsSidebarComponentProps) {
+export default function WalletDetailsSidebarComponent({isOpen, onClose, wallet}: WalletDetailsSidebarComponentPropsType) {
     const [activePeriod, setActivePeriod] = useState<TransactionPeriod>('daily');
 
     // Lock body scroll when open
@@ -114,21 +110,18 @@ export default function WalletDetailsSidebarComponent({
                     {/* Top identity block */}
                     <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-[var(--bg-subtle)] border border-[var(--line)] flex items-center justify-center font-bold text-base text-[var(--ink)] shrink-0">
-                                {wallet.wallet_currency.slice(0, 2)}
-                            </div>
                             <div>
                                 <h2 className="text-2xl font-bold text-[var(--ink)] uppercase tracking-wide">
                                     {wallet.wallet_currency}
                                 </h2>
-                                <p className="text-xs text-[var(--mute)] mt-0.5">
+                                <p className="text-xs text-[var(--mute)] mt-0.5!">
                                     {wallet.wallet_type === 'FIAT' ? 'Fiat Currency Wallet' : 'Crypto Currency Wallet'}
                                 </p>
                             </div>
                         </div>
                         <div className="mt-1 flex items-center">
                             <span
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${STATUS_STYLES[wallet.wallet_status] ?? 'bg-[var(--bg-subtle)] text-[var(--mute)]'}`}
+                                className={`inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold ${STATUS_STYLES[wallet.wallet_status] ?? 'bg-[var(--bg-subtle)] text-[var(--mute)]'}`}
                             >
                                 <span
                                     className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_STYLES[wallet.wallet_status] ?? 'bg-[var(--mute)]'}`}
@@ -139,7 +132,7 @@ export default function WalletDetailsSidebarComponent({
                     </div>
 
                     {/* Section: WALLET INFO */}
-                    <div className="flex flex-col gap-3 pt-4 border-t border-[var(--line)]">
+                    <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
                         <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
                             — WALLET INFO
                         </div>
@@ -158,33 +151,33 @@ export default function WalletDetailsSidebarComponent({
 
                             <DetailRow label="Account balance">
                                 <span className="font-semibold text-[var(--ink)]">
-                                    {fmt(wallet.account_balance.$numberDecimal, wallet.wallet_currency)}
+                                    {formatDecimal(wallet.account_balance.$numberDecimal, wallet.wallet_currency)}
                                 </span>
                             </DetailRow>
 
                             <DetailRow label="Available balance">
                                 <span className="font-semibold text-[var(--ok)]">
-                                    {fmt(wallet.available_balance.$numberDecimal, wallet.wallet_currency)}
+                                    {formatDecimal(wallet.available_balance.$numberDecimal, wallet.wallet_currency)}
                                 </span>
                             </DetailRow>
 
                             <DetailRow label="Holding amount">
                                 <span className="font-semibold text-[var(--warn)]">
-                                    {fmt(wallet.holding_amount.$numberDecimal, wallet.wallet_currency)}
+                                    {formatDecimal(wallet.holding_amount.$numberDecimal, wallet.wallet_currency)}
                                 </span>
                             </DetailRow>
                         </div>
                     </div>
 
                     {/* Section: TRANSACTIONS */}
-                    <div className="flex flex-col gap-4 pt-4 border-t border-[var(--line)]">
+                    <div className="flex flex-col gap-4 pt-4! border-t border-[var(--line)]">
                         <div className="flex items-center gap-2 text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
                             <TrendingUp className="w-3.5 h-3.5" />
                             <span>— TRANSACTIONS</span>
                         </div>
 
                         {/* Period toggle buttons */}
-                        <div className="flex items-center gap-2 p-1 bg-[var(--bg-subtle)] rounded-xl border border-[var(--line)]">
+                        <div className="flex items-center gap-2 p-1! bg-[var(--bg-subtle)] rounded-xl border border-[var(--line)]">
                             {PERIOD_TABS.map((tab) => {
                                 const isActive = activePeriod === tab.id;
                                 return (
@@ -246,7 +239,7 @@ export default function WalletDetailsSidebarComponent({
                                     Credit
                                 </span>
                                 <span className="text-base font-bold text-[var(--ok)] leading-tight break-all">
-                                    {fmt(activeTx.credit.$numberDecimal)}
+                                    {formatDecimal(activeTx.credit.$numberDecimal)}
                                 </span>
                                 <span className="text-[10px] text-[var(--ok)] opacity-75 uppercase">
                                     {wallet.wallet_currency}
@@ -259,7 +252,7 @@ export default function WalletDetailsSidebarComponent({
                                     Debit
                                 </span>
                                 <span className="text-base font-bold text-[var(--danger)] leading-tight break-all">
-                                    {fmt(activeTx.debit.$numberDecimal)}
+                                    {formatDecimal(activeTx.debit.$numberDecimal)}
                                 </span>
                                 <span className="text-[10px] text-[var(--danger)] opacity-75 uppercase">
                                     {wallet.wallet_currency}
