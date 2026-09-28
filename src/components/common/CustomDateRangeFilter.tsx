@@ -228,7 +228,7 @@ export default function CustomDateRangeFilter({
                     onClick={() =>
                         setIsOpen((previous) => !previous)
                     }
-                    className="!w-auto !h-auto min-w-fit whitespace-nowrap px-3! py-2! rounded-lg"
+                    className="w-auto h-auto min-w-fit whitespace-nowrap px-3! py-2! rounded-lg"
                 >
                     <span className="flex items-center gap-2">
                         <CalendarIcon
@@ -278,7 +278,7 @@ export default function CustomDateRangeFilter({
                                         );
                                     }
                                 }}
-                                className="ml-1 inline-flex items-center justify-center rounded-full p-0.5 cursor-pointer hover:bg-[var(--bg-hover)]"
+                                className="ml-1! inline-flex items-center justify-center rounded-full p-0.5! cursor-pointer hover:bg-[var(--bg-hover)]"
                             >
                                 <X
                                     className="w-3.5 h-3.5"
@@ -294,7 +294,7 @@ export default function CustomDateRangeFilter({
 
             {isOpen && (
                 <div
-                    className="absolute right-0 top-full z-50 mt-2 w-max min-w-[420px] overflow-hidden rounded-xl border shadow-lg"
+                    className="absolute right-0 top-full z-50 mt-2! w-max min-w-[420px] overflow-hidden rounded-xl border shadow-lg"
                     style={{
                         backgroundColor:
                             'var(--bg-surface)',
@@ -302,7 +302,7 @@ export default function CustomDateRangeFilter({
                     }}
                 >
                     <div
-                        className="flex items-center justify-between border-b px-4 py-3"
+                        className="flex items-center justify-between border-b px-4! py-3!"
                         style={{
                             borderColor: 'var(--line)',
                         }}
@@ -321,7 +321,7 @@ export default function CustomDateRangeFilter({
                             onClick={() =>
                                 setIsOpen(false)
                             }
-                            className="rounded-md p-1 cursor-pointer hover:bg-[var(--bg-hover)]"
+                            className="rounded-md p-1! cursor-pointer hover:bg-[var(--bg-hover)]"
                             aria-label="Close"
                         >
                             <X
@@ -336,7 +336,7 @@ export default function CustomDateRangeFilter({
                     <div className="space-y-4 p-4">
                         <div className="flex gap-4">
                             <div
-                                className="flex w-32 shrink-0 flex-col gap-1 border-r pr-3"
+                                className="flex w-32 shrink-0 flex-col gap-1 border-r pr-3!"
                                 style={{
                                     borderColor:
                                         'var(--line)',
@@ -354,7 +354,7 @@ export default function CustomDateRangeFilter({
                                                     preset.getRange()
                                                 )
                                             }
-                                            className="rounded-md px-3 py-2 text-left text-xs font-medium cursor-pointer hover:bg-[var(--bg-hover)]"
+                                            className="rounded-md px-3! py-2! text-left text-xs font-medium cursor-pointer hover:bg-[var(--bg-hover)]"
                                             style={{
                                                 color:
                                                     'var(--ink)',
@@ -388,7 +388,7 @@ export default function CustomDateRangeFilter({
                         </div>
 
                         <div
-                            className="rounded-md px-3 py-2 text-sm font-medium"
+                            className="rounded-md px-3! py-2! text-sm font-medium"
                             style={{
                                 backgroundColor:
                                     'var(--bg-subtle)',
@@ -412,7 +412,7 @@ export default function CustomDateRangeFilter({
                         </div>
 
                         <div
-                            className="flex items-center justify-between border-t pt-3"
+                            className="flex items-center justify-between border-t p-3!"
                             style={{
                                 borderColor:
                                     'var(--line)',
@@ -425,7 +425,7 @@ export default function CustomDateRangeFilter({
                                     onClick={
                                         handleClearDraft
                                     }
-                                    className="!w-auto !h-auto px-4! py-1.5! text-xs"
+                                    className="w-auto h-auto px-4! py-1.5! text-xs"
                                 >
                                     Clear
                                 </CustomButtonComponent>
@@ -441,7 +441,7 @@ export default function CustomDateRangeFilter({
                                     disabled={
                                         isApplyDisabled
                                     }
-                                    className="!w-auto !h-auto px-4! py-1.5! text-xs"
+                                    className="w-auto h-auto px-4! py-1.5! text-xs"
                                 >
                                     Apply
                                 </CustomButtonComponent>

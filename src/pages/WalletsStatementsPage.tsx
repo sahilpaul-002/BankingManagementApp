@@ -14,6 +14,7 @@ import ShowInConsole from '@/utils/ShowInConsole';
 import type { WalletTransactionItemType, WalletTransactionsListResponseDataType } from '@/types/wallets/walletTransactionsSectionTypes';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import type { PaginationState } from '@tanstack/react-table';
+import type { DateRange } from '@/components/common/CustomDateRangeFilter';
 
 const DEFAULT_PAGINATION: PaginationState = {
     pageIndex: 0,
@@ -45,12 +46,17 @@ export default function WalletsStatementsPage() {
 
     // Pagination State
     const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
+    // Date Range State
+    const [dateRange, setDateRange] = useState<DateRange>({ fromDate: '', toDate: '' });
 
     // ------------------------------ WALLET TRANSACTION RTK QUERY ------------------------------ \\
     // Wallet Transaction
     const { data: getWalletTransactionsData, isLoading: getWalletTransactionsIsLoading, isFetching: getWalletTransactionsIsFetching, isError: getWalletTransactionsIsError, error: getWalletTransactionsError, refetch: refetchWalletTransactions } = useGetWalletTransactionsQuery({
         email: userEmail!, cardholderId: userCardholderId!, walletId: userWalletId!, pageNumber: pagination.pageIndex + 1,
-        pageSize: pagination.pageSize, }, { skip: !userEmail || !userCardholderId || !userWalletId })
+        pageSize: pagination.pageSize, ...(dateRange.fromDate && { from_date: dateRange.fromDate }), ...(dateRange.toDate && {
+            to_date: dateRange.toDate
+        })
+    }, { skip: !userEmail || !userCardholderId || !userWalletId })
     const userWalletTransactions = getWalletTransactionsData?.data as WalletTransactionsListResponseDataType ?? [];
     const useWalletTransactionsList = userWalletTransactions?.transactions as WalletTransactionItemType[] ?? []
     const totalTransactionCount = userWalletTransactions?.pagination?.total_records ?? 0;
@@ -115,6 +121,29 @@ export default function WalletsStatementsPage() {
         setSelectedTransaction(null);
     };
 
+    // ----------------------- Date Range Helpers ----------------------- \\
+    const handleDateRangeApply = (range: DateRange) => {
+        setDateRange(range);
+
+        setPagination((previous) => ({
+            ...previous,
+            pageIndex: 0,
+        }));
+    };
+
+    const handleDateRangeClear = () => {
+        setDateRange({
+            fromDate: '',
+            toDate: '',
+        });
+
+        setPagination((previous) => ({
+            ...previous,
+            pageIndex: 0,
+        }));
+    };
+    // --------------------------- XXXXXXXXXXXXXXXXXX --------------------------- \\
+
     return (
         <>
             {/* Page Loader */}
@@ -140,6 +169,9 @@ export default function WalletsStatementsPage() {
                     onSearchChange={setSearchQuery}
                     selectedType={selectedType}
                     onTypeChange={setSelectedType}
+                    dateRange={dateRange}
+                    onDateRangeApply={handleDateRangeApply}
+                    onDateRangeClear={handleDateRangeClear}
                 />
 
                 {/* Sub-component 2: Transactions Table List */}
@@ -148,8 +180,8 @@ export default function WalletsStatementsPage() {
                     onSelectTransaction={handleSelectTransaction}
                     walletTransactionsNotFound={isWalletTransactionsNotFound}
                     getWalletTransactionsIsFetching={getWalletTransactionsIsFetching}
-                    totalCount={totalTransactionCount} 
-                    pagination={pagination} 
+                    totalCount={totalTransactionCount}
+                    pagination={pagination}
                     setPagination={setPagination}
                 />
 

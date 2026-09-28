@@ -72,7 +72,7 @@ export default function WalletStatementsListComponent({
 
     // Render Type Badge UI
     const renderTypeBadge = (type: string) => {
-        const upper = (type || '').toUpperCase();
+        const upper = (type || '').trim().toUpperCase();
 
         if (upper === 'LOAD') {
             return (
@@ -85,8 +85,8 @@ export default function WalletStatementsListComponent({
 
         if (upper === 'WITHDRAW') {
             return (
-                <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--err-bg)] text-[var(--err)]">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--err)]" />
+                <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--danger-bg)] text-[var(--danger)]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger)]" />
                     WITHDRAW
                 </span>
             );
@@ -132,8 +132,8 @@ export default function WalletStatementsListComponent({
         }
 
         return (
-            <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--err-bg)] text-[var(--err)]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--err)]" />
+            <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--danger-bg)] text-[var(--danger)]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger)]" />
                 {upper}
             </span>
         );
@@ -271,8 +271,8 @@ export default function WalletStatementsListComponent({
 
     return (
         <div className="w-full bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl shadow-xs overflow-hidden">
-            <div className={getWalletTransactionsIsFetching ? '' : 'overflow-x-auto'}>
-                <table className={`w-full text-left border-collapse ${getWalletTransactionsIsFetching ? '' : 'min-w-[900px]'}`}>
+            <div className={getWalletTransactionsIsFetching || walletTransactionsNotFound ? '' : 'overflow-x-auto'}>
+                <table className={`w-full text-left border-collapse ${getWalletTransactionsIsFetching || walletTransactionsNotFound ? '' : 'min-w-[900px]'}`}>
                     <thead>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <tr
