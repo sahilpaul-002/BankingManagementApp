@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import DepositWalletsTabsComponent from '@/components/wallets/depositWallets/DepositWalletsTabsComponent';
-import CustomDateRangeFilter, { type DateRange, } from '@/components/common/CustomDateRangeFilter';
+import CustomDateRangeFilterComponent, { type DateRange, } from '@/components/common/CustomDateRangeFilterComponent';
 
 type WalletTransactionTypeTab = 'ALL' | 'LOAD' | 'WITHDRAW' | 'RELEASE';
 
@@ -52,7 +52,7 @@ export default function WalletStatementsFilterComponent({searchQuery, onSearchCh
                 </div>
 
                 {/* Date Range Filter */}
-                <CustomDateRangeFilter
+                <CustomDateRangeFilterComponent
                     value={dateRange}
                     onApply={onDateRangeApply}
                     onClear={onDateRangeClear}
