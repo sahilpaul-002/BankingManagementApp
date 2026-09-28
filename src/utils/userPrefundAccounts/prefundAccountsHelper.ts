@@ -27,18 +27,28 @@ export function groupCryptoAccountsByNetwork(
  * Formats `{ $numberDecimal: "1234.50" }` (or a plain string / number) => "1,234.50".
  * Keeps the decimal part as-is so crypto precision is never lost.
  */
-export function formatNumberDecimal(value?: NumberDecimalType | string | number | null): string {
-    const raw = typeof value === 'object' && value !== null ? value.$numberDecimal : value;
+export function formatNumberDecimal(
+    value?: NumberDecimalType | string | number | null
+): string {
+    const raw =
+        typeof value === 'object' && value !== null
+            ? value.$numberDecimal
+            : value;
 
-    if (raw === undefined || raw === null || raw === '') return '0';
+    if (raw === undefined || raw === null || raw === '') {
+        return '0.00';
+    }
 
-    const str = String(raw).trim();
-    if (!/^-?\d+(\.\d+)?$/.test(str)) return str;
+    const num = Number(raw);
 
-    const [integerPart = '', decimalPart] = str.split('.');
-    const withCommas = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    if (!Number.isFinite(num)) {
+        return String(raw);
+    }
 
-    return decimalPart ? `${withCommas}.${decimalPart}` : withCommas;
+    return num.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
 }
 
 /**

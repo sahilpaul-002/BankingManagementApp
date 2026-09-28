@@ -13,6 +13,8 @@ import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import ShowInConsole from '@/utils/ShowInConsole';
 import type { WalletItemType } from '@/types/wallets/depositWalletsTypes';
 import { toast } from 'react-toastify';
+import { logoutUser } from '@/redux/thunks/userThunks';
+import type { appDispatchType } from '@/redux/sotre';
 
 // --- Constants ---
 
@@ -22,6 +24,12 @@ const NETWORK_OPTIONS = [
 ];
 
 const CryptoNetworkEnum = z.enum(['ETHEREUM', 'TRON', 'POLYGON', 'BSC']);
+
+// -- Format Decimal Function --
+function formatDecimal(val?: string) {
+    const num = Number(val);
+    return Number.isFinite(num) ? num.toFixed(2) : '0.00';
+}
 
 // --- Schema ---
 
@@ -68,6 +76,7 @@ export default function LoadWalletSidebarComponent({
 }: LoadWalletSidebarComponentPropsType) {
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const appDispatch = useDispatch<appDispatchType>();
 
     const isFiat = wallet?.wallet_type === 'FIAT';
     const isCrypto = wallet?.wallet_type === 'CRYPTO';
@@ -142,8 +151,8 @@ export default function LoadWalletSidebarComponent({
                     amount: Number(data.amount),
                     ...(isCrypto && data.network
                         ? {
-                              network: data.network as 'ETHEREUM' | 'POLYGON',
-                          }
+                            network: data.network as 'ETHEREUM' | 'POLYGON',
+                        }
                         : {}),
                 },
             };
@@ -161,10 +170,40 @@ export default function LoadWalletSidebarComponent({
                 Array.isArray(error?.data?.message)
                     ? error.data.message[0]
                     : error?.data?.message ||
-                      error?.message ||
-                      'Failed to load wallet. Please try again later.';
+                    error?.message ||
+                    'Failed to load wallet. Please try again later.';
 
-            toast.error(errorMessage);
+            const normalizeErrorMessage = errorMessage?.toLowerCase();
+            if (normalizeErrorMessage?.includes("insufficient") && normalizeErrorMessage?.includes("funding account balance")) {
+                if (wallet?.wallet_type === "FIAT") {
+                    toast.error('Issuficient USD funding account balance. Please try again after prefunding to USD account.');
+                }
+                else {
+                    if (wallet?.wallet_currency === "USDT") {
+                        toast.error(`Issuficient USDT funding account balance. Please try again after prefunding to USDT ${data?.network} account.`);
+                    }
+                    else {
+                        toast.error(`Issuficient USDC funding account balance. Please try again after prefunding to USDC ${data?.network} address.`);
+                    }
+                }
+            }
+            else if (normalizeErrorMessage?.includes("active funding account not found")) {
+                toast.error('Active prefund account not found. Please contact admin.');
+
+                setTimeout(() => {
+                    toast.error('You are being logged out.');
+                }, 1000);
+
+                setTimeout(() => {
+                    appDispatch(logoutUser());
+                }, 2000);
+            }
+            else if (normalizeErrorMessage?.includes("user wallet does not exists")) {
+                toast.error(`${wallet?.wallet_currency} walet does not exist. Please create ${wallet?.wallet_currency}.`)
+            }
+            else {
+                toast.error('Failed to load wallet. Please try again later.');
+            }
         }
     };
 
@@ -222,13 +261,13 @@ export default function LoadWalletSidebarComponent({
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-[var(--mute)] font-medium">Account Balance</span>
                             <span className="font-semibold text-[var(--ink)]">
-                                {wallet?.account_balance?.$numberDecimal ?? '0.00'}
+                                {formatDecimal(wallet?.account_balance?.$numberDecimal) ?? '0.00'}
                             </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-[var(--mute)] font-medium">Available Balance</span>
                             <span className="font-semibold text-[var(--ok)]">
-                                {wallet?.available_balance?.$numberDecimal ?? '0.00'}
+                                {formatDecimal(wallet?.available_balance?.$numberDecimal) ?? '0.00'}
                             </span>
                         </div>
                         <div className="flex items-center justify-between text-xs">

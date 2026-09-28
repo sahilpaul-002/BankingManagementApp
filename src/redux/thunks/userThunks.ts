@@ -8,16 +8,15 @@ import {clearBanner, clearDestroySession, resetUtilityStates} from "../slice/uti
 import { InternalApplicationError } from "@/errorHandling/error";
 import { logError } from "@/errorHandling/errorLogger";
 import { twoFaApis } from "../features/twoFa/twoFaApis";
-// import { kycApis } from "../features/kyc/kycApis";
-// import { utilityApis } from "../features/utility/utilityApis";
+import { kycApis } from "../features/kyc/kycApis";
 // import { cardholderApis } from "../features/cardholder/cardholderApis";
 // import { beneficiariesApis } from "../features/transfer/beneficiaries";
-// import { payoutApis } from "../features/transfer/payout";
 // import { cardsApis } from "../features/cards/cardsApis";
-// import { entityApis } from "../features/entity/entityApis";
 // import { accountApis } from "../features/account/accountApis";
 // import { prefundApis } from "../features/prefund/prefundApis";
 import { finishLogout, startLogout } from "../slice/appSession/appSessionSlice";
+import { payablesApis } from "../features/payables/payablesApi";
+import { walletApis } from "../features/wallet/walletApis";
 
 let isLoggingOut = false;
 
@@ -57,13 +56,12 @@ export const logoutUser = createAsyncThunk(
             dispatch(helperApis.util.resetApiState());
             dispatch(userApis.util.resetApiState());
             dispatch(twoFaApis.util.resetApiState());
-            // dispatch(kycApis.util.resetApiState());
-            // dispatch(utilityApis.util.resetApiState());
+            dispatch(kycApis.util.resetApiState());
+            dispatch(walletApis.util.resetApiState());
+            dispatch(payablesApis.util.resetApiState());
             // dispatch(cardholderApis.util.resetApiState());
             // dispatch(beneficiariesApis.util.resetApiState());
-            // dispatch(payoutApis.util.resetApiState());
             // dispatch(cardsApis.util.resetApiState());
-            // dispatch(entityApis.util.resetApiState());
             // dispatch(accountApis.util.resetApiState());
             // dispatch(prefundApis.util.resetApiState());
 
