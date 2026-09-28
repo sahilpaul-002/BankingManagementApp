@@ -11,6 +11,7 @@ import ShowInConsole from '@/utils/ShowInConsole';
 import { setShowErrorBanner, setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import { useNavigate } from 'react-router';
 import { useDispatch } from 'react-redux';
+import type { WalletsDetailsResponseDataType } from '@/types/wallets/depositWalletsTypes';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -139,6 +140,10 @@ export default function CreateWalletSidebarComponent({ isOpen, onClose, onSucces
                 toast.error('Failed to create wallet. Please try again later.');
                 return;
             }
+
+            // Set wallet id in session storage
+            const userWalletId = (result?.data as WalletsDetailsResponseDataType)?.walletId;
+            sessionStorage.setItem("walletId", userWalletId);
 
             toast.success('Wallet created successfully.');
             reset();

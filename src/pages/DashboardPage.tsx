@@ -136,9 +136,9 @@ export default function DashboardPage() {
         }
 
         if (userWalletId) {
-            sessionStorage.setItem("userWalletId", userWalletId);
+            sessionStorage.setItem("walletId", userWalletId);
         } else {
-            sessionStorage.removeItem("userWalletId");
+            sessionStorage.removeItem("walletId");
         }
     }, [getAllWalletsBalancesIsSuccess, userWalletId]);
     const isAllWalletsBalancesNotFound =
