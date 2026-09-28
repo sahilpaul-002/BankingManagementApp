@@ -8,11 +8,7 @@ interface WalletTransactionDetailsSidebarComponentProps {
     transaction: WalletTransactionItem | null;
 }
 
-export default function WalletTransactionDetailsSidebarComponent({
-    isOpen,
-    onClose,
-    transaction,
-}: WalletTransactionDetailsSidebarComponentProps) {
+export default function WalletTransactionDetailsSidebarComponent({isOpen, onClose, transaction}: WalletTransactionDetailsSidebarComponentProps) {
     // Lock background scroll when drawer is open
     useEffect(() => {
         if (isOpen) {
@@ -55,7 +51,7 @@ export default function WalletTransactionDetailsSidebarComponent({
         const upper = (type || '').toUpperCase();
         if (upper === 'LOAD') {
             return (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ok-bg)] text-[var(--ok)]">
+                <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--ok-bg)] text-[var(--ok)]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[var(--ok)]"></span>
                     LOAD
                 </span>
@@ -63,7 +59,7 @@ export default function WalletTransactionDetailsSidebarComponent({
         }
         if (upper === 'WITHDRAW') {
             return (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--err-bg)] text-[var(--err)]">
+                <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--err-bg)] text-[var(--err)]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[var(--err)]"></span>
                     WITHDRAW
                 </span>
@@ -71,14 +67,14 @@ export default function WalletTransactionDetailsSidebarComponent({
         }
         if (upper === 'RELEASE') {
             return (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--warn-bg)] text-[var(--warn)]">
+                <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--warn-bg)] text-[var(--warn)]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[var(--warn)]"></span>
                     RELEASE
                 </span>
             );
         }
         return (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--bg-subtle)] text-[var(--ink-soft)]">
+            <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--bg-subtle)] text-[var(--ink-soft)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--mute)]"></span>
                 {upper}
             </span>
@@ -89,7 +85,7 @@ export default function WalletTransactionDetailsSidebarComponent({
         const upper = (status || '').toUpperCase();
         if (upper === 'SUCCESS' || upper === 'COMPLETED') {
             return (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ok-bg)] text-[var(--ok)]">
+                <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--ok-bg)] text-[var(--ok)]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[var(--ok)]"></span>
                     SUCCESS
                 </span>
@@ -97,14 +93,14 @@ export default function WalletTransactionDetailsSidebarComponent({
         }
         if (upper === 'PROCESSING' || upper === 'PENDING') {
             return (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--warn-bg)] text-[var(--warn)]">
+                <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--warn-bg)] text-[var(--warn)]">
                     <span className="w-1.5 h-1.5 rounded-full bg-[var(--warn)] animate-pulse"></span>
                     PROCESSING
                 </span>
             );
         }
         return (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--err-bg)] text-[var(--err)]">
+            <span className="inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold bg-[var(--err-bg)] text-[var(--err)]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--err)]"></span>
                 {upper}
             </span>
@@ -137,7 +133,7 @@ export default function WalletTransactionDetailsSidebarComponent({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-1.5 rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                        className="p-1.5! rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                         aria-label="Close details"
                     >
                         <X className="w-5 h-5" />
@@ -147,32 +143,32 @@ export default function WalletTransactionDetailsSidebarComponent({
                 {/* Content Body */}
                 <div className="p-6! flex-1 flex flex-col gap-6 overflow-y-auto">
                     {/* Top Amount & Type Block */}
-                    <div className="flex flex-col gap-2 p-4 bg-[var(--bg-subtle)] rounded-xl border border-[var(--line)]">
+                    <div className="flex flex-col gap-2 p-4! bg-[var(--bg-subtle)] rounded-xl border border-[var(--line)]">
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-[var(--mute)] font-medium">Transaction Type</span>
                             {renderTypeBadge(transaction.transaction_type)}
                         </div>
-                        <div className="flex items-baseline gap-2 mt-1">
+                        <div className="flex items-baseline gap-2 mt-1!">
                             <span className="text-2xl font-bold text-[var(--ink)]">
                                 {formatDecimal(transaction.amount)}{' '}
                                 {transaction.wallet_details.wallet_currency}
                             </span>
                         </div>
-                        <div className="flex items-center justify-between mt-1">
+                        <div className="flex items-center justify-between mt-1!">
                             <span className="text-xs text-[var(--mute)] font-medium">Status</span>
                             {renderStatusBadge(transaction.transaction_status)}
                         </div>
                     </div>
 
                     {/* Section: TRANSACTION SUMMARY */}
-                    <div className="flex flex-col gap-3 pt-2">
+                    <div className="flex flex-col gap-3 pt-2!">
                         <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
                             <span>— TRANSACTION SUMMARY</span>
                         </div>
                         <div className="grid grid-cols-2 gap-y-3 text-xs">
                             <span className="text-[var(--mute)] font-medium">Transaction ID</span>
                             <span
-                                className="text-right font-mono font-semibold text-[var(--ink)] truncate"
+                                className="text-right font-semibold text-[var(--ink)] truncate"
                                 title={transaction.transaction_id}
                             >
                                 {transaction.transaction_id}
@@ -189,19 +185,19 @@ export default function WalletTransactionDetailsSidebarComponent({
                             </span>
 
                             <span className="text-[var(--mute)] font-medium">Amount</span>
-                            <span className="text-right font-mono font-semibold text-[var(--ink)]">
+                            <span className="text-right font-semibold text-[var(--ink)]">
                                 {formatDecimal(transaction.amount)}{' '}
                                 {transaction.wallet_details.wallet_currency}
                             </span>
 
                             <span className="text-[var(--mute)] font-medium">Fee</span>
-                            <span className="text-right font-mono font-semibold text-[var(--ink)]">
+                            <span className="text-right font-semibold text-[var(--ink)]">
                                 {formatDecimal(transaction.fee)}{' '}
                                 {transaction.wallet_details.wallet_currency}
                             </span>
 
                             <span className="text-[var(--mute)] font-medium">Balance After</span>
-                            <span className="text-right font-mono font-semibold text-[var(--ink)]">
+                            <span className="text-right font-semibold text-[var(--ink)]">
                                 {formatDecimal(transaction.balance_after)}{' '}
                                 {transaction.wallet_details.wallet_currency}
                             </span>
@@ -209,7 +205,7 @@ export default function WalletTransactionDetailsSidebarComponent({
                     </div>
 
                     {/* Section: TIMESTAMPS */}
-                    <div className="flex flex-col gap-3 pt-4 border-t border-[var(--line)]">
+                    <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
                         <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
                             <span>— TIMESTAMPS</span>
                         </div>
@@ -222,11 +218,11 @@ export default function WalletTransactionDetailsSidebarComponent({
                     </div>
 
                     {/* Section: REMARKS */}
-                    <div className="flex flex-col gap-2 pt-4 border-t border-[var(--line)]">
+                    <div className="flex flex-col gap-2 pt-4! border-t border-[var(--line)]">
                         <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
                             <span>— REMARKS</span>
                         </div>
-                        <p className="text-xs text-[var(--ink-soft)] bg-[var(--bg-subtle)] p-3 rounded-lg border border-[var(--line)] leading-relaxed">
+                        <p className="text-xs text-[var(--ink-soft)] bg-[var(--bg-subtle)] p-3! rounded-lg border border-[var(--line)] leading-relaxed">
                             {transaction.remarks || 'No additional remarks.'}
                         </p>
                     </div>
@@ -237,7 +233,7 @@ export default function WalletTransactionDetailsSidebarComponent({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="w-full py-2.5 px-4 bg-[var(--bg-subtle)] border border-[var(--line)] hover:bg-[var(--bg-hover)] text-[var(--ink)] text-xs font-semibold rounded-xl transition-colors cursor-pointer"
+                        className="w-full py-2.5! px-4! bg-[var(--bg-subtle)] border border-[var(--line)] hover:bg-[var(--bg-hover)] text-[var(--ink)] text-xs font-semibold rounded-xl transition-colors cursor-pointer"
                     >
                         Close
                     </button>

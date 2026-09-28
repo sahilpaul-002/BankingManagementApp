@@ -36,7 +36,7 @@ export default function WalletStatementsFilterComponent({
 
             {/* Search Input Bar */}
             <div className="relative w-full sm:max-w-md">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[var(--mute)]">
+                <div className="absolute inset-y-0 left-0 pl-3.5! flex items-center pointer-events-none text-[var(--mute)]">
                     <Search className="w-4 h-4" />
                 </div>
                 <input
@@ -45,7 +45,7 @@ export default function WalletStatementsFilterComponent({
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     placeholder="Search by currency, type, or remarks..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl text-sm text-[var(--ink)] placeholder:text-[var(--mute)] focus:outline-hidden focus:border-[var(--line-strong)] focus:ring-1 focus:ring-[var(--line-strong)] transition-all"
+                    className="w-full pl-10! pr-4! py-2.5! bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl text-sm text-[var(--ink)] placeholder:text-[var(--mute)] focus:outline-hidden focus:border-[var(--line-strong)] focus:ring-1 focus:ring-[var(--line-strong)] transition-all"
                 />
             </div>
         </div>

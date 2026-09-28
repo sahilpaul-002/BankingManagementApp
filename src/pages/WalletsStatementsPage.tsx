@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Activity } from 'react';
 import WalletStatementsFilterComponent from '@/components/wallets/walletStatements/WalletStatementsFilterComponent';
 import WalletStatementsListComponent from '@/components/wallets/walletStatements/WalletStatementsListComponent';
 import WalletTransactionDetailsSidebarComponent from '@/components/wallets/walletStatements/WalletTransactionDetailsSidebarComponent';
@@ -7,22 +7,57 @@ import {
     type WalletTransactionItem,
 } from '@/fallbacks/wallets/walletStatements/walletStatementsFallbacks';
 import { useGetWalletTransactionsQuery } from '@/redux/features/wallet/walletApis';
+import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
+import { useNavigate } from 'react-router';
+import { useDispatch } from 'react-redux';
+import ShowInConsole from '@/utils/ShowInConsole';
+import type { WalletTransactionItemType, WalletTransactionsListResponseDataType } from '@/types/wallets/walletTransactionsSectionTypes';
+import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 
 export default function WalletsStatementsPage() {
-    // Session identifiers
-    const userEmail = sessionStorage.getItem('userEmail') ?? '';
-    const cardholderId = sessionStorage.getItem('cardholderId') ?? '';
+    // Configure useNavigate
+    const navigate = useNavigate();
 
-    // RTK Query call for wallet transactions list
-    const { data: apiResponse } = useGetWalletTransactionsQuery(
-        { email: userEmail, cardholderId },
-        { skip: !userEmail || !cardholderId }
-    );
+    // Configure useDispatch
+    const dispatch = useDispatch();
 
-    // Local transactions list state with fallback
-    const [transactionsList, setTransactionsList] = useState<WalletTransactionItem[]>(
-        WALLET_TRANSACTIONS_LIST_FALLBACK
-    );
+    // ------------------------------- GET EMAIL FROM SESSION STORAGE ---------------------------------- \\
+    // Get necessary user details from session storage
+    const userEmail = sessionStorage.getItem('userEmail');
+    const userId = sessionStorage.getItem("userId")
+    const userCardholderId = sessionStorage.getItem("cardholderId")
+    const userWalletId = sessionStorage.getItem('walletId');
+
+    useEffect(() => {
+        // Validate email once
+        if (!userEmail || !userId || !userCardholderId || !userWalletId) {
+            dispatch(setShowInfoBanner("Application facing issue, necessary user details not present in session storage. Please re-login."));
+            return;
+        }
+    }, [userEmail, userId, userCardholderId, userWalletId]);
+    // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+    // ------------------------------ WALLET TRANSACTION RTK QUERY ------------------------------ \\
+    // Wallet Transaction
+    const { data: getWalletTransactionsData, isLoading: getWalletTransactionsIsLoading, isFetching: getWalletTransactionsIsFetching, isError: getWalletTransactionsIsError, error: getWalletTransactionsError, refetch: refetchWalletTransactions } = useGetWalletTransactionsQuery({ email: userEmail!, cardholderId: userCardholderId!, walletId: userWalletId!, pageNumber: 1, pageSize: 7 }, { skip: !userEmail || !userCardholderId || !userWalletId })
+    const userWalletTransactions = getWalletTransactionsData?.data as WalletTransactionsListResponseDataType ?? [];
+    const useWalletTransactionsList = userWalletTransactions?.transactions as WalletTransactionItemType[] ?? []
+    const isWalletTransactionsNotFound =
+        getWalletTransactionsIsError &&
+        getWalletTransactionsError &&
+        getWalletTransactionsError != null &&
+        "status" in getWalletTransactionsError &&
+        getWalletTransactionsError?.status === 404 &&
+        typeof getWalletTransactionsError?.data === "object" &&
+        getWalletTransactionsError?.data !== null &&
+        "status" in getWalletTransactionsError?.data &&
+        getWalletTransactionsError?.data.status === "NOT_FOUND";
+
+    useEffect(() => {
+        ShowInConsole("User Wallets Transactions", userWalletTransactions);
+    }, [userWalletTransactions])
+    // -------------------------------- XXXXXXXXXXXXXXXXXXXX ------------------------------ \\
+    const showPageLoader = getWalletTransactionsData ? getWalletTransactionsIsLoading : getWalletTransactionsIsFetching;
 
     // Selected transaction for details drawer
     const [selectedTransaction, setSelectedTransaction] = useState<WalletTransactionItem | null>(null);
@@ -32,22 +67,9 @@ export default function WalletsStatementsPage() {
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [selectedType, setSelectedType] = useState<string>('ALL');
 
-    // Sync API data into state when available
-    useEffect(() => {
-        if (
-            apiResponse &&
-            apiResponse.data &&
-            apiResponse.data.transactions &&
-            Array.isArray(apiResponse.data.transactions) &&
-            apiResponse.data.transactions.length > 0
-        ) {
-            setTransactionsList(apiResponse.data.transactions);
-        }
-    }, [apiResponse]);
-
     // Sort by createdAt descending and filter by type & search
     const filteredTransactions = useMemo(() => {
-        const sorted = [...transactionsList].sort(
+        const sorted = [...useWalletTransactionsList].sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
@@ -69,7 +91,7 @@ export default function WalletsStatementsPage() {
 
             return true;
         });
-    }, [transactionsList, searchQuery, selectedType]);
+    }, [useWalletTransactionsList, searchQuery, selectedType]);
 
     const handleSelectTransaction = (item: WalletTransactionItem) => {
         setSelectedTransaction(item);
@@ -82,41 +104,48 @@ export default function WalletsStatementsPage() {
     };
 
     return (
-        <div className="walletsStatementsPage-container w-full h-fit flex flex-col justify-start items-stretch gap-6 p-4! sm:p-6!">
-            {/* Breadcrumb & Header Section */}
-            <div className="flex flex-col gap-3">
-                <p className="text-xs text-[var(--mute)] tracking-wide">
-                    Wallets &gt; <span className="text-[var(--ink-soft)] font-medium">Statements</span>
-                </p>
+        <>
+            {/* Page Loader */}
+            <Activity mode={showPageLoader ? "visible" : "hidden"}>
+                <PageLoaderComponent showPageLoader={showPageLoader} />
+            </Activity>
 
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                    <h1 className="text-2xl sm:text-3xl text-[var(--ink)] tracking-normal">
-                        <span className="font-serif font-medium">Wallet</span>{' '}
-                        <span className="font-serif italic font-normal">Statements</span>
-                    </h1>
+            {/* Main Content */}
+            <div className="walletsStatementsPage-container w-full h-fit flex flex-col justify-start items-stretch gap-6 p-4! sm:p-6!">
+                {/* Header Section */}
+                <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <h1 className="text-2xl sm:text-3xl text-[var(--ink)] tracking-normal">
+                            <span className="font-serif font-medium">Wallet</span>{' '}
+                            <span className="font-serif italic font-normal">Statements</span>
+                        </h1>
+                    </div>
                 </div>
+
+                {/* Sub-component 1: Filter & Search Bar */}
+                <WalletStatementsFilterComponent
+                    searchQuery={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    selectedType={selectedType}
+                    onTypeChange={setSelectedType}
+                />
+
+                {/* Sub-component 2: Transactions Table List */}
+                <WalletStatementsListComponent
+                    transactions={filteredTransactions}
+                    onSelectTransaction={handleSelectTransaction}
+                    walletTransactionsNotFound={isWalletTransactionsNotFound}
+                    getWalletTransactionsIsFetching={getWalletTransactionsIsFetching}
+                    
+                />
+
+                {/* Sub-component 3: Transaction Details Sidebar Drawer */}
+                <WalletTransactionDetailsSidebarComponent
+                    isOpen={isDetailsOpen}
+                    onClose={handleCloseDetails}
+                    transaction={selectedTransaction}
+                />
             </div>
-
-            {/* Sub-component 1: Filter & Search Bar */}
-            <WalletStatementsFilterComponent
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                selectedType={selectedType}
-                onTypeChange={setSelectedType}
-            />
-
-            {/* Sub-component 2: Transactions Table List */}
-            <WalletStatementsListComponent
-                transactions={filteredTransactions}
-                onSelectTransaction={handleSelectTransaction}
-            />
-
-            {/* Sub-component 3: Transaction Details Sidebar Drawer */}
-            <WalletTransactionDetailsSidebarComponent
-                isOpen={isDetailsOpen}
-                onClose={handleCloseDetails}
-                transaction={selectedTransaction}
-            />
-        </div>
+        </>
     );
 }
