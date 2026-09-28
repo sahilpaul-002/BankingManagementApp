@@ -17,7 +17,7 @@ import type { PaginationState } from '@tanstack/react-table';
 
 const DEFAULT_PAGINATION: PaginationState = {
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 7,
 };
 
 export default function WalletsStatementsPage() {
