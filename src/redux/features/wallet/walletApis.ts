@@ -173,24 +173,6 @@ export const walletApis = createApi({
             },
 
             // Runs after loadWallet has been initiated.
-            // onQueryStarted: async (payload, { dispatch, queryFulfilled }) => {
-            //     try {
-            //         await queryFulfilled;
-
-            //         await dispatch(
-            //             userApis.endpoints.getUserPrefundAccountsDetails.initiate(
-            //                 { email: payload.email },
-            //                 {
-            //                     forceRefetch: true,
-            //                     subscribe: false,
-            //                 }
-            //             )
-            //         );
-            //     } catch (error) {
-            //         console.error('LOAD-WALLET - Failed to refresh prefund accounts', error);
-            //     }
-            // },
-
             onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
                 try {
                     await queryFulfilled;

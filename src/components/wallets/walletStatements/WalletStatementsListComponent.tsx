@@ -2,15 +2,20 @@ import React from 'react';
 import { ChevronRight, ReceiptText } from 'lucide-react';
 import type { WalletTransactionItemType } from '@/types/wallets/walletTransactionsSectionTypes';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
+import type { PaginationState } from '@tanstack/react-table';
 
 interface WalletStatementsListComponentPropsType {
     transactions: WalletTransactionItemType[];
     onSelectTransaction: (transaction: WalletTransactionItemType) => void;
     walletTransactionsNotFound?: boolean | undefined;
     getWalletTransactionsIsFetching: boolean;
+    totalCount: number;
+    pagination: PaginationState;
+    setPagination: React.Dispatch<React.SetStateAction<PaginationState>>;
 }
 
-export default function WalletStatementsListComponent({transactions, onSelectTransaction, walletTransactionsNotFound, getWalletTransactionsIsFetching}: WalletStatementsListComponentPropsType) {
+export default function WalletStatementsListComponent({ transactions, onSelectTransaction, walletTransactionsNotFound, getWalletTransactionsIsFetching, totalCount, pagination, setPagination }: WalletStatementsListComponentPropsType) {
+    // Function Format Date
     const formatDate = (dateStr: string | null) => {
         if (!dateStr) return '—';
 
@@ -29,6 +34,7 @@ export default function WalletStatementsListComponent({transactions, onSelectTra
         }
     };
 
+    // Function to format Decimal Amount
     const formatDecimal = (
         val: { $numberDecimal: string } | string | undefined
     ) => {
@@ -44,6 +50,7 @@ export default function WalletStatementsListComponent({transactions, onSelectTra
         return isNaN(num) ? str : num.toFixed(4);
     };
 
+    // Render Type Badge UI
     const renderTypeBadge = (type: string) => {
         const upper = (type || '').toUpperCase();
 
@@ -82,6 +89,7 @@ export default function WalletStatementsListComponent({transactions, onSelectTra
         );
     };
 
+    // Render Status Badge UI
     const renderStatusBadge = (status: string) => {
         const upper = (status || '').toUpperCase();
 
@@ -110,6 +118,11 @@ export default function WalletStatementsListComponent({transactions, onSelectTra
             </span>
         );
     };
+
+    // Pagination Helpers
+    const totalPages = Math.ceil(totalCount / pagination.pageSize);
+    const startRecord = totalCount === 0 ? 0 : pagination.pageIndex * pagination.pageSize + 1;
+    const endRecord = Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalCount);
 
     return (
         <div className="w-full bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl shadow-xs overflow-hidden">
@@ -256,6 +269,101 @@ export default function WalletStatementsListComponent({transactions, onSelectTra
                         )}
                     </tbody>
                 </table>
+
+                {/* Pgination */}
+                {totalCount > 0 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4! py-3! border-t border-[var(--line)]">
+                        <div className="text-xs sm:text-sm text-[var(--mute)]">
+                            Showing{' '}
+                            <span className="text-[var(--ink)] font-medium">
+                                {startRecord}
+                            </span>
+                            {' - '}
+                            <span className="text-[var(--ink)] font-medium">
+                                {endRecord}
+                            </span>
+                            {' of '}
+                            <span className="text-[var(--ink)] font-medium">
+                                {totalCount}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={pagination.pageSize}
+                                onChange={(event) =>
+                                    setPagination({
+                                        pageIndex: 0,
+                                        pageSize: Number(event.target.value),
+                                    })
+                                }
+                                className="h-9 rounded-md border border-[var(--line)] bg-[var(--bg-surface)] px-2! text-xs sm:text-sm text-[var(--ink)]"
+                            >
+                                {[7, 10, 20, 50].map((size) => (
+                                    <option key={size} value={size}>
+                                        Show {size}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <button
+                                type="button"
+                                disabled={pagination.pageIndex === 0}
+                                onClick={() =>
+                                    setPagination((prev) => ({
+                                        ...prev,
+                                        pageIndex: 0,
+                                    }))
+                                }
+                            >
+                                First
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={pagination.pageIndex === 0}
+                                onClick={() =>
+                                    setPagination((prev) => ({
+                                        ...prev,
+                                        pageIndex: prev.pageIndex - 1,
+                                    }))
+                                }
+                            >
+                                Previous
+                            </button>
+
+                            <span className="text-xs sm:text-sm text-[var(--mute)] whitespace-nowrap">
+                                Page {pagination.pageIndex + 1} of {totalPages}
+                            </span>
+
+                            <button
+                                type="button"
+                                disabled={pagination.pageIndex >= totalPages - 1}
+                                onClick={() =>
+                                    setPagination((prev) => ({
+                                        ...prev,
+                                        pageIndex: prev.pageIndex + 1,
+                                    }))
+                                }
+                            >
+                                Next
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={pagination.pageIndex >= totalPages - 1}
+                                onClick={() =>
+                                    setPagination((prev) => ({
+                                        ...prev,
+                                        pageIndex: totalPages - 1,
+                                    }))
+                                }
+                            >
+                                Last
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

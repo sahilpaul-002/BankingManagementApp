@@ -13,6 +13,12 @@ import { useDispatch } from 'react-redux';
 import ShowInConsole from '@/utils/ShowInConsole';
 import type { WalletTransactionItemType, WalletTransactionsListResponseDataType } from '@/types/wallets/walletTransactionsSectionTypes';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
+import type { PaginationState } from '@tanstack/react-table';
+
+const DEFAULT_PAGINATION: PaginationState = {
+    pageIndex: 0,
+    pageSize: 10,
+};
 
 export default function WalletsStatementsPage() {
     // Configure useNavigate
@@ -37,11 +43,17 @@ export default function WalletsStatementsPage() {
     }, [userEmail, userId, userCardholderId, userWalletId]);
     // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
+    // Pagination State
+    const [pagination, setPagination] = useState<PaginationState>(DEFAULT_PAGINATION);
+
     // ------------------------------ WALLET TRANSACTION RTK QUERY ------------------------------ \\
     // Wallet Transaction
-    const { data: getWalletTransactionsData, isLoading: getWalletTransactionsIsLoading, isFetching: getWalletTransactionsIsFetching, isError: getWalletTransactionsIsError, error: getWalletTransactionsError, refetch: refetchWalletTransactions } = useGetWalletTransactionsQuery({ email: userEmail!, cardholderId: userCardholderId!, walletId: userWalletId!, pageNumber: 1, pageSize: 7 }, { skip: !userEmail || !userCardholderId || !userWalletId })
+    const { data: getWalletTransactionsData, isLoading: getWalletTransactionsIsLoading, isFetching: getWalletTransactionsIsFetching, isError: getWalletTransactionsIsError, error: getWalletTransactionsError, refetch: refetchWalletTransactions } = useGetWalletTransactionsQuery({
+        email: userEmail!, cardholderId: userCardholderId!, walletId: userWalletId!, pageNumber: pagination.pageIndex + 1,
+        pageSize: pagination.pageSize, }, { skip: !userEmail || !userCardholderId || !userWalletId })
     const userWalletTransactions = getWalletTransactionsData?.data as WalletTransactionsListResponseDataType ?? [];
     const useWalletTransactionsList = userWalletTransactions?.transactions as WalletTransactionItemType[] ?? []
+    const totalTransactionCount = userWalletTransactions?.pagination?.total_records ?? 0;
     const isWalletTransactionsNotFound =
         getWalletTransactionsIsError &&
         getWalletTransactionsError &&
@@ -136,7 +148,9 @@ export default function WalletsStatementsPage() {
                     onSelectTransaction={handleSelectTransaction}
                     walletTransactionsNotFound={isWalletTransactionsNotFound}
                     getWalletTransactionsIsFetching={getWalletTransactionsIsFetching}
-                    
+                    totalCount={totalTransactionCount} 
+                    pagination={pagination} 
+                    setPagination={setPagination}
                 />
 
                 {/* Sub-component 3: Transaction Details Sidebar Drawer */}
