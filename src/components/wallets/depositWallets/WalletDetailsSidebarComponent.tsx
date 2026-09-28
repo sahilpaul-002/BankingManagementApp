@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, TrendingUp } from 'lucide-react';
+import { X, TrendingUp, ArrowDownToLine } from 'lucide-react';
 import type { WalletItemType } from '@/types/wallets/depositWalletsTypes';
+import LoadWalletSidebarComponent from '@/components/wallets/depositWallets/LoadWalletSidebarComponent';
 
 type TransactionPeriod = 'daily' | 'monthly' | 'yearly';
 
@@ -47,6 +48,7 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
 
 export default function WalletDetailsSidebarComponent({isOpen, onClose, wallet}: WalletDetailsSidebarComponentPropsType) {
     const [activePeriod, setActivePeriod] = useState<TransactionPeriod>('daily');
+    const [isLoadWalletOpen, setIsLoadWalletOpen] = useState(false);
 
     // Lock body scroll when open
     useEffect(() => {
@@ -72,99 +74,111 @@ export default function WalletDetailsSidebarComponent({isOpen, onClose, wallet}:
     const activeTx = txData[activePeriod];
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end">
-            {/* Backdrop */}
-            <div
-                className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-200"
-                onClick={onClose}
-            />
+        <>
+            <div className="fixed inset-0 z-50 flex justify-end">
+                {/* Backdrop */}
+                <div
+                    className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-200"
+                    onClick={onClose}
+                />
 
-            {/* Drawer */}
-            <div className="relative z-10 w-full max-w-md h-full bg-[var(--bg-surface)] border-l border-[var(--line)] shadow-2xl flex flex-col overflow-y-auto animate-[slideInRight_0.25s_ease-out]">
-                <style>{`
-                    @keyframes slideInRight {
-                        from { transform: translateX(100%); }
-                        to   { transform: translateX(0); }
-                    }
-                `}</style>
+                {/* Drawer */}
+                <div className="relative z-10 w-full max-w-md h-full bg-[var(--bg-surface)] border-l border-[var(--line)] shadow-2xl flex flex-col overflow-y-auto animate-[slideInRight_0.25s_ease-out]">
+                    <style>{`
+                        @keyframes slideInRight {
+                            from { transform: translateX(100%); }
+                            to   { transform: translateX(0); }
+                        }
+                    `}</style>
 
-                {/* Header */}
-                <div className="p-6! border-b border-[var(--line)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0">
-                    <h3 className="text-xl font-normal text-[var(--ink)] tracking-normal">
-                        <span className="font-serif font-medium">Wallet</span>{' '}
-                        <span className="font-serif italic font-normal">details</span>
-                    </h3>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="p-1.5 rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
-                        aria-label="Close wallet details"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                {/* Body */}
-                <div className="p-6! flex-1 flex flex-col gap-6 overflow-y-auto">
-
-                    {/* Top identity block */}
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3">
-                            <div>
-                                <h2 className="text-2xl font-bold text-[var(--ink)] uppercase tracking-wide">
-                                    {wallet.wallet_currency}
-                                </h2>
-                                <p className="text-xs text-[var(--mute)] mt-0.5!">
-                                    {wallet.wallet_type === 'FIAT' ? 'Fiat Currency Wallet' : 'Crypto Currency Wallet'}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="mt-1 flex items-center">
-                            <span
-                                className={`inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold ${STATUS_STYLES[wallet.wallet_status] ?? 'bg-[var(--bg-subtle)] text-[var(--mute)]'}`}
+                    {/* Header */}
+                    <div className="p-6! border-b border-[var(--line)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0">
+                        <h3 className="text-xl font-normal text-[var(--ink)] tracking-normal">
+                            <span className="font-serif font-medium">Wallet</span>{' '}
+                            <span className="font-serif italic font-normal">details</span>
+                        </h3>
+                        <div className="flex items-center gap-2">
+                            <button
+                                id="walletDetails-loadWallet-btn"
+                                type="button"
+                                onClick={() => setIsLoadWalletOpen(true)}
+                                className="inline-flex items-center gap-1.5 px-3! py-1.5! rounded-lg text-xs font-semibold bg-[var(--nav-bg)] text-white hover:opacity-90 transition-opacity cursor-pointer"
                             >
-                                <span
-                                    className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_STYLES[wallet.wallet_status] ?? 'bg-[var(--mute)]'}`}
-                                />
-                                {wallet.wallet_status}
-                            </span>
+                                <ArrowDownToLine className="w-3.5 h-3.5" />
+                                Load Wallet
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="p-1.5 rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                                aria-label="Close wallet details"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
                     </div>
 
-                    {/* Section: WALLET INFO */}
-                    <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
-                        <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
-                            — WALLET INFO
+                    {/* Body */}
+                    <div className="p-6! flex-1 flex flex-col gap-6 overflow-y-auto">
+
+                        {/* Top identity block */}
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-3">
+                                <div>
+                                    <h2 className="text-2xl font-bold text-[var(--ink)] uppercase tracking-wide">
+                                        {wallet.wallet_currency}
+                                    </h2>
+                                    <p className="text-xs text-[var(--mute)] mt-0.5!">
+                                        {wallet.wallet_type === 'FIAT' ? 'Fiat Currency Wallet' : 'Crypto Currency Wallet'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="mt-1 flex items-center">
+                                <span
+                                    className={`inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold ${STATUS_STYLES[wallet.wallet_status] ?? 'bg-[var(--bg-subtle)] text-[var(--mute)]'}`}
+                                >
+                                    <span
+                                        className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_STYLES[wallet.wallet_status] ?? 'bg-[var(--mute)]'}`}
+                                    />
+                                    {wallet.wallet_status}
+                                </span>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-y-3 text-xs">
-                            <DetailRow label="Wallet type">
-                                <span className="font-semibold text-[var(--ink)] uppercase">
-                                    {wallet.wallet_type}
-                                </span>
-                            </DetailRow>
 
-                            <DetailRow label="Currency">
-                                <span className="font-semibold text-[var(--ink)] uppercase">
-                                    {wallet.wallet_currency}
-                                </span>
-                            </DetailRow>
+                        {/* Section: WALLET INFO */}
+                        <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
+                            <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
+                                — WALLET INFO
+                            </div>
+                            <div className="grid grid-cols-2 gap-y-3 text-xs">
+                                <DetailRow label="Wallet type">
+                                    <span className="font-semibold text-[var(--ink)] uppercase">
+                                        {wallet.wallet_type}
+                                    </span>
+                                </DetailRow>
 
-                            <DetailRow label="Account balance">
-                                <span className="font-semibold text-[var(--ink)]">
-                                    {formatDecimal(wallet.account_balance.$numberDecimal, wallet.wallet_currency)}
-                                </span>
-                            </DetailRow>
+                                <DetailRow label="Currency">
+                                    <span className="font-semibold text-[var(--ink)] uppercase">
+                                        {wallet.wallet_currency}
+                                    </span>
+                                </DetailRow>
 
-                            <DetailRow label="Available balance">
-                                <span className="font-semibold text-[var(--ok)]">
-                                    {formatDecimal(wallet.available_balance.$numberDecimal, wallet.wallet_currency)}
-                                </span>
-                            </DetailRow>
+                                <DetailRow label="Account balance">
+                                    <span className="font-semibold text-[var(--ink)]">
+                                        {formatDecimal(wallet.account_balance.$numberDecimal, wallet.wallet_currency)}
+                                    </span>
+                                </DetailRow>
 
-                            <DetailRow label="Holding amount">
-                                <span className="font-semibold text-[var(--warn)]">
-                                    {formatDecimal(wallet.holding_amount.$numberDecimal, wallet.wallet_currency)}
-                                </span>
+                                <DetailRow label="Available balance">
+                                    <span className="font-semibold text-[var(--ok)]">
+                                        {formatDecimal(wallet.available_balance.$numberDecimal, wallet.wallet_currency)}
+                                    </span>
+                                </DetailRow>
+
+                                <DetailRow label="Holding amount">
+                                    <span className="font-semibold text-[var(--warn)]">
+                                        {formatDecimal(wallet.holding_amount.$numberDecimal, wallet.wallet_currency)}
+                                    </span>
                             </DetailRow>
                         </div>
                     </div>
@@ -263,5 +277,13 @@ export default function WalletDetailsSidebarComponent({isOpen, onClose, wallet}:
                 </div>
             </div>
         </div>
+
+            {/* Load Wallet Sidebar */}
+            <LoadWalletSidebarComponent
+                isOpen={isLoadWalletOpen}
+                onClose={() => setIsLoadWalletOpen(false)}
+                wallet={wallet}
+            />
+        </>
     );
 }

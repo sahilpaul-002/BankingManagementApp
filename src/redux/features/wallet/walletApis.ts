@@ -116,7 +116,7 @@ export const walletApis = createApi({
         // =======================================================
         // LOAD WALLET
         // =======================================================
-        loadWallet: build.mutation<apiResponseType<apiResponseDataType>, { email: string;  walletDetails: {cardholderId: string, walletId: string,  walletType: "FIAT" | "CRYPTO", walletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", amount: number} }>({
+        loadWallet: build.mutation<apiResponseType<apiResponseDataType>, { email: string; walletDetails: {cardholderId: string, walletId: string, walletType: "FIAT" | "CRYPTO", walletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", network?: "ETHEREUM" | "POLYGON", amount: number} }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -138,11 +138,26 @@ export const walletApis = createApi({
                         headers = walletApiHeaders(state)
                     }
 
+                    const walletDetails: Record<string, any> = {
+                        cardholder_id: payload.walletDetails.cardholderId,
+                        wallet_id: payload.walletDetails.walletId,
+                        wallet_type: payload.walletDetails.walletType,
+                        wallet_currency: payload.walletDetails.walletCurrency,
+                        amount: payload.walletDetails.amount,
+                    };
+
+                    if (payload.walletDetails.network) {
+                        walletDetails.network = payload.walletDetails.network;
+                    }
+
                     const result = await executeBaseQuery(baseQuery, {
-                        url: `${WALLET_URL}/create`,
+                        url: `${WALLET_URL}/load`,
                         method: 'POST',
                         headers,
-                        data: {email: payload.email, wallet_details: {cardholder_id: payload.walletDetails.cardholderId, wallet_id: payload.walletDetails.walletId, wallet_type: payload.walletDetails.walletType, wallet_currency: payload.walletDetails.walletCurrency, amount: payload.walletDetails.amount}},
+                        data: {
+                            email: payload.email,
+                            walletDetails: walletDetails,
+                        },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown
