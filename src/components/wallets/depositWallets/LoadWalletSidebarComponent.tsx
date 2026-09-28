@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { X, Wallet } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useDispatch } from 'react-redux';
 import { setShowErrorBanner } from '@/redux/slice/utility/utilitySlice';
@@ -55,6 +55,7 @@ interface LoadWalletSidebarComponentPropsType {
     onClose: () => void;
     wallet: WalletItemType | null;
     walletId?: string | null;
+    onSuccess?: () => void;
 }
 
 // --- Component ---
@@ -63,6 +64,7 @@ export default function LoadWalletSidebarComponent({
     isOpen,
     onClose,
     wallet,
+    onSuccess,
 }: LoadWalletSidebarComponentPropsType) {
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -84,6 +86,14 @@ export default function LoadWalletSidebarComponent({
             network: undefined,
         },
     });
+
+    // Lock body scroll when open
+    useEffect(() => {
+        document.body.style.overflow = isOpen ? 'hidden' : 'unset';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [isOpen]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -122,8 +132,6 @@ export default function LoadWalletSidebarComponent({
         }
 
         try {
-            ShowInConsole('LoadWallet form data:', data);
-
             const payload = {
                 email: userEmail,
                 walletDetails: {
@@ -140,14 +148,12 @@ export default function LoadWalletSidebarComponent({
                 },
             };
 
-            ShowInConsole('LoadWallet payload:', payload);
-
             await triggerLoadWallet(payload).unwrap();
 
             toast.success('Wallet loaded successfully.');
 
             handleClose();
-            navigate(0);
+            onSuccess?.();
         } catch (error: any) {
             ShowInConsole('LoadWallet error:', error);
 
@@ -168,146 +174,161 @@ export default function LoadWalletSidebarComponent({
         <div className="fixed inset-0 z-50 flex justify-end">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                className="fixed inset-0 bg-black/50 backdrop-blur-xs"
                 onClick={handleClose}
             />
 
-            {/* Sidebar Panel */}
-            <div className="relative z-10 flex h-full w-full max-w-[480px] flex-col bg-white shadow-2xl">
+            {/* Right Sidebar Panel */}
+            <div className="relative z-10 w-full max-w-md h-full bg-[var(--bg-surface)] border-l border-[var(--line)] shadow-2xl flex flex-col overflow-hidden animate-[slideInRight_0.25s_ease-out]">
+                <style>{`
+                    @keyframes slideInRight {
+                        from { transform: translateX(100%); }
+                        to   { transform: translateX(0); }
+                    }
+                `}</style>
+
                 {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-5">
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy-800">
-                            <Wallet className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                            <h2 className="text-base font-semibold text-gray-900">Load Wallet</h2>
-                            <p className="text-xs text-gray-500">
-                                {wallet?.wallet_currency ?? '—'} &bull;{' '}
-                                {wallet?.wallet_type ?? ''}
-                            </p>
-                        </div>
+                <div className="shrink-0 p-6! border-b border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-between">
+                    <div>
+                        <h3 className="text-lg font-semibold text-[var(--ink)]">
+                            Load Wallet
+                        </h3>
+                        <p className="text-xs text-[var(--mute)] mt-1!">
+                            {wallet?.wallet_currency ?? '—'} &bull;{' '}
+                            {wallet?.wallet_type === 'FIAT' ? 'Fiat Currency Wallet' : 'Crypto Currency Wallet'}
+                        </p>
                     </div>
+
                     <button
-                        id="loadWallet-close-btn"
                         type="button"
                         onClick={handleClose}
                         disabled={loadWalletIsSubmitting}
-                        className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
+                        className="p-1.5 rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer disabled:opacity-50"
+                        aria-label="Close sidebar"
                     >
-                        <X className="h-5 w-5" />
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                {/* Body */}
-                <div className="flex-1 overflow-y-auto px-6 py-6">
+                {/* Body Form */}
+                <form
+                    id="depositWallets-loadWallet-form"
+                    noValidate
+                    onSubmit={handleSubmit(onSubmit)}
+                    className="flex-1 overflow-y-auto p-6! space-y-6!"
+                >
                     {/* Wallet info card */}
-                    <div className="mb-6 rounded-xl border border-gray-100 bg-gray-50 p-4">
-                        <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Account Balance</span>
-                            <span className="font-semibold text-gray-900">
+                    <div className="p-4! rounded-xl bg-[var(--bg-subtle)] border border-[var(--line)] space-y-2.5">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-[var(--mute)] font-medium">Account Balance</span>
+                            <span className="font-semibold text-[var(--ink)]">
                                 {wallet?.account_balance?.$numberDecimal ?? '0.00'}
                             </span>
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Available Balance</span>
-                            <span className="font-medium text-gray-700">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-[var(--mute)] font-medium">Available Balance</span>
+                            <span className="font-semibold text-[var(--ok)]">
                                 {wallet?.available_balance?.$numberDecimal ?? '0.00'}
                             </span>
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Currency</span>
-                            <span className="font-medium text-gray-700">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-[var(--mute)] font-medium">Currency</span>
+                            <span className="font-semibold text-[var(--ink)] uppercase">
                                 {wallet?.wallet_currency ?? '—'}
                             </span>
                         </div>
-                        <div className="mt-2 flex items-center justify-between text-sm">
-                            <span className="text-gray-500">Status</span>
-                            <span className="font-medium text-gray-700">
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-[var(--mute)] font-medium">Status</span>
+                            <span className="font-semibold text-[var(--ink)]">
                                 {wallet?.wallet_status ?? '—'}
                             </span>
                         </div>
                     </div>
 
-                    {/* Form */}
-                    <form id="depositWallets-loadWallet-form" onSubmit={handleSubmit(onSubmit)}>
-                        <div className="space-y-5">
-                            {/* Amount */}
+                    {/* Amount */}
+                    <Controller
+                        name="amount"
+                        control={control}
+                        render={({ field }) => (
+                            <CustomInputComponent
+                                id="loadWallet-amount"
+                                label="Amount"
+                                placeholder="Enter amount"
+                                type="number"
+                                fieldLabelClassname="text-sm text-[var(--ink-soft)] font-semibold tracking-normal mb-2"
+                                inputClassname="px-4! text-[var(--ink)]"
+                                error={errors.amount?.message}
+                                {...field}
+                            />
+                        )}
+                    />
+
+                    {/* Currency — Read-only field */}
+                    <CustomInputComponent
+                        id="loadWallet-currency"
+                        label="Wallet Currency"
+                        placeholder="Wallet currency"
+                        type="text"
+                        fieldLabelClassname="text-sm text-[var(--ink-soft)] font-semibold tracking-normal mb-2"
+                        inputClassname="px-4! text-[var(--ink)] opacity-70"
+                        value={wallet?.wallet_currency ?? ''}
+                        disabled
+                    />
+
+                    {/* Network — Required ONLY for CRYPTO */}
+                    {isCrypto && (
+                        <div className="w-full h-fit flex flex-col justify-center items-start gap-2">
+                            <span className="text-sm text-[var(--ink-soft)] font-semibold tracking-normal">
+                                Network
+                            </span>
                             <Controller
-                                name="amount"
+                                name="network"
                                 control={control}
                                 render={({ field }) => (
-                                    <CustomInputComponent
-                                        id="loadWallet-amount"
-                                        label="Amount"
-                                        placeholder="Enter amount"
-                                        type="number"
-                                        error={errors.amount?.message}
-                                        {...field}
+                                    <CustomSelectComponent
+                                        id="loadWallet-network"
+                                        label="Select network"
+                                        labels={NETWORK_OPTIONS}
+                                        selectTriggerClassName="w-full h-[42px] px-4! text-[var(--ink-2)]"
+                                        selectGroupClassName="w-full"
+                                        error={errors.network?.message}
+                                        value={field.value ?? null}
+                                        onChange={field.onChange}
+                                        ref={field.ref}
                                     />
                                 )}
                             />
-
-                            {/* Currency — Read-only field */}
-                            <CustomInputComponent
-                                id="loadWallet-currency"
-                                label="Currency"
-                                type="text"
-                                placeholder="Wallet currency"
-                                value={wallet?.wallet_currency ?? ''}
-                                disabled
-                            />
-
-                            {/* Network — Required ONLY for CRYPTO */}
-                            {isCrypto && (
-                                <Controller
-                                    name="network"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <CustomSelectComponent
-                                            id="loadWallet-network"
-                                            label="Select network"
-                                            labels={NETWORK_OPTIONS}
-                                            error={errors.network?.message}
-                                            value={field.value ?? null}
-                                            onChange={field.onChange}
-                                            ref={field.ref}
-                                        />
-                                    )}
-                                />
-                            )}
                         </div>
-                    </form>
-                </div>
+                    )}
+                </form>
 
                 {/* Footer */}
-                <div className="border-t border-gray-200 px-6 py-4">
-                    <div className="flex items-center justify-end gap-3">
-                        <div className="w-[100px] h-[38px]">
-                            <CustomButtonComponent
-                                id="loadWallet-cancel-btn"
-                                label="Cancel"
-                                type="button"
-                                variant="outline"
-                                onClick={handleClose}
-                                disabled={loadWalletIsSubmitting}
-                            />
-                        </div>
+                <div className="shrink-0 p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end gap-3">
+                    <div className="w-[100px] h-[38px]">
+                        <CustomButtonComponent
+                            id="loadWallet-cancel-btn"
+                            label="Cancel"
+                            type="button"
+                            variant="outline"
+                            onClick={handleClose}
+                            disabled={loadWalletIsSubmitting}
+                        />
+                    </div>
 
-                        <div className="w-[140px] h-[38px]">
-                            <CustomButtonComponent
-                                id="loadWallet-submit-btn"
-                                label="Load Wallet"
-                                type="submit"
-                                form="depositWallets-loadWallet-form"
-                                variant="navy"
-                                showButtonLoader={loadWalletIsSubmitting}
-                            />
-                        </div>
+                    <div className="w-[140px] h-[38px]">
+                        <CustomButtonComponent
+                            id="loadWallet-submit-btn"
+                            label="Load Wallet"
+                            type="submit"
+                            form="depositWallets-loadWallet-form"
+                            variant="navy"
+                            showButtonLoader={loadWalletIsSubmitting}
+                        />
                     </div>
                 </div>
             </div>
         </div>
     );
 }
+
 

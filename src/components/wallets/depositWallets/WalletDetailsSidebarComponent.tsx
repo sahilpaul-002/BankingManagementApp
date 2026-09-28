@@ -97,52 +97,53 @@ export default function WalletDetailsSidebarComponent({isOpen, onClose, wallet}:
                             <span className="font-serif font-medium">Wallet</span>{' '}
                             <span className="font-serif italic font-normal">details</span>
                         </h3>
-                        <div className="flex items-center gap-2">
-                            <button
-                                id="walletDetails-loadWallet-btn"
-                                type="button"
-                                onClick={() => setIsLoadWalletOpen(true)}
-                                className="inline-flex items-center gap-1.5 px-3! py-1.5! rounded-lg text-xs font-semibold bg-[var(--nav-bg)] text-white hover:opacity-90 transition-opacity cursor-pointer"
-                            >
-                                <ArrowDownToLine className="w-3.5 h-3.5" />
-                                Load Wallet
-                            </button>
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="p-1.5 rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
-                                aria-label="Close wallet details"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="p-1.5 rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                            aria-label="Close wallet details"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
                     </div>
 
                     {/* Body */}
                     <div className="p-6! flex-1 flex flex-col gap-6 overflow-y-auto">
 
                         {/* Top identity block */}
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-3">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-[var(--ink)] uppercase tracking-wide">
-                                        {wallet.wallet_currency}
-                                    </h2>
-                                    <p className="text-xs text-[var(--mute)] mt-0.5!">
-                                        {wallet.wallet_type === 'FIAT' ? 'Fiat Currency Wallet' : 'Crypto Currency Wallet'}
-                                    </p>
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-3">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-[var(--ink)] uppercase tracking-wide">
+                                            {wallet.wallet_currency}
+                                        </h2>
+                                        <p className="text-xs text-[var(--mute)] mt-0.5!">
+                                            {wallet.wallet_type === 'FIAT' ? 'Fiat Currency Wallet' : 'Crypto Currency Wallet'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-1 flex items-center">
+                                    <span
+                                        className={`inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold ${STATUS_STYLES[wallet.wallet_status] ?? 'bg-[var(--bg-subtle)] text-[var(--mute)]'}`}
+                                    >
+                                        <span
+                                            className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_STYLES[wallet.wallet_status] ?? 'bg-[var(--mute)]'}`}
+                                        />
+                                        {wallet.wallet_status}
+                                    </span>
                                 </div>
                             </div>
-                            <div className="mt-1 flex items-center">
-                                <span
-                                    className={`inline-flex items-center gap-1.5 px-2.5! py-0.5! rounded-full text-xs font-semibold ${STATUS_STYLES[wallet.wallet_status] ?? 'bg-[var(--bg-subtle)] text-[var(--mute)]'}`}
-                                >
-                                    <span
-                                        className={`w-1.5 h-1.5 rounded-full ${STATUS_DOT_STYLES[wallet.wallet_status] ?? 'bg-[var(--mute)]'}`}
-                                    />
-                                    {wallet.wallet_status}
-                                </span>
-                            </div>
+
+                            <button
+                                id="walletDetails-loadWallet-btn"
+                                type="button"
+                                onClick={() => setIsLoadWalletOpen(true)}
+                                className="inline-flex items-center gap-1.5 px-3! py-2! rounded-lg text-xs font-semibold bg-[var(--nav-bg)] text-white hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+                            >
+                                <ArrowDownToLine className="w-3.5 h-3.5" />
+                                Load Wallet
+                            </button>
                         </div>
 
                         {/* Section: WALLET INFO */}
@@ -282,6 +283,10 @@ export default function WalletDetailsSidebarComponent({isOpen, onClose, wallet}:
             <LoadWalletSidebarComponent
                 isOpen={isLoadWalletOpen}
                 onClose={() => setIsLoadWalletOpen(false)}
+                onSuccess={() => {
+                    setIsLoadWalletOpen(false);
+                    onClose();
+                }}
                 wallet={wallet}
             />
         </>

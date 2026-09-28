@@ -58,13 +58,13 @@ const axiosInstance = getAxiosInstance();
 // ==============================
 export const walletApis = createApi({
     reducerPath: 'walletApis',
-    tagTypes: ['Wallet', 'WalletTransactions'],
+    tagTypes: ['Wallet', 'User'],
     baseQuery: axiosBaseQuery(axiosInstance),
     endpoints: (build) => ({
         // =======================================================
         // CREATE WALLET
         // =======================================================
-        createWallet: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardholderId: string; walletDetails: {walletStatus: "ACTIVE" | "INACTIVE", walletType: "FIAT" | "CRYPTO", walletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC"} }>({
+        createWallet: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardholderId: string; walletDetails: { walletStatus: "ACTIVE" | "INACTIVE", walletType: "FIAT" | "CRYPTO", walletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC" } }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -90,7 +90,7 @@ export const walletApis = createApi({
                         url: `${WALLET_URL}/create`,
                         method: 'POST',
                         headers,
-                        data: {email: payload.email, cardholder_id: payload.cardholderId, wallet_details: {wallet_status: payload.walletDetails.walletStatus, wallet_type: payload.walletDetails.walletType, wallet_currency: payload.walletDetails.walletCurrency}},
+                        data: { email: payload.email, cardholder_id: payload.cardholderId, wallet_details: { wallet_status: payload.walletDetails.walletStatus, wallet_type: payload.walletDetails.walletType, wallet_currency: payload.walletDetails.walletCurrency } },
                         params: { email: payload.email, cardholder_id: payload.cardholderId },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
@@ -116,7 +116,7 @@ export const walletApis = createApi({
         // =======================================================
         // LOAD WALLET
         // =======================================================
-        loadWallet: build.mutation<apiResponseType<apiResponseDataType>, { email: string; walletDetails: {cardholderId: string, walletId: string, walletType: "FIAT" | "CRYPTO", walletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", network?: "ETHEREUM" | "POLYGON", amount: number} }>({
+        loadWallet: build.mutation<apiResponseType<apiResponseDataType>, { email: string; walletDetails: { cardholderId: string, walletId: string, walletType: "FIAT" | "CRYPTO", walletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", network?: "ETHEREUM" | "POLYGON", amount: number } }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -171,6 +171,41 @@ export const walletApis = createApi({
                     return rtkError
                 }
             },
+
+            // Runs after loadWallet has been initiated.
+            // onQueryStarted: async (payload, { dispatch, queryFulfilled }) => {
+            //     try {
+            //         await queryFulfilled;
+
+            //         await dispatch(
+            //             userApis.endpoints.getUserPrefundAccountsDetails.initiate(
+            //                 { email: payload.email },
+            //                 {
+            //                     forceRefetch: true,
+            //                     subscribe: false,
+            //                 }
+            //             )
+            //         );
+            //     } catch (error) {
+            //         console.error('LOAD-WALLET - Failed to refresh prefund accounts', error);
+            //     }
+            // },
+
+            onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
+                try {
+                    await queryFulfilled;
+
+                    dispatch(
+                        userApis.util.invalidateTags([
+                            { type: 'User', id: 'PREFUND-ACCOUNTS-DETAILS' },
+                        ])
+                    );
+                } catch (error) {
+                    // Load wallet failed, so don't refetch prefund accounts.
+                    console.error('LOAD-WALLET - Failed to refresh prefund account details', error);
+                }
+            },
+
             invalidatesTags: [{ type: 'Wallet', id: 'BALANCES' }, { type: 'Wallet', id: 'DETAILS' }],
         }),
 
