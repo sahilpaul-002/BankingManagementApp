@@ -98,8 +98,8 @@ export default function DepositWalletsListComponent({ wallets, onSelectWallet, s
 
             {/* Table Card */}
             <div className="w-full bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl shadow-xs overflow-hidden">
-                <div className={getWalletsDetailsIsFetching ? '' : 'overflow-x-auto'}>
-                    <table className={`w-full text-left border-collapse ${getWalletsDetailsIsFetching} ? "" : "min-w-[680px]" `}>
+                <div className={getWalletsDetailsIsFetching || walletsDetailsNotFound ? '' : 'overflow-x-auto'}>
+                    <table className={`w-full text-left border-collapse ${getWalletsDetailsIsFetching || walletsDetailsNotFound} ? "" : "min-w-[680px]" `}>
                         <thead>
                             <tr className="border-b border-[var(--line)] bg-[var(--bg-subtle)] text-[11px] font-semibold text-[var(--mute)] uppercase tracking-wider">
                                 <th className="py-3.5! px-6!">Currency</th>
