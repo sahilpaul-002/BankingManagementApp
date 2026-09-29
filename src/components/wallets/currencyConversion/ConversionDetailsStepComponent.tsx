@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { Activity, useEffect } from 'react';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowRight, ArrowLeftRight, Info } from 'lucide-react';
+import { ArrowRight, ArrowLeftRight, Info, WalletCards } from 'lucide-react';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
@@ -107,168 +107,193 @@ export default function ConversionDetailsStepComponent({
     };
 
     return (
-        <div className="w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6! shadow-xs flex flex-col gap-6">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
-                Conversion Details
-            </h2>
-
-            {/* Supported conversion info banner */}
-            <div className="flex items-start gap-2.5 p-3.5! rounded-lg bg-[var(--info-bg)] border border-[var(--info)]/20 text-[11px] text-[var(--info)]">
-                <Info className="w-4 h-4 shrink-0 mt-px!" />
-                <span className="leading-relaxed">
-                    <strong className="font-semibold">Supported conversions:</strong> FIAT-to-FIAT
-                    (USD, EUR, SGD) and USD-to-Crypto / Crypto-to-USD (USDT, USDC). Crypto-to-Crypto
-                    and non-USD FIAT-to-Crypto pairs are not supported.
-                </span>
-            </div>
-
-            <form
-                id="currency-conversion-form"
-                noValidate
-                onSubmit={handleSubmit(handleFormSubmit)}
-                className="flex flex-col gap-5"
-            >
-                {/* Row 1 — Source Wallet */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Controller
-                        name="source_currency"
-                        control={control}
-                        render={({ field }) => (
-                            <div className="w-full h-fit flex flex-col justify-center items-start gap-2">
-                                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
-                                    From Wallet
-                                </span>
-                                <CustomSelectComponent
-                                    id="conversion-select-sourceCurrency"
-                                    label="Select source wallet"
-                                    labels={walletSelectOptions}
-                                    selectTriggerClassName="w-full px-4! text-[var(--ink)]"
-                                    selectGroupClassName="w-full"
-                                    value={field.value}
-                                    onChange={(val) => {
-                                        field.onChange(val);
-                                        if (quote) onResetQuote();
-                                    }}
-                                    error={errors?.source_currency?.message}
-                                />
-                            </div>
-                        )}
-                    />
-
-                    {/* Source Available Balance */}
-                    <div className="w-full flex flex-col justify-center items-start gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
-                            Available Balance
-                        </span>
-                        <div className="w-full h-10 px-4! rounded-md bg-[var(--line-faint)] border border-[var(--line)] flex items-center text-xs font-medium text-[var(--ink-soft)]">
-                            {sourceWallet
-                                ? `${parseFloat(sourceWallet.available_balance).toFixed(2)} ${sourceWallet.wallet_currency}`
-                                : '—'}
+        <>
+            {/* Wallets Balances Details Not Found */}
+            <Activity mode={walletsBalancesListNotFound ? "visible" : "hidden"}>
+                <div className="w-full min-h-[420px] bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6! shadow-xs flex items-center justify-center">
+                    <div className="flex flex-col items-center justify-center text-center max-w-md">
+                        <div className="w-16 h-16 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--line)] flex items-center justify-center mb-5">
+                            <WalletCards className="w-8 h-8 text-[var(--mute)]" />
                         </div>
+
+                        <h2 className="text-lg font-semibold text-[var(--ink)]">
+                            Wallet Balance Details Not Found
+                        </h2>
+
+                        <p className="mt-2 text-sm leading-relaxed text-[var(--mute)]">
+                            We couldn't find any wallet balance details for your account.
+                            Please create a wallet before starting a currency conversion.
+                        </p>
                     </div>
                 </div>
+            </Activity>
 
-                {/* Row 2 — Destination Wallet */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Controller
-                        name="destination_currency"
-                        control={control}
-                        render={({ field }) => (
-                            <div className="w-full h-fit flex flex-col justify-center items-start gap-2">
-                                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
-                                    To Wallet
-                                </span>
-                                <CustomSelectComponent
-                                    id="conversion-select-destinationCurrency"
-                                    label="Select destination wallet"
-                                    labels={walletSelectOptions}
-                                    selectTriggerClassName="w-full px-4! text-[var(--ink)]"
-                                    selectGroupClassName="w-full"
-                                    value={field.value}
-                                    onChange={(val) => {
-                                        field.onChange(val);
-                                        if (quote) onResetQuote();
-                                    }}
-                                    error={errors?.destination_currency?.message}
-                                />
-                            </div>
-                        )}
-                    />
+            {/* Conversion Details Form */}
+            <Activity mode={!walletsBalancesListNotFound ? "visible" : "hidden"}>
+                <div className="w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6! shadow-xs flex flex-col gap-6">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
+                        Conversion Details
+                    </h2>
 
-                    {/* Destination Available Balance */}
-                    <div className="w-full flex flex-col justify-center items-start gap-2">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
-                            Available Balance
+                    {/* Supported conversion info banner */}
+                    <div className="flex items-start gap-2.5 p-3.5! rounded-lg bg-[var(--info-bg)] border border-[var(--info)]/20 text-[11px] text-[var(--info)]">
+                        <Info className="w-4 h-4 shrink-0 mt-px!" />
+                        <span className="leading-relaxed">
+                            <strong className="font-semibold">Supported conversions:</strong> FIAT-to-FIAT
+                            (USD, EUR, SGD) and USD-to-Crypto / Crypto-to-USD (USDT, USDC). Crypto-to-Crypto
+                            and non-USD FIAT-to-Crypto pairs are not supported.
                         </span>
-                        <div className="w-full h-10 px-4! rounded-md bg-[var(--line-faint)] border border-[var(--line)] flex items-center text-xs font-medium text-[var(--ink-soft)]">
-                            {destinationWallet
-                                ? `${parseFloat(destinationWallet.available_balance).toFixed(2)} ${destinationWallet.wallet_currency}`
-                                : '—'}
-                        </div>
                     </div>
-                </div>
 
-                {/* Row 3 — Amount */}
-                <CustomInputComponent
-                    id="conversion-input-amount"
-                    label="Amount to convert"
-                    type="number"
-                    placeholder="e.g. 100"
-                    fieldLabelClassname="text-[var(--ink-soft)] text-xs font-semibold uppercase tracking-wide"
-                    inputClassname="px-4! text-[var(--ink)]"
-                    error={errors?.amount?.message}
-                    {...register('amount', {
-                        onChange: () => {
-                            if (quote) onResetQuote();
-                        },
-                    })}
-                />
-            </form>
+                    <form
+                        id="currency-conversion-form"
+                        noValidate
+                        onSubmit={handleSubmit(handleFormSubmit)}
+                        className="flex flex-col gap-5"
+                    >
+                        {/* Row 1 — Source Wallet */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Controller
+                                name="source_currency"
+                                control={control}
+                                render={({ field }) => (
+                                    <div className="w-full h-fit flex flex-col justify-center items-start gap-2">
+                                        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
+                                            From Wallet
+                                        </span>
+                                        <CustomSelectComponent
+                                            id="conversion-select-sourceCurrency"
+                                            label="Select source wallet"
+                                            labels={walletSelectOptions}
+                                            selectTriggerClassName="w-full px-4! text-[var(--ink)]"
+                                            selectGroupClassName="w-full"
+                                            value={field.value}
+                                            onChange={(val) => {
+                                                field.onChange(val);
+                                                if (quote) onResetQuote();
+                                            }}
+                                            error={errors?.source_currency?.message}
+                                        />
+                                    </div>
+                                )}
+                            />
 
-            {/* Bottom Actions */}
-            <div className="pt-4! border-t border-[var(--line)] flex items-center justify-end gap-3">
-                {!quote ? (
-                    <div className="w-fit h-fit px-2! py-1!">
-                        <CustomButtonComponent
-                            id="conversion-generateQuote-btn"
-                            label={
-                                <span className="flex items-center justify-center gap-1.5">
-                                    <ArrowLeftRight className="w-4 h-4" /> Get Conversion Quote
+                            {/* Source Available Balance */}
+                            <div className="w-full flex flex-col justify-center items-start gap-2">
+                                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
+                                    Available Balance
                                 </span>
-                            }
-                            type="submit"
-                            form="currency-conversion-form"
-                            variant="navy"
-                            showButtonLoader={isQuoteLoading}
+                                <div className="w-full h-10 px-4! rounded-md bg-[var(--line-faint)] border border-[var(--line)] flex items-center text-xs font-medium text-[var(--ink-soft)]">
+                                    {sourceWallet
+                                        ? `${parseFloat(sourceWallet.available_balance).toFixed(2)} ${sourceWallet.wallet_currency}`
+                                        : '—'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Row 2 — Destination Wallet */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Controller
+                                name="destination_currency"
+                                control={control}
+                                render={({ field }) => (
+                                    <div className="w-full h-fit flex flex-col justify-center items-start gap-2">
+                                        <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
+                                            To Wallet
+                                        </span>
+                                        <CustomSelectComponent
+                                            id="conversion-select-destinationCurrency"
+                                            label="Select destination wallet"
+                                            labels={walletSelectOptions}
+                                            selectTriggerClassName="w-full px-4! text-[var(--ink)]"
+                                            selectGroupClassName="w-full"
+                                            value={field.value}
+                                            onChange={(val) => {
+                                                field.onChange(val);
+                                                if (quote) onResetQuote();
+                                            }}
+                                            error={errors?.destination_currency?.message}
+                                        />
+                                    </div>
+                                )}
+                            />
+
+                            {/* Destination Available Balance */}
+                            <div className="w-full flex flex-col justify-center items-start gap-2">
+                                <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
+                                    Available Balance
+                                </span>
+                                <div className="w-full h-10 px-4! rounded-md bg-[var(--line-faint)] border border-[var(--line)] flex items-center text-xs font-medium text-[var(--ink-soft)]">
+                                    {destinationWallet
+                                        ? `${parseFloat(destinationWallet.available_balance).toFixed(2)} ${destinationWallet.wallet_currency}`
+                                        : '—'}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Row 3 — Amount */}
+                        <CustomInputComponent
+                            id="conversion-input-amount"
+                            label="Amount to convert"
+                            type="number"
+                            placeholder="e.g. 100"
+                            fieldLabelClassname="text-[var(--ink-soft)] text-xs font-semibold uppercase tracking-wide"
+                            inputClassname="px-4! text-[var(--ink)]"
+                            error={errors?.amount?.message}
+                            {...register('amount', {
+                                onChange: () => {
+                                    if (quote) onResetQuote();
+                                },
+                            })}
                         />
+                    </form>
+
+                    {/* Bottom Actions */}
+                    <div className="pt-4! border-t border-[var(--line)] flex items-center justify-end gap-3">
+                        {!quote ? (
+                            <div className="w-fit h-fit px-2! py-1!">
+                                <CustomButtonComponent
+                                    id="conversion-generateQuote-btn"
+                                    label={
+                                        <span className="flex items-center justify-center gap-1.5">
+                                            <ArrowLeftRight className="w-4 h-4" /> Get Conversion Quote
+                                        </span>
+                                    }
+                                    type="submit"
+                                    form="currency-conversion-form"
+                                    variant="navy"
+                                    showButtonLoader={isQuoteLoading}
+                                />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="w-[160px] h-[38px]">
+                                    <CustomButtonComponent
+                                        id="conversion-resetQuote-btn"
+                                        label="Get New Quote"
+                                        type="button"
+                                        variant="outline"
+                                        onClick={onResetQuote}
+                                    />
+                                </div>
+                                <div className="w-[140px] h-[38px]">
+                                    <CustomButtonComponent
+                                        id="conversion-continueStep1-btn"
+                                        label={
+                                            <span className="flex items-center justify-center gap-1.5">
+                                                Continue <ArrowRight className="w-4 h-4" />
+                                            </span>
+                                        }
+                                        type="button"
+                                        variant="navy"
+                                        onClick={onContinue}
+                                    />
+                                </div>
+                            </>
+                        )}
                     </div>
-                ) : (
-                    <>
-                        <div className="w-[160px] h-[38px]">
-                            <CustomButtonComponent
-                                id="conversion-resetQuote-btn"
-                                label="Get New Quote"
-                                type="button"
-                                variant="outline"
-                                onClick={onResetQuote}
-                            />
-                        </div>
-                        <div className="w-[140px] h-[38px]">
-                            <CustomButtonComponent
-                                id="conversion-continueStep1-btn"
-                                label={
-                                    <span className="flex items-center justify-center gap-1.5">
-                                        Continue <ArrowRight className="w-4 h-4" />
-                                    </span>
-                                }
-                                type="button"
-                                variant="navy"
-                                onClick={onContinue}
-                            />
-                        </div>
-                    </>
-                )}
-            </div>
-        </div>
+                </div>
+            </Activity>
+        </>
     );
 }
