@@ -142,7 +142,7 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
 
 // ------------------------------------- GET ALL WALLET BALANCES SERVICE ------------------------------------- \\
 
-export const getAllWalletBalancesService = async (requestSession: Request["session"], aesDecryptedQueryData:| Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
+export const getAllWalletBalancesService = async (requestSession: Request["session"], aesDecryptedQueryData: | Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");
@@ -191,11 +191,11 @@ export const getAllWalletBalancesService = async (requestSession: Request["sessi
 
         // Get Wallet Details
         const userWalletDetails = await user_wallet_details.findOne({
-                    user_id: new Types.ObjectId(
-                        requestSession.userId
-                    ),
-                    cardholder_id: cardholderObjectId,
-                }).lean();
+            user_id: new Types.ObjectId(
+                requestSession.userId
+            ),
+            cardholder_id: cardholderObjectId,
+        }).lean();
         if (!userWalletDetails) {
             throw new NotFoundError("User wallet details not found");
         }
@@ -263,7 +263,7 @@ export const getAllWalletBalancesService = async (requestSession: Request["sessi
     catch (err) {
         const error = err as any;
 
-        logger.error(error, {serviceName: "GetAllWalletBalancesService"});
+        logger.error(error, { serviceName: "GetAllWalletBalancesService" });
 
         const sanitizedError = sanitizeApiError(error);
 
@@ -497,7 +497,11 @@ export const loadWalletService = async (requestSession: Request["session"], aesD
             userId = cardholderDetails?._id;
         }
 
-        const amountDecimal = new Decimal(walletDetails?.amount?.toString())
+        const amount = walletDetails?.amount;
+        if (amount === undefined || amount === null || amount.trim() === "") {
+            throw new InvalidRequestBodyError("Amount is required");
+        }
+        const amountDecimal = new Decimal(amount);
 
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof loadWalletValidationSchema>> = loadWalletValidationSchema.safeParse(
@@ -639,7 +643,11 @@ export const withdrawWalletService = async (requestSession: Request["session"], 
             userId = cardholderDetails?._id;
         }
 
-        const amountDecimal = new Decimal(walletDetails?.amount?.toString());
+        const amount = walletDetails?.amount;
+        if (amount === undefined || amount === null || amount.trim() === "") {
+            throw new InvalidRequestBodyError("Amount is required");
+        }
+        const amountDecimal = new Decimal(amount);
 
         // Check Validations
         const validationResult: SafeParseResult<z.infer<typeof withdrawWalletValidationSchema>> = withdrawWalletValidationSchema.safeParse(
