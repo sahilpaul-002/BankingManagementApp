@@ -20,7 +20,7 @@ export default function CurrencyConversionStepperComponent({
     currentStep,
 }: CurrencyConversionStepperComponentProps) {
     return (
-        <div className="w-full py-4 flex items-center justify-between">
+        <div className="w-full py-4! flex items-center justify-between">
             <div className="w-full flex items-center justify-between max-w-4xl mx-auto">
                 {STEPS.map((step, index) => {
                     const isCompleted = currentStep > step.id;

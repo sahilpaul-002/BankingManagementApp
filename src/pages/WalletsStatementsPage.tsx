@@ -11,7 +11,7 @@ import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import { useNavigate } from 'react-router';
 import { useDispatch } from 'react-redux';
 import ShowInConsole from '@/utils/ShowInConsole';
-import type { WalletTransactionItemType, WalletTransactionsListResponseDataType } from '@/types/wallets/walletTransactionsSectionTypes';
+import type { WalletTransactionItemType, WalletTransactionsListResponseDataType } from '@/types/wallets/walletTransactionsTypes';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import type { PaginationState } from '@tanstack/react-table';
 import type { DateRange } from '@/components/common/CustomDateRangeFilterComponent';

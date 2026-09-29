@@ -7,16 +7,6 @@ import { KYC_URL, WALLET_URL } from '@/configs/constants'
 import { selectApplicaitonHeaders } from '@/redux/slice/config/configSlice'
 import { ApplicationServiceError } from '@/errorHandling/error'
 import { userApis } from '../user/userApi'
-import type {
-    CreateConversionQuoteRequestBody,
-    CreateConversionQuoteResponse,
-    ExecuteConversionRequestBody,
-    ExecuteConversionResponse,
-} from '@/fallbacks/wallets/currencyConversion/currencyConversionFallbacks'
-import type {
-    WalletTransactionsListResponse,
-    WalletTransactionDetailsResponse,
-} from '@/fallbacks/wallets/walletStatements/walletStatementsFallbacks'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 
@@ -116,7 +106,7 @@ export const walletApis = createApi({
         // =======================================================
         // LOAD WALLET
         // =======================================================
-        loadWallet: build.mutation<apiResponseType<apiResponseDataType>, { email: string; walletDetails: { cardholderId: string, walletId: string, walletType: "FIAT" | "CRYPTO", walletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", network?: "ETHEREUM" | "POLYGON", amount: number } }>({
+        loadWallet: build.mutation<apiResponseType<apiResponseDataType>, { email: string; walletDetails: { cardholderId: string, walletId: string, walletType: "FIAT" | "CRYPTO", walletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", network?: "ETHEREUM" | "POLYGON", amount: string } }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -301,7 +291,7 @@ export const walletApis = createApi({
         // =======================================================
         // CREATE CURRENCY CONVERSION QUOTE
         // =======================================================
-        createConversionQuote: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardholderId: string; body: CreateConversionQuoteRequestBody }>({
+        createCurrencyConversionQuote: build.mutation<apiResponseType<apiResponseDataType>, { email: string; bodyPayload: {cardholderId: string, sourceWalletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", distinatinWalletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", amount: string} }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -314,7 +304,7 @@ export const walletApis = createApi({
                             )
                         );
                         if (result.isError) {
-                            throw new ApplicationServiceError('CREATE-CONVERSION-QUOTE - Failed to fetch application headers');
+                            throw new ApplicationServiceError('CREATE-CURRENCY-CONVERSION-QUOTE - Failed to fetch application headers');
                         }
 
                         // Get the latest Redux state
@@ -324,11 +314,11 @@ export const walletApis = createApi({
                     }
 
                     const result = await executeBaseQuery(baseQuery, {
-                        url: `${WALLET_URL}/currency-conversion/quote`,
+                        url: `${WALLET_URL}/walletCurrencyConversion/createPayout`,
                         method: 'POST',
                         headers,
-                        data: payload.body,
-                        params: { email: payload.email, cardholder_id: payload.cardholderId },
+                        params: {email: payload?.email},
+                        data: { cardholder_id: payload?.bodyPayload?.cardholderId, source_wallet_currency: payload?.bodyPayload?.sourceWalletCurrency, destination_wallet_currency: payload?.bodyPayload?.distinatinWalletCurrency, amount: payload?.bodyPayload?.amount },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown
@@ -338,17 +328,18 @@ export const walletApis = createApi({
                         data: result.data as apiResponseType<apiResponseDataType>,
                     };
                 } catch (error) {
-                    const rtkError = rtkQueryCatchError(error, 'CREATE-CONVERSION-QUOTE faced application error');
+                    const rtkError = rtkQueryCatchError(error, 'CREATE-CURRENCY-CONVERSION-QUOTE faced application error');
                     return rtkError
                 }
             },
+            invalidatesTags: [{ type: 'Wallet', id: 'BALANCES' }, { type: 'Wallet', id: 'DETAILS' }, { type: 'Wallet', id: 'TRANSACTIONS' }],
         }),
 
 
         // =======================================================
         // EXECUTE CURRENCY CONVERSION
         // =======================================================
-        executeConversion: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardholderId: string; body: ExecuteConversionRequestBody }>({
+        executeCurrencyConversionQuote: build.mutation<apiResponseType<apiResponseDataType>, { email: string; bodyPayload: {cardholderId: string, quoteId: string}; }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -361,7 +352,7 @@ export const walletApis = createApi({
                             )
                         );
                         if (result.isError) {
-                            throw new ApplicationServiceError('EXECUTE-CONVERSION - Failed to fetch application headers');
+                            throw new ApplicationServiceError('EXECUTE-CURRENCY-CONVERSION-QUOTE - Failed to fetch application headers');
                         }
 
                         // Get the latest Redux state
@@ -371,11 +362,11 @@ export const walletApis = createApi({
                     }
 
                     const result = await executeBaseQuery(baseQuery, {
-                        url: `${WALLET_URL}/currency-conversion/execute`,
+                        url: `${WALLET_URL}/walletCurrencyConversion/executePayout`,
                         method: 'POST',
                         headers,
-                        data: payload.body,
-                        params: { email: payload.email, cardholder_id: payload.cardholderId },
+                        data: {quote_id: payload?.bodyPayload?.quoteId, cardholder_id: payload?.bodyPayload?.cardholderId},
+                        params: { email: payload?.email },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown
@@ -385,7 +376,7 @@ export const walletApis = createApi({
                         data: result.data as apiResponseType<apiResponseDataType>,
                     };
                 } catch (error) {
-                    const rtkError = rtkQueryCatchError(error, 'EXECUTE-CONVERSION faced application error');
+                    const rtkError = rtkQueryCatchError(error, 'EXECUTE-CURRENCY-CONVERSION-QUOTE faced application error');
                     return rtkError
                 }
             },
@@ -423,7 +414,7 @@ export const walletApis = createApi({
                         method: 'GET',
                         headers,
                         params: {
-                            email: payload.email, cardholder_id: payload.cardholderId, wallet_id: payload.walletId, page: payload.pageNumber, page_size: payload.pageSize, ...(payload.from_date && {from_date: payload.from_date}), ...(payload.to_date && {to_date: payload.to_date}),
+                            email: payload.email, cardholder_id: payload.cardholderId, wallet_id: payload.walletId, page: payload.pageNumber, page_size: payload.pageSize, ...(payload.from_date && { from_date: payload.from_date }), ...(payload.to_date && { to_date: payload.to_date }),
                         },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
@@ -440,53 +431,6 @@ export const walletApis = createApi({
             },
             providesTags: [{ type: 'Wallet', id: 'TRANSACTIONS' }],
         }),
-
-
-        // =======================================================
-        // GET WALLET TRANSACTION DETAILS BY ID
-        // =======================================================
-        getWalletTransactionDetails: build.query<apiResponseType<apiResponseDataType>, { email: string; cardholderId: string; transactionId: string }>({
-            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
-                try {
-                    let state = getState() as rootStateType;
-                    let headers = walletApiHeaders(state);
-                    if (!headers || Object.keys(headers).length === 0) {
-                        const result = await dispatch(
-                            userApis.endpoints.getApplicationHeaders.initiate(
-                                { email: payload.email },
-                                { forceRefetch: true }
-                            )
-                        );
-                        if (result.isError) {
-                            throw new ApplicationServiceError('GET-WALLET-TRANSACTION-DETAILS - Failed to fetch application headers');
-                        }
-
-                        // Get the latest Redux state
-                        state = getState() as rootStateType;
-
-                        headers = walletApiHeaders(state)
-                    }
-
-                    const result = await executeBaseQuery(baseQuery, {
-                        url: `${WALLET_URL}/transactions/${payload.transactionId}`,
-                        method: 'GET',
-                        headers,
-                        params: { email: payload.email, cardholder_id: payload.cardholderId },
-                    }) as {
-                        data?: apiResponseType<apiResponseDataType>
-                        error?: unknown
-                    }
-
-                    return {
-                        data: result.data as apiResponseType<apiResponseDataType>,
-                    };
-                } catch (error) {
-                    const rtkError = rtkQueryCatchError(error, 'GET-WALLET-TRANSACTION-DETAILS faced application error');
-                    return rtkError;
-                }
-            },
-            providesTags: [{ type: 'Wallet', id: 'TRANSACTION-DETAILS' }],
-        }),
     }),
 })
 
@@ -497,10 +441,8 @@ export const {
     useLazyGetAllWalletBalancesQuery,
     useGetWalletDetailsQuery,
     useLazyGetWalletDetailsQuery,
-    useCreateConversionQuoteMutation,
-    useExecuteConversionMutation,
+    useCreateCurrencyConversionQuoteMutation,
+    useExecuteCurrencyConversionQuoteMutation,
     useGetWalletTransactionsQuery,
     useLazyGetWalletTransactionsQuery,
-    useGetWalletTransactionDetailsQuery,
-    useLazyGetWalletTransactionDetailsQuery
 } = walletApis

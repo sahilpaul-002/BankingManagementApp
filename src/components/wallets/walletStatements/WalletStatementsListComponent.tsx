@@ -8,7 +8,7 @@ import {
     type ColumnDef,
     type PaginationState,
 } from '@tanstack/react-table';
-import type { WalletTransactionItemType } from '@/types/wallets/walletTransactionsSectionTypes';
+import type { WalletTransactionItemType } from '@/types/wallets/walletTransactionsTypes';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
 
 const walletTableFeatures = tableFeatures({

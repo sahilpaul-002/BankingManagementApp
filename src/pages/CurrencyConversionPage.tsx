@@ -1,114 +1,126 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Activity } from 'react';
 import { toast } from 'react-toastify';
 import CurrencyConversionStepperComponent from '@/components/wallets/currencyConversion/CurrencyConversionStepperComponent';
-import ConversionDetailsStepComponent, {
-    type ConversionFormData,
-} from '@/components/wallets/currencyConversion/ConversionDetailsStepComponent';
+import ConversionDetailsStepComponent, { type ConversionFormData } from '@/components/wallets/currencyConversion/ConversionDetailsStepComponent';
 import ReviewConversionStepComponent from '@/components/wallets/currencyConversion/ReviewConversionStepComponent';
 import ConversionConfirmationStepComponent from '@/components/wallets/currencyConversion/ConversionConfirmationStepComponent';
 import ConversionQuoteSummaryCardComponent from '@/components/wallets/currencyConversion/ConversionQuoteSummaryCardComponent';
-import {
-    ALL_WALLET_BALANCES_FALLBACK,
-    CREATE_CONVERSION_QUOTE_FALLBACK,
-    EXECUTE_CONVERSION_FALLBACK,
-    type WalletBalanceItem,
-    type CurrencyConversionQuoteData,
-    type ExecuteConversionData,
-} from '@/fallbacks/wallets/currencyConversion/currencyConversionFallbacks';
-import {
-    useGetAllWalletBalancesQuery,
-    useCreateConversionQuoteMutation,
-    useExecuteConversionMutation,
-} from '@/redux/features/wallet/walletApis';
+import { useCreateCurrencyConversionQuoteMutation, useExecuteCurrencyConversionQuoteMutation, useGetAllWalletBalancesQuery } from '@/redux/features/wallet/walletApis';
+import { useNavigate } from 'react-router';
+import { useDispatch } from 'react-redux';
+import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
+import type { AllWalletBalancesResponseDataType, CurrencyConversionQuoteDataType, ExecuteConversionDataType, WalletBalanceItemType } from '@/types/wallets/currencyConversionTypes';
+import ShowInConsole from '@/utils/ShowInConsole';
+import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 
 export default function CurrencyConversionPage() {
-    const userEmail = sessionStorage.getItem('userEmail') ?? '';
-    const userCardholderId = sessionStorage.getItem('cardholderId') ?? '';
+    // Configure useNavigate
+    const navigate = useNavigate();
 
-    // RTK Query
-    const { data: walletBalancesApiResponse } = useGetAllWalletBalancesQuery(
-        { email: userEmail, cardholderId: userCardholderId },
-        { skip: !userEmail || !userCardholderId }
+    // Configure useDispatch
+    const dispatch = useDispatch();
+
+    // ------------------------------- GET EMAIL FROM SESSION STORAGE ---------------------------------- \\
+    // Get necessary user details from session storage
+    const userEmail = sessionStorage.getItem('userEmail');
+    const userId = sessionStorage.getItem("userId")
+    const userCardholderId = sessionStorage.getItem("cardholderId")
+    let userWalletId = sessionStorage.getItem('walletId');
+
+    useEffect(() => {
+        // Validate email once
+        if (!userEmail || !userId || !userCardholderId || !userWalletId) {
+            dispatch(setShowInfoBanner("Application facing issue, necessary user details not present in session storage. Please re-login."));
+            return;
+        }
+    }, [userEmail, userId, userCardholderId, userWalletId]);
+    // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+    // -------------------------------- ALL WALLETS BALANCES RTK QUERY -------------------------------- \\
+    // User All Wallets Balances
+    const { data: getAllWalletsBalancesData, isLoading: getAllWalletsBanalcesIsLoading, isFetching: getAllWalletsBanalcesIsFetching, isError: getAllWalletsBalancesIsError, error: getAllWalletsBalancesError, isSuccess: getAllWalletsBalancesIsSuccess, refetch: refetchGetAllWalletsBalances } = useGetAllWalletBalancesQuery({ email: userEmail!, cardholderId: userCardholderId! }, { skip: !userEmail || !userCardholderId }
     );
-    const [createQuoteApi, { isLoading: isQuoteApiLoading }] = useCreateConversionQuoteMutation();
-    const [executeConversionApi, { isLoading: isExecuteApiLoading }] = useExecuteConversionMutation();
+    const userAllWalletsBalances = getAllWalletsBalancesData?.data as AllWalletBalancesResponseDataType ?? [];
+    userWalletId = (getAllWalletsBalancesData?.data as AllWalletBalancesResponseDataType | undefined)?.walletId || null;
+    const userWalletsBalancesList = userAllWalletsBalances?.wallets_details as WalletBalanceItemType[]
+    useEffect(() => {
+        if (!getAllWalletsBalancesIsSuccess) {
+            return;
+        }
 
-    // Local state
-    const [walletsList, setWalletsList] = useState<WalletBalanceItem[]>(ALL_WALLET_BALANCES_FALLBACK);
+        if (userWalletId) {
+            sessionStorage.setItem("walletId", userWalletId);
+        } else {
+            sessionStorage.removeItem("walletId");
+        }
+    }, [getAllWalletsBalancesIsSuccess, userWalletId]);
+    const isAllWalletsBalancesNotFound =
+        getAllWalletsBalancesIsError &&
+        getAllWalletsBalancesError &&
+        getAllWalletsBalancesError != null &&
+        "status" in getAllWalletsBalancesError &&
+        getAllWalletsBalancesError?.status === 404 &&
+        typeof getAllWalletsBalancesError?.data === "object" &&
+        getAllWalletsBalancesError?.data !== null &&
+        "status" in getAllWalletsBalancesError?.data &&
+        getAllWalletsBalancesError?.data.status === "NOT_FOUND";
 
-    // Flow state
+    useEffect(() => {
+        ShowInConsole("User All Wallets Balances details", userAllWalletsBalances);
+    }, [userAllWalletsBalances])
+    // ---------------------------- XXXXXXXXXXXXXXXXXXXX ---------------------------- \\
+
+    // ------------ CREATE CURRENCY CONVERSION QUOTE / EXECUTE CURRENCY CONVERSION QUOTE RTK MUTATION ------------ \\
+    const [triggerCreateCurrencyConversionQuote, { isLoading: createCurrencyConversionQuoteIsLoading }] = useCreateCurrencyConversionQuoteMutation();
+    const [triggerExecuteCurrencyConversionQuote, { isLoading: executeCurrencyConversionQuoteIsLoading }] = useExecuteCurrencyConversionQuoteMutation();
+    // ---------------------------- XXXXXXXXXXXXXXXXXXXX ---------------------------- \\
+
+    // ----------------------- Currency Conversion States ----------------------- \\
     const [currentStep, setCurrentStep] = useState<number>(1);
     const [savedFormData, setSavedFormData] = useState<ConversionFormData | null>(null);
-    const [activeQuote, setActiveQuote] = useState<CurrencyConversionQuoteData | null>(null);
-    const [executionResult, setExecutionResult] = useState<ExecuteConversionData | null>(null);
-    const [isLocalQuoteLoading, setIsLocalQuoteLoading] = useState<boolean>(false);
-    const [isLocalExecuting, setIsLocalExecuting] = useState<boolean>(false);
+    const [activeQuote, setActiveQuote] = useState<CurrencyConversionQuoteDataType | null>(null);
+    const [executionResult, setExecutionResult] = useState<ExecuteConversionDataType | null>(null);
+    // ----------------------- XXXXXXXXXXXXXXX ----------------------- \\
 
-    // Sync wallet balances from API
-    // useEffect(() => {
-    //     const details = walletBalancesApiResponse?.data?.wallets_details;
-    //     if (Array.isArray(details) && details.length > 0) {
-    //         setWalletsList(details as WalletBalanceItem[]);
-    //     }
-    // }, [walletBalancesApiResponse]);
-
-    // ── Step 1: Generate Quote ────────────────────────────────────────────────
+    // Function to Create Currency Conversion Quote
     const handleGenerateQuote = async (formData: ConversionFormData) => {
         setSavedFormData(formData);
-        setIsLocalQuoteLoading(true);
 
         try {
-            const apiRes = await createQuoteApi({
-                email: userEmail,
-                cardholderId: userCardholderId,
-                body: {
-                    source_currency: formData.source_currency,
-                    destination_currency: formData.destination_currency,
+            const createCurrencyConversionResult = await triggerCreateCurrencyConversionQuote({
+                email: userEmail!,
+                bodyPayload: {
+                    cardholderId: userCardholderId!,
+                    sourceWalletCurrency: formData.source_currency as "USD" | "SGD" | "EUR" | "USDT" | "USDC",
+                    distinatinWalletCurrency: formData.destination_currency as "USD" | "SGD" | "EUR" | "USDT" | "USDC",
                     amount: formData.amount,
                 },
-            })
-                .unwrap()
-                .catch(() => null);
-
-            if (apiRes && apiRes.data) {
-                setActiveQuote(apiRes.data);
-            } else {
-                // Fallback quote
-                const sendAmount = parseFloat(formData.amount) || 10;
-                const feeRate = 0.04;
-                const feeAmount = parseFloat((sendAmount * feeRate).toFixed(4));
-                const exchangeRate = 1.28;
-                const destinationAmount = parseFloat(
-                    ((sendAmount - feeAmount) * exchangeRate).toFixed(4)
-                );
-
-                const fallbackQuote: CurrencyConversionQuoteData = {
-                    ...CREATE_CONVERSION_QUOTE_FALLBACK,
-                    quote_id: `qte_${Math.random().toString(36).substring(2, 10)}`,
-                    source: { currency: formData.source_currency, amount: sendAmount.toFixed(4) },
-                    destination: {
-                        currency: formData.destination_currency,
-                        amount: destinationAmount.toFixed(4),
-                    },
-                    fee: {
-                        currency: formData.source_currency,
-                        percentage: '4.0000',
-                        amount: feeAmount.toFixed(4),
-                    },
-                    total_debit: {
-                        currency: formData.source_currency,
-                        amount: sendAmount.toFixed(4),
-                    },
-                    expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-                };
-                setActiveQuote(fallbackQuote);
+            }).unwrap();
+            if (createCurrencyConversionResult?.status?.toUpperCase() !== "SUCCESS") {
+                toast.error('Failed to generate currency conversion quote. Please try again later.');
             }
 
+            setActiveQuote(createCurrencyConversionResult?.data as CurrencyConversionQuoteDataType ?? null);
+
             toast.success('Conversion quote generated successfully.');
-        } catch {
-            toast.error('Failed to generate conversion quote.');
-        } finally {
-            setIsLocalQuoteLoading(false);
+        }
+        catch (err: any) {
+            ShowInConsole('Create currency conversion quote error:', err);
+
+            const errorMessage =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message ||
+                    err?.message ||
+                    'Failed to generate currency conversion quote. Please try again later.';
+            const normalizeErrorMessage = errorMessage?.toLowerCase();
+
+            if (normalizeErrorMessage?.includes("insufficient available") && normalizeErrorMessage?.includes("wallet balance")) {
+                toast.error(`${errorMessage}. Please try a different wallet or add funds in the wallet.`);
+            }
+            else {
+                toast.error('Failed to generate currency conversion quote. Please try again later.');
+            }
         }
     };
 
@@ -130,64 +142,42 @@ export default function CurrencyConversionPage() {
         setCurrentStep(1);
     };
 
-    // ── Step 2: Execute Conversion ────────────────────────────────────────────
+    // Function to Execute Currency Conversion Quote
     const handleExecuteConversion = async () => {
         if (!activeQuote) return;
-        setIsLocalExecuting(true);
 
         try {
-            const apiRes = await executeConversionApi({
-                email: userEmail,
-                cardholderId: userCardholderId,
-                body: { quote_id: activeQuote.quote_id },
-            })
-                .unwrap()
-                .catch(() => null);
+            const executeCurrencyConversionResult = await triggerExecuteCurrencyConversionQuote({
+                email: userEmail!,
+                bodyPayload: { quoteId: activeQuote.quote_id, cardholderId: userCardholderId!, },
+            }).unwrap();
 
-            if (apiRes && apiRes.data) {
-                setExecutionResult(apiRes.data);
-            } else {
-                // Fallback execution result
-                const sendAmount = parseFloat(activeQuote.source.amount);
-                const feeAmount = parseFloat(activeQuote.fee.amount);
-
-                const sourceWallet = walletsList.find(
-                    (w) => w.wallet_currency === activeQuote.source.currency
-                );
-                const destWallet = walletsList.find(
-                    (w) => w.wallet_currency === activeQuote.destination.currency
-                );
-
-                const srcBalanceBefore = parseFloat(sourceWallet?.available_balance ?? '0');
-                const dstBalanceBefore = parseFloat(destWallet?.available_balance ?? '0');
-
-                setExecutionResult({
-                    ...EXECUTE_CONVERSION_FALLBACK,
-                    conversion_reference_id: `conv_${Math.random().toString(36).substring(2, 14)}`,
-                    source_currency: activeQuote.source.currency,
-                    destination_currency: activeQuote.destination.currency,
-                    source_amount: activeQuote.source.amount,
-                    conversion_fee: feeAmount.toFixed(4),
-                    amount_after_fee: (sendAmount - feeAmount).toFixed(4),
-                    exchange_rate: activeQuote.exchange_rate,
-                    destination_amount: activeQuote.destination.amount,
-                    source_balance_before: srcBalanceBefore.toFixed(4),
-                    source_balance_after: (srcBalanceBefore - sendAmount).toFixed(4),
-                    destination_balance_before: dstBalanceBefore.toFixed(4),
-                    destination_balance_after: (
-                        dstBalanceBefore + parseFloat(activeQuote.destination.amount)
-                    ).toFixed(4),
-                    quote_id: activeQuote.quote_id,
-                    quote_status: 'EXECUTED',
-                });
+            if (executeCurrencyConversionResult?.status?.toUpperCase() !== "SUCCESS") {
+                toast.error('Failed to generate currency conversion quote. Please try again later.');
             }
 
+            setExecutionResult(executeCurrencyConversionResult?.data as ExecuteConversionDataType ?? null);
+            
             setCurrentStep(3);
-            toast.success('Currency conversion executed successfully!');
-        } catch {
-            toast.error('Failed to execute currency conversion.');
-        } finally {
-            setIsLocalExecuting(false);
+            toast.success('Currency conversion quote executed successfully!');
+        }
+        catch (err: any) {
+            ShowInConsole('Create currency conversion quote error:', err);
+
+            const errorMessage =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message ||
+                    err?.message ||
+                    'Failed to execute currency conversion quote. Please try again later.';
+            const normalizeErrorMessage = errorMessage?.toLowerCase();
+
+            if (normalizeErrorMessage?.includes("currency conversion quote has expired")) {
+                toast.error('Currency conversion quote has expired. Please generate a new quote and try again.');
+            }
+            else {
+                toast.error('Failed to execute currency conversion quote. Please try again later.');
+            }
         }
     };
 
@@ -200,63 +190,70 @@ export default function CurrencyConversionPage() {
     };
 
     return (
-        <div className="currencyConversionPage-container w-full h-fit flex flex-col justify-start items-stretch gap-6 p-4! sm:p-6!">
-            {/* Header */}
-            <div className="flex flex-col gap-1.5">
-                <p className="text-xs text-[var(--mute)] tracking-wide">
-                    Wallets &gt; <span className="text-[var(--ink-soft)] font-medium">Currency Conversion</span>
-                </p>
+        <>
+            {/* Page Loader */}
+            <Activity mode={getAllWalletsBanalcesIsLoading ? "visible" : "hidden"}>
+                <PageLoaderComponent showPageLoader={getAllWalletsBanalcesIsLoading} />
+            </Activity>
 
-                <h1 className="text-2xl sm:text-3xl text-[var(--ink)] tracking-normal">
-                    <span className="font-serif font-medium">Currency</span>{' '}
-                    <span className="font-serif italic font-normal text-[var(--mute)]">conversion.</span>
-                </h1>
-                <p className="text-xs text-[var(--mute)]">
-                    Convert between your wallet balances instantly.
-                </p>
-            </div>
-
-            {/* Stepper */}
-            <CurrencyConversionStepperComponent currentStep={currentStep} />
-
-            {/* Step 1 & 2: 2-column layout | Step 3: centered */}
-            {currentStep < 3 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                    {/* Left Column */}
-                    <div className="lg:col-span-2">
-                        {currentStep === 1 ? (
-                            <ConversionDetailsStepComponent
-                                wallets={walletsList}
-                                quote={activeQuote}
-                                isQuoteLoading={isQuoteApiLoading || isLocalQuoteLoading}
-                                onGenerateQuote={handleGenerateQuote}
-                                onResetQuote={handleResetQuote}
-                                onContinue={handleContinueStep1}
-                            />
-                        ) : (
-                            <ReviewConversionStepComponent
-                                quote={activeQuote!}
-                                isExecuting={isExecuteApiLoading || isLocalExecuting}
-                                onBack={handleBackStep2}
-                                onExecute={handleExecuteConversion}
-                            />
-                        )}
+            {/* Main Content */}
+            <Activity mode={!getAllWalletsBanalcesIsLoading ? "visible" : "hidden"}>
+                <div className="currencyConversionPage-container w-full h-fit flex flex-col justify-start items-stretch gap-6 p-4! sm:p-6!">
+                    {/* Header */}
+                    <div className="flex flex-col gap-1.5">
+                        <h1 className="text-2xl sm:text-3xl text-[var(--ink)] tracking-normal">
+                            <span className="font-serif font-medium">Currency</span>{' '}
+                            <span className="font-serif italic font-normal text-[var(--mute)]">conversion.</span>
+                        </h1>
+                        <p className="text-xs text-[var(--mute)]">
+                            Convert between your wallet balances instantly.
+                        </p>
                     </div>
 
-                    {/* Right Column — Quote Summary */}
-                    <div className="lg:col-span-1">
-                        <ConversionQuoteSummaryCardComponent
-                            quote={activeQuote}
-                            isLoading={isQuoteApiLoading || isLocalQuoteLoading}
+                    {/* Stepper */}
+                    <CurrencyConversionStepperComponent currentStep={currentStep} />
+
+                    {/* Step 1 & 2: 2-column layout | Step 3: centered */}
+                    {currentStep < 3 ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                            {/* Left Column */}
+                            <div className="lg:col-span-2">
+                                {currentStep === 1 ? (
+                                    <ConversionDetailsStepComponent
+                                        wallets={userWalletsBalancesList}
+                                        walletsBalancesListNotFound={isAllWalletsBalancesNotFound}
+                                        quote={activeQuote}
+                                        isQuoteLoading={createCurrencyConversionQuoteIsLoading}
+                                        onGenerateQuote={handleGenerateQuote}
+                                        onResetQuote={handleResetQuote}
+                                        onContinue={handleContinueStep1}
+                                    />
+                                ) : (
+                                    <ReviewConversionStepComponent
+                                        quote={activeQuote!}
+                                        isExecuting={executeCurrencyConversionQuoteIsLoading}
+                                        onBack={handleBackStep2}
+                                        onExecute={handleExecuteConversion}
+                                    />
+                                )}
+                            </div>
+
+                            {/* Right Column — Quote Summary */}
+                            <div className="lg:col-span-1">
+                                <ConversionQuoteSummaryCardComponent
+                                    quote={activeQuote}
+                                    isLoading={createCurrencyConversionQuoteIsLoading}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <ConversionConfirmationStepComponent
+                            result={executionResult!}
+                            onConvertAnother={handleConvertAnother}
                         />
-                    </div>
+                    )}
                 </div>
-            ) : (
-                <ConversionConfirmationStepComponent
-                    result={executionResult!}
-                    onConvertAnother={handleConvertAnother}
-                />
-            )}
-        </div>
+            </Activity>
+        </>
     );
 }

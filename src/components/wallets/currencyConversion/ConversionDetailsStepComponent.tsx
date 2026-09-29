@@ -6,10 +6,7 @@ import { ArrowRight, ArrowLeftRight, Info } from 'lucide-react';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type {
-    WalletBalanceItem,
-    CurrencyConversionQuoteData,
-} from '@/fallbacks/wallets/currencyConversion/currencyConversionFallbacks';
+import type { CurrencyConversionQuoteDataType, WalletBalanceItemType } from '@/types/wallets/currencyConversionTypes';
 
 // ── Conversion rules ─────────────────────────────────────────────────────────
 // FIAT: USD, EUR, SGD  |  CRYPTO: USDT, USDC
@@ -57,9 +54,10 @@ const conversionFormSchema = z
 
 export type ConversionFormData = z.infer<typeof conversionFormSchema>;
 
-interface ConversionDetailsStepComponentProps {
-    wallets: WalletBalanceItem[];
-    quote: CurrencyConversionQuoteData | null;
+interface ConversionDetailsStepComponentPropsType {
+    wallets: WalletBalanceItemType[];
+    walletsBalancesListNotFound?: boolean | undefined;
+    quote: CurrencyConversionQuoteDataType | null;
     isQuoteLoading: boolean;
     onGenerateQuote: (data: ConversionFormData) => void;
     onResetQuote: () => void;
@@ -68,12 +66,13 @@ interface ConversionDetailsStepComponentProps {
 
 export default function ConversionDetailsStepComponent({
     wallets,
+    walletsBalancesListNotFound,
     quote,
     isQuoteLoading,
     onGenerateQuote,
     onResetQuote,
     onContinue,
-}: ConversionDetailsStepComponentProps) {
+}: ConversionDetailsStepComponentPropsType) {
     const {
         register,
         handleSubmit,
@@ -95,27 +94,27 @@ export default function ConversionDetailsStepComponent({
     const watchedDestination = watch('destination_currency');
 
     // Build wallet select options from API data
-    const walletSelectOptions = wallets.map((w) => ({
+    const walletSelectOptions = wallets?.map((w) => ({
         label: `${w.wallet_currency} (${w.wallet_type})`,
         value: w.wallet_currency,
     }));
 
-    const sourceWallet = wallets.find((w) => w.wallet_currency === watchedSource) ?? null;
-    const destinationWallet = wallets.find((w) => w.wallet_currency === watchedDestination) ?? null;
+    const sourceWallet = wallets?.find((w) => w.wallet_currency === watchedSource) ?? null;
+    const destinationWallet = wallets?.find((w) => w.wallet_currency === watchedDestination) ?? null;
 
     const handleFormSubmit: SubmitHandler<ConversionFormData> = (data) => {
         onGenerateQuote(data);
     };
 
     return (
-        <div className="w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6 shadow-xs flex flex-col gap-6">
+        <div className="w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6! shadow-xs flex flex-col gap-6">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
                 Conversion Details
             </h2>
 
             {/* Supported conversion info banner */}
-            <div className="flex items-start gap-2.5 p-3.5 rounded-lg bg-[var(--info-bg)] border border-[var(--info)]/20 text-[11px] text-[var(--info)]">
-                <Info className="w-4 h-4 shrink-0 mt-px" />
+            <div className="flex items-start gap-2.5 p-3.5! rounded-lg bg-[var(--info-bg)] border border-[var(--info)]/20 text-[11px] text-[var(--info)]">
+                <Info className="w-4 h-4 shrink-0 mt-px!" />
                 <span className="leading-relaxed">
                     <strong className="font-semibold">Supported conversions:</strong> FIAT-to-FIAT
                     (USD, EUR, SGD) and USD-to-Crypto / Crypto-to-USD (USDT, USDC). Crypto-to-Crypto
@@ -161,9 +160,9 @@ export default function ConversionDetailsStepComponent({
                         <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
                             Available Balance
                         </span>
-                        <div className="w-full h-10 px-4 rounded-md bg-[var(--line-faint)] border border-[var(--line)] flex items-center text-xs font-medium text-[var(--ink-soft)]">
+                        <div className="w-full h-10 px-4! rounded-md bg-[var(--line-faint)] border border-[var(--line)] flex items-center text-xs font-medium text-[var(--ink-soft)]">
                             {sourceWallet
-                                ? `${parseFloat(sourceWallet.available_balance).toFixed(4)} ${sourceWallet.wallet_currency}`
+                                ? `${parseFloat(sourceWallet.available_balance).toFixed(2)} ${sourceWallet.wallet_currency}`
                                 : '—'}
                         </div>
                     </div>
@@ -201,9 +200,9 @@ export default function ConversionDetailsStepComponent({
                         <span className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)]">
                             Available Balance
                         </span>
-                        <div className="w-full h-10 px-4 rounded-md bg-[var(--line-faint)] border border-[var(--line)] flex items-center text-xs font-medium text-[var(--ink-soft)]">
+                        <div className="w-full h-10 px-4! rounded-md bg-[var(--line-faint)] border border-[var(--line)] flex items-center text-xs font-medium text-[var(--ink-soft)]">
                             {destinationWallet
-                                ? `${parseFloat(destinationWallet.available_balance).toFixed(4)} ${destinationWallet.wallet_currency}`
+                                ? `${parseFloat(destinationWallet.available_balance).toFixed(2)} ${destinationWallet.wallet_currency}`
                                 : '—'}
                         </div>
                     </div>
@@ -227,9 +226,9 @@ export default function ConversionDetailsStepComponent({
             </form>
 
             {/* Bottom Actions */}
-            <div className="pt-4 border-t border-[var(--line)] flex items-center justify-end gap-3">
+            <div className="pt-4! border-t border-[var(--line)] flex items-center justify-end gap-3">
                 {!quote ? (
-                    <div className="w-[180px] h-[38px]">
+                    <div className="w-fit h-fit px-2! py-1!">
                         <CustomButtonComponent
                             id="conversion-generateQuote-btn"
                             label={

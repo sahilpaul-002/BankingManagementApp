@@ -1,8 +1,8 @@
+import type { CurrencyConversionQuoteDataType } from '@/types/wallets/currencyConversionTypes';
 import { Info } from 'lucide-react';
-import type { CurrencyConversionQuoteData } from '@/fallbacks/wallets/currencyConversion/currencyConversionFallbacks';
 
-interface ConversionQuoteSummaryCardComponentProps {
-    quote: CurrencyConversionQuoteData | null;
+interface ConversionQuoteSummaryCardComponentPropsType {
+    quote: CurrencyConversionQuoteDataType | null;
     isLoading?: boolean;
 }
 
@@ -26,20 +26,20 @@ function formatTime(isoString?: string): string {
 export default function ConversionQuoteSummaryCardComponent({
     quote,
     isLoading = false,
-}: ConversionQuoteSummaryCardComponentProps) {
+}: ConversionQuoteSummaryCardComponentPropsType) {
     return (
-        <div className="w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6 shadow-xs flex flex-col gap-6">
+        <div className="w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6! shadow-xs flex flex-col gap-6">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
                 Conversion Summary
             </h3>
 
             {isLoading ? (
-                <div className="py-8 flex flex-col items-center justify-center gap-2">
+                <div className="py-8! flex flex-col items-center justify-center gap-2">
                     <div className="w-6 h-6 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
                     <span className="text-xs text-[var(--mute)]">Generating quote...</span>
                 </div>
             ) : !quote ? (
-                <div className="py-6 text-xs text-[var(--gold)] font-medium">
+                <div className="py-6! text-xs text-[var(--gold)] font-medium">
                     Get a conversion quote to view the summary.
                 </div>
             ) : (
@@ -48,7 +48,7 @@ export default function ConversionQuoteSummaryCardComponent({
                     <div className="flex items-center justify-between">
                         <span className="text-[var(--mute)]">You convert</span>
                         <span className="font-semibold text-[var(--ink)]">
-                            {parseFloat(quote.source.amount).toFixed(4)} {quote.source.currency}
+                            {parseFloat(quote.source.amount).toFixed(2)} {quote.source.currency}
                         </span>
                     </div>
 
@@ -58,15 +58,15 @@ export default function ConversionQuoteSummaryCardComponent({
                             Fee ({parseFloat(quote.fee.percentage).toFixed(2)}%)
                         </span>
                         <span className="font-semibold text-[var(--ink)]">
-                            {parseFloat(quote.fee.amount).toFixed(4)} {quote.fee.currency}
+                            {parseFloat(quote.fee.amount).toFixed(2)} {quote.fee.currency}
                         </span>
                     </div>
 
                     {/* FX Rate */}
                     <div className="flex items-center justify-between">
                         <span className="text-[var(--mute)]">FX Rate</span>
-                        <span className="font-semibold text-[var(--ink)] font-mono">
-                            {parseFloat(quote.exchange_rate).toFixed(8)}
+                        <span className="font-semibold text-[var(--ink)]">
+                            {parseFloat(quote.exchange_rate).toFixed(2)}
                         </span>
                     </div>
 
@@ -76,7 +76,7 @@ export default function ConversionQuoteSummaryCardComponent({
                     <div className="flex items-center justify-between">
                         <span className="font-semibold text-[var(--ink)]">You receive</span>
                         <span className="font-semibold text-[var(--ok)]">
-                            {parseFloat(quote.destination.amount).toFixed(4)}{' '}
+                            {parseFloat(quote.destination.amount).toFixed(2)}{' '}
                             {quote.destination.currency}
                         </span>
                     </div>
@@ -85,14 +85,14 @@ export default function ConversionQuoteSummaryCardComponent({
                     <div className="flex items-center justify-between">
                         <span className="font-semibold text-[var(--ink)]">Total debit</span>
                         <span className="font-semibold text-[var(--ink)]">
-                            {parseFloat(quote.total_debit.amount).toFixed(4)}{' '}
+                            {parseFloat(quote.total_debit.amount).toFixed(2)}{' '}
                             {quote.total_debit.currency}
                         </span>
                     </div>
 
                     {/* Expiration Notice */}
                     <div className="mt-2! p-3 rounded-lg bg-[var(--bg-subtle)] border border-[var(--line)] flex items-start gap-2 text-[11px] text-[var(--ink-soft)]">
-                        <Info className="w-4 h-4 shrink-0 text-[var(--ink-soft)] mt-0.5" />
+                        <Info className="w-4 h-4 shrink-0 text-[var(--ink-soft)] mt-0.5!" />
                         <span>
                             Quote expires at{' '}
                             <strong className="font-semibold text-[var(--ink)]">

@@ -148,7 +148,7 @@ export default function LoadWalletSidebarComponent({
                     walletId: userWalletId,
                     walletType: wallet.wallet_type,
                     walletCurrency: wallet.wallet_currency as "USD" | "SGD" | "EUR" | "USDT" | "USDC",
-                    amount: Number(data.amount),
+                    amount: data.amount,
                     ...(isCrypto && data.network
                         ? {
                             network: data.network as 'ETHEREUM' | 'POLYGON',
