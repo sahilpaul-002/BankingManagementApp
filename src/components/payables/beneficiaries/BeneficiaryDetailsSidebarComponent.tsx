@@ -1,20 +1,20 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Send } from 'lucide-react';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type { BeneficiaryItem } from '@/fallbacks/payables/beneficiaries/beneficiariesFallbacks';
+import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
 
-interface BeneficiaryDetailsSidebarComponentProps {
+interface BeneficiaryDetailsSidebarComponentPropsType {
     isOpen: boolean;
     onClose: () => void;
-    beneficiary: BeneficiaryItem | null;
+    beneficiary: BeneficiaryItemType | null;
 }
 
 export default function BeneficiaryDetailsSidebarComponent({
     isOpen,
     onClose,
     beneficiary,
-}: BeneficiaryDetailsSidebarComponentProps) {
+}: BeneficiaryDetailsSidebarComponentPropsType) {
     const navigate = useNavigate();
 
     // Lock background scroll when drawer is open
@@ -68,7 +68,7 @@ export default function BeneficiaryDetailsSidebarComponent({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="p-1.5 rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                        className="p-1.5! rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                         aria-label="Close details"
                     >
                         <X className="w-5 h-5" />
@@ -82,47 +82,23 @@ export default function BeneficiaryDetailsSidebarComponent({
                         <h2 className="text-2xl font-bold text-[var(--ink)]">
                             {beneficiary.account_holder_name}
                         </h2>
-                        <p className="text-xs text-[var(--mute)]">
-                            {beneficiary.email || `${beneficiary.account_holder_name.toLowerCase().replace(/\s+/g, '.')}@example.com`}
-                        </p>
-                        <div className="mt-2 flex items-center">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[var(--ok-bg)] text-[var(--ok)]">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--ok)]"></span>
-                                {beneficiary.status || 'ACTIVE'}
-                            </span>
-                        </div>
                     </div>
 
                     {/* Section: GENERAL */}
-                    <div className="flex flex-col gap-3 pt-4 border-t border-[var(--line)]">
+                    <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
                         <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider flex items-center gap-2">
                             <span>— GENERAL</span>
                         </div>
                         <div className="grid grid-cols-2 gap-y-3 text-xs">
-                            <span className="text-[var(--mute)] font-medium">Beneficiary type</span>
-                            <span className="text-right font-semibold text-[var(--ink)] uppercase">
-                                {beneficiary.type || 'INDIVIDUAL'}
-                            </span>
-
-                            <span className="text-[var(--mute)] font-medium">Payment method</span>
-                            <span className="text-right font-semibold text-[var(--ink)] uppercase">
-                                {beneficiary.payment_method || 'SWIFT'}
-                            </span>
-
                             <span className="text-[var(--mute)] font-medium">Currency</span>
                             <span className="text-right font-semibold text-[var(--ink)] uppercase">
-                                {beneficiary.account_currency || 'USD'}
-                            </span>
-
-                            <span className="text-[var(--mute)] font-medium">Country</span>
-                            <span className="text-right font-semibold text-[var(--ink)] uppercase">
-                                {beneficiary.country || 'US'}
+                                {beneficiary.account_currency || '—'}
                             </span>
                         </div>
                     </div>
 
                     {/* Section: BANK DETAILS */}
-                    <div className="flex flex-col gap-3 pt-4 border-t border-[var(--line)]">
+                    <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
                         <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider flex items-center gap-2">
                             <span>— BANK DETAILS</span>
                         </div>

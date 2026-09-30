@@ -6,9 +6,8 @@ import {
     columnVisibilityFeature,
     type ColumnDef,
 } from '@tanstack/react-table';
-import type { WalletItem, WalletType } from '@/fallbacks/wallets/depositWallets/depositWalletsFallbacks';
 import DepositWalletsTabsComponent from './DepositWalletsTabsComponent';
-import type { WalletItemType } from '@/types/wallets/depositWalletsTypes';
+import type { WalletItemType, WalletType } from '@/types/wallets/depositWalletsTypes';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
 
 const depositWalletsTableFeatures = tableFeatures({
@@ -42,7 +41,7 @@ const WALLET_TYPE_STYLES: Record<WalletType, string> = {
 
 interface DepositWalletsListComponentPropsType {
     wallets: WalletItemType[];
-    onSelectWallet: (wallet: WalletItem) => void;
+    onSelectWallet: (wallet: WalletItemType) => void;
     selectedWalletId?: string | null | undefined;
     walletsDetailsNotFound?: boolean | undefined;
     getWalletsDetailsIsFetching: boolean;
@@ -258,7 +257,7 @@ export default function DepositWalletsListComponent({
                                     return (
                                         <tr
                                             key={row.id}
-                                            onClick={() => onSelectWallet(wallet as unknown as WalletItem)}
+                                            onClick={() => onSelectWallet(wallet as unknown as WalletItemType)}
                                             className={`transition-colors cursor-pointer group ${isSelected
                                                 ? 'bg-[var(--bg-hover)] border-l-2 border-l-[var(--gold)]'
                                                 : 'hover:bg-[var(--bg-hover)]'

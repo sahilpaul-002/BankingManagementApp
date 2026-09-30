@@ -1,12 +1,12 @@
 import React from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type { PayoutQuoteData } from '@/fallbacks/payables/payouts/payoutsFallbacks';
-import type { BeneficiaryItem } from '@/fallbacks/payables/beneficiaries/beneficiariesFallbacks';
+import type { PayoutQuoteData } from '@/types/payables/payoutTypes';
+import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
 
 interface ReviewTransactionStepComponentProps {
     quote: PayoutQuoteData;
-    beneficiary: BeneficiaryItem | null;
+    beneficiary: BeneficiaryItemType | null;
     isExecuting: boolean;
     onBack: () => void;
     onConfirmAndSend: () => void;

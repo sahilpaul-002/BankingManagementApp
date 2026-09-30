@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +8,10 @@ import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import { useAddBeneficiaryMutation } from '@/redux/features/beneficiaries/beneficiariesApi';
-import type { BeneficiaryItem, AddBeneficiaryRequestBody } from '@/fallbacks/payables/beneficiaries/beneficiariesFallbacks';
+import type { AddBeneficiaryRequestBody } from '@/types/payables/beneficiariesTypes';
+import { useDispatch } from 'react-redux';
+import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
+import ShowInConsole from '@/utils/ShowInConsole';
 
 const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'SGD', 'AUD', 'CAD'];
 
@@ -41,20 +44,36 @@ const addBeneficiarySchema = z.object({
 
 type AddBeneficiaryFormData = z.infer<typeof addBeneficiarySchema>;
 
-interface AddBeneficiarySidebarComponentProps {
+interface AddBeneficiarySidebarComponentPropsType {
     isOpen: boolean;
     onClose: () => void;
-    onAddSuccess?: (newBeneficiary: BeneficiaryItem) => void;
 }
 
 export default function AddBeneficiarySidebarComponent({
     isOpen,
     onClose,
-    onAddSuccess,
-}: AddBeneficiarySidebarComponentProps) {
-    const [addBeneficiaryApi, { isLoading: isApiLoading }] = useAddBeneficiaryMutation();
-    const [isSubmitting, setIsSubmitting] = useState(false);
+}: AddBeneficiarySidebarComponentPropsType) {
+    // Configure useDispatch
+    const dispatch = useDispatch();
 
+    // ------------------------------- GET EMAIL FROM SESSION STORAGE ---------------------------------- \\
+    // Get necessary user details from session storage
+    const userEmail = sessionStorage.getItem('userEmail');
+    const userId = sessionStorage.getItem('userId');
+
+    useEffect(() => {
+        // Validate session storage once
+        if (!userEmail || !userId) {
+            dispatch(setShowInfoBanner('Application facing issue, necessary user details not present in session storage. Please re-login.'));
+            return;
+        }
+    }, [userEmail, userId]);
+    // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+    // Add Beneficiary Rtk Mutation
+    const [triggerAddBeneficiary, { isLoading: addBeneficiaryIsLoading }] = useAddBeneficiaryMutation();
+
+    // React Hook Form
     const {
         register,
         handleSubmit,
@@ -89,7 +108,6 @@ export default function AddBeneficiarySidebarComponent({
 
     const handleFormSubmit: SubmitHandler<AddBeneficiaryFormData> = async (formData) => {
         try {
-            setIsSubmitting(true);
             const payload: AddBeneficiaryRequestBody = {
                 account_holder_name: formData.account_holder_name.trim(),
                 bank_name: formData.bank_name.trim(),
@@ -99,34 +117,40 @@ export default function AddBeneficiarySidebarComponent({
                 iban_code: formData.iban_code.trim().toUpperCase(),
             };
 
-            // Call RTK Query mutation or fallback simulator
-            const res = await addBeneficiaryApi(payload).unwrap().catch(() => null);
-
-            const newBeneficiary: BeneficiaryItem = res?.data || {
-                _id: `bne_${Date.now()}`,
-                ...payload,
-                type: 'INDIVIDUAL',
-                payment_method: 'SWIFT',
-                country: payload.iban_code.slice(0, 2).toUpperCase() || 'US',
-                status: 'ACTIVE',
-                created_at: new Date().toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                }),
-                email: `${payload.account_holder_name.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-            };
+            // Call RTK Query mutation
+            await triggerAddBeneficiary({
+                email: userEmail!,
+                beneficiaryDetails: {
+                    accountNumber: payload.account_number,
+                    accountCurrency: payload.account_currency,
+                    accountHolderName: payload.account_holder_name,
+                    swiftCode: payload.swift_code,
+                    ibanCode: payload.iban_code,
+                    bankName: payload.bank_name,
+                },
+            }).unwrap();
 
             toast.success('Beneficiary added successfully.');
-            if (onAddSuccess) {
-                onAddSuccess(newBeneficiary);
-            }
             reset();
             onClose();
-        } catch {
+        }
+        catch (err: any){
+            ShowInConsole('Add beneficiary error:', err);
+
+            const errorMessage =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message ||
+                    err?.message ||
+                    'Failed to add beneficiary. Please try again later.';
+
+            if (errorMessage?.toLowerCase()?.includes("beneficiary with this account number already exists")) {
+                toast.error('Beneficiary with this account number already exists. Please try again with a different account number.');
+            }
+            else {
+                toast.error('Failed to add beneficiary. Please try again later.');
+            }
             toast.error('Failed to add beneficiary. Please try again.');
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -168,7 +192,7 @@ export default function AddBeneficiarySidebarComponent({
                     <button
                         type="button"
                         onClick={handleClose}
-                        className="p-1.5 rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
+                        className="p-1.5! rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                         aria-label="Close sidebar"
                     >
                         <X className="w-5 h-5" />
@@ -232,7 +256,7 @@ export default function AddBeneficiarySidebarComponent({
                                     label="Select Currency"
                                     labels={CURRENCY_OPTIONS}
                                     selectTriggerClassName="w-full px-4! text-[var(--ink)]"
-                                    selectGroupClassName="w-full"
+                                    selectGroupClassName="w-full p-2!"
                                     value={field.value}
                                     onChange={field.onChange}
                                     error={errors?.account_currency?.message}
@@ -275,7 +299,7 @@ export default function AddBeneficiarySidebarComponent({
                             type="button"
                             variant="outline"
                             onClick={handleClose}
-                            disabled={isSubmitting || isApiLoading}
+                            disabled={addBeneficiaryIsLoading}
                         />
                     </div>
                     <div className="w-[160px] h-[38px]">
@@ -289,7 +313,7 @@ export default function AddBeneficiarySidebarComponent({
                             type="submit"
                             variant="navy"
                             form="addBeneficiarySidebar-form"
-                            showButtonLoader={isSubmitting || isApiLoading}
+                            showButtonLoader={addBeneficiaryIsLoading}
                         />
                     </div>
                 </div>

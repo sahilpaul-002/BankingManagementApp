@@ -176,7 +176,7 @@ export const transferApis = createApi({
                     }
 
                     const result = await executeBaseQuery(baseQuery, {
-                        url: `${TRANSFER_URL}/transactions`,
+                        url: `${TRANSFER_URL}/payoutQuote/transactions`,
                         method: 'GET',
                         headers,
                         params: {
@@ -200,4 +200,4 @@ export const transferApis = createApi({
     }),
 });
 
-export const { useCreatePayoutQuoteMutation, useExecutePayoutQuoteMutation } = transferApis;
+export const { useCreatePayoutQuoteMutation, useExecutePayoutQuoteMutation, useGetPayoutQuoteTransactionsQuery, useLazyGetPayoutQuoteTransactionsQuery } = transferApis;

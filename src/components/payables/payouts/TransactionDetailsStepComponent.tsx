@@ -6,11 +6,8 @@ import { Upload, CheckCircle, ArrowRight } from 'lucide-react';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type { BeneficiaryItem } from '@/fallbacks/payables/beneficiaries/beneficiariesFallbacks';
-import {
-    PURPOSE_OF_PAYMENTS_FALLBACK,
-    type PayoutQuoteData,
-} from '@/fallbacks/payables/payouts/payoutsFallbacks';
+import { PURPOSE_OF_PAYMENTS_FALLBACK, type PayoutQuoteData } from '@/types/payables/payoutTypes';
+import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
 
 const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'SGD', 'AUD', 'CAD'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -51,8 +48,8 @@ const transactionDetailsSchema = z.object({
 
 export type TransactionDetailsFormData = z.infer<typeof transactionDetailsSchema>;
 
-interface TransactionDetailsStepComponentProps {
-    beneficiaries: BeneficiaryItem[];
+interface TransactionDetailsStepComponentPropsType {
+    beneficiaries: BeneficiaryItemType[];
     defaultBeneficiaryId?: string | undefined;
     quote: PayoutQuoteData | null;
     isQuoteLoading: boolean;
@@ -69,8 +66,8 @@ export default function TransactionDetailsStepComponent({
     onGenerateQuote,
     onResetQuote,
     onContinue,
-}: TransactionDetailsStepComponentProps) {
-    const [selectedBeneficiary, setSelectedBeneficiary] = useState<BeneficiaryItem | null>(null);
+}: TransactionDetailsStepComponentPropsType) {
+    const [selectedBeneficiary, setSelectedBeneficiary] = useState<BeneficiaryItemType | null>(null);
 
     const {
         register,

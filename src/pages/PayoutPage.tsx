@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { useDispatch } from 'react-redux';
 import PayoutStepperComponent from '@/components/payables/payouts/PayoutStepperComponent';
 import PayoutQuoteSummaryCardComponent from '@/components/payables/payouts/PayoutQuoteSummaryCardComponent';
 import TransactionDetailsStepComponent, {
@@ -8,52 +9,57 @@ import TransactionDetailsStepComponent, {
 } from '@/components/payables/payouts/TransactionDetailsStepComponent';
 import ReviewTransactionStepComponent from '@/components/payables/payouts/ReviewTransactionStepComponent';
 import PayoutConfirmationStepComponent from '@/components/payables/payouts/PayoutConfirmationStepComponent';
-import {
-    BENEFICIARIES_LIST_FALLBACK,
-    type BeneficiaryItem,
-} from '@/fallbacks/payables/beneficiaries/beneficiariesFallbacks';
-import {
-    CREATE_PAYOUT_QUOTE_FALLBACK,
-    EXECUTE_PAYOUT_QUOTE_FALLBACK,
-    type PayoutQuoteData,
-    type ExecutePayoutQuoteData,
-} from '@/fallbacks/payables/payouts/payoutsFallbacks';
-import {
-    useGetBeneficiariesQuery,
-    useCreatePayoutQuoteMutation,
-    useExecutePayoutQuoteMutation,
-} from '@/redux/features/beneficiaries/beneficiariesApi';
+import { useGetBeneficiariesQuery } from '@/redux/features/beneficiaries/beneficiariesApi';
+import { useCreatePayoutQuoteMutation, useExecutePayoutQuoteMutation } from '@/redux/features/transfer/transferApis';
+import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
+import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
+import type { PayoutQuoteData, ExecutePayoutQuoteData } from '@/types/payables/payoutTypes';
+import ShowInConsole from '@/utils/ShowInConsole';
 
 export default function PayoutPage() {
     const { id: urlBeneficiaryId } = useParams<{ id?: string }>();
 
-    // RTK Query for beneficiaries list
-    const { data: beneficiariesApiResponse } = useGetBeneficiariesQuery();
-    const [createQuoteApi, { isLoading: isQuoteApiLoading }] = useCreatePayoutQuoteMutation();
-    const [executePayoutApi, { isLoading: isExecuteApiLoading }] = useExecutePayoutQuoteMutation();
+    // Configure useDispatch
+    const dispatch = useDispatch();
 
-    // Local beneficiaries list state
-    const [beneficiariesList, setBeneficiariesList] = useState<BeneficiaryItem[]>(BENEFICIARIES_LIST_FALLBACK);
+    // ------------------------------- GET USER DETAILS FROM SESSION STORAGE ---------------------------------- \\
+    // Get necessary user details from session storage
+    const userEmail = sessionStorage.getItem('userEmail');
+    const userId = sessionStorage.getItem('userId');
 
-    // Flow State
+    useEffect(() => {
+        // Validate session details once
+        if (!userEmail || !userId) {
+            dispatch(setShowInfoBanner("Application facing issue, necessary user details not present in session storage. Please re-login."));
+            return;
+        }
+    }, [userEmail, userId]);
+    // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+    // ------------------------------ BENEFICIARIES RTK QUERY ------------------------------ \\
+    // Beneficiaries List
+    const { data: getBeneficiariesData } = useGetBeneficiariesQuery(
+        { email: userEmail! },
+        { skip: !userEmail }
+    );
+    const beneficiariesList = getBeneficiariesData?.data as BeneficiaryItemType[] ?? [];
+
+    useEffect(() => {
+        ShowInConsole("Beneficiaries list", beneficiariesList);
+    }, [beneficiariesList]);
+    // ------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------- \\
+
+    // ------------ CREATE PAYOUT QUOTE / EXECUTE PAYOUT QUOTE RTK MUTATION ------------ \\
+    const [triggerCreatePayoutQuote, { isLoading: createPayoutQuoteIsLoading }] = useCreatePayoutQuoteMutation();
+    const [triggerExecutePayoutQuote, { isLoading: executePayoutQuoteIsLoading }] = useExecutePayoutQuoteMutation();
+    // ---------------------------- XXXXXXXXXXXXXXXXXXXX ---------------------------- \\
+
+    // ----------------------- Payout Flow States ----------------------- \\
     const [currentStep, setCurrentStep] = useState<number>(1);
     const [savedFormData, setSavedFormData] = useState<TransactionDetailsFormData | null>(null);
     const [activeQuote, setActiveQuote] = useState<PayoutQuoteData | null>(null);
     const [executionResult, setExecutionResult] = useState<ExecutePayoutQuoteData | null>(null);
-    const [isLocalQuoteLoading, setIsLocalQuoteLoading] = useState<boolean>(false);
-    const [isLocalExecuting, setIsLocalExecuting] = useState<boolean>(false);
-
-    // Sync beneficiaries list from API when ready
-    useEffect(() => {
-        if (
-            beneficiariesApiResponse &&
-            beneficiariesApiResponse.data &&
-            Array.isArray(beneficiariesApiResponse.data) &&
-            beneficiariesApiResponse.data.length > 0
-        ) {
-            setBeneficiariesList(beneficiariesApiResponse.data);
-        }
-    }, [beneficiariesApiResponse]);
+    // ----------------------- XXXXXXXXXXXXXXX ----------------------- \\
 
     // Find selected beneficiary object
     const selectedBeneficiary = savedFormData?.beneficiary_id
@@ -62,66 +68,38 @@ export default function PayoutPage() {
         ? beneficiariesList.find((b) => b._id === urlBeneficiaryId) || null
         : null;
 
-    // Handle Generate Quote
+    // Function to Create Payout Quote
     const handleGenerateQuote = async (formData: TransactionDetailsFormData) => {
         setSavedFormData(formData);
-        setIsLocalQuoteLoading(true);
 
         try {
-            const apiRes = await createQuoteApi({
-                beneficiary_id: formData.beneficiary_id,
-                source_currency: formData.source_currency,
-                amount: formData.amount,
-                purpose_of_payment: formData.purpose_of_payment,
-                memo: formData.memo,
-            }).unwrap().catch(() => null);
+            const createPayoutQuoteResult = await triggerCreatePayoutQuote({
+                email: userEmail!,
+                payoutDetails: {
+                    benefeciaryId: formData.beneficiary_id,
+                    sourceWalletCurrency: formData.source_currency as 'USD' | 'SGD' | 'EUR',
+                    sourceAmout: formData.amount,
+                },
+            }).unwrap();
 
-            if (apiRes && apiRes.data) {
-                setActiveQuote(apiRes.data);
-            } else {
-                // Fallback quote generation if API is not connected
-                const targetBen = beneficiariesList.find((b) => b._id === formData.beneficiary_id);
-                const sendAmount = parseFloat(formData.amount) || 100;
-                const feeAmount = 8.0;
-                const totalDebit = sendAmount + feeAmount;
-
-                const fallbackQuote: PayoutQuoteData = {
-                    ...CREATE_PAYOUT_QUOTE_FALLBACK,
-                    quote_id: `qte_${Math.random().toString(36).substring(2, 10)}`,
-                    beneficiary: {
-                        beneficiary_id: targetBen?._id || formData.beneficiary_id,
-                        account_holder_name: targetBen?.account_holder_name || 'John Doe',
-                        account_number: targetBen?.account_number || '123456789012',
-                        account_currency: targetBen?.account_currency || 'USD',
-                        bank_name: targetBen?.bank_name || 'Bank of America',
-                    },
-                    source: {
-                        currency: formData.source_currency || 'USD',
-                        amount: sendAmount.toFixed(4),
-                    },
-                    destination: {
-                        currency: targetBen?.account_currency || 'USD',
-                        gross_amount: sendAmount.toFixed(4),
-                        amount: sendAmount.toFixed(4),
-                    },
-                    fee: {
-                        currency: formData.source_currency || 'USD',
-                        amount: feeAmount.toFixed(4),
-                    },
-                    total_debit: {
-                        currency: formData.source_currency || 'USD',
-                        amount: totalDebit.toFixed(4),
-                    },
-                    expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-                };
-                setActiveQuote(fallbackQuote);
+            if (createPayoutQuoteResult?.status?.toUpperCase() !== 'SUCCESS') {
+                toast.error('Failed to generate payout quote. Please try again later.');
             }
 
+            setActiveQuote(createPayoutQuoteResult?.data as PayoutQuoteData ?? null);
+
             toast.success('Payout quote generated successfully.');
-        } catch {
-            toast.error('Failed to generate payout quote.');
-        } finally {
-            setIsLocalQuoteLoading(false);
+        } catch (err: any) {
+            ShowInConsole('Create payout quote error:', err);
+
+            const errorMessage =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message ||
+                    err?.message ||
+                    'Failed to generate payout quote. Please try again later.';
+
+            toast.error(errorMessage);
         }
     };
 
@@ -130,7 +108,7 @@ export default function PayoutPage() {
         setActiveQuote(null);
     };
 
-    // Step 1 -> Step 2
+    // ── Step 1 → Step 2 ───────────────────────────────────────────────────────
     const handleContinueStep1 = () => {
         if (!activeQuote) {
             toast.error('Please generate a quote before continuing.');
@@ -139,47 +117,49 @@ export default function PayoutPage() {
         setCurrentStep(2);
     };
 
-    // Step 2 -> Step 1
+    // ── Step 2 → Step 1 ───────────────────────────────────────────────────────
     const handleBackStep2 = () => {
         setCurrentStep(1);
     };
 
-    // Step 2 Confirm & Send
+    // Function to Execute Payout Quote
     const handleConfirmAndSend = async () => {
         if (!activeQuote) return;
-        setIsLocalExecuting(true);
 
         try {
-            const apiRes = await executePayoutApi({
-                quote_id: activeQuote.quote_id,
-                documents: savedFormData?.documents || undefined,
-                memo: savedFormData?.memo,
-            }).unwrap().catch(() => null);
+            const executePayoutQuoteResult = await triggerExecutePayoutQuote({
+                email: userEmail!,
+                quoteId: activeQuote.quote_id,
+            }).unwrap();
 
-            if (apiRes && apiRes.data) {
-                setExecutionResult(apiRes.data);
-            } else {
-                // Fallback execute payout quote response
-                setExecutionResult({
-                    ...EXECUTE_PAYOUT_QUOTE_FALLBACK,
-                    payout_transaction_id: `tx_${Math.random().toString(36).substring(2, 10)}`,
-                    source_currency: activeQuote.source.currency,
-                    source_amount: { $numberDecimal: activeQuote.source.amount },
-                    destination_currency: activeQuote.destination.currency,
-                    destination_amount: { $numberDecimal: activeQuote.destination.amount },
-                });
+            if (executePayoutQuoteResult?.status?.toUpperCase() !== 'SUCCESS') {
+                toast.error('Failed to execute payout. Please try again later.');
             }
+
+            setExecutionResult(executePayoutQuoteResult?.data as ExecutePayoutQuoteData ?? null);
 
             setCurrentStep(3);
             toast.success('Payout executed successfully!');
-        } catch {
-            toast.error('Failed to execute payout.');
-        } finally {
-            setIsLocalExecuting(false);
+        } catch (err: any) {
+            ShowInConsole('Execute payout quote error:', err);
+
+            const errorMessage =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message ||
+                    err?.message ||
+                    'Failed to execute payout. Please try again later.';
+            const normalizeErrorMessage = errorMessage?.toLowerCase();
+
+            if (normalizeErrorMessage?.includes('quote') && normalizeErrorMessage?.includes('expired')) {
+                toast.error('Payout quote has expired. Please generate a new quote and try again.');
+            } else {
+                toast.error('Failed to execute payout. Please try again later.');
+            }
         }
     };
 
-    // Step 3 -> Reset flow to Step 1
+    // ── Step 3 → Reset flow to Step 1 ────────────────────────────────────────────────────────
     const handleSendAnother = () => {
         setSavedFormData(null);
         setActiveQuote(null);
@@ -191,10 +171,6 @@ export default function PayoutPage() {
         <div className="payoutPage-container w-full h-fit flex flex-col justify-start items-stretch gap-6 p-4! sm:p-6!">
             {/* Header Section */}
             <div className="flex flex-col gap-1.5">
-                <p className="text-xs text-[var(--mute)] tracking-wide">
-                    Payables &gt; <span className="text-[var(--ink-soft)] font-medium">Payout</span>
-                </p>
-
                 <h1 className="text-2xl sm:text-3xl text-[var(--ink)] tracking-normal">
                     <span className="font-serif font-medium">Send</span>{' '}
                     <span className="font-serif italic font-normal text-[var(--mute)]">money.</span>
@@ -217,7 +193,7 @@ export default function PayoutPage() {
                                 beneficiaries={beneficiariesList}
                                 defaultBeneficiaryId={urlBeneficiaryId}
                                 quote={activeQuote}
-                                isQuoteLoading={isQuoteApiLoading || isLocalQuoteLoading}
+                                isQuoteLoading={createPayoutQuoteIsLoading}
                                 onGenerateQuote={handleGenerateQuote}
                                 onResetQuote={handleResetQuote}
                                 onContinue={handleContinueStep1}
@@ -226,7 +202,7 @@ export default function PayoutPage() {
                             <ReviewTransactionStepComponent
                                 quote={activeQuote!}
                                 beneficiary={selectedBeneficiary}
-                                isExecuting={isExecuteApiLoading || isLocalExecuting}
+                                isExecuting={executePayoutQuoteIsLoading}
                                 onBack={handleBackStep2}
                                 onConfirmAndSend={handleConfirmAndSend}
                             />
@@ -237,7 +213,7 @@ export default function PayoutPage() {
                     <div className="lg:col-span-1">
                         <PayoutQuoteSummaryCardComponent
                             quote={activeQuote}
-                            isLoading={isQuoteApiLoading || isLocalQuoteLoading}
+                            isLoading={createPayoutQuoteIsLoading}
                         />
                     </div>
                 </div>

@@ -6,12 +6,7 @@ export interface BeneficiaryItemType {
     swift_code: string;
     iban_code: string;
     bank_name: string;
-    type?: string;
-    payment_method?: string;
-    country?: string;
-    status?: string;
-    created_at?: string;
-    email?: string;
+    createdAt?: string;
 }
 
 export interface BeneficiaryDetailsResponseType {

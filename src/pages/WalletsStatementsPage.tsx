@@ -2,10 +2,6 @@ import React, { useState, useEffect, useMemo, Activity } from 'react';
 import WalletStatementsFilterComponent from '@/components/wallets/walletStatements/WalletStatementsFilterComponent';
 import WalletStatementsListComponent from '@/components/wallets/walletStatements/WalletStatementsListComponent';
 import WalletTransactionDetailsSidebarComponent from '@/components/wallets/walletStatements/WalletTransactionDetailsSidebarComponent';
-import {
-    WALLET_TRANSACTIONS_LIST_FALLBACK,
-    type WalletTransactionItem,
-} from '@/fallbacks/wallets/walletStatements/walletStatementsFallbacks';
 import { useGetWalletTransactionsQuery } from '@/redux/features/wallet/walletApis';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import { useNavigate } from 'react-router';
@@ -78,7 +74,7 @@ export default function WalletsStatementsPage() {
     const showPageLoader = getWalletTransactionsData ? getWalletTransactionsIsLoading : getWalletTransactionsIsFetching;
 
     // Selected transaction for details drawer
-    const [selectedTransaction, setSelectedTransaction] = useState<WalletTransactionItem | null>(null);
+    const [selectedTransaction, setSelectedTransaction] = useState<WalletTransactionItemType | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
 
     // Filter states
@@ -111,7 +107,7 @@ export default function WalletsStatementsPage() {
         });
     }, [useWalletTransactionsList, searchQuery, selectedType]);
 
-    const handleSelectTransaction = (item: WalletTransactionItem) => {
+    const handleSelectTransaction = (item: WalletTransactionItemType) => {
         setSelectedTransaction(item);
         setIsDetailsOpen(true);
     };

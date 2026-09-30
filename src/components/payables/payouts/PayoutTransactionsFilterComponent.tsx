@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import DepositWalletsTabsComponent from '@/components/wallets/depositWallets/DepositWalletsTabsComponent';
+import CustomDateRangeFilterComponent, { type DateRange } from '@/components/common/CustomDateRangeFilterComponent';
 
 type PayoutStatusTab = 'ALL' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
 
@@ -11,11 +12,14 @@ const STATUS_TABS: { id: PayoutStatusTab; label: string }[] = [
     { id: 'FAILED', label: 'Failed' },
 ];
 
-interface PayoutTransactionsFilterComponentProps {
+interface PayoutTransactionsFilterComponentPropsType {
     searchQuery: string;
     onSearchChange: (value: string) => void;
     selectedStatus: string;
     onStatusChange: (status: string) => void;
+    dateRange: DateRange;
+    onDateRangeApply: (range: DateRange) => void;
+    onDateRangeClear: () => void;
 }
 
 export default function PayoutTransactionsFilterComponent({
@@ -23,7 +27,10 @@ export default function PayoutTransactionsFilterComponent({
     onSearchChange,
     selectedStatus,
     onStatusChange,
-}: PayoutTransactionsFilterComponentProps) {
+    dateRange,
+    onDateRangeApply,
+    onDateRangeClear,
+}: PayoutTransactionsFilterComponentPropsType) {
     return (
         <div className="w-full flex flex-col gap-4">
             {/* Status Tabs */}
@@ -34,18 +41,29 @@ export default function PayoutTransactionsFilterComponent({
                 idPrefix="payoutTransactions"
             />
 
-            {/* Search Input Bar */}
-            <div className="relative w-full sm:max-w-md">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-[var(--mute)]">
-                    <Search className="w-4 h-4" />
+            {/* Search + Date Filter */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                {/* Search Input */}
+                <div className="relative w-full">
+                    <div className="absolute inset-y-0 left-0 pl-3.5! flex items-center pointer-events-none text-[var(--mute)]">
+                        <Search className="w-4 h-4" />
+                    </div>
+
+                    <input
+                        id="payoutTransactions-search-input"
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        placeholder="Search by quote ID, currency, or remarks..."
+                        className="w-full pl-10! pr-4! py-2.5! bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl text-sm text-[var(--ink)] placeholder:text-[var(--mute)] focus:outline-hidden focus:border-[var(--line-strong)] focus:ring-1 focus:ring-[var(--line-strong)] transition-all"
+                    />
                 </div>
-                <input
-                    id="payoutTransactions-search-input"
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => onSearchChange(e.target.value)}
-                    placeholder="Search by quote ID, currency, or remarks..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl text-sm text-[var(--ink)] placeholder:text-[var(--mute)] focus:outline-hidden focus:border-[var(--line-strong)] focus:ring-1 focus:ring-[var(--line-strong)] transition-all"
+
+                {/* Date Range Filter */}
+                <CustomDateRangeFilterComponent
+                    value={dateRange}
+                    onApply={onDateRangeApply}
+                    onClear={onDateRangeClear}
                 />
             </div>
         </div>

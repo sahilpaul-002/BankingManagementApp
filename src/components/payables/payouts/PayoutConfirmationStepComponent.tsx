@@ -2,12 +2,12 @@ import React from 'react';
 import { Check, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type { PayoutQuoteData } from '@/fallbacks/payables/payouts/payoutsFallbacks';
-import type { BeneficiaryItem } from '@/fallbacks/payables/beneficiaries/beneficiariesFallbacks';
+import type { PayoutQuoteData } from '@/types/payables/payoutTypes';
+import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
 
 interface PayoutConfirmationStepComponentProps {
     quote: PayoutQuoteData | null;
-    beneficiary: BeneficiaryItem | null;
+    beneficiary: BeneficiaryItemType | null;
     onSendAnother: () => void;
 }
 

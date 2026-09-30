@@ -1,5 +1,4 @@
 import { useState, useEffect, Activity } from 'react';
-import { DEPOSIT_WALLETS_LIST_FALLBACK, type WalletItem } from '@/fallbacks/wallets/depositWallets/depositWalletsFallbacks';
 import { useCreateWalletMutation, useGetWalletDetailsQuery } from '@/redux/features/wallet/walletApis';
 import DepositWalletsListComponent from '@/components/wallets/depositWallets/DepositWalletsListComponent';
 import WalletDetailsSidebarComponent from '@/components/wallets/depositWallets/WalletDetailsSidebarComponent';
@@ -7,7 +6,7 @@ import CreateWalletSidebarComponent from '@/components/wallets/depositWallets/Cr
 import { useNavigate } from 'react-router';
 import { useDispatch } from 'react-redux';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
-import type { WalletsDetailsResponseDataType } from '@/types/wallets/depositWalletsTypes';
+import type { WalletItemType, WalletsDetailsResponseDataType } from '@/types/wallets/depositWalletsTypes';
 import ShowInConsole from '@/utils/ShowInConsole';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import { Plus } from 'lucide-react';
@@ -58,10 +57,10 @@ export default function DepositWalletsPage() {
     const showPageLoader = getWalletsDetailsData ? getWalletsDetailsIsLoading : getWalletsDetailsIsFetching;
 
     // Selected wallet for details sidebar
-    const [selectedWallet, setSelectedWallet] = useState<WalletItem | null>(null);
+    const [selectedWallet, setSelectedWallet] = useState<WalletItemType | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-    const handleSelectWallet = (wallet: WalletItem) => {
+    const handleSelectWallet = (wallet: WalletItemType) => {
         setSelectedWallet(wallet);
         setIsDetailsOpen(true);
     };

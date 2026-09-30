@@ -1,6 +1,6 @@
 import React from 'react';
 import { Info } from 'lucide-react';
-import type { PayoutQuoteData } from '@/fallbacks/payables/payouts/payoutsFallbacks';
+import type { PayoutQuoteData } from '@/types/payables/payoutTypes';
 
 interface PayoutQuoteSummaryCardComponentProps {
     quote: PayoutQuoteData | null;

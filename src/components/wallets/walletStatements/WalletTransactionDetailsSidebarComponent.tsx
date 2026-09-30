@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { WalletTransactionItem } from '@/fallbacks/wallets/walletStatements/walletStatementsFallbacks';
+import type { WalletTransactionItemType } from '@/types/dashboard/walletTransactionsSectionTypes';
 
 interface WalletTransactionDetailsSidebarComponentProps {
     isOpen: boolean;
     onClose: () => void;
-    transaction: WalletTransactionItem | null;
+    transaction: WalletTransactionItemType | null;
 }
 
 export default function WalletTransactionDetailsSidebarComponent({isOpen, onClose, transaction}: WalletTransactionDetailsSidebarComponentProps) {
