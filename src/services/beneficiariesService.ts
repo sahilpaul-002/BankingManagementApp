@@ -60,12 +60,14 @@ export const getBeneficiariesListService = async (requestSession: Request["sessi
         // Fetch beneficiaries
         const beneficiaries = await beneficiaries_bank_details.find({},
             {
+                _id: 1,
                 account_number: 1,
                 account_holder_name: 1,
+                account_currency: 1,
                 swift_code: 1,
                 iban_code: 1,
                 bank_name: 1,
-                is_verified: 1
+                createdAt: 1
             }
         ).lean();
 
