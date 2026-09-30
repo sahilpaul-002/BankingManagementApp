@@ -9,7 +9,7 @@ import {
     PAYOUT_TRANSACTIONS_LIST_FALLBACK,
     type PayoutTransactionItem,
 } from '@/fallbacks/payables/payouts/payoutsFallbacks';
-import { useGetPayoutTransactionsQuery } from '@/redux/features/payables/payablesApi';
+import { useGetPayoutTransactionsQuery } from '@/redux/features/beneficiaries/beneficiariesApi';
 
 export default function PayoutTransactionsPage() {
     const navigate = useNavigate();

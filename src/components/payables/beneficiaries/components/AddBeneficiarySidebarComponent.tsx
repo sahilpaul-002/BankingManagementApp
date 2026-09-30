@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import { useAddBeneficiaryMutation } from '@/redux/features/payables/payablesApi';
+import { useAddBeneficiaryMutation } from '@/redux/features/beneficiaries/beneficiariesApi';
 import type { BeneficiaryItem, AddBeneficiaryRequestBody } from '@/fallbacks/payables/beneficiaries/beneficiariesFallbacks';
 
 const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'SGD', 'AUD', 'CAD'];

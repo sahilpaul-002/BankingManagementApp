@@ -10,13 +10,11 @@ import { logError } from "@/errorHandling/errorLogger";
 import { twoFaApis } from "../features/twoFa/twoFaApis";
 import { kycApis } from "../features/kyc/kycApis";
 // import { cardholderApis } from "../features/cardholder/cardholderApis";
-// import { beneficiariesApis } from "../features/transfer/beneficiaries";
 // import { cardsApis } from "../features/cards/cardsApis";
-// import { accountApis } from "../features/account/accountApis";
-// import { prefundApis } from "../features/prefund/prefundApis";
 import { finishLogout, startLogout } from "../slice/appSession/appSessionSlice";
-import { payablesApis } from "../features/payables/payablesApi";
+import { beneficiariesApis } from "../features/beneficiaries/beneficiariesApi";
 import { walletApis } from "../features/wallet/walletApis";
+import { transferApis } from "../features/transfer/transferApis";
 
 let isLoggingOut = false;
 
@@ -58,12 +56,11 @@ export const logoutUser = createAsyncThunk(
             dispatch(twoFaApis.util.resetApiState());
             dispatch(kycApis.util.resetApiState());
             dispatch(walletApis.util.resetApiState());
-            dispatch(payablesApis.util.resetApiState());
+            dispatch(beneficiariesApis.util.resetApiState());
+            dispatch(transferApis.util.resetApiState())
             // dispatch(cardholderApis.util.resetApiState());
-            // dispatch(beneficiariesApis.util.resetApiState());
             // dispatch(cardsApis.util.resetApiState());
             // dispatch(accountApis.util.resetApiState());
-            // dispatch(prefundApis.util.resetApiState());
 
             // Reset normal Redux slices.
             dispatch(resetUserState());

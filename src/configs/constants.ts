@@ -6,5 +6,6 @@ export const USER_PUBLIC_URL = "/api/v1/public/user"
 export const TWO_FA_URL = "/api/v1/twoFa";
 export const KYC_URL = "/api/v1/kyc";
 export const WALLET_URL = "/api/v1/wallet";
-export const PAYABLES_URL = "/api/v1/payables";
+export const BENEFICIARIES_URL = "/api/v1/beneficiaries";
+export const TRANSFER_URL = "/api/v1/transfer";
 

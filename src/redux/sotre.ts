@@ -6,10 +6,11 @@ import { configApis } from './features/config/configApi.js'
 import { helperApis } from './features/helper/helperApis.js'
 import utilitySlice from './slice/utility/utilitySlice.js'
 import { twoFaApis } from './features/twoFa/twoFaApis.js'
-import { payablesApis } from './features/payables/payablesApi.js'
+import { beneficiariesApis } from './features/beneficiaries/beneficiariesApi.js'
 import appSessionSlice from './slice/appSession/appSessionSlice.js'
 import { kycApis } from './features/kyc/kycApis.js'
 import { walletApis } from './features/wallet/walletApis.js'
+import { transferApis } from './features/transfer/transferApis.js'
 
 // EXPORT RTK STORE
 export const store = configureStore({
@@ -27,12 +28,13 @@ export const store = configureStore({
         [twoFaApis.reducerPath]: twoFaApis.reducer,
         [kycApis.reducerPath]: kycApis.reducer,
         [walletApis.reducerPath]: walletApis.reducer,
-        [payablesApis.reducerPath]: payablesApis.reducer,
+        [beneficiariesApis.reducerPath]: beneficiariesApis.reducer,
+        [transferApis.reducerPath]: transferApis.reducer,
     },
 
     // 🔥 RTK Query middleware
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware, twoFaApis.middleware, kycApis.middleware, walletApis.middleware, payablesApis.middleware),
+        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware, twoFaApis.middleware, kycApis.middleware, walletApis.middleware, beneficiariesApis.middleware, transferApis.middleware),
 })
 
 // EXPORT STORE DISPATCH

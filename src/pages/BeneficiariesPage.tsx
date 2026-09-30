@@ -4,11 +4,7 @@ import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import BeneficiariesListComponent from '@/components/payables/beneficiaries/BeneficiariesListComponent';
 import BeneficiaryDetailsSidebarComponent from '@/components/payables/beneficiaries/BeneficiaryDetailsSidebarComponent';
 import AddBeneficiarySidebarComponent from '@/components/payables/beneficiaries/AddBeneficiarySidebarComponent';
-import {
-    BENEFICIARIES_LIST_FALLBACK,
-    type BeneficiaryItem,
-} from '@/fallbacks/payables/beneficiaries/beneficiariesFallbacks';
-import { useGetBeneficiariesQuery } from '@/redux/features/payables/payablesApi';
+import { useGetBeneficiariesQuery } from '@/redux/features/beneficiaries/beneficiariesApi';
 
 export default function BeneficiariesPage() {
     // RTK Query call for get beneficiaries list

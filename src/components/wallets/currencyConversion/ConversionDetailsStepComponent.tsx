@@ -166,7 +166,7 @@ export default function ConversionDetailsStepComponent({
                                             label="Select source wallet"
                                             labels={walletSelectOptions}
                                             selectTriggerClassName="w-full px-4! text-[var(--ink)]"
-                                            selectGroupClassName="w-full"
+                                            selectGroupClassName="w-full p-2!"
                                             value={field.value}
                                             onChange={(val) => {
                                                 field.onChange(val);

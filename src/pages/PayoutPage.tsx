@@ -22,7 +22,7 @@ import {
     useGetBeneficiariesQuery,
     useCreatePayoutQuoteMutation,
     useExecutePayoutQuoteMutation,
-} from '@/redux/features/payables/payablesApi';
+} from '@/redux/features/beneficiaries/beneficiariesApi';
 
 export default function PayoutPage() {
     const { id: urlBeneficiaryId } = useParams<{ id?: string }>();
