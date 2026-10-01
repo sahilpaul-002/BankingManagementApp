@@ -105,6 +105,13 @@ export interface ExecutePayoutQuoteResponse {
     data: ExecutePayoutQuoteData;
 }
 
+export type CryptoTransactionFormDataType = {
+    source_wallet_currency: 'USDT' | 'USDC';
+    network: 'ETHEREUM' | 'POLYGON';
+    destination_address: string;
+    amount: string;
+};
+
 // ── Purpose of Payments Hardcoded Fallback Values ────────────────────────
 export const PURPOSE_OF_PAYMENTS_FALLBACK: PurposeOptionItem[] = [
     { value: 'AUDIO_VISUAL_SERVICES', label: 'Audiovisual services' },

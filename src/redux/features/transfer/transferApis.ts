@@ -168,6 +168,72 @@ export const transferApis = createApi({
             invalidatesTags: [{ type: 'Transfer', id: 'PAYOUT-TRANSACTIONS' }],
         }),
 
+
+        // =======================================================
+        // CRYPTO BENEFICIARY TRANSFER
+        // =======================================================
+        cryptoBeneficiaryTransfer: build.mutation<apiResponseType<apiResponseDataType>, { email: string, transferDetails: {sourceCurrency: "USDT" | "USDC", destinationNetwork: string, destinationAddress: string, amount: string} }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = transferApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('CRYPTO-BENEFICIARY-TRANSFER - Failed to fetch application headers');
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = transferApiHeaders(state)
+                    }
+
+                    const result = (await executeBaseQuery(baseQuery, {
+                        url: `${TRANSFER_URL}/executePayout`,
+                        method: 'POST',
+                        headers,
+                        params: { email: payload.email },
+                        data: { source_currency: payload?.transferDetails?.sourceCurrency, destination_network: payload?.transferDetails?.destinationNetwork, destination_address: payload?.transferDetails?.destinationAddress, amount: payload?.transferDetails?.amount },
+                    })) as {
+                        data?: apiResponseType<apiResponseDataType>;
+                        error?: unknown;
+                    };
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                } catch (error) {
+                    const rtkError = rtkQueryCatchError(error, 'CRYPTO-BENEFICIARY-TRANSFER faced application error');
+                    return rtkError;
+                }
+            },
+
+            // Runs after execute payout quote has been initiated.
+            onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
+                try {
+                    await queryFulfilled;
+
+                    dispatch(
+                        walletApis.util.invalidateTags([
+                            { type: 'Wallet', id: 'BALANCES' }, { type: 'Wallet', id: 'DETAILS' },
+                        ])
+                    );
+                } catch (error) {
+                    // Load wallet failed, so don't refetch prefund accounts.
+                    console.error('CRYPTO-BENEFICIARY-TRANSFER - Failed to refresh prefund account details', error);
+                }
+            },
+
+            invalidatesTags: [{ type: 'Transfer', id: 'PAYOUT-TRANSACTIONS' }],
+        }),
+
+
         // =======================================================
         // GET PAYOUT QUOTE TRANSACTIONS LIST
         // =======================================================
@@ -218,4 +284,4 @@ export const transferApis = createApi({
     }),
 });
 
-export const { useCreatePayoutQuoteMutation, useExecutePayoutQuoteMutation, useGetPayoutQuoteTransactionsQuery, useLazyGetPayoutQuoteTransactionsQuery } = transferApis;
+export const { useCreatePayoutQuoteMutation, useExecutePayoutQuoteMutation, useCryptoBeneficiaryTransferMutation, useGetPayoutQuoteTransactionsQuery, useLazyGetPayoutQuoteTransactionsQuery } = transferApis;
