@@ -7,6 +7,7 @@ import executeBaseQuery from '../executeBaseQuery';
 import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError';
 import { userApis } from '../user/userApi';
 import { ApplicationServiceError } from '@/errorHandling/error';
+import { walletApis } from '../wallet/walletApis';
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 
@@ -129,7 +130,7 @@ export const transferApis = createApi({
                     }
 
                     const result = (await executeBaseQuery(baseQuery, {
-                        url: `${BENEFICIARIES_URL}/executePayout`,
+                        url: `${TRANSFER_URL}/executePayout`,
                         method: 'POST',
                         headers,
                         params: { email: payload.email },
@@ -147,6 +148,23 @@ export const transferApis = createApi({
                     return rtkError;
                 }
             },
+
+            // Runs after execute payout quote has been initiated.
+            onQueryStarted: async (_arg, { dispatch, queryFulfilled }) => {
+                try {
+                    await queryFulfilled;
+
+                    dispatch(
+                        walletApis.util.invalidateTags([
+                            { type: 'Wallet', id: 'BALANCES' }, { type: 'Wallet', id: 'DETAILS' },
+                        ])
+                    );
+                } catch (error) {
+                    // Load wallet failed, so don't refetch prefund accounts.
+                    console.error('LOAD-WALLET - Failed to refresh prefund account details', error);
+                }
+            },
+
             invalidatesTags: [{ type: 'Transfer', id: 'PAYOUT-TRANSACTIONS' }],
         }),
 

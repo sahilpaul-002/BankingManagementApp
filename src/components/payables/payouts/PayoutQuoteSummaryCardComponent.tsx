@@ -30,18 +30,18 @@ export default function PayoutQuoteSummaryCardComponent({
     };
 
     return (
-        <div className="w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6 shadow-xs flex flex-col gap-6">
+        <div className="w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6! shadow-xs flex flex-col gap-6">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
                 Summary
             </h3>
 
             {isLoading ? (
-                <div className="py-8 flex flex-col items-center justify-center gap-2">
+                <div className="py-8! flex flex-col items-center justify-center gap-2">
                     <div className="w-6 h-6 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
                     <span className="text-xs text-[var(--mute)]">Generating quote...</span>
                 </div>
             ) : !quote ? (
-                <div className="py-6 text-xs text-[var(--gold)] font-medium">
+                <div className="py-6! text-xs text-[var(--gold)] font-medium">
                     Generate a quote to view the quote summary.
                 </div>
             ) : (
@@ -66,7 +66,7 @@ export default function PayoutQuoteSummaryCardComponent({
                     <div className="flex items-center justify-between">
                         <span className="text-[var(--mute)]">FX Rate</span>
                         <span className="font-semibold text-[var(--ink)] font-mono">
-                            {parseFloat(quote.exchange_rate).toFixed(4)}
+                            {parseFloat(quote.exchange_rate).toFixed(2)}
                         </span>
                     </div>
 
@@ -89,8 +89,8 @@ export default function PayoutQuoteSummaryCardComponent({
                     </div>
 
                     {/* Expiration Notice */}
-                    <div className="mt-2! p-3 rounded-lg bg-[var(--bg-subtle)] border border-[var(--line)] flex items-start gap-2 text-[11px] text-[var(--ink-soft)]">
-                        <Info className="w-4 h-4 shrink-0 text-[var(--ink-soft)] mt-0.5" />
+                    <div className="mt-2! p-3! rounded-lg bg-[var(--bg-subtle)] border border-[var(--line)] flex items-start gap-2 text-[11px] text-[var(--ink-soft)]">
+                        <Info className="w-4 h-4 shrink-0 text-[var(--ink-soft)] mt-0.5!" />
                         <span>
                             Quote expires at{' '}
                             <strong className="font-semibold text-[var(--ink)]">

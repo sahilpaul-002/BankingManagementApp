@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Activity } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useDispatch } from 'react-redux';
@@ -13,8 +13,10 @@ import { useGetBeneficiariesQuery } from '@/redux/features/beneficiaries/benefic
 import { useCreatePayoutQuoteMutation, useExecutePayoutQuoteMutation } from '@/redux/features/transfer/transferApis';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
-import type { PayoutQuoteData, ExecutePayoutQuoteData } from '@/types/payables/payoutTypes';
+import type { PayoutQuoteData, ExecutePayoutQuoteData, AllWalletBalancesResponseDataType, WalletBalanceItemType } from '@/types/payables/payoutTypes';
 import ShowInConsole from '@/utils/ShowInConsole';
+import { useGetAllWalletBalancesQuery } from '@/redux/features/wallet/walletApis';
+import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 
 export default function PayoutPage() {
     const { id: urlBeneficiaryId } = useParams<{ id?: string }>();
@@ -22,27 +24,57 @@ export default function PayoutPage() {
     // Configure useDispatch
     const dispatch = useDispatch();
 
-    // ------------------------------- GET USER DETAILS FROM SESSION STORAGE ---------------------------------- \\
+    // ------------------------------- GET EMAIL FROM SESSION STORAGE ---------------------------------- \\
     // Get necessary user details from session storage
     const userEmail = sessionStorage.getItem('userEmail');
-    const userId = sessionStorage.getItem('userId');
+    const userId = sessionStorage.getItem("userId")
+    const userCardholderId = sessionStorage.getItem("cardholderId")
+    let userWalletId = sessionStorage.getItem('walletId');
 
     useEffect(() => {
-        // Validate session details once
-        if (!userEmail || !userId) {
+        // Validate email once
+        if (!userEmail || !userId || !userCardholderId || !userWalletId) {
             dispatch(setShowInfoBanner("Application facing issue, necessary user details not present in session storage. Please re-login."));
             return;
         }
-    }, [userEmail, userId]);
+    }, [userEmail, userId, userCardholderId, userWalletId]);
     // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
-    // ------------------------------ BENEFICIARIES RTK QUERY ------------------------------ \\
-    // Beneficiaries List
-    const { data: getBeneficiariesData } = useGetBeneficiariesQuery(
-        { email: userEmail! },
-        { skip: !userEmail }
+    // ------------------------------ ALL WALLETS BALANCES RTK QUERY ------------------------------ \\
+    // User All Wallets Balances
+    const { data: getAllWalletsBalancesData, isLoading: getAllWalletsBanalcesIsLoading, isFetching: getAllWalletsBanalcesIsFetching, isError: getAllWalletsBalancesIsError, error: getAllWalletsBalancesError, isSuccess: getAllWalletsBalancesIsSuccess } = useGetAllWalletBalancesQuery({ email: userEmail!, cardholderId: userCardholderId! }, { skip: !userEmail || !userCardholderId }
     );
+    const userAllWalletsBalances = getAllWalletsBalancesData?.data as AllWalletBalancesResponseDataType ?? [];
+    const userWalletsBalancesList = userAllWalletsBalances?.wallets_details as WalletBalanceItemType[]
+    const allWalletsBalancesNotFound =
+        getAllWalletsBalancesIsError &&
+        getAllWalletsBalancesError &&
+        getAllWalletsBalancesError != null &&
+        "status" in getAllWalletsBalancesError &&
+        getAllWalletsBalancesError?.status === 404 &&
+        typeof getAllWalletsBalancesError?.data === "object" &&
+        getAllWalletsBalancesError?.data !== null &&
+        "status" in getAllWalletsBalancesError?.data &&
+        getAllWalletsBalancesError?.data.status === "NOT_FOUND";
+    useEffect(() => {
+        ShowInConsole("All wallet balances", userAllWalletsBalances);
+    }, [userAllWalletsBalances]);
+    // ------------------------------- XXXXXXXXXXXXXXXXXXXX ------------------------------- \\ 
+
+    // ------------------------------ GET BENEFICIARIES RTK QUERY ------------------------------ \\
+    // Get Beneficiaries List
+    const { data: getBeneficiariesData, isLoading: getBeneficiariesIsLoading, isFetching: getBeneficiariesIsFetching, isError: getBeneficiariesIsError, error: getBeneficiariesError, isSuccess: getBeneficiariesIsSuccess } = useGetBeneficiariesQuery({ email: userEmail! }, { skip: !userEmail });
     const beneficiariesList = getBeneficiariesData?.data as BeneficiaryItemType[] ?? [];
+    const beneficiariesListNotFound =
+        getBeneficiariesIsError &&
+        getBeneficiariesError &&
+        getBeneficiariesError != null &&
+        "status" in getBeneficiariesError &&
+        getBeneficiariesError?.status === 404 &&
+        typeof getBeneficiariesError?.data === "object" &&
+        getBeneficiariesError?.data !== null &&
+        "status" in getBeneficiariesError?.data &&
+        getBeneficiariesError?.data.status === "NOT_FOUND";
 
     useEffect(() => {
         ShowInConsole("Beneficiaries list", beneficiariesList);
@@ -65,8 +97,8 @@ export default function PayoutPage() {
     const selectedBeneficiary = savedFormData?.beneficiary_id
         ? beneficiariesList.find((b) => b._id === savedFormData.beneficiary_id) || null
         : urlBeneficiaryId
-        ? beneficiariesList.find((b) => b._id === urlBeneficiaryId) || null
-        : null;
+            ? beneficiariesList.find((b) => b._id === urlBeneficiaryId) || null
+            : null;
 
     // Function to Create Payout Quote
     const handleGenerateQuote = async (formData: TransactionDetailsFormData) => {
@@ -99,7 +131,7 @@ export default function PayoutPage() {
                     err?.message ||
                     'Failed to generate payout quote. Please try again later.';
 
-            toast.error(errorMessage);
+            toast.error('Failed to generate payout quote. Please try again later.');
         }
     };
 
@@ -151,7 +183,7 @@ export default function PayoutPage() {
                     'Failed to execute payout. Please try again later.';
             const normalizeErrorMessage = errorMessage?.toLowerCase();
 
-            if (normalizeErrorMessage?.includes('quote') && normalizeErrorMessage?.includes('expired')) {
+            if (normalizeErrorMessage?.includes('payout quote has expired')) {
                 toast.error('Payout quote has expired. Please generate a new quote and try again.');
             } else {
                 toast.error('Failed to execute payout. Please try again later.');
@@ -168,63 +200,76 @@ export default function PayoutPage() {
     };
 
     return (
-        <div className="payoutPage-container w-full h-fit flex flex-col justify-start items-stretch gap-6 p-4! sm:p-6!">
-            {/* Header Section */}
-            <div className="flex flex-col gap-1.5">
-                <h1 className="text-2xl sm:text-3xl text-[var(--ink)] tracking-normal">
-                    <span className="font-serif font-medium">Send</span>{' '}
-                    <span className="font-serif italic font-normal text-[var(--mute)]">money.</span>
-                </h1>
-                <p className="text-xs text-[var(--mute)]">
-                    Pay a beneficiary from any of your fiat or crypto balances.
-                </p>
-            </div>
+        <>
+            {/* Page Loader */}
+            <Activity mode={(getAllWalletsBanalcesIsLoading || getBeneficiariesIsLoading) ? "visible" : "hidden"}>
+                <PageLoaderComponent showPageLoader={getAllWalletsBanalcesIsLoading || getBeneficiariesIsLoading} />
+            </Activity>
 
-            {/* Stepper Progress Bar */}
-            <PayoutStepperComponent currentStep={currentStep} />
-
-            {/* Step 1 & Step 2 Layout: Split 2 columns (Main form/review left + Quote summary right) */}
-            {currentStep < 3 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                    {/* Left Column (2/3 width) */}
-                    <div className="lg:col-span-2">
-                        {currentStep === 1 ? (
-                            <TransactionDetailsStepComponent
-                                beneficiaries={beneficiariesList}
-                                defaultBeneficiaryId={urlBeneficiaryId}
-                                quote={activeQuote}
-                                isQuoteLoading={createPayoutQuoteIsLoading}
-                                onGenerateQuote={handleGenerateQuote}
-                                onResetQuote={handleResetQuote}
-                                onContinue={handleContinueStep1}
-                            />
-                        ) : (
-                            <ReviewTransactionStepComponent
-                                quote={activeQuote!}
-                                beneficiary={selectedBeneficiary}
-                                isExecuting={executePayoutQuoteIsLoading}
-                                onBack={handleBackStep2}
-                                onConfirmAndSend={handleConfirmAndSend}
-                            />
-                        )}
+            {/* Main Content */}
+            <Activity mode={(!getAllWalletsBanalcesIsLoading && !getBeneficiariesIsLoading) ? "visible" : "hidden"}>
+                <div className="payoutPage-container w-full h-fit flex flex-col justify-start items-stretch gap-6 p-4! sm:p-6!">
+                    {/* Header Section */}
+                    <div className="flex flex-col gap-1.5">
+                        <h1 className="text-2xl sm:text-3xl text-[var(--ink)] tracking-normal">
+                            <span className="font-serif font-medium">Send</span>{' '}
+                            <span className="font-serif italic font-normal text-[var(--mute)]">money.</span>
+                        </h1>
+                        <p className="text-xs text-[var(--mute)]">
+                            Pay a beneficiary from any of your fiat or crypto balances.
+                        </p>
                     </div>
 
-                    {/* Right Column Summary Card (1/3 width) */}
-                    <div className="lg:col-span-1">
-                        <PayoutQuoteSummaryCardComponent
+                    {/* Stepper Progress Bar */}
+                    <PayoutStepperComponent currentStep={currentStep} />
+
+                    {/* Step 1 & Step 2 Layout: Split 2 columns (Main form/review left + Quote summary right) */}
+                    {currentStep < 3 ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                            {/* Left Column (2/3 width) */}
+                            <div className="lg:col-span-2">
+                                {currentStep === 1 ? (
+                                    <TransactionDetailsStepComponent
+                                        beneficiaries={beneficiariesList}
+                                        defaultBeneficiaryId={urlBeneficiaryId}
+                                        beneficiariesNotFound={beneficiariesListNotFound}
+                                        wallets={userWalletsBalancesList}
+                                        walletsBalancesListNotFound={allWalletsBalancesNotFound}
+                                        quote={activeQuote}
+                                        isQuoteLoading={createPayoutQuoteIsLoading}
+                                        onGenerateQuote={handleGenerateQuote}
+                                        onResetQuote={handleResetQuote}
+                                        onContinue={handleContinueStep1}
+                                    />
+                                ) : (
+                                    <ReviewTransactionStepComponent
+                                        quote={activeQuote!}
+                                        beneficiary={selectedBeneficiary}
+                                        isExecuting={executePayoutQuoteIsLoading}
+                                        onBack={handleBackStep2}
+                                        onConfirmAndSend={handleConfirmAndSend}
+                                    />
+                                )}
+                            </div>
+
+                            {/* Right Column Summary Card (1/3 width) */}
+                            <div className="lg:col-span-1">
+                                <PayoutQuoteSummaryCardComponent
+                                    quote={activeQuote}
+                                    isLoading={createPayoutQuoteIsLoading}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        /* Step 3 Layout: Centered Confirmation UI */
+                        <PayoutConfirmationStepComponent
                             quote={activeQuote}
-                            isLoading={createPayoutQuoteIsLoading}
+                            beneficiary={selectedBeneficiary}
+                            onSendAnother={handleSendAnother}
                         />
-                    </div>
+                    )}
                 </div>
-            ) : (
-                /* Step 3 Layout: Centered Confirmation UI */
-                <PayoutConfirmationStepComponent
-                    quote={activeQuote}
-                    beneficiary={selectedBeneficiary}
-                    onSendAnother={handleSendAnother}
-                />
-            )}
-        </div>
+            </Activity>
+        </>
     );
 }

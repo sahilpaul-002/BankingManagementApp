@@ -33,7 +33,7 @@ export default function BeneficiaryDetailsSidebarComponent({
 
     const handleSendMoney = () => {
         onClose();
-        navigate(`/payables/payout?beneficiaryId=${beneficiary._id}`);
+        navigate(`/payables/payout/${beneficiary._id}`);
     };
 
     const maskAccountNumber = (accNo: string) => {

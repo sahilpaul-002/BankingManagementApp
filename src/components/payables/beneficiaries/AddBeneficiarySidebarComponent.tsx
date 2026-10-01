@@ -13,7 +13,7 @@ import { useDispatch } from 'react-redux';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import ShowInConsole from '@/utils/ShowInConsole';
 
-const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'SGD', 'AUD', 'CAD'];
+const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CAD', 'CHF', 'SGD'];
 
 // ── Zod Schema ──────────────────────────────────────────────────────────────
 const addBeneficiarySchema = z.object({
@@ -134,7 +134,7 @@ export default function AddBeneficiarySidebarComponent({
             reset();
             onClose();
         }
-        catch (err: any){
+        catch (err: any) {
             ShowInConsole('Add beneficiary error:', err);
 
             const errorMessage =
