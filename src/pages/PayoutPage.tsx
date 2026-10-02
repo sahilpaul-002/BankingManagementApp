@@ -9,12 +9,11 @@ import TransactionDetailsStepComponent, {
 } from '@/components/payables/payouts/fiat/TransactionDetailsStepComponent';
 import ReviewTransactionStepComponent from '@/components/payables/payouts/fiat/ReviewTransactionStepComponent';
 import PayoutConfirmationStepComponent from '@/components/payables/payouts/fiat/PayoutConfirmationStepComponent';
-import CryptoPayoutFlowComponent from '@/components/payables/payouts/crypto/CryptoPayoutFlowComponent';
 import { useGetBeneficiariesQuery } from '@/redux/features/beneficiaries/beneficiariesApi';
 import { useCreatePayoutQuoteMutation, useCryptoBeneficiaryTransferMutation, useExecutePayoutQuoteMutation } from '@/redux/features/transfer/transferApis';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
-import type { PayoutQuoteData, ExecutePayoutQuoteData, AllWalletBalancesResponseDataType, WalletBalanceItemType, CryptoTransactionFormDataType } from '@/types/payables/payoutTypes';
+import type { PayoutQuoteDataType, ExecutePayoutQuoteDataType, AllWalletBalancesResponseDataType, WalletBalanceItemType, CryptoTransactionFormDataType, CryptoBeneficiaryTransferResponseDataType } from '@/types/payables/payoutTypes';
 import ShowInConsole from '@/utils/ShowInConsole';
 import { useGetAllWalletBalancesQuery } from '@/redux/features/wallet/walletApis';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
@@ -24,11 +23,6 @@ import CryptoReviewTransactionStepComponent from '@/components/payables/payouts/
 import CryptoConfirmationStepComponent from '@/components/payables/payouts/crypto/CryptoConfirmationStepComponent';
 
 type PaymentType = 'FIAT' | 'CRYPTO';
-
-function generateSimulatedHash(): string {
-    const hex = Math.random().toString(16).slice(2, 12);
-    return `SIMULATED-${hex}`;
-}
 
 export default function PayoutPage() {
     const { id: urlBeneficiaryId } = useParams<{ id?: string }>();
@@ -103,8 +97,8 @@ export default function PayoutPage() {
     const [paymentType, setPaymentType] = useState<PaymentType>('FIAT');
     const [currentStep, setCurrentStep] = useState<number>(1);
     const [savedFormData, setSavedFormData] = useState<TransactionDetailsFormData | null>(null);
-    const [activeQuote, setActiveQuote] = useState<PayoutQuoteData | null>(null);
-    const [executionResult, setExecutionResult] = useState<ExecutePayoutQuoteData | null>(null);
+    const [activeQuote, setActiveQuote] = useState<PayoutQuoteDataType | null>(null);
+    const [executionResult, setExecutionResult] = useState<ExecutePayoutQuoteDataType | null>(null);
     // ----------------------- XXXXXXXXXXXXXXX ----------------------- \\
 
     // ------------------------ Fiat Beneficiary Payout ------------------------ \\
@@ -133,7 +127,7 @@ export default function PayoutPage() {
                 toast.error('Failed to generate payout quote. Please try again later.');
             }
 
-            setActiveQuote(createPayoutQuoteResult?.data as PayoutQuoteData ?? null);
+            setActiveQuote(createPayoutQuoteResult?.data as PayoutQuoteDataType ?? null);
 
             toast.success('Payout quote generated successfully.');
         } catch (err: any) {
@@ -183,7 +177,7 @@ export default function PayoutPage() {
                 toast.error('Failed to execute payout. Please try again later.');
             }
 
-            setExecutionResult(executePayoutQuoteResult?.data as ExecutePayoutQuoteData ?? null);
+            setExecutionResult(executePayoutQuoteResult?.data as ExecutePayoutQuoteDataType ?? null);
 
             setCurrentStep(3);
             toast.success('Payout executed successfully!');
@@ -247,7 +241,7 @@ export default function PayoutPage() {
 
     const [cryptoCurrentStep, setCryptoCurrentStep] = useState<number>(1);
     const [cryptoFormData, setCryptoFormData] = useState<CryptoTransactionFormDataType | null>(null);
-    const [cryptoTransactionHash, setCryptoTransactionHash] = useState<string | null>(null);
+    const [cryptoTransferResult, setCryptoTransferResult] = useState<CryptoBeneficiaryTransferResponseDataType | null>(null);
 
     const handleCryptoDetailsSubmit = (data: CryptoTransactionFormDataType) => {
         setCryptoFormData(data);
@@ -264,26 +258,51 @@ export default function PayoutPage() {
         try {
             const result = await handleCryptoTransfer(cryptoFormData);
 
-            if (!result) {
+            if (result?.status?.toUpperCase() !== 'SUCCESS') {
+                toast.error('Crypto transfer failed.');
                 return;
             }
 
-            const hash = generateSimulatedHash();
+            setCryptoTransferResult(result.data as CryptoBeneficiaryTransferResponseDataType);
 
-            setCryptoTransactionHash(hash);
             setCryptoCurrentStep(3);
-
             toast.success('Crypto transfer executed successfully!');
-        } catch (error: any) {
-            ShowInConsole('Crypto beneficiary transfer error:', error);
+        }
+        catch (err: any) {
+            ShowInConsole('Crypto beneficiary transfer error:', err);
 
-            toast.error('Failed to execute crypto transfer. Please try again.');
+            const errorMessage =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message ||
+                    err?.message ||
+                    'Failed to execute crypto transfer. Please try again later.';
+            const normalizeErrorMessage = errorMessage?.toLowerCase();
+
+            if (normalizeErrorMessage?.includes('user wallet details not found') || normalizeErrorMessage?.includes('user wallets not found')) {
+                toast.error('User wallet details not found. Please add wallets and try again.');
+            }
+            else if (normalizeErrorMessage?.includes('active usd fiat wallet not found') || normalizeErrorMessage?.includes('usd wallet details not found')) {
+                toast.error('Active USD fiat wallet not found. Please add USD wallet and try again.');
+            }
+            else if (normalizeErrorMessage?.includes('source') && normalizeErrorMessage?.includes('wallet details not found')) {
+                toast.error(`${cryptoFormData?.source_wallet_currency || 'Source'} wallet details not found. Please add wallet and try again.`);
+            }
+            else if (normalizeErrorMessage?.includes('transfer amount must be greater than 0"')) {
+                toast.error('Transfer amount must be greater than 0. Please try again.');
+            }
+            else if (normalizeErrorMessage?.includes('insufficient') && normalizeErrorMessage?.includes('wallet balance')) {
+                toast.error(`${cryptoFormData?.source_wallet_currency || 'Source'} wallet has insufficient balance. Please add funds and try again.`);
+            }
+            else {
+                toast.error('Failed to execute crypto transfer. Please try again.');
+            }
         }
     };
 
     const handleCryptoSendAnother = () => {
         setCryptoFormData(null);
-        setCryptoTransactionHash(null);
+        setCryptoTransferResult(null);
         setCryptoCurrentStep(1);
     };
     // ------------------------ XXXXXXXXXXXXXXXXXXXXXX ------------------------ \\
@@ -402,37 +421,36 @@ export default function PayoutPage() {
 
                             {/* Step content */}
                             {cryptoCurrentStep < 3 ? (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                                    <div className="lg:col-span-2">
-                                        {cryptoCurrentStep === 1 ? (
+                                cryptoCurrentStep === 1 ? (
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                                        <div className="lg:col-span-2">
                                             <CryptoTransactionDetailsStepComponent
                                                 wallets={userWalletsBalancesList}
                                                 walletsBalancesListNotFound={allWalletsBalancesNotFound}
                                                 onSubmit={handleCryptoDetailsSubmit}
                                             />
-                                        ) : (
-                                            cryptoFormData && (
-                                                <CryptoReviewTransactionStepComponent
-                                                    formData={cryptoFormData}
-                                                    onBack={handleCrytoBack}
-                                                    onConfirmAndSend={handleCryptoConfirmAndSend}
-                                                />
-                                            )
-                                        )}
-                                    </div>
+                                        </div>
 
-                                    {/* Right summary panel (Step 1 only) */}
-                                    {cryptoCurrentStep === 1 && (
                                         <div className="lg:col-span-1">
                                             <CryptoSummaryCard wallets={userWalletsBalancesList} />
                                         </div>
-                                    )}
-                                </div>
+                                    </div>
+                                ) : (
+                                    <div className="w-full">
+                                        {cryptoFormData && (
+                                            <CryptoReviewTransactionStepComponent
+                                                formData={cryptoFormData}
+                                                isExecuting={cryptoBeneficiaryTransferIsLoading}
+                                                onBack={handleCrytoBack}
+                                                onConfirmAndSend={handleCryptoConfirmAndSend}
+                                            />
+                                        )}
+                                    </div>
+                                )
                             ) : (
-                                cryptoFormData && cryptoTransactionHash && (
+                                cryptoFormData && cryptoTransferResult && (
                                     <CryptoConfirmationStepComponent
-                                        formData={cryptoFormData}
-                                        transactionHash={cryptoTransactionHash}
+                                        transferResult={cryptoTransferResult}
                                         onSendAnother={handleCryptoSendAnother}
                                     />
                                 )

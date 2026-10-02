@@ -1,9 +1,9 @@
 import React from 'react';
 import { Info } from 'lucide-react';
-import type { PayoutQuoteData } from '@/types/payables/payoutTypes';
+import type { PayoutQuoteDataType } from '@/types/payables/payoutTypes';
 
 interface PayoutQuoteSummaryCardComponentProps {
-    quote: PayoutQuoteData | null;
+    quote: PayoutQuoteDataType | null;
     isLoading?: boolean;
 }
 

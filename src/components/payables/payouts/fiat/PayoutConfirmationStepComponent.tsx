@@ -2,11 +2,11 @@ import React from 'react';
 import { Check, ArrowRight, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type { PayoutQuoteData } from '@/types/payables/payoutTypes';
+import type { PayoutQuoteDataType } from '@/types/payables/payoutTypes';
 import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
 
 interface PayoutConfirmationStepComponentProps {
-    quote: PayoutQuoteData | null;
+    quote: PayoutQuoteDataType | null;
     beneficiary: BeneficiaryItemType | null;
     onSendAnother: () => void;
 }

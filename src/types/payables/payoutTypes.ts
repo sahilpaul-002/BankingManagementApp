@@ -28,12 +28,12 @@ export interface AllWalletBalancesResponseType {
 }
 
 // ── Payout Types ──────────────────────────────────────
-export interface PurposeOptionItem {
+export interface PurposeOptionItemType {
     value: string;
     label: string;
 }
 
-export interface CreatePayoutQuoteRequestBody {
+export interface CreatePayoutQuoteRequestBodyType {
     beneficiary_id: string;
     source_currency: string;
     amount: string | number;
@@ -41,7 +41,7 @@ export interface CreatePayoutQuoteRequestBody {
     memo?: string | undefined;
 }
 
-export interface PayoutQuoteBeneficiaryData {
+export interface PayoutQuoteBeneficiaryDataType {
     beneficiary_id: string;
     account_holder_name: string;
     account_number: string;
@@ -49,42 +49,42 @@ export interface PayoutQuoteBeneficiaryData {
     bank_name: string;
 }
 
-export interface PayoutQuoteCurrencyAmount {
+export interface PayoutQuoteCurrencyAmountType {
     currency: string;
     amount: string;
 }
 
-export interface PayoutQuoteDestinationData {
+export interface PayoutQuoteDestinationDataType {
     currency: string;
     gross_amount: string;
     amount: string;
 }
 
-export interface PayoutQuoteData {
+export interface PayoutQuoteDataType {
     quote_id: string;
-    beneficiary: PayoutQuoteBeneficiaryData;
-    source: PayoutQuoteCurrencyAmount;
-    destination: PayoutQuoteDestinationData;
+    beneficiary: PayoutQuoteBeneficiaryDataType;
+    source: PayoutQuoteCurrencyAmountType;
+    destination: PayoutQuoteDestinationDataType;
     exchange_rate: string;
-    fee: PayoutQuoteCurrencyAmount;
-    total_debit: PayoutQuoteCurrencyAmount;
+    fee: PayoutQuoteCurrencyAmountType;
+    total_debit: PayoutQuoteCurrencyAmountType;
     quote_status: string;
     expires_at: string;
 }
 
-export interface CreatePayoutQuoteResponse {
+export interface CreatePayoutQuoteResponseType {
     status: string;
     message: string;
-    data: PayoutQuoteData;
+    data: PayoutQuoteDataType;
 }
 
-export interface ExecutePayoutQuoteRequestBody {
+export interface ExecutePayoutQuoteRequestBodyType {
     quote_id: string;
     documents?: FileList | File[] | File | undefined;
     memo?: string | undefined;
 }
 
-export interface ExecutePayoutQuoteData {
+export interface ExecutePayoutQuoteDataType {
     payout_transaction_id: string;
     wallet_transaction_id: string;
     wallet_id: string;
@@ -99,10 +99,10 @@ export interface ExecutePayoutQuoteData {
     status: string;
 }
 
-export interface ExecutePayoutQuoteResponse {
+export interface ExecutePayoutQuoteResponseType {
     status: string;
     message: string;
-    data: ExecutePayoutQuoteData;
+    data: ExecutePayoutQuoteDataType;
 }
 
 export type CryptoTransactionFormDataType = {
@@ -112,8 +112,40 @@ export type CryptoTransactionFormDataType = {
     amount: string;
 };
 
+export type CryptoBeneficiaryTransferResponseDataType = {
+    transfer_reference_id: string;
+    crypto_wallet_transaction_id: string;
+    usd_fee_wallet_transaction_id: string;
+    wallet_id: string;
+    source_currency: 'USDT' | 'USDC';
+    source_amount: string;
+    destination_network: 'ETHEREUM' | 'POLYGON';
+    destination_address: string;
+    source_amount_usd: string;
+    fee: {
+        currency: 'USD';
+        percentage: string;
+        amount: string;
+    };
+    total_source_wallet_debit: {
+        currency: 'USDT' | 'USDC';
+        amount: string;
+    };
+    total_usd_wallet_debit: {
+        currency: 'USD';
+        amount: string;
+    };
+    status: string;
+};
+
+export interface CryptoBeneficiaryTransferResponseType {
+    status: string;
+    message: string;
+    data: CryptoBeneficiaryTransferResponseDataType;
+}
+
 // ── Purpose of Payments Hardcoded Fallback Values ────────────────────────
-export const PURPOSE_OF_PAYMENTS_FALLBACK: PurposeOptionItem[] = [
+export const PURPOSE_OF_PAYMENTS_FALLBACK: PurposeOptionItemType[] = [
     { value: 'AUDIO_VISUAL_SERVICES', label: 'Audiovisual services' },
     { value: 'BILL_PAYMENT', label: 'Bill payment' },
     { value: 'BUSINESS_EXPENSES', label: 'Business expenses' },

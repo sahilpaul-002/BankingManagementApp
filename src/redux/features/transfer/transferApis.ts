@@ -195,7 +195,7 @@ export const transferApis = createApi({
                     }
 
                     const result = (await executeBaseQuery(baseQuery, {
-                        url: `${TRANSFER_URL}/executePayout`,
+                        url: `${TRANSFER_URL}/cryptoBeneficiaryTransfer`,
                         method: 'POST',
                         headers,
                         params: { email: payload.email },

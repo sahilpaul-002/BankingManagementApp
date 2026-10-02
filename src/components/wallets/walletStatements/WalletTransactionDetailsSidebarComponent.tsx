@@ -44,7 +44,7 @@ export default function WalletTransactionDetailsSidebarComponent({isOpen, onClos
         if (!val) return '0.00';
         const str = typeof val === 'object' ? val.$numberDecimal : String(val);
         const num = parseFloat(str);
-        return isNaN(num) ? str : num.toFixed(4);
+        return isNaN(num) ? str : num.toFixed(2);
     };
 
     const renderTypeBadge = (type: string) => {

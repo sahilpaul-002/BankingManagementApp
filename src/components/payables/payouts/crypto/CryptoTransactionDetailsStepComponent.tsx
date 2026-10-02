@@ -5,13 +5,13 @@ import { Wallet, ArrowRight, Info, CircleAlert } from 'lucide-react';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type { WalletBalanceItemType } from '@/types/payables/payoutTypes';
+import type { CryptoTransactionFormDataType, WalletBalanceItemType } from '@/types/payables/payoutTypes';
 import { Activity } from 'react';
 
 // ── Constants ────────────────────────────────────────────────────────────────
+const CRYPTO_TRANSFER_FEE_PERCENTAGE = 20;
 const CRYPTO_CURRENCIES = ['USDT', 'USDC'] as const;
 const CRYPTO_NETWORKS = ['ETHEREUM', 'POLYGON'] as const;
-const SIMULATED_NETWORK_FEE = 20;
 
 const NETWORK_OPTIONS = [
     { label: 'Ethereum', value: 'ETHEREUM' },
@@ -48,13 +48,13 @@ export const cryptoTransactionSchema = z.object({
         ),
 });
 
-export type CryptoTransactionFormDataType = z.infer<typeof cryptoTransactionSchema>;
+export type CryptoTransactionFormSchemaDataType = z.infer<typeof cryptoTransactionSchema>;
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface CryptoTransactionDetailsStepComponentProps {
     wallets: WalletBalanceItemType[];
     walletsBalancesListNotFound?: boolean | undefined;
-    onSubmit: (data: CryptoTransactionFormDataType) => void;
+    onSubmit: (data: CryptoTransactionFormSchemaDataType) => void;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -90,7 +90,7 @@ export default function CryptoTransactionDetailsStepComponent({
         watch,
         formState: { errors },
         setError,
-    } = useForm<CryptoTransactionFormDataType>({
+    } = useForm<CryptoTransactionFormSchemaDataType>({
         resolver: zodResolver(cryptoTransactionSchema),
         mode: 'onTouched',
         reValidateMode: 'onChange',
@@ -106,31 +106,21 @@ export default function CryptoTransactionDetailsStepComponent({
     const selectedWallet = cryptoWallets.find((w) => w.wallet_currency === watchedCurrency) ?? null;
     const availableBalance = selectedWallet ? parseFloat(selectedWallet.available_balance) : 0;
     const parsedAmount = parseFloat(watchedAmount) || 0;
-    const totalDebit = parsedAmount + SIMULATED_NETWORK_FEE;
 
     const handleFormSubmit: SubmitHandler<CryptoTransactionFormDataType> = (data) => {
         const balance = cryptoWallets.find((w) => w.wallet_currency === data.source_wallet_currency)
             ? parseFloat(cryptoWallets.find((w) => w.wallet_currency === data.source_wallet_currency)!.available_balance)
             : 0;
 
-        const total = parseFloat(data.amount) + SIMULATED_NETWORK_FEE;
+        const amount = parseFloat(data.amount);
 
-        if (total > balance) {
+        if (amount > balance) {
             setError('amount', {
                 type: 'manual',
-                message: `Total debit (${total.toFixed(2)} ${data.source_wallet_currency}) exceeds available balance (${balance.toFixed(2)} ${data.source_wallet_currency})`,
+                message: `Amount (${amount.toFixed(2)} ${data.source_wallet_currency}) exceeds available balance (${balance.toFixed(2)} ${data.source_wallet_currency})`,
             });
             return;
         }
-
-        console.log('Crypto payout transaction:', {
-            source_wallet_currency: data.source_wallet_currency,
-            network: data.network,
-            destination_address: data.destination_address.trim(),
-            amount: parseFloat(data.amount).toFixed(2),
-            network_fee: SIMULATED_NETWORK_FEE.toFixed(2),
-            total_debit: total.toFixed(2),
-        });
 
         onSubmit({
             ...data,
@@ -241,13 +231,12 @@ export default function CryptoTransactionDetailsStepComponent({
                                 Destination Address
                             </span>
                             <div className="relative w-full">
-                                <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--mute)] pointer-events-none z-10" />
                                 <CustomInputComponent
                                     id="crypto-input-destinationAddress"
                                     label=""
                                     type="text"
                                     placeholder="0x71C765..."
-                                    inputClassname="pl-9! text-[var(--ink)] font-mono text-xs"
+                                    inputClassname="p-2! text-[var(--ink)] text-xs"
                                     error={errors?.destination_address?.message}
                                     {...register('destination_address')}
                                 />
@@ -269,37 +258,21 @@ export default function CryptoTransactionDetailsStepComponent({
                             {...register('amount')}
                         />
 
-                        {/* Fee Summary */}
-                        {parsedAmount > 0 && (
-                            <div className="w-full bg-[var(--bg-subtle)] border border-[var(--line)] rounded-lg p-4! flex flex-col gap-2.5">
-                                <InfoRow
-                                    label="Amount"
-                                    value={`${parsedAmount.toFixed(2)} ${currencyLabel}`}
-                                />
-                                <InfoRow
-                                    label="Network Fee (simulated)"
-                                    value={`${SIMULATED_NETWORK_FEE.toFixed(2)} ${currencyLabel}`}
-                                />
-                                <div className="pt-2 border-t border-[var(--line)]">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <span className="font-semibold text-[var(--ink)]">Total Debit</span>
-                                        <span
-                                            className={`font-bold ${totalDebit > availableBalance && availableBalance > 0
-                                                ? 'text-[var(--danger)]'
-                                                : 'text-[var(--ink)]'
-                                                }`}
-                                        >
-                                            {totalDebit.toFixed(2)} {currencyLabel}
-                                        </span>
-                                    </div>
-                                    {totalDebit > availableBalance && availableBalance > 0 && (
-                                        <p className="text-[11px] text-[var(--danger)] mt-1">
-                                            Total debit exceeds available balance.
-                                        </p>
-                                    )}
-                                </div>
+                        {/* Crypto Transfer Fee Information */}
+                        <div className="flex items-start gap-3 rounded-lg border border-[var(--line)] bg-[var(--bg-subtle)] px-4! py-3!">
+                            <Info className="w-4 h-4 mt-0.5 shrink-0 text-[var(--gold)]" />
+
+                            <div className="flex flex-col gap-1">
+                                <span className="text-xs font-semibold text-[var(--ink)]">
+                                    Crypto transfer fee
+                                </span>
+
+                                <p className="text-xs leading-relaxed text-[var(--mute)]">
+                                    A {CRYPTO_TRANSFER_FEE_PERCENTAGE}% transfer fee applies to crypto transfers.
+                                    The applicable fee is charged separately in USD.
+                                </p>
                             </div>
-                        )}
+                        </div>
                     </form>
 
                     {/* Bottom Actions */}

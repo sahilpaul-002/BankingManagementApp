@@ -1,8 +1,6 @@
 import { ArrowLeft, ArrowRight, ArrowDown, Info } from 'lucide-react';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type { CryptoTransactionFormData } from './CryptoTransactionDetailsStepComponent';
-
-const SIMULATED_NETWORK_FEE = 5;
+import type { CryptoTransactionFormDataType } from '@/types/payables/payoutTypes';
 
 const NETWORK_LABELS: Record<string, string> = {
     ETHEREUM: 'Ethereum',
@@ -10,9 +8,10 @@ const NETWORK_LABELS: Record<string, string> = {
 };
 
 interface CryptoReviewTransactionStepComponentProps {
-    formData: CryptoTransactionFormData;
+    formData: CryptoTransactionFormDataType;
     onBack: () => void;
     onConfirmAndSend: () => void;
+    isExecuting: boolean;
 }
 
 interface DetailRowProps {
@@ -36,10 +35,9 @@ export default function CryptoReviewTransactionStepComponent({
     formData,
     onBack,
     onConfirmAndSend,
+    isExecuting
 }: CryptoReviewTransactionStepComponentProps) {
     const amount = parseFloat(formData.amount);
-    const fee = SIMULATED_NETWORK_FEE;
-    const totalDebit = amount + fee;
     const currency = formData.source_wallet_currency;
     const networkLabel = NETWORK_LABELS[formData.network] ?? formData.network;
 
@@ -90,24 +88,6 @@ export default function CryptoReviewTransactionStepComponent({
                     value={<span className="font-mono text-xs break-all">{formData.destination_address}</span>}
                     mono
                 />
-                <DetailRow label="Network Fee (simulated)" value={`${fee.toFixed(2)} ${currency}`} />
-                <DetailRow
-                    label="Total Debit"
-                    value={
-                        <span className="text-[var(--ink)] font-bold">
-                            {totalDebit.toFixed(2)} {currency}
-                        </span>
-                    }
-                />
-            </div>
-
-            {/* Demo Notice */}
-            <div className="flex items-start gap-3 p-3! rounded-lg bg-[var(--bg-subtle)] border border-[var(--line)]">
-                <Info className="w-4 h-4 text-[var(--gold)] shrink-0 mt-0.5" />
-                <p className="text-xs text-[var(--mute)] leading-relaxed">
-                    <span className="font-semibold text-[var(--ink-soft)]">Demo transaction</span> — No blockchain
-                    transaction will be submitted.
-                </p>
             </div>
 
             {/* Bottom Actions */}
@@ -124,6 +104,7 @@ export default function CryptoReviewTransactionStepComponent({
                         type="button"
                         variant="outline"
                         onClick={onBack}
+                        disabled={isExecuting}
                     />
                 </div>
 
@@ -138,6 +119,7 @@ export default function CryptoReviewTransactionStepComponent({
                         type="button"
                         variant="navy"
                         onClick={onConfirmAndSend}
+                        showButtonLoader={isExecuting}
                     />
                 </div>
             </div>

@@ -7,7 +7,7 @@ import { Upload, CheckCircle, ArrowRight, WalletCards } from 'lucide-react';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import { PURPOSE_OF_PAYMENTS_FALLBACK, type PayoutQuoteData, type WalletBalanceItemType } from '@/types/payables/payoutTypes';
+import { PURPOSE_OF_PAYMENTS_FALLBACK, type PayoutQuoteDataType, type WalletBalanceItemType } from '@/types/payables/payoutTypes';
 import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
 
 const FIAT_PAYOUT_CURRENCIES = ['USD', 'SGD', 'EUR'] as const;
@@ -55,7 +55,7 @@ interface TransactionDetailsStepComponentPropsType {
     beneficiariesNotFound?: boolean | undefined;
     wallets: WalletBalanceItemType[];
     walletsBalancesListNotFound?: boolean | undefined;
-    quote: PayoutQuoteData | null;
+    quote: PayoutQuoteDataType | null;
     isQuoteLoading: boolean;
     onGenerateQuote: (data: TransactionDetailsFormData) => void;
     onResetQuote: () => void;

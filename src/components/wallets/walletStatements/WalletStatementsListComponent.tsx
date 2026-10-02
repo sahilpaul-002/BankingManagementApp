@@ -67,7 +67,7 @@ export default function WalletStatementsListComponent({
 
         const num = parseFloat(str);
 
-        return isNaN(num) ? str : num.toFixed(4);
+        return isNaN(num) ? str : num.toFixed(2);
     };
 
     // Render Type Badge UI

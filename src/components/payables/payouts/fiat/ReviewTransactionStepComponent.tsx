@@ -1,11 +1,11 @@
 import React from 'react';
 import { ArrowLeft, ArrowRight, ArrowLeftRight } from 'lucide-react';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import type { PayoutQuoteData } from '@/types/payables/payoutTypes';
+import type { PayoutQuoteDataType } from '@/types/payables/payoutTypes';
 import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
 
 interface ReviewTransactionStepComponentProps {
-    quote: PayoutQuoteData;
+    quote: PayoutQuoteDataType;
     beneficiary: BeneficiaryItemType | null;
     isExecuting: boolean;
     onBack: () => void;
