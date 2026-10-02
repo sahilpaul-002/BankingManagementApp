@@ -109,8 +109,8 @@ export default function PayoutPage() {
             ? beneficiariesList.find((b) => b._id === urlBeneficiaryId) || null
             : null;
 
-    // Function to Create Payout Quote
-    const handleGenerateQuote = async (formData: TransactionDetailsFormData) => {
+    // Function to Create Fiat Payout Quote
+    const handleFiatGenerateQuote = async (formData: TransactionDetailsFormData) => {
         setSavedFormData(formData);
 
         try {
@@ -139,18 +139,25 @@ export default function PayoutPage() {
                     : err?.data?.message ||
                     err?.message ||
                     'Failed to generate payout quote. Please try again later.';
+                    
+            const normalizeErrorMessage = errorMessage?.toLowerCase();
 
-            toast.error('Failed to generate payout quote. Please try again later.');
+            if (normalizeErrorMessage?.includes('insufficient wallet balance')) {
+                toast.error('Insufficient wallet balance. Please add funds and try again.');
+            }
+            else {
+                toast.error('Failed to generate payout quote. Please try again later.');
+            }
         }
     };
 
     // Reset Quote
-    const handleResetQuote = () => {
+    const handleFiatResetQuote = () => {
         setActiveQuote(null);
     };
 
     // ── Step 1 → Step 2 ────────────────
-    const handleContinueStep1 = () => {
+    const handleFiatContinueStep1 = () => {
         if (!activeQuote) {
             toast.error('Please generate a quote before continuing.');
             return;
@@ -159,12 +166,12 @@ export default function PayoutPage() {
     };
 
     // ── Step 2 → Step 1 ────────────────
-    const handleBackStep2 = () => {
+    const handleFiatBackStep2 = () => {
         setCurrentStep(1);
     };
 
     // Function to Execute Payout Quote
-    const handleConfirmAndSend = async () => {
+    const handleFiatConfirmAndSend = async () => {
         if (!activeQuote) return;
 
         try {
@@ -201,7 +208,7 @@ export default function PayoutPage() {
     };
 
     // ── Step 3 → Reset flow to Step 1 ────────────────
-    const handleSendAnother = () => {
+    const handleFiatSendAnother = () => {
         setSavedFormData(null);
         setActiveQuote(null);
         setExecutionResult(null);
@@ -379,17 +386,17 @@ export default function PayoutPage() {
                                                 walletsBalancesListNotFound={allWalletsBalancesNotFound}
                                                 quote={activeQuote}
                                                 isQuoteLoading={createPayoutQuoteIsLoading}
-                                                onGenerateQuote={handleGenerateQuote}
-                                                onResetQuote={handleResetQuote}
-                                                onContinue={handleContinueStep1}
+                                                onGenerateQuote={handleFiatGenerateQuote}
+                                                onResetQuote={handleFiatResetQuote}
+                                                onContinue={handleFiatContinueStep1}
                                             />
                                         ) : (
                                             <ReviewTransactionStepComponent
                                                 quote={activeQuote!}
                                                 beneficiary={selectedBeneficiary}
                                                 isExecuting={executePayoutQuoteIsLoading}
-                                                onBack={handleBackStep2}
-                                                onConfirmAndSend={handleConfirmAndSend}
+                                                onBack={handleFiatBackStep2}
+                                                onConfirmAndSend={handleFiatConfirmAndSend}
                                             />
                                         )}
                                     </div>
@@ -407,7 +414,7 @@ export default function PayoutPage() {
                                 <PayoutConfirmationStepComponent
                                     quote={activeQuote}
                                     beneficiary={selectedBeneficiary}
-                                    onSendAnother={handleSendAnother}
+                                    onSendAnother={handleFiatSendAnother}
                                 />
                             )}
                         </>

@@ -89,7 +89,6 @@ export default function CryptoTransactionDetailsStepComponent({
         control,
         watch,
         formState: { errors },
-        setError,
     } = useForm<CryptoTransactionFormSchemaDataType>({
         resolver: zodResolver(cryptoTransactionSchema),
         mode: 'onTouched',
@@ -101,27 +100,10 @@ export default function CryptoTransactionDetailsStepComponent({
     });
 
     const watchedCurrency = watch('source_wallet_currency');
-    const watchedAmount = watch('amount');
 
     const selectedWallet = cryptoWallets.find((w) => w.wallet_currency === watchedCurrency) ?? null;
-    const availableBalance = selectedWallet ? parseFloat(selectedWallet.available_balance) : 0;
-    const parsedAmount = parseFloat(watchedAmount) || 0;
 
     const handleFormSubmit: SubmitHandler<CryptoTransactionFormDataType> = (data) => {
-        const balance = cryptoWallets.find((w) => w.wallet_currency === data.source_wallet_currency)
-            ? parseFloat(cryptoWallets.find((w) => w.wallet_currency === data.source_wallet_currency)!.available_balance)
-            : 0;
-
-        const amount = parseFloat(data.amount);
-
-        if (amount > balance) {
-            setError('amount', {
-                type: 'manual',
-                message: `Amount (${amount.toFixed(2)} ${data.source_wallet_currency}) exceeds available balance (${balance.toFixed(2)} ${data.source_wallet_currency})`,
-            });
-            return;
-        }
-
         onSubmit({
             ...data,
             destination_address: data.destination_address.trim(),
@@ -251,9 +233,6 @@ export default function CryptoTransactionDetailsStepComponent({
                             placeholder="e.g. 200"
                             fieldLabelClassname="text-[var(--ink-soft)] text-xs font-semibold uppercase tracking-wide"
                             inputClassname="px-4! text-[var(--ink)]"
-                            {...(parsedAmount > 0
-                                ? { hint: `${parsedAmount.toFixed(2)} ${currencyLabel}` }
-                                : {})}
                             error={errors?.amount?.message}
                             {...register('amount')}
                         />

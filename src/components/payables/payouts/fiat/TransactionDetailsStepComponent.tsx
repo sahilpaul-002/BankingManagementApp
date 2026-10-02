@@ -3,7 +3,7 @@ import { Activity } from 'react';
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Upload, CheckCircle, ArrowRight, WalletCards } from 'lucide-react';
+import { Upload, CheckCircle, ArrowRight, WalletCards, LucideUsersRound } from 'lucide-react';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
@@ -170,8 +170,26 @@ export default function TransactionDetailsStepComponent({
                 </div>
             </Activity>
 
+            {/* Beneficiaries Not Found Information */}
+            <Activity mode={!walletsBalancesListNotFound && beneficiariesNotFound ? "visible" : "hidden"}>
+                <div className="w-full min-h-[420px] bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6! shadow-xs flex items-center justify-center">
+                    <div className="flex flex-col items-center justify-center text-center max-w-md">
+                        <div className="w-16 h-16 rounded-2xl bg-[var(--bg-subtle)] border border-[var(--line)] flex items-center justify-center mb-5">
+                            <LucideUsersRound className="w-4 h-4 text-[var(--gold)]" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-[var(--ink)]">
+                            No Beneficiaries Found
+                        </h2>
+                        <p className="mt-2 text-sm leading-relaxed text-[var(--mute)]">
+                            We couldn't find any beneficiaries added to your account.
+                            Please add a beneficiary before initiating a payout.
+                        </p>
+                    </div>
+                </div>
+            </Activity>
+
             {/* Transaction Details Form */}
-            <Activity mode={!walletsBalancesListNotFound ? "visible" : "hidden"}>
+            <Activity mode={!walletsBalancesListNotFound && !beneficiariesNotFound ? "visible" : "hidden"}>
                 <div className="w-full bg-[var(--bg-surface)] rounded-xl border border-[var(--line)] p-6! shadow-xs flex flex-col gap-6">
                     <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-soft)]">
                         Transaction Details
