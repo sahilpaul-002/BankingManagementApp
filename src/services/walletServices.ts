@@ -27,6 +27,8 @@ import executeWalletCurrencyConversionTransaction from "../mongoDbTransactions/e
 import { loadWalletValidationSchema, withdrawWalletValidationSchema } from "../validations/userWalletActionValidation.js";
 import createWalletCurrencyConversionTransaction from "../mongoDbTransactions/createWalletCurrencyConversionTransaction.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
+import walletToWalletLoadValidationSchema from "../validations/walletToWalletLoadValidation.js";
+import walletToWalletLoadTransaction from "../mongoDbTransactions/walletToWalletLoadTransaction.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -1370,6 +1372,141 @@ export const executeWalletCurrencyConversionQuoteService = async (requestSession
         }
 
         throw new ServiceError(`ExecuteWalletCurrencyConversionQuoteService facing issue`, sanitizedError);
+    }
+};
+// -------------------------------------------- XXXXXXXXXXXXXXXXXXXXXX -------------------------------------------- \\
+
+
+// --------------------------------- Wallet To Wallet Transfer SERVICE --------------------------------- //
+export const walletToWalletLoadService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType): Promise<any> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid body data");
+        }
+
+        // Check quote collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_wallet_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("User wallet details collection does not exist in MongoDB");
+        }
+
+        // Validate email
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request query");
+        }
+
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError(
+                "Unauthorized access detected - invalid email"
+            );
+        }
+
+        // Validate user type
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+            throw new ForbiddenError("Not authorized to execute currency conversion");
+        }
+
+        // Validate configuration
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
+        const sessionProgramId = requestSession?.userConfiguration?.programId;
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
+
+        if (userConfiguration?.businessId !== sessionBusinessId ||
+            userConfiguration?.programId !== sessionProgramId ||
+            userConfiguration?.agentCode !== sessionAgentCode ||
+            userConfiguration?.subAgentCode !== sessionSubAgentCode
+        ) {
+            throw new ForbiddenError("User configuration is not valid to execute currency conversion");
+        }
+
+        // Validate request body amount
+        const amount = aesDecryptedBodyData.amount;
+        if (amount === undefined || amount === null || amount.trim() === "") {
+            throw new InvalidRequestBodyError("Amount is required");
+        }
+        const amountDecimal = new Decimal(amount);
+
+        // Get user ID
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
+        }
+
+        // Validate request body
+        const validationResult = walletToWalletLoadValidationSchema.safeParse({
+            source_user_id: aesDecryptedBodyData.source_user_id,
+            source_wallet_id: aesDecryptedBodyData.source_wallet_id,
+            destination_wallet_id: aesDecryptedBodyData.destination_wallet_id,
+            amount: amountDecimal,
+        });
+        if (!validationResult.success) {
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
+        const validatedData = validationResult.data;
+
+        // Validate quote ID
+        const sourceUserId = aesDecryptedBodyData.source_user_id;
+        if (!sourceUserId || !Types.ObjectId.isValid(sourceUserId)) {
+            throw new InvalidRequestBodyError("Source user ID not found in request body or invalid source ID");
+        }
+        if (sourceUserId !== sessionUserId) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid source user ID");
+        }
+        const userId = new Types.ObjectId(sessionUserId);
+
+        // Validate Source Wallet ID
+        const sourceWalletId = aesDecryptedBodyData.source_wallet_id;
+        if (!sourceWalletId || !Types.ObjectId.isValid(sourceWalletId)) {
+            throw new InvalidRequestBodyError("Source wallet ID not found in request body or invalid source wallet ID");
+        }
+        const sourceWalletObjectId = new Types.ObjectId(sourceWalletId);
+
+        // Validate Destination Wallet ID
+        const destinationWalletId = aesDecryptedBodyData.destination_wallet_id;
+        if (!destinationWalletId || !Types.ObjectId.isValid(destinationWalletId)) {
+            throw new InvalidRequestBodyError("Destination wallet ID not found in request body or invalid destination wallet ID");
+        }
+        const destinationWalletObjectId = new Types.ObjectId(destinationWalletId);
+
+        // Execute MongoDB transaction
+        const transactionResult = await walletToWalletLoadTransaction({
+            sourceUserId: userId,
+            sourceWalletId: sourceWalletObjectId,
+            destinationWalletId: destinationWalletObjectId,
+            amount: amountDecimal,
+        });
+
+        return {
+            status: "SUCCESS",
+            data: transactionResult.data,
+            message: "Currency conversion executed successfully",
+        };
+
+    }
+    catch (err) {
+        const error = err as any;
+
+        const errorStatus =
+            error?.status ||
+            "UnknownErrorStatus";
+
+
+        logger.error(error, { serviceName: "WalletToWalletLoadService" });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`WalletToWalletLoadService facing issue`, sanitizedError);
     }
 };
 // -------------------------------------------- XXXXXXXXXXXXXXXXXXXXXX -------------------------------------------- \\

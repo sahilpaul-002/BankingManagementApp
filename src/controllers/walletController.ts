@@ -425,3 +425,49 @@ export const executeWalletCurrencyConversionPayoutQuote = async (req: Request, r
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// -------------------------- FUNCTION TO EXECUTE WALLET To Wallet Transfer -------------------------- \\
+export const walletToWalletLoad = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const walletToWalletTransferServiceResponse = await executeWalletCurrencyConversionQuoteService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
+        if (walletToWalletTransferServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to execute wallet to wallet transfer", 400);
+        }
+        return res.success("Wallet to wallet transfer executed successfully", walletToWalletTransferServiceResponse?.data || {}, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "WalletToWalletLoadController",
+            // url: req.path,
+            // method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError("WalletToWalletLoadController is facing unknown issue.", sanitizedError)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

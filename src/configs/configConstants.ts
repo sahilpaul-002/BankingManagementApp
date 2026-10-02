@@ -13,5 +13,5 @@ export const FEE_DETAILS: feeDetailsSchemaTypes = {
     'p2P_percent': 8,
     'currency_conversion': 4,
     'crypto_currency_conversion': 10,
-    'crypto_payout': 20
+    'crypto_payout': 20,
 }
