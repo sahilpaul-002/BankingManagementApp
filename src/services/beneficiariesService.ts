@@ -57,8 +57,21 @@ export const getBeneficiariesListService = async (requestSession: Request["sessi
             throw new ForbiddenError("User configuration is not valid to access beneficiaries list");
         }
 
+        // Get user ID
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthenticatedError(
+                "Unauthorized session detected - invalid user id"
+            );
+        }
+        const userId = new Types.ObjectId(sessionUserId);
+
+
         // Fetch beneficiaries
-        const beneficiaries = await beneficiaries_bank_details.find({},
+        const beneficiaries = await beneficiaries_bank_details.find(
+            {
+                user_id: userId,
+            },
             {
                 _id: 1,
                 account_number: 1,
@@ -67,8 +80,9 @@ export const getBeneficiariesListService = async (requestSession: Request["sessi
                 swift_code: 1,
                 iban_code: 1,
                 bank_name: 1,
-                createdAt: 1
+                createdAt: 1,
             }
+
         ).lean();
 
         if (beneficiaries.length === 0) {
