@@ -14,9 +14,7 @@ type ExecuteFiatPayoutTransactionData = {
     userId: Types.ObjectId;
 };
 
-const executeFiatPayoutTransaction = async (
-    transactionData: ExecuteFiatPayoutTransactionData
-) => {
+const executeFiatPayoutTransaction = async (transactionData: ExecuteFiatPayoutTransactionData) => {
 
     const mongoSession = await mongoose.startSession();
 

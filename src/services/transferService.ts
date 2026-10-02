@@ -20,6 +20,8 @@ import { fiatPayoutTransactionsModel as fiat_payout_transactions } from "../mode
 import { userDetailsModel as user_details } from "../models/user_details.js"
 import getPayoutQuoteTransactionsValidationSchema from "../validations/getPayoutQuoteTransactionsValidation.js";
 import type { SafeParseResult } from "../types/zodTypes.js";
+import cryptoBeneficiaryTransferValidationSchema from "../validations/cryptoBeneficiaryTransferValidation.js";
+import createBeneficiaryTransferTransaction from "../mongoDbTransactions/cryptoBeneficiaryTransferTransaction.js";
 
 type userConfigurationsType = {
     businessId: string;
@@ -336,6 +338,91 @@ export const executePayoutQuoteService = async (requestSession: Request["session
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
 
 
+// ------------------------------------- CREATE BENEFICIARY TRANSFER SERVICE -------------------------------------  \\
+export const cryptoBeneficiaryTransferService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+        if (!aesDecryptedBodyData) {
+            throw new BadRequestError("Invalid body data");
+        }
+
+        // Check if collection exists
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_wallet_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("User wallet details collection does not exist in MongoDB");
+        }
+
+        // Validate User Configuration
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request query");
+        }
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email");
+        }
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+            throw new ForbiddenError("Not authorized to access beneficiaries list");
+        }
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
+        const sessionProgramId = requestSession?.userConfiguration?.programId;
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
+        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
+            throw new ForbiddenError("User configuration is not valid to access payout quotes");
+        }
+
+        // Get user id
+        const sessionUserId = requestSession?.userId;
+        if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
+            throw new UnauthorizedError("Unauthorized session detected - user id not found in session");
+        }
+        const userObjectId = new Types.ObjectId(sessionUserId)
+
+        // Calculate source amount
+        const sourceAmount = new Decimal(aesDecryptedBodyData.amount?.toString() ?? "0");
+        // Validate crypto beneficiary transfer details
+        const validationData = {...aesDecryptedBodyData, amount: sourceAmount};
+        const validationResult = cryptoBeneficiaryTransferValidationSchema.safeParse(validationData);
+        if (!validationResult.success) {
+            throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
+        }
+        const validatedData = validationResult.data;
+
+        // Execute payout mongo db transaction
+        const transactionResult = await createBeneficiaryTransferTransaction({ userId: userObjectId, sourceCurrency: validatedData.source_currency, destinationNetwork: validatedData.destination_network, destinationAddress: validatedData.destination_address, amount: sourceAmount });
+
+        return {
+            status: "SUCCESS",
+            data: transactionResult.data,
+            message: "Crypto beneficiary transfer successfull",
+        };
+
+    } catch (err) {
+
+        const error = err as any;
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "ExecutePayoutQuoteService"
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(
+            `ExecutePayoutQuoteService facing issue`,
+            sanitizedError
+        );
+    }
+}
+// ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
 // ----------------------------------- GET PAYOUT QUOTE TRANSACTIONS ----------------------------------- \\
 export const getPayoutQuoteTransactionsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson | failedResponseJson> => {
     try {
@@ -572,8 +659,8 @@ export const getPayoutQuoteTransactionDetailsService = async (requestSession: Re
         const quoteObjectId = new Types.ObjectId(quoteId);
 
         // Get Payout Quote Transaction Details
-        const transaction = await fiat_payout_transactions.findOne({quote_id: quoteObjectId, user_id: userObjectId})
-        .select("-_id -user_id -wallet_id -createdAt -updatedAt").lean();
+        const transaction = await fiat_payout_transactions.findOne({ quote_id: quoteObjectId, user_id: userObjectId })
+            .select("-_id -user_id -wallet_id -createdAt -updatedAt").lean();
         if (!transaction) {
             throw new NotFoundError("Payout quote transaction not found");
         }
@@ -581,7 +668,7 @@ export const getPayoutQuoteTransactionDetailsService = async (requestSession: Re
         return {
             status: "SUCCESS",
             message: "Payout quote transaction details fetched successfully",
-            data: {transaction},
+            data: { transaction },
         };
     }
     catch (err) {

@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createPayoutQuoteService, executePayoutQuoteService, getPayoutQuoteTransactionDetailsService, getPayoutQuoteTransactionsService } from "../services/transferService.js";
+import { createPayoutQuoteService, cryptoBeneficiaryTransferService, executePayoutQuoteService, getPayoutQuoteTransactionDetailsService, getPayoutQuoteTransactionsService } from "../services/transferService.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------------------ FUNCTION TO CREATE PAYOUT QUOTE ------------------------------------------ \\
@@ -93,6 +93,52 @@ export const executePayoutQuote = async (req: Request, res: Response): Promise<R
             throw error
         }
         throw new ServiceError("ExecutePayoutQuoteController is facing unknown issue.", sanitizedError)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// ------------------------------------------ FUNCTION TO CREATE PAYOUT QUOTE ------------------------------------------ \\
+export const cryptoBeneficiaryTransfer = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const cryptoBeneficiaryTransferServiceResponse = await cryptoBeneficiaryTransferService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
+        if (cryptoBeneficiaryTransferServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to execute crypto beneficiary transfer", 400);
+        }
+        return res.success("Crypto beneficiary transfer executed successfully", cryptoBeneficiaryTransferServiceResponse?.data || {}, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "CryptoBeneficiaryTransferController",
+            // url: req.path,
+            // method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError("CryptoBeneficiaryTransferController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
