@@ -12,7 +12,7 @@ import PayoutConfirmationStepComponent from '@/components/payables/payouts/fiat/
 import { useGetBeneficiariesQuery } from '@/redux/features/beneficiaries/beneficiariesApi';
 import { useCreatePayoutQuoteMutation, useCryptoBeneficiaryTransferMutation, useExecutePayoutQuoteMutation } from '@/redux/features/transfer/transferApis';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
-import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
+import type { BeneficiariesListResponseDataType, BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
 import type { PayoutQuoteDataType, ExecutePayoutQuoteDataType, AllWalletBalancesResponseDataType, WalletBalanceItemType, CryptoTransactionFormDataType, CryptoBeneficiaryTransferResponseDataType } from '@/types/payables/payoutTypes';
 import ShowInConsole from '@/utils/ShowInConsole';
 import { useGetAllWalletBalancesQuery } from '@/redux/features/wallet/walletApis';
@@ -70,7 +70,8 @@ export default function PayoutPage() {
     // ------------------------------ GET BENEFICIARIES RTK QUERY ------------------------------ \\
     // Get Beneficiaries List
     const { data: getBeneficiariesData, isLoading: getBeneficiariesIsLoading, isFetching: getBeneficiariesIsFetching, isError: getBeneficiariesIsError, error: getBeneficiariesError, isSuccess: getBeneficiariesIsSuccess } = useGetBeneficiariesQuery({ email: userEmail! }, { skip: !userEmail });
-    const beneficiariesList = getBeneficiariesData?.data as BeneficiaryItemType[] ?? [];
+    const beneficiariesResponseData = getBeneficiariesData?.data as BeneficiariesListResponseDataType ?? {};
+    const beneficiariesList = beneficiariesResponseData?.beneficiaries as BeneficiaryItemType[] ?? [];
     const beneficiariesListNotFound =
         getBeneficiariesIsError &&
         getBeneficiariesError &&
@@ -139,7 +140,7 @@ export default function PayoutPage() {
                     : err?.data?.message ||
                     err?.message ||
                     'Failed to generate payout quote. Please try again later.';
-                    
+
             const normalizeErrorMessage = errorMessage?.toLowerCase();
 
             if (normalizeErrorMessage?.includes('insufficient wallet balance')) {

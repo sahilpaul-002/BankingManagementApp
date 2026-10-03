@@ -17,30 +17,58 @@ const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'JPY', 'CNY', 'INR', 'AUD', 'CAD'
 
 // ── Zod Schema ──────────────────────────────────────────────────────────────
 const addBeneficiarySchema = z.object({
-    account_holder_name: z
-        .string()
-        .min(2, 'Account holder name is required')
-        .regex(/^[A-Za-z0-9 .'"-]+$/, 'Account holder name contains invalid characters'),
-    bank_name: z
-        .string()
-        .min(2, 'Bank name is required'),
     account_number: z
-        .string()
-        .min(6, 'Account number must be at least 6 characters')
-        .regex(/^[0-9A-Za-z]+$/, 'Account number must contain alphanumeric characters'),
+        .string('Account number is required and must be a string')
+        .trim()
+        .regex(
+            /^\d{8,20}$/,
+            'Account number must be between 8 and 20 digits'
+        ),
+
     account_currency: z
-        .string()
-        .min(1, 'Please select account currency'),
+        .enum(CURRENCY_OPTIONS, {
+            error: 'Unsupported account currency',
+        })
+        .transform((value) => value.toUpperCase()),
+
+    account_holder_name: z
+        .string('Account holder name is required and must be a string')
+        .trim()
+        .min(3, 'Account holder name must be at least 3 characters')
+        .max(100, 'Account holder name cannot exceed 100 characters')
+        .regex(
+            /^[A-Za-z\s.'-]+$/,
+            'Account holder name can only contain alphabets, spaces, dots (.), apostrophes (\'), and hyphens (-)'
+        ),
+
     swift_code: z
-        .string()
-        .min(8, 'SWIFT code must be 8 to 11 characters')
-        .max(11, 'SWIFT code must be 8 to 11 characters')
-        .regex(/^[A-Z0-9]+$/i, 'Invalid SWIFT code format'),
+        .string('SWIFT code is required and must be a string')
+        .trim()
+        .regex(
+            /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/,
+            'Invalid SWIFT/BIC code. It must be 8 or 11 uppercase alphanumeric characters.'
+        )
+        .transform((value) => value.toUpperCase()),
+
     iban_code: z
-        .string()
-        .min(8, 'IBAN code is required')
-        .regex(/^[A-Z0-9]+$/i, 'Invalid IBAN code format'),
-});
+        .string('IBAN code is required and must be a string')
+        .trim()
+        .regex(
+            /^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/,
+            'Invalid IBAN format.'
+        )
+        .transform((value) => value.toUpperCase().replace(/\s+/g, '')),
+
+    bank_name: z
+        .string('Bank name is required and must be a string')
+        .trim()
+        .min(2, 'Bank name must be at least 2 characters')
+        .max(100, 'Bank name cannot exceed 100 characters')
+        .regex(
+            /^[A-Za-z0-9\s.'&()-]+$/,
+            'Bank name contains invalid characters'
+        ),
+}).strict();
 
 type AddBeneficiaryFormData = z.infer<typeof addBeneficiarySchema>;
 

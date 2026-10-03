@@ -7,7 +7,7 @@ import AddBeneficiarySidebarComponent from '@/components/payables/beneficiaries/
 import { useGetBeneficiariesQuery } from '@/redux/features/beneficiaries/beneficiariesApi';
 import { useDispatch } from 'react-redux';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
-import type { BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
+import type { BeneficiariesListResponseDataType, BeneficiaryItemType } from '@/types/payables/beneficiariesTypes';
 import ShowInConsole from '@/utils/ShowInConsole';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import type { PaginationState } from '@tanstack/react-table';
@@ -40,9 +40,11 @@ export default function BeneficiariesPage() {
 
     // ------------------------------ GET BENEFICIARIES RTK QUERY ------------------------------ \\
     // Beneficiaries List
-    const { data: getBeneficiariesData, isLoading: getBeneficiariesIsLoading, isFetching: getBeneficiariesIsFetching, isError: getBeneficiariesIsError, error: getBeneficiariesError } = useGetBeneficiariesQuery({ email: userEmail! }, { skip: !userEmail });
-    const beneficiariesResponseData = getBeneficiariesData?.data;
-    const beneficiariesList = (Array.isArray(beneficiariesResponseData) ? beneficiariesResponseData : []) as BeneficiaryItemType[];
+    const { data: getBeneficiariesData, isLoading: getBeneficiariesIsLoading, isFetching: getBeneficiariesIsFetching, isError: getBeneficiariesIsError, error: getBeneficiariesError } = useGetBeneficiariesQuery({ email: userEmail!, pageNumber: pagination.pageIndex + 1, pageSize: pagination.pageSize }, { skip: !userEmail });
+    const beneficiariesResponseData = getBeneficiariesData?.data as BeneficiariesListResponseDataType ?? {};
+    const beneficiariesList = beneficiariesResponseData?.beneficiaries as BeneficiaryItemType[] ?? [];
+    const totalBeneficiaryCount = beneficiariesResponseData?.pagination?.total_records ?? 0;
+
     const isBeneficiariesNotFound =
         getBeneficiariesIsError &&
         getBeneficiariesError &&
@@ -119,7 +121,7 @@ export default function BeneficiariesPage() {
                     onSelectBeneficiary={handleSelectBeneficiary}
                     beneficiariesNotFound={isBeneficiariesNotFound}
                     getBeneficiariesIsFetching={getBeneficiariesIsFetching}
-                    totalCount={beneficiariesList.length}
+                    totalCount={totalBeneficiaryCount}
                     pagination={pagination}
                     setPagination={setPagination}
                 />

@@ -8,4 +8,5 @@ export const KYC_URL = "/api/v1/kyc";
 export const WALLET_URL = "/api/v1/wallet";
 export const BENEFICIARIES_URL = "/api/v1/beneficiaries";
 export const TRANSFER_URL = "/api/v1/transfer";
+export const CARDHOLDER_URL = "/api/v1/cardholder";
 

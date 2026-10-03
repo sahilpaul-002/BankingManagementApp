@@ -1,6 +1,6 @@
 import { createApi } from '@reduxjs/toolkit/query/react';
 import { axiosBaseQuery, getAxiosInstance } from '@/configs/axiosConfig';
-import { BENEFICIARIES_URL } from '@/configs/constants';
+import { CARDHOLDER_URL } from '@/configs/constants';
 import { selectApplicaitonHeaders } from '@/redux/slice/config/configSlice';
 import type { rootStateType } from '@/redux/sotre';
 import executeBaseQuery from '../executeBaseQuery';
@@ -19,9 +19,9 @@ type apiResponseType<T> = {
 }
 
 // =============================
-// SET UP BENEFICIARIES API HEADERS
+// SET UP CARDHOLDER API HEADERS
 // =============================
-const beneficiariesApiHeaders = (state: rootStateType) => {
+const cardholdersApiHeaders = (state: rootStateType) => {
     const applicationHeaders = selectApplicaitonHeaders(state);
 
     // Build user api headers
@@ -46,19 +46,19 @@ const axiosInstance = getAxiosInstance();
 // ==============================
 // APIS
 // ==============================
-export const beneficiariesApis = createApi({
-    reducerPath: 'beneficiariesApis',
+export const cardholdersApis = createApi({
+    reducerPath: 'cardholdersApis',
     baseQuery: axiosBaseQuery(axiosInstance),
-    tagTypes: ['Beneficiaries'],
+    tagTypes: ['Cardholders'],
     endpoints: (build) => ({
         // =======================================================
-        // GET BENEFICIARIES LIST
+        // GET CARDHOLDERS LIST
         // =======================================================
-        getBeneficiaries: build.query<apiResponseType<apiResponseDataType>, { email: string, pageNumber?: number, pageSize?: number }>({
+        getCardholders: build.query<apiResponseType<apiResponseDataType>, { email: string, pageNumber: number, pageSize: number }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
-                    let headers = beneficiariesApiHeaders(state);
+                    let headers = cardholdersApiHeaders(state);
                     if (!headers || Object.keys(headers).length === 0) {
                         const result = await dispatch(
                             userApis.endpoints.getApplicationHeaders.initiate(
@@ -67,27 +67,23 @@ export const beneficiariesApis = createApi({
                             )
                         );
                         if (result.isError) {
-                            throw new ApplicationServiceError('GET-BENEFICIARIES-LIST - Failed to fetch application headers');
+                            throw new ApplicationServiceError('GET-CARDHOLDERS-LIST - Failed to fetch application headers');
                         }
 
                         // Get the latest Redux state
                         state = getState() as rootStateType;
 
-                        headers = beneficiariesApiHeaders(state)
+                        headers = cardholdersApiHeaders(state)
                     }
 
                     const result = await executeBaseQuery(baseQuery, {
-                        url: `${BENEFICIARIES_URL}`,
+                        url: `${CARDHOLDER_URL}`,
                         method: 'GET',
                         headers,
                         params: {
                             email: payload.email,
-                            ...(payload.pageNumber !== undefined && {
-                                page: payload.pageNumber,
-                            }),
-                            ...(payload.pageSize !== undefined && {
-                                page_size: payload.pageSize,
-                            }),
+                            page: payload.pageNumber,
+                            page_size: payload.pageSize,
                         },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
@@ -99,21 +95,21 @@ export const beneficiariesApis = createApi({
                     };
                 }
                 catch (error) {
-                    const rtkError = rtkQueryCatchError(error, 'GET-BENEFICIARIES-LIST faced application error');
+                    const rtkError = rtkQueryCatchError(error, 'GET-CARDHOLDERS-LIST faced application error');
                     return rtkError;
                 }
             },
-            providesTags: [{ type: 'Beneficiaries', id: 'LIST' }],
+            providesTags: [{ type: 'Cardholders', id: 'LIST' }],
         }),
 
         // =======================================================
-        // ADD BENEFICIARY
+        // ADD CARDHOLDER
         // =======================================================
-        addBeneficiary: build.mutation<apiResponseType<apiResponseDataType>, { email: string; beneficiaryDetails: { accountNumber: string, accountCurrency: string, accountHolderName: string, swiftCode: string, ibanCode: string, bankName: string } }>({
+        addCardholder: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardholderDetails: { email: string, fullName: string, mobileCountryCode: string, mobileCountryName: string, phoneNumber: string, dateOfBirth: string, gender: "MALE" | "FEMALE" } }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
-                    let headers = beneficiariesApiHeaders(state);
+                    let headers = cardholdersApiHeaders(state);
                     if (!headers || Object.keys(headers).length === 0) {
                         const result = await dispatch(
                             userApis.endpoints.getApplicationHeaders.initiate(
@@ -122,27 +118,28 @@ export const beneficiariesApis = createApi({
                             )
                         );
                         if (result.isError) {
-                            throw new ApplicationServiceError('ADD-BENEFICARY - Failed to fetch application headers');
+                            throw new ApplicationServiceError('ADD-CARDHOLDER - Failed to fetch application headers');
                         }
 
                         // Get the latest Redux state
                         state = getState() as rootStateType;
 
-                        headers = beneficiariesApiHeaders(state)
+                        headers = cardholdersApiHeaders(state)
                     }
 
                     const result = (await executeBaseQuery(baseQuery, {
-                        url: `${BENEFICIARIES_URL}/add`,
+                        url: `${CARDHOLDER_URL}/add`,
                         method: 'POST',
                         headers,
                         params: { email: payload.email },
                         data: {
-                            account_number: payload?.beneficiaryDetails?.accountNumber,
-                            account_currency: payload?.beneficiaryDetails?.accountCurrency,
-                            account_holder_name: payload?.beneficiaryDetails?.accountHolderName,
-                            swift_code: payload?.beneficiaryDetails?.swiftCode,
-                            iban_code: payload?.beneficiaryDetails?.ibanCode,
-                            bank_name: payload?.beneficiaryDetails?.bankName
+                            email: payload?.cardholderDetails?.email,
+                            full_name: payload?.cardholderDetails?.fullName,
+                            mobile_country_code: payload?.cardholderDetails?.mobileCountryCode,
+                            mobile_country_name: payload?.cardholderDetails?.mobileCountryName,
+                            phone_number: payload?.cardholderDetails?.phoneNumber,
+                            date_of_birth: payload?.cardholderDetails?.dateOfBirth,
+                            gender: payload?.cardholderDetails?.gender
                         },
                     })) as {
                         data?: apiResponseType<apiResponseDataType>;
@@ -153,13 +150,13 @@ export const beneficiariesApis = createApi({
                         data: result.data as apiResponseType<apiResponseDataType>,
                     };
                 } catch (error) {
-                    const rtkError = rtkQueryCatchError(error, 'ADD-BENEFICARY faced application error');
+                    const rtkError = rtkQueryCatchError(error, 'ADD-CARDHOLDER faced application error');
                     return rtkError;
                 }
             },
-            invalidatesTags: [{ type: 'Beneficiaries', id: 'LIST' }],
+            invalidatesTags: [{ type: 'Cardholders', id: 'LIST' }],
         }),
     }),
 });
 
-export const { useGetBeneficiariesQuery, useLazyGetBeneficiariesQuery, useAddBeneficiaryMutation } = beneficiariesApis;
+export const { useGetCardholdersQuery, useLazyGetCardholdersQuery, useAddCardholderMutation } = cardholdersApis;

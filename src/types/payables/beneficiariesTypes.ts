@@ -15,10 +15,24 @@ export interface BeneficiaryDetailsResponseType {
     data: BeneficiaryItemType;
 }
 
+export interface BeneficiariesListPaginationType {
+    current_page: number;
+    page_size: number;
+    total_records: number;
+    total_pages: number;
+    has_next_page: boolean;
+    has_previous_page: boolean;
+}
+
+export interface BeneficiariesListResponseDataType {
+    pagination: BeneficiariesListPaginationType;
+    beneficiaries: BeneficiaryItemType[];
+}
+
 export interface BeneficiariesListResponseType {
     status: string;
     message: string;
-    data: BeneficiaryItemType[];
+    data: BeneficiariesListResponseDataType;
 }
 
 export interface AddBeneficiaryRequestBody {

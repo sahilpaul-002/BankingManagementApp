@@ -39,8 +39,12 @@ export default function BeneficiariesListComponent({
 
     // Filter beneficiaries locally by search query
     const filteredBeneficiaries = useMemo(() => {
-        if (!searchQuery.trim()) return beneficiaries;
+        if (!searchQuery.trim()) {
+            return beneficiaries;
+        }
+
         const query = searchQuery.toLowerCase().trim();
+
         return beneficiaries.filter((item) => {
             return (
                 item.account_holder_name.toLowerCase().includes(query) ||
@@ -135,7 +139,7 @@ export default function BeneficiariesListComponent({
 
     const table = useTable({
         features: beneficiariesTableFeatures,
-        data: filteredBeneficiaries,
+        data: beneficiaries,
         columns,
     });
 
