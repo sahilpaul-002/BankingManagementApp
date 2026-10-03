@@ -68,9 +68,9 @@ export const getBeneficiariesListService = async (requestSession: Request["sessi
         const userId = new Types.ObjectId(sessionUserId);
 
         // Get page
-        const page = aesDecryptedQueryData.page;
+        const page = checkStringQueryParams(aesDecryptedQueryData, "page");
         // Get page size
-        const pageSize = aesDecryptedQueryData.page_size;
+        const pageSize = checkStringQueryParams(aesDecryptedQueryData, "page_size");
         // Check if pagination parameters are provided
         const isPageProvided = page !== undefined && page !== null && page !== "";
         const isPageSizeProvided = pageSize !== undefined && pageSize !== null && pageSize !== "";

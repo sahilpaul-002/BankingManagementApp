@@ -15,6 +15,7 @@ import z from "zod";
 import userSignUpTransaction from "../mongoDbTransactions/userSignUpTransaction.js";
 import { genSaltSync, hashSync } from "bcrypt-ts";
 import type { userDetailsDocumentType } from "../types/schemaTypes.js";
+import crypto from "crypto"
 
 // ------------------------------------- GET CARDHOLDER LIST SERVICE -------------------------------------  \\
 type userConfigurationsType = {
@@ -315,7 +316,7 @@ export const addCardholderService = async (req: Request, res: Response, aesDecry
             business_name: sessionBusinessName,
             business_type: sessionBusinessType,
             email: cardholderEmail,
-            password: "Wallet@123",
+            password: crypto.randomUUID(),
             mobile_country_code: aesDecryptedBodyData?.mobile_country_code,
             mobile_country_name: aesDecryptedBodyData?.mobile_country_name,
             phone_number: aesDecryptedBodyData?.phone_number,

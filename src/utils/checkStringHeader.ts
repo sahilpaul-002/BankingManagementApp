@@ -1,8 +1,30 @@
 import type { Request } from "express";
 
-const checkStringHeader = (headers: Request["headers"], name: string): string | null => {
-    const value: string | string[] | undefined = headers[name.toLowerCase()];
-    return typeof value === "string" ? value : null;    // Check if the header is present and if present then string
+const checkStringHeader = (
+    headers: Request["headers"],
+    name: string
+): string | null => {
+    const value = headers[name.toLowerCase()];
+
+    if (typeof value !== "string") {
+        return null;
+    }
+
+    const trimmedValue = value.trim();
+    const normalizedValue = trimmedValue.toLowerCase();
+
+    if (
+        normalizedValue === "" ||
+        normalizedValue === '""' ||
+        normalizedValue === "undefined" ||
+        normalizedValue === '"undefined"' ||
+        normalizedValue === "null" ||
+        normalizedValue === '"null"'
+    ) {
+        return null;
+    }
+
+    return trimmedValue;
 };
 
 export default checkStringHeader;
