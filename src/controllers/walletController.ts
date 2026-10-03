@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createWalletCurrencyConversionQuoteService, createWalletService, executeWalletCurrencyConversionQuoteService, getAllWalletBalancesService, getWalletService, getWalletTransactionDetailsService, getWalletTransactionsService, loadWalletService, withdrawWalletService } from "../services/walletServices.js";
+import { createWalletCurrencyConversionQuoteService, createWalletService, executeWalletCurrencyConversionQuoteService, getAllWalletBalancesService, getWalletService, getWalletTransactionDetailsService, getWalletTransactionsService, loadWalletService, walletToWalletLoadService, withdrawWalletService } from "../services/walletServices.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------------------ FUNCTION TO GET WALLET ------------------------------------------ \\
@@ -445,7 +445,7 @@ export const walletToWalletLoad = async (req: Request, res: Response): Promise<R
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const walletToWalletTransferServiceResponse = await executeWalletCurrencyConversionQuoteService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
+        const walletToWalletTransferServiceResponse = await walletToWalletLoadService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
         if (walletToWalletTransferServiceResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to execute wallet to wallet transfer", 400);
         }

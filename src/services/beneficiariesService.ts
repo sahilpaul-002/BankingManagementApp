@@ -23,25 +23,28 @@ type userConfigurationsType = {
 // ------------------------------------- GET BENEFICIERIES LIST SERVICE -------------------------------------  \\
 export const getBeneficiariesListService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
     try {
-
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");
         }
 
         // Check if collection exists
         const isCollectionPresent = await checkMongoDbCollectionExist("beneficiaries_bank_details");
+
         if (isCollectionPresent.status !== "SUCCESS") {
             throw new NotFoundError("Beneficiaries collection does not exist in MongoDB");
         }
 
         // Validate User Configuration
         const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+
         if (!email) {
             throw new InvalidRequestBodyError("Email not found in request query");
         }
+
         if (email !== requestSession?.userEmail) {
             throw new UnauthorizedError("Unauthorized access detected - invalid email");
         }
+
         if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
             throw new ForbiddenError("Not authorized to access beneficiaries list");
         }
@@ -60,49 +63,114 @@ export const getBeneficiariesListService = async (requestSession: Request["sessi
         // Get user ID
         const sessionUserId = requestSession?.userId;
         if (!sessionUserId || !Types.ObjectId.isValid(sessionUserId)) {
-            throw new UnauthenticatedError(
-                "Unauthorized session detected - invalid user id"
-            );
+            throw new UnauthenticatedError("Unauthorized session detected - invalid user id");
         }
         const userId = new Types.ObjectId(sessionUserId);
 
+        // Get page
+        const page = aesDecryptedQueryData.page;
+        // Get page size
+        const pageSize = aesDecryptedQueryData.page_size;
+        // Check if pagination parameters are provided
+        const isPageProvided = page !== undefined && page !== null && page !== "";
+        const isPageSizeProvided = pageSize !== undefined && pageSize !== null && pageSize !== "";
+        // Get total matching beneficiaries
+        const totalBeneficiaries = await beneficiaries_bank_details.countDocuments({ user_id: userId });
+        // Pagination variables
+        let requestedPage: number;
+        let requestedPageSize: number;
+        let currentPage: number;
+        let totalPages: number;
+        let skip: number;
 
-        // Fetch beneficiaries
-        const beneficiaries = await beneficiaries_bank_details.find(
-            {
-                user_id: userId,
-            },
-            {
-                _id: 1,
-                account_number: 1,
-                account_holder_name: 1,
-                account_currency: 1,
-                swift_code: 1,
-                iban_code: 1,
-                bank_name: 1,
-                createdAt: 1,
+        // Pagination parameters provided
+        if (isPageProvided || isPageSizeProvided) {
+            // Both parameters must be provided
+            if (!isPageProvided) {
+                throw new InvalidRequestQueryError("Page parameter is not present");
+            }
+            if (!isPageSizeProvided) {
+                throw new InvalidRequestQueryError("Page size parameter is not present");
             }
 
-        ).lean();
+            requestedPage = Number(page);
+            requestedPageSize = Number(pageSize);
 
-        if (beneficiaries.length === 0) {
+            // Validate page
+            if (!Number.isInteger(requestedPage) || requestedPage < 1) {
+                throw new InvalidRequestQueryError("Page must be a valid integer greater than 0");
+            }
+
+            // Validate page size
+            if (!Number.isInteger(requestedPageSize) || requestedPageSize < 1) {
+                throw new InvalidRequestQueryError("Page size must be a valid integer greater than 0");
+            }
+
+            // Calculate total pages
+            totalPages = Math.max(1, Math.ceil(totalBeneficiaries / requestedPageSize));
+            // Calculate current page
+            currentPage = Math.min(requestedPage, totalPages);
+            // Calculate skip
+            skip = (currentPage - 1) * requestedPageSize;
+        }
+        else {
+            // No pagination parameters provided
+            requestedPage = 1;
+            // Treat the complete list as one page
+            requestedPageSize = totalBeneficiaries;
+            totalPages = 1;
+            currentPage = 1;
+            skip = 0;
+        }
+
+        // Fetch beneficiaries
+        const beneficiaries = await beneficiaries_bank_details
+            .find(
+                {
+                    user_id: userId,
+                },
+                {
+                    _id: 1,
+                    account_number: 1,
+                    account_holder_name: 1,
+                    account_currency: 1,
+                    swift_code: 1,
+                    iban_code: 1,
+                    bank_name: 1,
+                    createdAt: 1,
+                }
+            )
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(requestedPageSize)
+            .lean();
+
+        if (!Array.isArray(beneficiaries) || beneficiaries.length === 0) {
             throw new NotFoundError("No beneficiaries found");
         }
 
         return {
             status: "SUCCESS",
-            data: beneficiaries,
-            message: "Beneficiaries list fetched successfully"
+            data: {
+                pagination: {
+                    current_page: currentPage,
+                    page_size: requestedPageSize,
+                    total_records: totalBeneficiaries,
+                    total_pages: totalPages,
+                    has_next_page:
+                        currentPage * requestedPageSize < totalBeneficiaries,
+                    has_previous_page:
+                        currentPage > 1,
+                },
+                beneficiaries,
+            },
+            message: "Beneficiaries list fetched successfully",
         };
-
-    } catch (err) {
-
+    } 
+    catch (err) {
         const error = err as any;
-        const errorStatus = error?.status || "UnknownErrorStatus";
 
-        logger.error(error, {
-            serviceName: "GetBeneficiariesListService"
-        });
+        logger.error(error, {serviceName: "GetBeneficiariesListService"});
 
         const sanitizedError = sanitizeApiError(error);
 
@@ -110,10 +178,7 @@ export const getBeneficiariesListService = async (requestSession: Request["sessi
             throw error;
         }
 
-        throw new ServiceError(
-            `GetBeneficiariesListService facing issue`,
-            sanitizedError
-        );
+        throw new ServiceError(`GetBeneficiariesListService facing issue`, sanitizedError);
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\

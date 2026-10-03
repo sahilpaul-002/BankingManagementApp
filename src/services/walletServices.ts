@@ -1424,6 +1424,11 @@ export const walletToWalletLoadService = async (requestSession: Request["session
             throw new ForbiddenError("User configuration is not valid to execute currency conversion");
         }
 
+        // Validation M2P is allowed
+        if (!requestSession?.sessiondata?.m2pAllowed) {
+            throw new ServiceError("Wallet access is not allowed for this application - M2P is not allowed.")
+        }
+
         // Validate request body amount
         const amount = aesDecryptedBodyData.amount;
         if (amount === undefined || amount === null || amount.trim() === "") {
