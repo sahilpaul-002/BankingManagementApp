@@ -1,6 +1,6 @@
 import express from "express"
 import type { Router } from "express";
-import { createCard, getCardDetails, getCardsList, getCardTransactionDetails, getCardTransactions, updateCardLimits, updateCardStatus } from "../controllers/cardController.js";
+import { createCard, getCardDetails, getCardsList, getCardTransactionDetails, getCardTransactions, mailCardSensetiveDetails, updateCardLimits, updateCardStatus } from "../controllers/cardController.js";
 
 const router: Router = express.Router()
 
@@ -13,5 +13,6 @@ router.get("/transaction/:id", getCardTransactionDetails);
 
 router.get("/:id", getCardDetails) // Dynamic router lower in heirarchy to that it does not overplay specific routes
 // If this route above other then anything after / in url will treated as currencyType in req.params
+router.post("/mailCardSensitiveDetails/:id", mailCardSensetiveDetails);
 
 export default router

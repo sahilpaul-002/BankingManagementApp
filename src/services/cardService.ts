@@ -185,53 +185,39 @@ export const getCardsListService = async (requestSession: Request["session"], ae
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
 
-        // Date range filter
-        const dateFilter: Record<string, Date> = {};
-        let fromDate: string | null;
-        let toDate: string | null;
+        // Get page in request
+        const page = checkStringQueryParams(aesDecryptedQueryData, "page");
+        // Get page size in request
+        const pageSize = checkStringQueryParams(aesDecryptedQueryData, "page_size");
 
-        if (aesDecryptedQueryData.from_date) {
-            fromDate = checkStringQueryParams(aesDecryptedQueryData, "from_date");
-            if (!fromDate) {
-                throw new InvalidRequestQueryError("From date parameter is not present");
-            }
-            dateFilter.$gte = new Date(fromDate);
+        // Validate page
+        if (!page) {
+            throw new InvalidRequestBodyError("Page value not present in the request query")
         }
-
-        if (aesDecryptedQueryData.to_date) {
-            toDate = checkStringQueryParams(aesDecryptedQueryData, "to_date");
-            if (!toDate) {
-                throw new InvalidRequestQueryError("To date parameter is not present");
-            }
-
-            const endDate = new Date(toDate);
-            endDate.setHours(23, 59, 59, 999);
-
-            dateFilter.$lte = endDate;
-        }
-
-        // Check page in request
-        const requestedPage = Number(aesDecryptedQueryData.page ?? 1);
+        const requestedPage = Number(page);
         if (!Number.isInteger(requestedPage) || requestedPage < 1) {
-            throw new BadRequestError("Page must be a positive integer");
+            throw new InvalidRequestQueryError("Page must be a valid integer greater than 0");
         }
-        // Cehck page size in request
-        const pageSize = Number(aesDecryptedQueryData.page_size ?? 30);
-        if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50) {
-            throw new BadRequestError("Page size must be between 1 and 50");
+        // Validate page size
+        if (!pageSize) {
+            throw new InvalidRequestBodyError("Page size value not present in the request query")
+        }
+        const requestedPageSize = Number(pageSize);
+        if (!Number.isInteger(requestedPageSize) || requestedPageSize < 1) {
+            throw new InvalidRequestQueryError("Page size must be a valid integer greater than 0");
         }
 
         // Get total matching transactions
         const totalCards = await user_card_details.countDocuments({ cardholder_id: cardholderObjectId })
         // Calculate total pages
-        const totalPages = Math.max(1, Math.ceil(totalCards / pageSize));
+        const totalPages = Math.max(1, Math.ceil(totalCards / requestedPageSize));
         // Calculate current page
         const currentPage = Math.min(requestedPage, totalPages);
         // Calculate skip using the corrected page
-        const skip = (currentPage - 1) * pageSize; // Skip fetching documents for page number more than 1
+        const skip = (currentPage - 1) * requestedPageSize; // Skip fetching documents for page number more than 1
 
         // Fetch Cards List
-        const cardsList = await user_card_details.find({ cardholder_id: cardholderObjectId }).select("-cardholder_id -cvv -valid_date -valid_merchant_categories -createdAt -updatedAt -__v").sort({ createdAt: -1 }).skip(skip).limit(pageSize).lean()
+        const cardsList = await user_card_details.find({ cardholder_id: cardholderObjectId }).select("-cardholder_id -cvv -valid_date -valid_merchant_categories -createdAt -updatedAt -__v").sort({ createdAt: -1 }).skip(skip).limit(requestedPageSize).lean()
 
         if (!Array.isArray(cardsList) || cardsList.length === 0) {
             throw new NotFoundError("No cards associated with this cardholder found")
@@ -244,10 +230,10 @@ export const getCardsListService = async (requestSession: Request["session"], ae
                 cardholderId: cardholderId,
                 pagination: {
                     current_page: currentPage,
-                    page_size: pageSize,
+                    page_size: requestedPageSize,
                     total_records: totalCards,
-                    total_pages: Math.ceil(totalCards / pageSize),
-                    has_next_page: currentPage * pageSize < totalCards,
+                    total_pages: Math.ceil(totalCards / requestedPageSize),
+                    has_next_page: currentPage * requestedPageSize < totalCards,
                     has_previous_page: currentPage > 1,
                 },
                 cards: cardsList,
@@ -337,7 +323,7 @@ export const getCardDetailsService = async (requestSession: Request["session"], 
         const cardDetails = await user_card_details.findOne({
             cardholder_id: cardholderId,
             _id: cardObjectId,
-        }).select("-cardholder_id -cvv -createdAt -updatedAt -__v").lean();
+        }).select("-cardholder_id -cvv -valid_date -createdAt -updatedAt -__v").lean();
 
         if (!cardDetails) {
             throw new NotFoundError("Card and card details not found")
@@ -357,6 +343,97 @@ export const getCardDetailsService = async (requestSession: Request["session"], 
         }
 
         throw new ServiceError(`GetCardDetailsService facing issue`, sanitizedError);
+
+    }
+};
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+
+// ----------------------------------- GET CARDS DETAILS SERVICE ----------------------------------- \\
+export const mailCardSensetiveDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType, cardId?: string): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_card_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection(card details) does not exist");
+        }
+
+        // Check userEmail from session
+        if (!requestSession?.userEmail) {
+            throw new UnauthenticatedError("Unauthenticated access detected - email not found in session");
+        }
+
+        // Check cardholderId from session
+        if (!requestSession?.cardholderId) {
+            throw new UnauthenticatedError("Unauthenticated access detected - cardholderId not found in session");
+        }
+
+        // Validate Email & User Id & Cardholder Id
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request request body")
+        }
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId
+        const sessionProgramId = requestSession?.userConfiguration?.programId
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
+        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
+            throw new ForbiddenError("User configuration is not valid to access cardholder list")
+        }
+        const cardholderId = checkStringBody(aesDecryptedBodyData, "cardholder_id");
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Valid cardholder-id not found in request body")
+        }
+
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
+        // Check user type for non-user's cardholder id
+        if (cardholderId !== requestSession?.cardholderId) {
+            if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+                throw new ForbiddenError("Not authorized to get card details")
+            }
+        }
+        const cardholderUserDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }, {full_name: 1, email: 1}).lean();
+        if (!cardholderUserDetails) {
+            throw new ServiceError("Cardholder Id provided is invalid or does not exist")
+        }
+
+        // Validate card id
+        if (!cardId || !Types.ObjectId.isValid(cardId)) {
+            throw new InvalidRequestBodyError("Valid card-id not found in request query params")
+        }
+        const cardObjectId = new Types.ObjectId(cardId)
+
+        // Fetch Card Details
+        const cardDetails = await user_card_details.findOne({
+            cardholder_id: cardholderId,
+            _id: cardObjectId,
+        }).select("-cardholder_id -issued_date -card_limits -valid_merchant_categories -daily_transaction -monthly_transaction -yearly_transaction -createdAt -updatedAt -__v").lean();
+
+        if (!cardDetails) {
+            throw new NotFoundError("Card and card details not found")
+        }
+
+        return { status: "SUCCESS", message: "Card details fetched successfully", data: { cardholderId, email: cardholderUserDetails?.email, fullName: cardholderUserDetails?.full_name,  cardDetails } };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, { serviceName: "MailCardSensetiveDetailsService" });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`MailCardSensetiveDetailsService facing issue`, sanitizedError);
 
     }
 };

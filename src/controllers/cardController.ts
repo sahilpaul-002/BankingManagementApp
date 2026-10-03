@@ -3,8 +3,15 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { cardTransactionAuthorizationWebhookService, createCardService, createCardTransactionService, getCardDetailsService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
+import { cardTransactionAuthorizationWebhookService, createCardService, createCardTransactionService, getCardDetailsService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, mailCardSensetiveDetailsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
+import generateEmailTemplate from "../utils/generateEmailTemplate.js";
+import dotenv from "dotenv"
+import { gmailSendService } from "../services/gmailSendService.js";
+
+dotenv.config();
+
+const fromEmail = process.env.MAIL_SERVICE_SENDING_EMAIL || "nodemailtesting02@gmail.com"
 
 // ------------------------------------------ FUNCTION TO CREATE CARD ------------------------------------------ \\
 export const createCard = async (req: Request, res: Response): Promise<Response<successResponseJson> | void> => {
@@ -139,6 +146,95 @@ export const getCardDetails = async (req: Request<{ id?: string }>, res: Respons
             throw error
         }
         throw new ServiceError("GetCardDetailsController is facing unknown issue.", sanitizedError)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// ------------------------------------------ FUNCTION TO GET CARD DETAILS ------------------------------------------ \\
+export const mailCardSensetiveDetails = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        const aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const getCardDetailsResponse = await mailCardSensetiveDetailsService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations, req.params.id)
+        if (getCardDetailsResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to fetch card details", 400);
+        }
+        const getCardDetailsResponseData = getCardDetailsResponse?.data as Record<string, any> | undefined
+
+        // Generate email template
+        const userName = getCardDetailsResponseData?.fullName || "User"
+        const dashboardName = req.session.sessiondata?.dashboardName || "BMA"
+        const cardNumber = getCardDetailsResponseData?.cardDetails?.card_number
+        const cardStatus = getCardDetailsResponseData?.cardDetails?.card_status
+        const cardCvv = getCardDetailsResponseData?.cardDetails?.cvv
+        const cardValidDate = getCardDetailsResponseData?.cardDetails?.valid_date
+            ? new Date(getCardDetailsResponseData.cardDetails.valid_date)
+                .toLocaleDateString("en-US", {
+                    month: "2-digit",
+                    year: "2-digit"
+                })
+            : "";
+        const nameOnCard = getCardDetailsResponseData?.cardDetails?.name_on_card
+        const cardType = getCardDetailsResponseData?.cardDetails?.card_type
+        const cardCurrency = getCardDetailsResponseData?.cardDetails?.card_currency
+        const emailTemplate = generateEmailTemplate(
+            "CARD_SENSITIVE_DETAILS",
+            {
+                userName,
+                dashboardName,
+                cardNumber,
+                cardStatus,
+                cardCvv,
+                cardValidDate,
+                nameOnCard,
+                cardType,
+                cardCurrency
+            }
+        );
+
+        const toEmail: string = getCardDetailsResponseData?.email
+        const sendEmail: string = fromEmail
+        const mainConfig = { toEmail, sendEmail, dashboardName, emailTemplate }
+        // const resendMailSendServiceResponse = await resendMailSendService(mainConfig)
+        const gmailMailServiceResponse = await gmailSendService(mainConfig)
+
+        if (gmailMailServiceResponse?.status !== "SUCCESS") {
+            throw new ServiceError("GmailSendService is facing error")
+        }
+
+        return res.success(`Sensetive card details mailed to ${toEmail} successfully`, {} , 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "MailCardSensetiveDetailsController",
+            // url: req.path,
+            // method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError("MailCardSensetiveDetailsController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
@@ -337,7 +433,7 @@ export const createCardTransaction = async (req: Request<{ id?: string }>, res: 
         if (createCardTransactionResponse?.status !== "SUCCESS") {
             return res.status(400).json({ status: "FAILED", message: "Failed to create card transaction", });
         }
-        return res.status(200).json({status: "SUCCESS", message: "Card transaction created successfully", data: createCardTransactionResponse?.data});
+        return res.status(200).json({ status: "SUCCESS", message: "Card transaction created successfully", data: createCardTransactionResponse?.data });
     }
     catch (err) {
         const error = err as any;

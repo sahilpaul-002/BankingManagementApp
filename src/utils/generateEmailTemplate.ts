@@ -11,6 +11,7 @@ type emailTemplateType =
     | "BANK_VERIFICATION_ACCEPTED"
     | "BANK_VERIFICATION_ACCEPTED_ADMIN"
     | "CARD_TRANSACTION_AUTHORIZATION"
+    | "CARD_SENSITIVE_DETAILS";
 
 interface verificationCodePayloadType {
     verificationCode: string;
@@ -91,6 +92,18 @@ interface templateResponseType {
     html: string;
 }
 
+interface cardSensitiveDetailsPayloadType {
+    userName: string;
+    dashboardName: string;
+    cardNumber: string;
+    cardStatus: string;
+    cardCvv: string;
+    cardValidDate: string;
+    nameOnCard: string;
+    cardType: string;
+    cardCurrency: string;
+}
+
 type emailTemplatePayloadType =
     | verificationCodePayloadType
     | kycVerificationCodePayloadType
@@ -101,6 +114,7 @@ type emailTemplatePayloadType =
     | userBankAccountVerificationAcceptedPayloadType
     | userBankAccountVerificationAcceptedAdminPayloadType
     | cardTransactionAuthorizationPayload
+    | cardSensitiveDetailsPayloadType
 
 const generateEmailTemplate = (
     templateType: emailTemplateType,
@@ -1513,6 +1527,246 @@ const generateEmailTemplate = (
 
                     </div>
                     `
+            };
+        }
+
+
+        // =========================================================
+        // CARD SENSITIVE DETAILS
+        // =========================================================
+        case "CARD_SENSITIVE_DETAILS": {
+
+            const cardPayload = payload as cardSensitiveDetailsPayloadType;
+
+            return {
+                subject: "Your Card Details",
+
+                html: `
+                    <div style="
+                        font-family: Arial, Helvetica, sans-serif;
+                        background-color:#f4f4f4;
+                        padding:40px 20px;
+                    ">
+
+                        <div style="
+                            max-width:700px;
+                            margin:auto;
+                            background:#ffffff;
+                            border-radius:10px;
+                            overflow:hidden;
+                            box-shadow:0 2px 10px rgba(0,0,0,0.1);
+                        ">
+
+                            <!-- HEADER -->
+                            <div style="
+                                background:#111827;
+                                padding:22px;
+                                text-align:center;
+                            ">
+                                <h1 style="
+                                    margin:0;
+                                    color:#ffffff;
+                                    font-size:24px;
+                                ">
+                                    ${cardPayload.dashboardName} Card Details
+                                </h1>
+                            </div>
+
+                            <!-- BODY -->
+                            <div style="padding:40px 32px;">
+
+                                <h2 style="
+                                    margin-top:0;
+                                    color:#111827;
+                                ">
+                                    Your Card Details
+                                </h2>
+
+                                <p style="
+                                    color:#374151;
+                                    font-size:16px;
+                                    line-height:1.7;
+                                ">
+                                    Hello <strong>${cardPayload.userName}</strong>,
+                                </p>
+
+                                <p style="
+                                    color:#374151;
+                                    font-size:16px;
+                                    line-height:1.7;
+                                ">
+                                    Your card has been successfully issued. 
+                                    Please find your card details below.
+                                </p>
+
+                                <!-- CARD DETAILS -->
+                                <table
+                                    cellpadding="12"
+                                    cellspacing="0"
+                                    width="100%"
+                                    style="
+                                        border-collapse:collapse;
+                                        margin-top:25px;
+                                        border:1px solid #E5E7EB;
+                                        border-radius:8px;
+                                    "
+                                >
+
+                                    <tr style="background:#F9FAFB;">
+                                        <td style="
+                                            color:#374151;
+                                            width:40%;
+                                        ">
+                                            <strong>Name on Card</strong>
+                                        </td>
+
+                                        <td style="
+                                            color:#111827;
+                                        ">
+                                            ${cardPayload.nameOnCard}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="color:#374151;">
+                                            <strong>Card Number</strong>
+                                        </td>
+
+                                        <td style="
+                                            color:#111827;
+                                            font-weight:bold;
+                                            letter-spacing:1px;
+                                        ">
+                                            ${cardPayload.cardNumber}
+                                        </td>
+                                    </tr>
+
+                                    <tr style="background:#F9FAFB;">
+                                        <td style="color:#374151;">
+                                            <strong>CVV</strong>
+                                        </td>
+
+                                        <td style="
+                                            color:#111827;
+                                            font-weight:bold;
+                                            letter-spacing:2px;
+                                        ">
+                                            ${cardPayload.cardCvv}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="color:#374151;">
+                                            <strong>Valid Until</strong>
+                                        </td>
+
+                                        <td style="color:#111827;">
+                                            ${cardPayload.cardValidDate}
+                                        </td>
+                                    </tr>
+
+                                    <tr style="background:#F9FAFB;">
+                                        <td style="color:#374151;">
+                                            <strong>Card Type</strong>
+                                        </td>
+
+                                        <td style="color:#111827;">
+                                            ${cardPayload.cardType}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td style="color:#374151;">
+                                            <strong>Currency</strong>
+                                        </td>
+
+                                        <td style="color:#111827;">
+                                            ${cardPayload.cardCurrency}
+                                        </td>
+                                    </tr>
+
+                                    <tr style="background:#F9FAFB;">
+                                        <td style="color:#374151;">
+                                            <strong>Card Status</strong>
+                                        </td>
+
+                                        <td>
+                                            <span style="
+                                                display:inline-block;
+                                                padding:6px 12px;
+                                                background:#DCFCE7;
+                                                color:#166534;
+                                                border-radius:20px;
+                                                font-size:13px;
+                                                font-weight:bold;
+                                            ">
+                                                ${cardPayload.cardStatus}
+                                            </span>
+                                        </td>
+                                    </tr>
+
+                                </table>
+
+                                <!-- SECURITY NOTICE -->
+                                <div style="
+                                    margin-top:30px;
+                                    padding:18px;
+                                    background:#FEF3C7;
+                                    border-left:4px solid #F59E0B;
+                                    border-radius:8px;
+                                ">
+
+                                    <p style="
+                                        margin-top:0;
+                                        margin-bottom:10px;
+                                        font-weight:bold;
+                                        color:#92400E;
+                                    ">
+                                        Security Notice
+                                    </p>
+
+                                    <p style="
+                                        margin:0;
+                                        color:#78350F;
+                                        font-size:14px;
+                                        line-height:1.7;
+                                    ">
+                                        Please keep your card details secure and do not
+                                        share your card number, CVV, or other card
+                                        information with anyone.
+                                    </p>
+
+                                </div>
+
+                                <p style="
+                                    margin-top:30px;
+                                    color:#6B7280;
+                                    font-size:14px;
+                                    line-height:1.7;
+                                ">
+                                    If you did not request this card or believe these
+                                    details have been accessed by someone else, please
+                                    contact our support team immediately.
+                                </p>
+
+                            </div>
+
+                            <!-- FOOTER -->
+                            <div style="
+                                background:#F9FAFB;
+                                padding:20px;
+                                text-align:center;
+                                font-size:13px;
+                                color:#6B7280;
+                            ">
+                                © ${new Date().getFullYear()} ${cardPayload.dashboardName}.
+                                All rights reserved.
+                            </div>
+
+                        </div>
+
+                    </div>
+                `
             };
         }
 
