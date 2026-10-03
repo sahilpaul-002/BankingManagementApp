@@ -264,7 +264,7 @@ export const transferApis = createApi({
                         method: 'GET',
                         headers,
                         params: {
-                            email: payload.email, user_id: payload.userId, page: payload.pageNumber, page_size: payload.pageSize, ...(payload.from_date && { from_date: payload.from_date }), ...(payload.to_date && { to_date: payload.to_date }),
+                            email: payload.email, user_id: payload.userId, page: String(payload.pageNumber), page_size: String(payload.pageSize), ...(payload.from_date && { from_date: payload.from_date }), ...(payload.to_date && { to_date: payload.to_date }),
                         },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>

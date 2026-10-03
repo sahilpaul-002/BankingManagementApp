@@ -1,7 +1,8 @@
 import React from 'react'
+import { Outlet } from 'react-router'
 
 export default function CardsLayout() {
   return (
-    <div>CardsLayout</div>
+    <Outlet />
   )
 }

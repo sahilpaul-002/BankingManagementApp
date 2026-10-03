@@ -83,10 +83,10 @@ export const beneficiariesApis = createApi({
                         params: {
                             email: payload.email,
                             ...(payload.pageNumber !== undefined && {
-                                page: payload.pageNumber,
+                                page: String(payload.pageNumber),
                             }),
                             ...(payload.pageSize !== undefined && {
-                                page_size: payload.pageSize,
+                                page_size: String(payload.pageSize),
                             }),
                         },
                     }) as {

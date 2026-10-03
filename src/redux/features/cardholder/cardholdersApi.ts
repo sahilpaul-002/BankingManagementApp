@@ -82,8 +82,8 @@ export const cardholdersApis = createApi({
                         headers,
                         params: {
                             email: payload.email,
-                            page: payload.pageNumber,
-                            page_size: payload.pageSize,
+                            page: String(payload.pageNumber),
+                            page_size: String(payload.pageSize),
                         },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
