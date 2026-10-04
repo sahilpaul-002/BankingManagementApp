@@ -444,7 +444,7 @@ export const mailCardSensetiveDetailsService = async (requestSession: Request["s
 
 
 // ----------------------------------- UPDATE CARDS STATUS SERVICE ----------------------------------- \\
-export const updateCardStatusService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType, cardId?: string): Promise<successResponseJson> => {
+export const updateCardStatusService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType, cardId?: string): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -473,7 +473,7 @@ export const updateCardStatusService = async (requestSession: Request["session"]
         }
 
         // Validate Email & User Id & Cardholder Id
-        const email = checkStringBody(aesDecryptedBodyData, "email");
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
         if (!email) {
             throw new InvalidRequestBodyError("Email not found in request request body")
         }
@@ -567,7 +567,7 @@ export const updateCardStatusService = async (requestSession: Request["session"]
 
 
 // ----------------------------------- UPDATE CARDS LIMITS SERVICE ----------------------------------- \\
-export const updateCardLimitsService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType, cardId?: string): Promise<successResponseJson> => {
+export const updateCardLimitsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType, cardId?: string): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request body data");
@@ -595,7 +595,7 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
         }
 
         // Validate Email & User Id & Cardholder Id
-        const email = checkStringBody(aesDecryptedBodyData, "email");
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
         if (!email) {
             throw new InvalidRequestBodyError("Email not found in request request body")
         }

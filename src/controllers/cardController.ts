@@ -258,7 +258,7 @@ export const updateCardStatus = async (req: Request<{ id?: string }>, res: Respo
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const updateCardDetailsResponse = await updateCardStatusService(requestSession, aesDecryptedBodyData, userConfigurations, req.params.id)
+        const updateCardDetailsResponse = await updateCardStatusService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations, req.params.id)
         if (updateCardDetailsResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to update card status", 400);
         }
@@ -303,7 +303,7 @@ export const updateCardLimits = async (req: Request<{ id?: string }>, res: Respo
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const updateCardDetailsResponse = await updateCardLimitsService(requestSession, aesDecryptedBodyData, userConfigurations, req.params.id)
+        const updateCardDetailsResponse = await updateCardLimitsService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations, req.params.id)
         if (updateCardDetailsResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Failed to update card limits", 400);
         }
