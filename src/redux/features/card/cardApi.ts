@@ -266,7 +266,110 @@ export const cardApis = createApi({
                 }
             },
         }),
+
+
+        // =======================================================
+        // UPDATE CARD STATUS
+        // =======================================================
+        updateCardStatus: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardDetails: { cardholderId: string, cardId: string, cardStatus: "ACTIVE" | "INACTIVE" | "FROZEN" | "BLOCKED" } }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = cardsApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('UPDATE-CARD-STATUS - Failed to fetch application headers');
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = cardsApiHeaders(state)
+                    }
+
+                    const result = (await executeBaseQuery(baseQuery, {
+                        url: `${CARD_URL}/updateStatus/${payload?.cardDetails?.cardId}`,
+                        method: 'POST',
+                        headers,
+                        params: { email: payload.email },
+                        data: {
+                            cardholder_id: payload.cardDetails.cardholderId
+                        },
+                    })) as {
+                        data?: apiResponseType<apiResponseDataType>;
+                        error?: unknown;
+                    };
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                } catch (error) {
+                    const rtkError = rtkQueryCatchError(error, 'UPDATE-CARD-STATUS faced application error');
+                    return rtkError;
+                }
+            },
+        }),
+
+
+        // =======================================================
+        // UPDATE CARD LIMITS
+        // =======================================================
+        updateCardLimits: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardDetails: { cardholderId: string, cardId: string, cardLimits: { dailyLimit: string, monthlyLimit: string, yearlyLimit: string }, } }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = cardsApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('UPDATE-CARD-LIMITS - Failed to fetch application headers');
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = cardsApiHeaders(state)
+                    }
+
+                    const result = (await executeBaseQuery(baseQuery, {
+                        url: `${CARD_URL}/updateStatus/${payload?.cardDetails?.cardId}`,
+                        method: 'POST',
+                        headers,
+                        params: { email: payload.email },
+                        data: {
+                            cardholder_id: payload.cardDetails.cardholderId,
+                            card_limits: {
+                                daily_limit: payload?.cardDetails?.cardLimits?.dailyLimit,
+                                monthly_limit: payload?.cardDetails?.cardLimits?.monthlyLimit,
+                                yearly_limit: payload?.cardDetails?.cardLimits?.yearlyLimit
+                            }
+                        },
+                    })) as {
+                        data?: apiResponseType<apiResponseDataType>;
+                        error?: unknown;
+                    };
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                } catch (error) {
+                    const rtkError = rtkQueryCatchError(error, 'UPDATE-CARD-LIMITS faced application error');
+                    return rtkError;
+                }
+            },
+        }),
     }),
 });
 
-export const { useGetCardsQuery, useLazyGetCardsQuery, useGetCardDetailSQuery, useLazyGetCardDetailSQuery, useCreateCardholderMutation, useCardSensitiveDetailsMutation } = cardApis;
+export const { useGetCardsQuery, useLazyGetCardsQuery, useGetCardDetailSQuery, useLazyGetCardDetailSQuery, useCreateCardholderMutation, useCardSensitiveDetailsMutation, useUpdateCardStatusMutation, useUpdateCardLimitsMutation } = cardApis;
