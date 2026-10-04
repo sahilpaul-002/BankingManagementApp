@@ -295,11 +295,12 @@ export const cardApis = createApi({
 
                     const result = (await executeBaseQuery(baseQuery, {
                         url: `${CARD_URL}/updateStatus/${payload?.cardDetails?.cardId}`,
-                        method: 'POST',
+                        method: 'PATCH',
                         headers,
                         params: { email: payload.email },
                         data: {
-                            cardholder_id: payload.cardDetails.cardholderId
+                            cardholder_id: payload?.cardDetails.cardholderId,
+                            card_status: payload?.cardDetails?.cardStatus
                         },
                     })) as {
                         data?: apiResponseType<apiResponseDataType>;
@@ -314,6 +315,7 @@ export const cardApis = createApi({
                     return rtkError;
                 }
             },
+            invalidatesTags: [{ type: 'Card', id: 'DETAILS' }],
         }),
 
 
@@ -343,8 +345,8 @@ export const cardApis = createApi({
                     }
 
                     const result = (await executeBaseQuery(baseQuery, {
-                        url: `${CARD_URL}/updateStatus/${payload?.cardDetails?.cardId}`,
-                        method: 'POST',
+                        url: `${CARD_URL}/updateLimits/${payload?.cardDetails?.cardId}`,
+                        method: 'PATCH',
                         headers,
                         params: { email: payload.email },
                         data: {
@@ -368,6 +370,7 @@ export const cardApis = createApi({
                     return rtkError;
                 }
             },
+            invalidatesTags: [{ type: 'Card', id: 'DETAILS' }],
         }),
     }),
 });
