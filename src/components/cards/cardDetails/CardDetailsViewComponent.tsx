@@ -236,7 +236,7 @@ export default function CardDetailsViewComponent({
                             <span className="text-xs font-medium text-[var(--mute)]">
                                 {card.card_currency}
                             </span>
-                            <span className="text-2xl font-bold text-[var(--ink)]">
+                            <span className="text-sm sm:text-lg font-bold text-[var(--ink)]">
                                 ${formatDecimal(card.card_limits?.daily_limit?.$numberDecimal)}
                             </span>
                         </div>
@@ -252,7 +252,7 @@ export default function CardDetailsViewComponent({
                             <span className="text-xs font-medium text-[var(--mute)]">
                                 {card.card_currency}
                             </span>
-                            <span className="text-2xl font-bold text-[var(--ink)]">
+                            <span className="text-sm sm:text-lg font-bold text-[var(--ink)]">
                                 ${formatDecimal(card.card_limits?.monthly_limit?.$numberDecimal)}
                             </span>
                         </div>
@@ -268,7 +268,7 @@ export default function CardDetailsViewComponent({
                             <span className="text-xs font-medium text-[var(--mute)]">
                                 {card.card_currency}
                             </span>
-                            <span className="text-2xl font-bold text-[var(--ink)]">
+                            <span className="text-sm sm:text-lg font-bold text-[var(--ink)]">
                                 ${formatDecimal(card.card_limits?.yearly_limit?.$numberDecimal)}
                             </span>
                         </div>
@@ -301,7 +301,7 @@ export default function CardDetailsViewComponent({
                                 <span className="text-[11px] text-[var(--mute)] font-medium flex items-center gap-1">
                                     <TrendingDown className="w-3 h-3 text-[var(--danger)]" /> Debit
                                 </span>
-                                <span className="text-base font-bold text-[var(--ink)]">
+                                <span className="text-sm font-bold text-[var(--ink)]">
                                     ${formatDecimal(card.daily_transaction?.debit?.$numberDecimal)}
                                 </span>
                             </div>
@@ -310,7 +310,7 @@ export default function CardDetailsViewComponent({
                                 <span className="text-[11px] text-[var(--mute)] font-medium flex items-center gap-1">
                                     <TrendingUp className="w-3 h-3 text-[var(--ok)]" /> Credit
                                 </span>
-                                <span className="text-base font-bold text-[var(--ink)]">
+                                <span className="text-sm font-bold text-[var(--ink)]">
                                     ${formatDecimal(card.daily_transaction?.credit?.$numberDecimal)}
                                 </span>
                             </div>
@@ -333,7 +333,7 @@ export default function CardDetailsViewComponent({
                                 <span className="text-[11px] text-[var(--mute)] font-medium flex items-center gap-1">
                                     <TrendingDown className="w-3 h-3 text-[var(--danger)]" /> Debit
                                 </span>
-                                <span className="text-base font-bold text-[var(--ink)]">
+                                <span className="text-sm font-bold text-[var(--ink)]">
                                     ${formatDecimal(card.monthly_transaction?.debit?.$numberDecimal)}
                                 </span>
                             </div>
@@ -342,7 +342,7 @@ export default function CardDetailsViewComponent({
                                 <span className="text-[11px] text-[var(--mute)] font-medium flex items-center gap-1">
                                     <TrendingUp className="w-3 h-3 text-[var(--ok)]" /> Credit
                                 </span>
-                                <span className="text-base font-bold text-[var(--ink)]">
+                                <span className="text-sm font-bold text-[var(--ink)]">
                                     ${formatDecimal(card.monthly_transaction?.credit?.$numberDecimal)}
                                 </span>
                             </div>
@@ -365,7 +365,7 @@ export default function CardDetailsViewComponent({
                                 <span className="text-[11px] text-[var(--mute)] font-medium flex items-center gap-1">
                                     <TrendingDown className="w-3 h-3 text-[var(--danger)]" /> Debit
                                 </span>
-                                <span className="text-base font-bold text-[var(--ink)]">
+                                <span className="text-sm font-bold text-[var(--ink)]">
                                     ${formatDecimal(card.yearly_transaction?.debit?.$numberDecimal)}
                                 </span>
                             </div>
@@ -374,7 +374,7 @@ export default function CardDetailsViewComponent({
                                 <span className="text-[11px] text-[var(--mute)] font-medium flex items-center gap-1">
                                     <TrendingUp className="w-3 h-3 text-[var(--ok)]" /> Credit
                                 </span>
-                                <span className="text-base font-bold text-[var(--ink)]">
+                                <span className="text-sm font-bold text-[var(--ink)]">
                                     ${formatDecimal(card.yearly_transaction?.credit?.$numberDecimal)}
                                 </span>
                             </div>

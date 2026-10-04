@@ -108,7 +108,7 @@ export const cardApis = createApi({
         // =======================================================
         // GET CARD DETAILS
         // =======================================================
-        getCardDetailS: build.query<apiResponseType<apiResponseDataType>, { email: string, cardDetails: {cardholderId: string, cardId: string} }>({
+        getCardDetailS: build.query<apiResponseType<apiResponseDataType>, { email: string, cardDetails: { cardholderId: string, cardId: string } }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -158,7 +158,7 @@ export const cardApis = createApi({
         // =======================================================
         // CREATE CARD
         // =======================================================
-        createCardholder: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardDetails: { cardholderId: string, nameOnCard: string, cardType: "VIRTUAL" | "PHYSICAL", cardCurrency: "USD", cardLimits: { dailyLimit: string, monthlyLimit: string, yearlyLimit: string }, merchantCategories: MerchantCategoryType } }>({
+        createCardholder: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardDetails: { cardholderId: string, nameOnCard: string, cardType: "VIRTUAL" | "PHYSICAL", cardCurrency: "USD", cardLimits?: { dailyLimit: string, monthlyLimit: string, yearlyLimit: string }, merchantCategories?: MerchantCategoryType[] } }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -190,12 +190,17 @@ export const cardApis = createApi({
                             name_on_card: payload.cardDetails.nameOnCard,
                             card_type: payload.cardDetails.cardType,
                             card_currency: payload.cardDetails.cardCurrency,
-                            card_limits: {
-                                daily_limit: payload.cardDetails.cardLimits.dailyLimit,
-                                monthly_limit: payload.cardDetails.cardLimits.monthlyLimit,
-                                yearly_limit: payload.cardDetails.cardLimits.yearlyLimit,
-                            },
-                            merchant_categories: payload.cardDetails.merchantCategories,
+                            ...(payload.cardDetails.cardLimits && {
+                                card_limits: {
+                                    daily_limit: payload.cardDetails.cardLimits.dailyLimit,
+                                    monthly_limit: payload.cardDetails.cardLimits.monthlyLimit,
+                                    yearly_limit: payload.cardDetails.cardLimits.yearlyLimit,
+                                },
+                            }),
+                            ...(payload.cardDetails.merchantCategories &&
+                                payload.cardDetails.merchantCategories.length > 0 && {
+                                merchant_categories: payload.cardDetails.merchantCategories,
+                            }),
                         },
                     })) as {
                         data?: apiResponseType<apiResponseDataType>;

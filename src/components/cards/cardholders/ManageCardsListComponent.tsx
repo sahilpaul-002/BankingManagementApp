@@ -1,7 +1,7 @@
 import { useState, useMemo, Activity } from 'react';
 import { Search, CreditCard, Calendar, ChevronRight, Wifi } from 'lucide-react';
 import type { PaginationState } from '@tanstack/react-table';
-import type { CardItemType } from '@/types/cards/manageCards/manageCardsTypes';
+import type { CardItemType } from '@/types/cards/manageCardsTypes';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
 
 type CardFilterTab = 'all' | 'virtual' | 'physical';

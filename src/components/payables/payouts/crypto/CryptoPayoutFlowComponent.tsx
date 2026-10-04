@@ -60,6 +60,7 @@ export default function CryptoPayoutFlowComponent({ wallets }: CryptoPayoutFlowC
                                     formData={cryptoFormData}
                                     onBack={handleBack}
                                     onConfirmAndSend={handleConfirmAndSend}
+                                    isExecuting={false}
                                 />
                             )
                         )}
@@ -75,8 +76,21 @@ export default function CryptoPayoutFlowComponent({ wallets }: CryptoPayoutFlowC
             ) : (
                 cryptoFormData && cryptoTransactionHash && (
                     <CryptoConfirmationStepComponent
-                        formData={cryptoFormData}
-                        transactionHash={cryptoTransactionHash}
+                        transferResult={{
+                            transfer_reference_id: cryptoTransactionHash,
+                            crypto_wallet_transaction_id: cryptoTransactionHash,
+                            usd_fee_wallet_transaction_id: cryptoTransactionHash,
+                            wallet_id: 'WALLET-1',
+                            source_currency: cryptoFormData.source_wallet_currency,
+                            source_amount: cryptoFormData.amount,
+                            destination_network: cryptoFormData.network,
+                            destination_address: cryptoFormData.destination_address,
+                            source_amount_usd: cryptoFormData.amount,
+                            fee: { currency: 'USD', percentage: '0', amount: '0.00' },
+                            total_source_wallet_debit: { currency: cryptoFormData.source_wallet_currency, amount: cryptoFormData.amount },
+                            total_usd_wallet_debit: { currency: 'USD', amount: '0.00' },
+                            status: 'COMPLETED',
+                        }}
                         onSendAnother={handleSendAnother}
                     />
                 )
