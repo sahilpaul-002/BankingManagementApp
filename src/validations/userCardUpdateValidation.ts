@@ -1,59 +1,79 @@
 import { z } from "zod";
 import { Decimal } from "decimal.js";
 
-const limitValidation = z
-    .string({
-        error: "Limit must be provided as a string",
-    })
-    .trim()
-    .refine(
-        (value) => {
-            try {
+const CARD_LIMIT_MAX = {
+    daily: new Decimal("10000"),
+    monthly: new Decimal("50000"),
+    yearly: new Decimal("100000"),
+};
+
+const limitValidation = (
+    limitType: keyof typeof CARD_LIMIT_MAX
+) =>
+    z
+        .string({
+            error: "Limit must be provided as a string",
+        })
+        .trim()
+        .refine(
+            (value) => {
+                try {
+                    const decimal = new Decimal(value);
+
+                    return decimal.isFinite();
+                } catch {
+                    return false;
+                }
+            },
+            {
+                message: "Limit must be a valid number",
+            }
+        )
+        .refine(
+            (value) => {
                 const decimal = new Decimal(value);
 
-                return decimal.isFinite();
-            } catch {
-                return false;
+                return decimal.greaterThanOrEqualTo(10);
+            },
+            {
+                message: "Minimum limit must be 10",
             }
-        },
-        {
-            message: "Limit must be a valid number",
-        }
-    )
-    .refine(
-        (value) => {
-            const decimal = new Decimal(value);
-            return decimal.greaterThanOrEqualTo(10);
-        },
-        {
-            message: "Minimum limit must be 10",
-        }
-    )
-    .refine(
-        (value) => {
-            const decimal = new Decimal(value);
-            return decimal.decimalPlaces() <= 4;
-        },
-        {
-            message: "Limit cannot have more than 4 decimal places",
-        }
-    );
+        )
+        .refine(
+            (value) => {
+                const decimal = new Decimal(value);
+
+                return decimal.lessThanOrEqualTo(
+                    CARD_LIMIT_MAX[limitType]
+                );
+            },
+            {
+                message: `Maximum ${limitType} limit is ${CARD_LIMIT_MAX[limitType].toString()}`,
+            }
+        )
+        .refine(
+            (value) => {
+                const decimal = new Decimal(value);
+
+                return decimal.decimalPlaces() <= 4;
+            },
+            {
+                message: "Limit cannot have more than 4 decimal places",
+            }
+        );
 
 const cardLimitsSchema = z
     .object({
-        daily_limit: limitValidation.optional(),
-        monthly_limit: limitValidation.optional(),
-        yearly_limit: limitValidation.optional(),
+        daily_limit: limitValidation("daily").optional(),
+        monthly_limit: limitValidation("monthly").optional(),
+        yearly_limit: limitValidation("yearly").optional(),
     })
     .check(({ value, issues }) => {
-
         const hasDaily = value.daily_limit !== undefined;
         const hasMonthly = value.monthly_limit !== undefined;
         const hasYearly = value.yearly_limit !== undefined;
 
-        // Either all three or none
         if (hasDaily || hasMonthly || hasYearly) {
-
             if (!hasDaily || !hasMonthly || !hasYearly) {
                 issues.push({
                     code: "custom",
@@ -107,7 +127,6 @@ const userCardUpdateValidationSchema = z
         card_limits: cardLimitsSchema.optional(),
     })
     .check(({ value, issues }) => {
-
         if (
             value.card_status === undefined &&
             value.card_limits === undefined

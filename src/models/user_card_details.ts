@@ -1,23 +1,25 @@
 import mongoose, { Schema } from "mongoose";
 import { MERCHANT_CATEGORIES } from "../configs/configConstants.js";
 import type { userCardDetailsSchemaTypes } from "../types/schemaTypes.js";
-import {Decimal} from "decimal.js"
+import { Decimal } from "decimal.js"
 
-const decimalField = (defaultValue: string) => ({
+const decimalField = (defaultValue: string, maxValue: string) => ({
     type: Schema.Types.Decimal128,
     required: true,
     default: () => mongoose.Types.Decimal128.fromString(defaultValue),
     validate: {
         validator(value: mongoose.Types.Decimal128) {
             const decimalValue = new Decimal(value.toString());
+            const max = new Decimal(maxValue);
 
             return (
                 decimalValue.greaterThanOrEqualTo(10) &&
+                decimalValue.lessThanOrEqualTo(max) &&
                 decimalValue.decimalPlaces() <= 4
             );
         },
-        message: "Value must be at least 10 and must have at most 4 decimal places."
-    }
+        message: `Value must be between 10 and ${maxValue} with at most 4 decimal places.`,
+    },
 });
 
 const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
@@ -83,9 +85,9 @@ const userCardDetailsSchema = new Schema<userCardDetailsSchemaTypes>(
         },
 
         card_limits: {
-            daily_limit: decimalField("1000"),
-            monthly_limit: decimalField("2000"),
-            yearly_limit: decimalField("5000"),
+            daily_limit: decimalField("1000", "10000"),
+            monthly_limit: decimalField("2000", "50000"),
+            yearly_limit: decimalField("5000", "100000"),
         },
 
         valid_merchant_categories: {
