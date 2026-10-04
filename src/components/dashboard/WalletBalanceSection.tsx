@@ -85,33 +85,29 @@ export default function WalletBalanceSection({ walletsBalances, walletsBalancesN
 
       {/* Walllets Balances Found */}
       <Activity mode={hasWalletBalances ? "visible" : "hidden"}>
-        <div className="walletBalanceSection-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
+        <div className="walletBalanceSection-container w-full h-full flex flex-col justify-between px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
 
           {/* Treasury Total Section */}
-          <div className="totalWalletBalanceHeader-container w-full h-fit flex flex-col sm:flex-row items-start justify-between mb-8!">
-            <div className="flex flex-col justify-center items-start">
+          <div className="totalWalletBalanceHeader-container w-full flex flex-col items-start gap-5 mb-8!">
+            <div className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold tracking-widest uppercase flex items-center gap-2.5 mb-4!">
+              <span className="text-[var(--gold)]">—</span>
+              Total treasury · USD equivalent
+            </div>
 
-              <div className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold tracking-widest uppercase flex items-center gap-2.5 mb-4!">
-                <span className="text-[var(--gold)]">—</span>
-                Total treasury · USD equivalent
-              </div>
+            <div className="text-[var(--ink)] text-2xl sm:text-4xl font-medium">
+              ${formatBalance(totalUSD)}
 
-              <div className="text-[var(--ink)] text-2xl sm:text-4xl font-medium">
-                ${formatBalance(totalUSD)}
-
-                <span className="text-xl sm:text-2xl font-semibold uppercase ml-3!">
-                  USD
-                </span>
-              </div>
-
+              <span className="text-xl sm:text-2xl font-semibold uppercase ml-3!">
+                USD
+              </span>
             </div>
           </div>
 
           {/* FIAT / CRYPTO Breakdown */}
           <div className={`individualWalletBalance-grid-container grid items-center gap-8 md:gap-20 ${fiatWallets.length > 0 && cryptoWallets.length > 0
-              ? 'grid-cols-1 sm:grid-cols-[max-content_2px_max-content]'
-              : 'grid-cols-1'
-              }`}
+            ? 'grid-cols-1 sm:grid-cols-[max-content_2px_max-content]'
+            : 'grid-cols-1'
+            }`}
           >
             {/* FIAT Section */}
             {fiatWallets.length > 0 && (

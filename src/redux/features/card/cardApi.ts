@@ -7,6 +7,7 @@ import executeBaseQuery from '../executeBaseQuery';
 import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError';
 import { userApis } from '../user/userApi';
 import { ApplicationServiceError } from '@/errorHandling/error';
+import type { MerchantCategoryType } from '@/types/cards/cardDetailsTypes';
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
 
@@ -103,10 +104,61 @@ export const cardApis = createApi({
             providesTags: [{ type: 'Card', id: 'LIST' }],
         }),
 
+
+        // =======================================================
+        // GET CARD DETAILS
+        // =======================================================
+        getCardDetailS: build.query<apiResponseType<apiResponseDataType>, { email: string, cardDetails: {cardholderId: string, cardId: string} }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = cardsApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('GET-CARDS-DETAILS - Failed to fetch application headers');
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = cardsApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${CARD_URL}/${payload?.cardDetails?.cardId}`,
+                        method: 'GET',
+                        headers,
+                        params: {
+                            email: payload?.email,
+                            cardholder_id: payload?.cardDetails?.cardholderId,
+                        },
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, 'GET-CARDS-DETAILS faced application error');
+                    return rtkError;
+                }
+            },
+            providesTags: [{ type: 'Card', id: 'DETAILS' }],
+        }),
+
         // =======================================================
         // CREATE CARD
         // =======================================================
-        createCardholder: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardDetails: { cardholderId: string, nameOnCard: string, cardType: "VIRTUAL" | "PHYSICAL", cardCurrency: "USD", cardLimits: { dailyLimit: string, monthlyLimit: string, yearlyLimit: string }, merchantCategories: MERCHANT_CATEGORIES } }>({
+        createCardholder: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardDetails: { cardholderId: string, nameOnCard: string, cardType: "VIRTUAL" | "PHYSICAL", cardCurrency: "USD", cardLimits: { dailyLimit: string, monthlyLimit: string, yearlyLimit: string }, merchantCategories: MerchantCategoryType } }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -212,4 +264,4 @@ export const cardApis = createApi({
     }),
 });
 
-export const { useGetCardsQuery, useLazyGetCardsQuery, useCreateCardholderMutation, useCardSensitiveDetailsMutation } = cardApis;
+export const { useGetCardsQuery, useLazyGetCardsQuery, useGetCardDetailSQuery, useLazyGetCardDetailSQuery, useCreateCardholderMutation, useCardSensitiveDetailsMutation } = cardApis;

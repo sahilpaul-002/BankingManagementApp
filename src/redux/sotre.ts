@@ -12,6 +12,7 @@ import { kycApis } from './features/kyc/kycApis.js'
 import { walletApis } from './features/wallet/walletApis.js'
 import { transferApis } from './features/transfer/transferApis.js'
 import { cardholdersApis } from './features/cardholder/cardholdersApi.js'
+import { cardApis } from './features/card/cardApi.js'
 
 // EXPORT RTK STORE
 export const store = configureStore({
@@ -32,11 +33,12 @@ export const store = configureStore({
         [beneficiariesApis.reducerPath]: beneficiariesApis.reducer,
         [transferApis.reducerPath]: transferApis.reducer,
         [cardholdersApis.reducerPath]: cardholdersApis.reducer,
+        [cardApis.reducerPath]: cardApis.reducer,
     },
 
     // 🔥 RTK Query middleware
     middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware, twoFaApis.middleware, kycApis.middleware, walletApis.middleware, beneficiariesApis.middleware, transferApis.middleware, cardholdersApis.middleware),
+        getDefaultMiddleware().concat(configApis.middleware, helperApis.middleware, userApis.middleware, twoFaApis.middleware, kycApis.middleware, walletApis.middleware, beneficiariesApis.middleware, transferApis.middleware, cardholdersApis.middleware, cardApis.middleware),
 })
 
 // EXPORT STORE DISPATCH

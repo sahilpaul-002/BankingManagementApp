@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { CardholderItemType } from '@/types/cards/cardholders/cardholderTypes';
+import type { CardholderItemType } from '@/types/cards/cardholderTypes';
 
 // ── Status badge helpers ──────────────────────────────────────────────────────
 const KYC_STATUS_STYLES: Record<string, string> = {

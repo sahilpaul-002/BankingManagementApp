@@ -8,7 +8,7 @@ import {
     type ColumnDef,
     type PaginationState,
 } from '@tanstack/react-table';
-import type { CardholderItemType } from '@/types/cards/cardholders/cardholderTypes';
+import type { CardholderItemType } from '@/types/cards/cardholderTypes';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
 
 // ── Table feature bundle ──────────────────────────────────────────────────────

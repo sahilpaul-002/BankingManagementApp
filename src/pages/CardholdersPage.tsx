@@ -7,7 +7,7 @@ import AddCardholderSidebarComponent from '@/components/cards/cardholders/AddCar
 import { useGetCardholdersQuery } from '@/redux/features/cardholder/cardholdersApi';
 import { useDispatch } from 'react-redux';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
-import type { CardholdersListResponseDataType, CardholderItemType } from '@/types/cards/cardholders/cardholderTypes';
+import type { CardholdersListResponseDataType, CardholderItemType } from '@/types/cards/cardholderTypes';
 import ShowInConsole from '@/utils/ShowInConsole';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import type { PaginationState } from '@tanstack/react-table';
