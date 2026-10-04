@@ -157,10 +157,8 @@ export const getBeneficiariesListService = async (requestSession: Request["sessi
                     page_size: requestedPageSize,
                     total_records: totalBeneficiaries,
                     total_pages: totalPages,
-                    has_next_page:
-                        currentPage * requestedPageSize < totalBeneficiaries,
-                    has_previous_page:
-                        currentPage > 1,
+                    has_next_page: currentPage * requestedPageSize < totalBeneficiaries,
+                    has_previous_page: currentPage > 1,
                 },
                 beneficiaries,
             },

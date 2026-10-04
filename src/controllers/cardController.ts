@@ -31,7 +31,7 @@ export const createCard = async (req: Request, res: Response): Promise<Response<
             subAgentCode: req.headers["subagent-code"] as string
         }
 
-        const createCardResponse = await createCardService(requestSession, aesDecryptedBodyData, userConfigurations)
+        const createCardResponse = await createCardService(requestSession, aesDecryptedQueryData, aesDecryptedBodyData, userConfigurations)
         if (createCardResponse?.status !== "SUCCESS") {
             return res.fail("SERVICE_ERROR", "Create card service faled to create card", 400);
         }

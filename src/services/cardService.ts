@@ -38,8 +38,11 @@ type userConfigurationsType = {
 }
 
 // ----------------------------------- CREATE CARD SERVICE ----------------------------------- \\
-export const createCardService = async (requestSession: Request["session"], aesDecryptedBodyData: Record<string, any> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
+export const createCardService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, any> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
     try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid request data");
+        }
         if (!aesDecryptedBodyData) {
             throw new BadRequestError("Invalid request data");
         }
@@ -57,9 +60,9 @@ export const createCardService = async (requestSession: Request["session"], aesD
         }
 
         // Validate Email & User Id & Cardholder Id
-        const email = checkStringBody(aesDecryptedBodyData, "email");
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
         if (!email) {
-            throw new InvalidRequestBodyError("Email not found in request request body")
+            throw new InvalidRequestQueryError("Email not found in request request body")
         }
         if (email !== requestSession?.userEmail) {
             throw new UnauthorizedError("Unauthorized access detected - invalid email provided")

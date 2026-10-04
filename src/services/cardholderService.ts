@@ -99,7 +99,7 @@ export const getCardholderListService = async (requestSession: Request["session"
 
         // Calculate Pagination
         const totalPages = Math.max(1, Math.ceil(totalCardholders / requestedPageSize));
-        const currentPage = Math.min(requestedPageSize, totalPages);
+        const currentPage = Math.min(requestedPage, totalPages);
         const skip = (currentPage - 1) * requestedPageSize;
 
         // Get User Details
@@ -265,6 +265,43 @@ export const getCardholderDetailsService = async (requestSession: Request["sessi
 
 
 // ------------------------------------- ADD CARDHOLDER SERVICE -------------------------------------  \\
+const generateRandomPassword = (length = 16): string => {
+    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lowercase = "abcdefghijklmnopqrstuvwxyz";
+    const digits = "0123456789";
+    const special = "!@#$%^&*";
+
+    const allCharacters = uppercase + lowercase + digits + special;
+
+    const getRandomCharacter = (characters: string): string => {
+        return characters[crypto.randomInt(0, characters.length)]!;
+    };
+
+    // Guarantee at least one character from each required category
+    const passwordCharacters = [
+        getRandomCharacter(uppercase),
+        getRandomCharacter(lowercase),
+        getRandomCharacter(digits),
+        getRandomCharacter(special),
+    ];
+
+    // Fill remaining characters
+    for (let i = passwordCharacters.length; i < length; i++) {
+        passwordCharacters.push(getRandomCharacter(allCharacters));
+    }
+
+    // Cryptographically secure shuffle
+    for (let i = passwordCharacters.length - 1; i > 0; i--) {
+        const randomIndex = crypto.randomInt(0, i + 1);
+        [passwordCharacters[i], passwordCharacters[randomIndex]] = [
+            passwordCharacters[randomIndex]!,
+            passwordCharacters[i]!,
+        ];
+    }
+
+    return passwordCharacters.join("");
+};
+
 export const addCardholderService = async (req: Request, res: Response, aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, aesDecryptedBodyData: Record<string, string> | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
     try {
         if (!aesDecryptedBodyData) {
@@ -316,7 +353,7 @@ export const addCardholderService = async (req: Request, res: Response, aesDecry
             business_name: sessionBusinessName,
             business_type: sessionBusinessType,
             email: cardholderEmail,
-            password: crypto.randomUUID(),
+            password: generateRandomPassword(16),
             mobile_country_code: aesDecryptedBodyData?.mobile_country_code,
             mobile_country_name: aesDecryptedBodyData?.mobile_country_name,
             phone_number: aesDecryptedBodyData?.phone_number,
