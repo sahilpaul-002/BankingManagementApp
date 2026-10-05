@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, ArrowDownToLine } from 'lucide-react';
+import { X, ArrowDownToLine, Plus } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import type { CardholderItemType, WalletsDetailsResponseDataType, WalletItemType } from '@/types/cards/cardholderTypes';
@@ -7,6 +7,7 @@ import CardholderCollapsibleSectionComponent from './CardholderCollapsibleSectio
 import CardholderWalletSectionComponent from './CardholderWalletSectionComponent';
 import CardholderCardsSectionComponent from './CardholderCardsSectionComponent';
 import LoadCardholderWalletSidebarComponent from './LoadCardholderWalletSidebarComponent';
+import CreateCardholderCardSidebarComponent from './CreateCardholderCardSidebarComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import { useCreateWalletMutation, useGetWalletDetailsQuery } from '@/redux/features/wallet/walletApis';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
@@ -77,6 +78,9 @@ export default function CardholderDetailsSidebarComponent({
 
     // Selected state for loading wallet
     const [isLoadWalletOpen, setIsLoadWalletOpen] = useState(false);
+
+    // State for creating card
+    const [isCreateCardOpen, setIsCreateCardOpen] = useState(false);
 
     // ------------------------------ USER USD WALLET DETAILS RTK QUERY ------------------------------ \\
     const {data: getWalletDetailsData, isFetching: getWalletDetailsIsFetching, isError: getWalletDetailsIsError, error: getWalletDetailsError} = useGetWalletDetailsQuery({ email: userEmail, cardholderId: targetCardholderId!, currency: 'USD' }, { skip: !isOpen || !userEmail || !targetCardholderId });
@@ -298,7 +302,7 @@ export default function CardholderDetailsSidebarComponent({
                         </div>
                     </div>
                 ) : usdWallet ? (
-                    <div className="shrink-0 p-4! sm:p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end">
+                    <div className="shrink-0 p-4! sm:p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end gap-3 flex-wrap sm:flex-nowrap">
                         <div className="w-full sm:w-[150px] h-[38px]">
                             <CustomButtonComponent
                                 id="cardholderDetails-loadWallet-btn"
@@ -308,8 +312,21 @@ export default function CardholderDetailsSidebarComponent({
                                     </span>
                                 }
                                 type="button"
-                                variant="navy"
+                                variant="outline"
                                 onClick={() => setIsLoadWalletOpen(true)}
+                            />
+                        </div>
+                        <div className="w-full sm:w-[150px] h-[38px]">
+                            <CustomButtonComponent
+                                id="cardholderDetails-createCard-btn"
+                                label={
+                                    <span className="flex items-center justify-center gap-1.5">
+                                        <Plus className="w-4 h-4" /> Create Card
+                                    </span>
+                                }
+                                type="button"
+                                variant="navy"
+                                onClick={() => setIsCreateCardOpen(true)}
                             />
                         </div>
                     </div>
@@ -323,6 +340,13 @@ export default function CardholderDetailsSidebarComponent({
                 cardholder={cardholder}
                 wallet={usdWallet ?? null}
                 destinationWalletId={destinationWalletId}
+            />
+
+            {/* Create Cardholder Card Sidebar Drawer */}
+            <CreateCardholderCardSidebarComponent
+                isOpen={isCreateCardOpen}
+                onClose={() => setIsCreateCardOpen(false)}
+                cardholder={cardholder}
             />
         </div>
     );

@@ -20,7 +20,7 @@ export default function CardholderCollapsibleSectionComponent({
             <button
                 type="button"
                 onClick={() => setIsOpen((prev) => !prev)}
-                className="flex items-center justify-between w-full py-1 text-xs font-semibold text-[var(--mute)] hover:text-[var(--ink)] uppercase tracking-wider transition-colors cursor-pointer group"
+                className="flex items-center justify-between w-full py-1! text-xs font-semibold text-[var(--mute)] hover:text-[var(--ink)] uppercase tracking-wider transition-colors cursor-pointer group"
                 aria-expanded={isOpen}
             >
                 <span>{title}</span>
@@ -32,7 +32,7 @@ export default function CardholderCollapsibleSectionComponent({
             </button>
 
             {/* Collapsible Section Body */}
-            {isOpen && <div className="pt-3 flex flex-col gap-3">{children}</div>}
+            {isOpen && <div className="pt-3! flex flex-col gap-3">{children}</div>}
         </div>
     );
 }

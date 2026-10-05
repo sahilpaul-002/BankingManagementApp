@@ -11,8 +11,9 @@ import { useCreateCardholderMutation } from '@/redux/features/card/cardApi';
 import { useDispatch } from 'react-redux';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import ShowInConsole from '@/utils/ShowInConsole';
-import CardLimitsFieldsComponent from '../createCard/CardLimitsFieldsComponent';
-import MerchantCategorySelectorComponent from '../createCard/MerchantCategorySelectorComponent';
+import CardLimitsFieldsComponent from '@/components/cards/createCard/CardLimitsFieldsComponent';
+import MerchantCategorySelectorComponent from '@/components/cards/createCard/MerchantCategorySelectorComponent';
+import type { CardholderItemType } from '@/types/cards/cardholderTypes';
 import type { MerchantCategoryType } from '@/types/cards/cardDetailsTypes';
 
 // ── Zod Validation Schema ──────────────────────────────────────────────────────
@@ -216,35 +217,20 @@ type CreateCardFormData = z.input<typeof createCardSchema>;
 type CreateCardFormOutput = z.output<typeof createCardSchema>;
 
 // ── Props ─────────────────────────────────────────────────────────────────────
-interface CreateCardSidebarComponentPropsType {
+interface CreateCardholderCardSidebarComponentPropsType {
     isOpen: boolean;
     onClose: () => void;
+    cardholder: CardholderItemType | null;
 }
 
 const CARD_TYPE_OPTIONS = ['VIRTUAL', 'PHYSICAL'];
 
-export default function CreateCardSidebarComponent({
+export default function CreateCardholderCardSidebarComponent({
     isOpen,
     onClose,
-}: CreateCardSidebarComponentPropsType) {
-    // Configure useDispatch
+    cardholder,
+}: CreateCardholderCardSidebarComponentPropsType) {
     const dispatch = useDispatch();
-
-    // ------------------------------- GET USER DETAILS FROM SESSION STORAGE ---------------------------------- \\
-    const userEmail = sessionStorage.getItem('userEmail');
-    const userId = sessionStorage.getItem('userId');
-    const userCardholderId = sessionStorage.getItem('cardholderId');
-
-    useEffect(() => {
-        if (!userEmail || !userId || !userCardholderId) {
-            dispatch(
-                setShowInfoBanner(
-                    'Application facing issue, necessary user details not present in session storage. Please re-login.'
-                )
-            );
-        }
-    }, [userEmail, userId, userCardholderId, dispatch]);
-    // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
     // ── RTK Query Mutation ────────────────────────────────────────────────────
     const [triggerCreateCard, { isLoading: isCreatingCard }] = useCreateCardholderMutation();
@@ -273,6 +259,23 @@ export default function CreateCardSidebarComponent({
         },
     });
 
+    // Sync form values when drawer opens or cardholder changes
+    useEffect(() => {
+        if (isOpen && cardholder) {
+            reset({
+                nameOnCard: cardholder.full_name || '',
+                cardType: 'VIRTUAL',
+                cardCurrency: 'USD',
+                cardLimits: {
+                    dailyLimit: '',
+                    monthlyLimit: '',
+                    yearlyLimit: '',
+                },
+                merchantCategories: [],
+            });
+        }
+    }, [isOpen, cardholder, reset]);
+
     // Lock background scroll when drawer is open
     useEffect(() => {
         if (isOpen) {
@@ -286,8 +289,16 @@ export default function CreateCardSidebarComponent({
     }, [isOpen]);
 
     const handleFormSubmit: SubmitHandler<CreateCardFormOutput> = async (formData) => {
-        if (!userEmail || !userCardholderId) {
-            toast.error('Missing user or cardholder information. Please re-login.');
+        const userEmail = sessionStorage.getItem('userEmail') || cardholder?.email || '';
+        const targetCardholderId = cardholder?.cardholder_id;
+
+        if (!userEmail || !targetCardholderId) {
+            dispatch(
+                setShowInfoBanner(
+                    'Application facing issue, necessary cardholder details not present. Please re-login or try again.'
+                )
+            );
+            toast.error('Missing cardholder ID or user email. Please try again.');
             return;
         }
 
@@ -297,18 +308,17 @@ export default function CreateCardSidebarComponent({
         const yearlyLimit = formData.cardLimits.yearlyLimit?.trim();
         const hasCardLimits = Boolean(
             dailyLimit || monthlyLimit || yearlyLimit
-        )
+        );
 
         // Merchant Categories
         const merchantCategories = formData.merchantCategories ?? [];
-
         const hasMerchantCategories = merchantCategories.length > 0;
 
         try {
             await triggerCreateCard({
                 email: userEmail,
                 cardDetails: {
-                    cardholderId: userCardholderId,
+                    cardholderId: targetCardholderId,
                     nameOnCard: formData.nameOnCard.trim(),
                     cardType: formData.cardType,
                     cardCurrency: 'USD',
@@ -338,15 +348,13 @@ export default function CreateCardSidebarComponent({
                     err?.message ||
                     'Failed to create card. Please try again later.';
 
-            const normalizeMessage = errorMessage?.toLowerCase()
+            const normalizeMessage = errorMessage?.toLowerCase();
 
-            if (normalizeMessage?.includes("user usd wallet not found")) {
-                toast.error("USD wallet does not exist. Please create USD wallet first and try again.")
-            }
-            if (normalizeMessage?.includes("insufficient available balance in usd wallet")) {
-                toast.error("Insufficient USD wallet availbale balance. Please add funds to USD wallet first and try again.")
-            }
-            else {
+            if (normalizeMessage?.includes('user usd wallet not found') || normalizeMessage?.includes('usd wallet does not exist')) {
+                toast.error('USD wallet does not exist. Please create USD wallet first and try again.');
+            } else if (normalizeMessage?.includes('insufficient available balance in usd wallet') || normalizeMessage?.includes('insufficient usd wallet')) {
+                toast.error('Insufficient USD wallet available balance. Please add funds to USD wallet first and try again.');
+            } else {
                 toast.error('Failed to create card. Please try again later.');
             }
         }
@@ -360,10 +368,10 @@ export default function CreateCardSidebarComponent({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-0 z-60 flex justify-end">
             {/* Backdrop */}
             <div
-                className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity duration-200"
+                className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity duration-200"
                 onClick={handleClose}
             />
 
@@ -377,19 +385,19 @@ export default function CreateCardSidebarComponent({
                 `}</style>
 
                 {/* Sidebar Header */}
-                <div className="p-6! border-b border-[var(--line)] flex items-center justify-between bg-[var(--bg-surface)]">
+                <div className="p-6! border-b border-[var(--line)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0">
                     <div>
                         <h3 className="text-xl font-normal text-[var(--ink)] tracking-normal">
                             <span className="font-serif font-medium">Create</span>{' '}
                             <span className="font-serif italic font-normal">Card</span>
                         </h3>
                         <p className="text-xs text-[var(--mute)] mt-1!">
-                            Configure card attributes and issuance options.
+                            Configure card attributes and issuance options for cardholder.
                         </p>
                     </div>
                     <button
                         type="button"
-                        id="createCardSidebar-close-btn"
+                        id="createCardholderCardSidebar-close-btn"
                         onClick={handleClose}
                         className="p-1.5! rounded-lg text-[var(--mute)] hover:text-[var(--ink)] hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
                         aria-label="Close create card drawer"
@@ -400,14 +408,34 @@ export default function CreateCardSidebarComponent({
 
                 {/* Form Body */}
                 <form
-                    id="createCardSidebar-form"
+                    id="createCardholderCardSidebar-form"
                     noValidate
                     onSubmit={handleSubmit(handleFormSubmit)}
                     className="p-6! flex-1 flex flex-col gap-4 overflow-y-auto"
                 >
+                    {/* Cardholder Summary Info */}
+                    {cardholder && (
+                        <div className="p-4! rounded-xl bg-[var(--bg-subtle)] border border-[var(--line)] space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
+                                    Cardholder
+                                </span>
+                                <span className="text-[10px] font-bold text-[var(--gold)] uppercase bg-[var(--bg-surface)] px-2! py-0.5! rounded border border-[var(--line)]">
+                                    {cardholder.cardholder_id ?? '—'}
+                                </span>
+                            </div>
+                            <div className="text-sm font-bold text-[var(--ink)]">
+                                {cardholder.full_name}
+                            </div>
+                            <div className="text-xs text-[var(--mute)]">
+                                {cardholder.email}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Name On Card */}
                     <CustomInputComponent
-                        id="createCard-input-nameOnCard"
+                        id="createCardholderCard-input-nameOnCard"
                         label="Name on Card"
                         type="text"
                         placeholder="e.g. John Doe"
@@ -427,7 +455,7 @@ export default function CreateCardSidebarComponent({
                                     Card Type
                                 </span>
                                 <CustomSelectComponent
-                                    id="createCard-select-cardType"
+                                    id="createCardholderCard-select-cardType"
                                     label="Select Card Type"
                                     labels={CARD_TYPE_OPTIONS}
                                     selectTriggerClassName="w-full px-4! text-[var(--ink)]"
@@ -442,7 +470,7 @@ export default function CreateCardSidebarComponent({
 
                     {/* Card Currency (Default USD, Non-editable) */}
                     <CustomInputComponent
-                        id="createCard-input-cardCurrency"
+                        id="createCardholderCard-input-cardCurrency"
                         label="Card Currency"
                         type="text"
                         value="USD"
@@ -475,10 +503,10 @@ export default function CreateCardSidebarComponent({
                 </form>
 
                 {/* Form Footer Action Buttons */}
-                <div className="p-6! border-t border-[var(--line)] bg-[var(--bg-surface)] flex items-center justify-end gap-3">
+                <div className="p-6! border-t border-[var(--line)] bg-[var(--bg-surface)] flex items-center justify-end gap-3 shrink-0">
                     <div className="w-[100px] h-[38px]">
                         <CustomButtonComponent
-                            id="createCard-cancel-btn"
+                            id="createCardholderCard-cancel-btn"
                             label="Cancel"
                             type="button"
                             variant="outline"
@@ -488,7 +516,7 @@ export default function CreateCardSidebarComponent({
                     </div>
                     <div className="w-[150px] h-[38px]">
                         <CustomButtonComponent
-                            id="createCard-submit-btn"
+                            id="createCardholderCard-submit-btn"
                             label={
                                 <span className="flex items-center justify-center gap-1.5">
                                     <Plus className="w-4 h-4" /> Create Card
@@ -496,7 +524,7 @@ export default function CreateCardSidebarComponent({
                             }
                             type="submit"
                             variant="navy"
-                            form="createCardSidebar-form"
+                            form="createCardholderCardSidebar-form"
                             showButtonLoader={isCreatingCard}
                         />
                     </div>

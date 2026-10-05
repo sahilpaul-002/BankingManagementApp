@@ -185,3 +185,26 @@ export interface CardsListResponseDataType {
     cards?: CardItemType[];
 }
 // ----------------------- XXXXXXXXXXXXXXXXXXX ----------------------- \\
+
+// =============================
+// CREATE CARD REQUEST / FORM TYPES
+// =============================
+export interface CreateCardLimitsPayloadType {
+    dailyLimit: string;
+    monthlyLimit: string;
+    yearlyLimit: string;
+}
+
+export interface CreateCardDetailsPayloadType {
+    cardholderId: string;
+    nameOnCard: string;
+    cardType: 'VIRTUAL' | 'PHYSICAL';
+    cardCurrency: 'USD';
+    cardLimits?: CreateCardLimitsPayloadType;
+    merchantCategories?: string[];
+}
+
+export interface CreateCardRequestBodyType {
+    email: string;
+    cardDetails: CreateCardDetailsPayloadType;
+}
