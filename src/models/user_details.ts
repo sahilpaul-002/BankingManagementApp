@@ -198,7 +198,7 @@ userDetailsSchema.index(
         program_id: 1
     },
     {
-        name: "idx_agent_subagent_business_program"
+        name: "idx_cardholder_agent_business_program"
     }
 );
 
@@ -210,7 +210,7 @@ userDetailsSchema.index(
         program_id: 1
     },
     {
-        name: "idx_agent_subagent_business_program"
+        name: "idx_id_agent_business_program"
     }
 );
 

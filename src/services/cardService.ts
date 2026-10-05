@@ -707,7 +707,7 @@ export const updateCardLimitsService = async (requestSession: Request["session"]
         ).select("-cardholder_id -cvv -valid_date -daily_transaction -monthly_transaction -yearly_transaction -valid_merchant_categories -createdAt -updatedAt -__v").lean();
 
         if (!updatedCard) {
-            throw new ServiceError("Failed update card limits");
+            throw new NotFoundError("Card and card details not found");
         }
 
         return { status: "SUCCESS", message: "Card limits updated successfully", data: { cardholderId, cardDetails: updatedCard } };

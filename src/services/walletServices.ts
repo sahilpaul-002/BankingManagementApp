@@ -76,7 +76,12 @@ export const getWalletService = async (requestSession: Request["session"], aesDe
                 throw new ForbiddenError("Not authorized to access wallet details")
             }
         }
-        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
+        const cardHolderExist = await user_details.exists({
+            cardholder_id: cardholderObjectId,
+            business_id: sessionBusinessId,
+            program_id: sessionProgramId,
+            agent_code: sessionAgentCode
+        });
         if (!cardHolderExist) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
@@ -393,8 +398,6 @@ export const createWalletService = async (requestSession: Request["session"], ae
 
             await existingWallet.save();
 
-            requestSession.walletId = existingWallet._id.toString();
-
             return { status: "SUCCESS", message: "Wallet added successfully", data: { walletId: existingWallet._id, wallets_details: existingWallet.wallets_details, } };
         }
 
@@ -406,8 +409,6 @@ export const createWalletService = async (requestSession: Request["session"], ae
                 newWallet,
             ],
         });
-
-        requestSession.walletId = insertedDocument._id.toString();
 
         return { status: "SUCCESS", message: "Wallet created successfully", data: { walletId: insertedDocument._id, wallets_details: insertedDocument.wallets_details, } };
     }

@@ -212,7 +212,11 @@ export const getCardholderDetailsService = async (requestSession: Request["sessi
         // Get user details
         const usersDetails = await user_details.findOne(
             {
-                cardholder_id: cardholderObjectId
+                cardholder_id: cardholderObjectId,
+                business_id: sessionBusinessId,
+                program_id: sessionProgramId,
+                agent_code: sessionAgentCode,
+                subagent_code: { $ne: "01" }
             },
             {
                 full_name: 1,
