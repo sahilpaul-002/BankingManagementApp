@@ -1,7 +1,7 @@
 import { useEffect, Activity } from 'react';
 import { Wallet, DollarSign } from 'lucide-react';
 import { useGetWalletDetailsQuery } from '@/redux/features/wallet/walletApis';
-import type { WalletsDetailsResponseDataType, WalletItemType } from '@/types/wallets/depositWalletsTypes';
+import type { WalletsDetailsResponseDataType, WalletItemType } from '@/types/cards/cardholderTypes';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
 import ShowInConsole from '@/utils/ShowInConsole';
 import { useDispatch } from 'react-redux';

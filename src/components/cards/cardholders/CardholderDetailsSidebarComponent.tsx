@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { X, ArrowDownToLine } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
-import type { CardholderItemType } from '@/types/cards/cardholderTypes';
+import type { CardholderItemType, WalletsDetailsResponseDataType, WalletItemType } from '@/types/cards/cardholderTypes';
 import CardholderCollapsibleSectionComponent from './CardholderCollapsibleSectionComponent';
 import CardholderWalletSectionComponent from './CardholderWalletSectionComponent';
 import CardholderCardsSectionComponent from './CardholderCardsSectionComponent';
 import LoadCardholderWalletSidebarComponent from './LoadCardholderWalletSidebarComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import { useCreateWalletMutation, useGetWalletDetailsQuery } from '@/redux/features/wallet/walletApis';
-import type { WalletsDetailsResponseDataType, WalletItemType } from '@/types/wallets/depositWalletsTypes';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import ShowInConsole from '@/utils/ShowInConsole';
 

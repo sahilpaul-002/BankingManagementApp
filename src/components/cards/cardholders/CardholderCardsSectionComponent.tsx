@@ -2,7 +2,7 @@ import { useState, useEffect, Activity } from 'react';
 import { CreditCard, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { PaginationState } from '@tanstack/react-table';
 import { useGetCardsQuery } from '@/redux/features/card/cardApi';
-import type { CardsListResponseDataType, CardItemType } from '@/types/cards/manageCardsTypes';
+import type { CardsListResponseDataType, CardItemType } from '@/types/cards/cardholderTypes';
 import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerLoaderComponent';
 import ShowInConsole from '@/utils/ShowInConsole';
 import { useDispatch } from 'react-redux';
