@@ -1,6 +1,16 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { toast } from 'react-toastify';
 import type { CardholderItemType } from '@/types/cards/cardholderTypes';
+import CardholderCollapsibleSectionComponent from './CardholderCollapsibleSectionComponent';
+import CardholderWalletSectionComponent from './CardholderWalletSectionComponent';
+import CardholderCardsSectionComponent from './CardholderCardsSectionComponent';
+import CustomButtonComponent from '@/components/common/CustomButtonComponent';
+import { useCreateWalletMutation, useGetWalletDetailsQuery } from '@/redux/features/wallet/walletApis';
+import type { WalletsDetailsResponseDataType, WalletItemType } from '@/types/wallets/depositWalletsTypes';
+import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
+import ShowInConsole from '@/utils/ShowInConsole';
 
 // ── Status badge helpers ──────────────────────────────────────────────────────
 const KYC_STATUS_STYLES: Record<string, string> = {
@@ -48,6 +58,8 @@ export default function CardholderDetailsSidebarComponent({
     onClose,
     cardholder,
 }: CardholderDetailsSidebarComponentPropsType) {
+    const dispatch = useDispatch();
+
     // Lock background scroll when drawer is open
     useEffect(() => {
         if (isOpen) {
@@ -60,6 +72,74 @@ export default function CardholderDetailsSidebarComponent({
         };
     }, [isOpen]);
 
+    const userEmail = sessionStorage.getItem('userEmail') || cardholder?.email || '';
+    const targetCardholderId = cardholder?.cardholder_id;
+
+    // ------------------------------ USER USD WALLET DETAILS RTK QUERY ------------------------------ \\
+    const {data: getWalletDetailsData, isFetching: getWalletDetailsIsFetching, isError: getWalletDetailsIsError, error: getWalletDetailsError} = useGetWalletDetailsQuery({ email: userEmail, cardholderId: targetCardholderId!, currency: 'USD' }, { skip: !isOpen || !userEmail || !targetCardholderId });
+    const walletDetailsData = (getWalletDetailsData?.data as WalletsDetailsResponseDataType) ?? {};
+    const walletList: WalletItemType[] = walletDetailsData?.wallets_details ?? [];
+    const usdWallet: WalletItemType | undefined = walletList.find((w) => w.wallet_currency?.toUpperCase() === 'USD') ?? walletList[0];
+    const isWalletsDetailsNotFound =
+        (getWalletDetailsIsError &&
+            getWalletDetailsError &&
+            getWalletDetailsError != null &&
+            'status' in getWalletDetailsError &&
+            getWalletDetailsError?.status === 404 &&
+            typeof getWalletDetailsError?.data === 'object' &&
+            getWalletDetailsError?.data !== null &&
+            'status' in getWalletDetailsError?.data &&
+            (getWalletDetailsError?.data as { status: string }).status === 'NOT_FOUND') ||
+        (!getWalletDetailsIsFetching && !usdWallet);
+    // ------------------------------- XXXXXXXXXXXXXXXXXXXXXXXX ------------------------------- \\
+
+    // ------------------------------- CREATE WALLET RTK QUERY ------------------------------- \\
+    const [triggerCreateWallet, { isLoading: isCreatingWallet }] = useCreateWalletMutation();
+    // ------------------------------- XXXXXXXXXXXXXXXXXXXXXXX ------------------------------- \\
+
+    const handleCreateWallet = async () => {
+        if (!userEmail || !cardholder?.cardholder_id) {
+            dispatch(setShowInfoBanner('Necessary cardholder details not found to create wallet.'));
+            return;
+        }
+
+        try {
+            const result = await triggerCreateWallet({
+                email: userEmail,
+                cardholderId: cardholder.cardholder_id,
+                walletDetails: {
+                    walletStatus: 'ACTIVE',
+                    walletType: 'FIAT',
+                    walletCurrency: 'USD',
+                },
+            }).unwrap();
+
+            ShowInConsole('Create wallet response:', result);
+
+            if (result?.status?.toUpperCase() !== 'SUCCESS') {
+                toast.error('Failed to create wallet. Please try again later.');
+                return;
+            }
+
+            toast.success('USD wallet created successfully.');
+        } catch (err: any) {
+            ShowInConsole('Create wallet error:', err);
+
+            const errorMessage =
+                Array.isArray(err?.data?.message)
+                    ? err.data.message[0]
+                    : err?.data?.message ||
+                      err?.message ||
+                      'Failed to create wallet. Please try again later.';
+
+            if (errorMessage?.toLowerCase()?.includes('wallet already exists')) {
+                toast.error('Wallet already exists.');
+            } else {
+                toast.error('Failed to create wallet. Please try again later.');
+            }
+        }
+    };
+
     if (!isOpen || !cardholder) return null;
 
     return (
@@ -71,7 +151,7 @@ export default function CardholderDetailsSidebarComponent({
             />
 
             {/* Right Drawer Panel */}
-            <div className="relative z-10 w-full max-w-md h-full bg-[var(--bg-surface)] border-l border-[var(--line)] shadow-2xl flex flex-col overflow-y-auto animate-[slideInRight_0.25s_ease-out]">
+            <div className="relative z-10 w-full max-w-md sm:max-w-lg h-full bg-[var(--bg-surface)] border-l border-[var(--line)] shadow-2xl flex flex-col overflow-hidden animate-[slideInRight_0.25s_ease-out]">
                 <style>{`
                     @keyframes slideInRight {
                         from { transform: translateX(100%); }
@@ -80,7 +160,7 @@ export default function CardholderDetailsSidebarComponent({
                 `}</style>
 
                 {/* Sidebar Header */}
-                <div className="p-6! border-b border-[var(--line)] flex items-center justify-between bg-[var(--bg-surface)]">
+                <div className="p-6! border-b border-[var(--line)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0">
                     <h3 className="text-xl font-normal text-[var(--ink)] tracking-normal">
                         <span className="font-serif font-medium">Cardholder</span>{' '}
                         <span className="font-serif italic font-normal">details</span>
@@ -105,7 +185,7 @@ export default function CardholderDetailsSidebarComponent({
                         <p className="text-sm text-[var(--mute)]">{cardholder.email}</p>
                     </div>
 
-                    {/* Section: STATUS */}
+                    {/* Section 1: STATUS (unchanged, not collapsible) */}
                     <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
                         <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
                             <span>— STATUS</span>
@@ -131,11 +211,8 @@ export default function CardholderDetailsSidebarComponent({
                         </div>
                     </div>
 
-                    {/* Section: PERSONAL */}
-                    <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
-                        <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
-                            <span>— PERSONAL</span>
-                        </div>
+                    {/* Section 2: PERSONAL (collapsible, default collapsed) */}
+                    <CardholderCollapsibleSectionComponent title="— PERSONAL" defaultOpen={false}>
                         <div className="grid grid-cols-2 gap-y-3 text-xs">
                             <DetailRow label="Full Name" value={cardholder.full_name} />
                             <DetailRow label="Gender" value={cardholder.gender} />
@@ -144,13 +221,10 @@ export default function CardholderDetailsSidebarComponent({
                                 value={formatDate(cardholder.date_of_birth)}
                             />
                         </div>
-                    </div>
+                    </CardholderCollapsibleSectionComponent>
 
-                    {/* Section: CONTACT */}
-                    <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
-                        <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
-                            <span>— CONTACT</span>
-                        </div>
+                    {/* Section 3: CONTACT (collapsible, default collapsed) */}
+                    <CardholderCollapsibleSectionComponent title="— CONTACT" defaultOpen={false}>
                         <div className="grid grid-cols-2 gap-y-3 text-xs">
                             <DetailRow label="Email" value={cardholder.email} />
                             <DetailRow
@@ -159,13 +233,10 @@ export default function CardholderDetailsSidebarComponent({
                             />
                             <DetailRow label="Country Code" value={cardholder.mobile_country_name} />
                         </div>
-                    </div>
+                    </CardholderCollapsibleSectionComponent>
 
-                    {/* Section: PROGRAM */}
-                    <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
-                        <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
-                            <span>— PROGRAM</span>
-                        </div>
+                    {/* Section 4: PROGRAM (collapsible, default collapsed) */}
+                    <CardholderCollapsibleSectionComponent title="— PROGRAM" defaultOpen={false}>
                         <div className="grid grid-cols-2 gap-y-3 text-xs">
                             <DetailRow label="Business" value={cardholder.business_name} />
                             <DetailRow label="Program Type" value={cardholder.program_type} />
@@ -174,13 +245,10 @@ export default function CardholderDetailsSidebarComponent({
                                 value={cardholder.cardholder_id ?? '—'}
                             />
                         </div>
-                    </div>
+                    </CardholderCollapsibleSectionComponent>
 
-                    {/* Section: SECURITY */}
-                    <div className="flex flex-col gap-3 pt-4! border-t border-[var(--line)]">
-                        <div className="text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
-                            <span>— SECURITY</span>
-                        </div>
+                    {/* Section 5: SECURITY (collapsible, default collapsed) */}
+                    <CardholderCollapsibleSectionComponent title="— SECURITY" defaultOpen={false}>
                         <div className="grid grid-cols-2 gap-y-3 text-xs">
                             <DetailRow
                                 label="Email Verified"
@@ -195,8 +263,37 @@ export default function CardholderDetailsSidebarComponent({
                                 value={cardholder.two_fa_type ?? '—'}
                             />
                         </div>
-                    </div>
+                    </CardholderCollapsibleSectionComponent>
+
+                    {/* Section 6: USD WALLET */}
+                    <CardholderWalletSectionComponent
+                        cardholderId={targetCardholderId}
+                        userEmail={userEmail}
+                    />
+
+                    {/* Section 7: CARDS LIST */}
+                    <CardholderCardsSectionComponent
+                        cardholderId={targetCardholderId}
+                        userEmail={userEmail}
+                    />
                 </div>
+
+                {/* Footer: Create Wallet Button when wallet is not found */}
+                {isWalletsDetailsNotFound && (
+                    <div className="shrink-0 p-4! sm:p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end">
+                        <div className="w-full sm:w-[150px] h-[38px]">
+                            <CustomButtonComponent
+                                id="cardholderDetails-createWallet-btn"
+                                label="Create Wallet"
+                                type="button"
+                                variant="navy"
+                                onClick={handleCreateWallet}
+                                showButtonLoader={isCreatingWallet}
+                                disabled={isCreatingWallet}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -269,8 +269,8 @@ export const walletApis = createApi({
                         url: `${WALLET_URL}`,
                         method: 'GET',
                         headers,
-                        params: { 
-                            email: payload?.email, 
+                        params: {
+                            email: payload?.email,
                             cardholder_id: payload?.cardholderId,
                             ...(payload?.currency && {
                                 currency: payload?.currency,
@@ -297,7 +297,7 @@ export const walletApis = createApi({
         // =======================================================
         // CREATE CURRENCY CONVERSION QUOTE
         // =======================================================
-        createCurrencyConversionQuote: build.mutation<apiResponseType<apiResponseDataType>, { email: string; bodyPayload: {cardholderId: string, sourceWalletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", distinatinWalletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", amount: string} }>({
+        createCurrencyConversionQuote: build.mutation<apiResponseType<apiResponseDataType>, { email: string; bodyPayload: { cardholderId: string, sourceWalletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", distinatinWalletCurrency: "USD" | "SGD" | "EUR" | "USDT" | "USDC", amount: string } }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -323,7 +323,7 @@ export const walletApis = createApi({
                         url: `${WALLET_URL}/walletCurrencyConversion/createPayout`,
                         method: 'POST',
                         headers,
-                        params: {email: payload?.email},
+                        params: { email: payload?.email },
                         data: { cardholder_id: payload?.bodyPayload?.cardholderId, source_wallet_currency: payload?.bodyPayload?.sourceWalletCurrency, destination_wallet_currency: payload?.bodyPayload?.distinatinWalletCurrency, amount: payload?.bodyPayload?.amount },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
@@ -345,7 +345,7 @@ export const walletApis = createApi({
         // =======================================================
         // EXECUTE CURRENCY CONVERSION
         // =======================================================
-        executeCurrencyConversionQuote: build.mutation<apiResponseType<apiResponseDataType>, { email: string; bodyPayload: {cardholderId: string, quoteId: string}; }>({
+        executeCurrencyConversionQuote: build.mutation<apiResponseType<apiResponseDataType>, { email: string; bodyPayload: { cardholderId: string, quoteId: string }; }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -371,7 +371,7 @@ export const walletApis = createApi({
                         url: `${WALLET_URL}/walletCurrencyConversion/executePayout`,
                         method: 'POST',
                         headers,
-                        data: {quote_id: payload?.bodyPayload?.quoteId, cardholder_id: payload?.bodyPayload?.cardholderId},
+                        data: { quote_id: payload?.bodyPayload?.quoteId, cardholder_id: payload?.bodyPayload?.cardholderId },
                         params: { email: payload?.email },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
@@ -436,6 +436,58 @@ export const walletApis = createApi({
                 }
             },
             providesTags: [{ type: 'Wallet', id: 'TRANSACTIONS' }],
+        }),
+
+
+        // =======================================================
+        // WALLET TO WALLET LOAD
+        // =======================================================
+        walletToWalletLoad: build.mutation<apiResponseType<apiResponseDataType>, { email: string; loadDetails: { sourceUserId: string, sourceWalletId: string, destinationWalletId: string, amount: string } }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = walletApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('WALLET-TO-WALLET-LOAD - Failed to fetch application headers');
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = walletApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${WALLET_URL}/walletToWalletLoad`,
+                        method: 'POST',
+                        headers,
+                        params: { email: payload?.email },
+                        data: {
+                            source_user_id: payload?.loadDetails?.sourceUserId,
+                            source_wallet_id: payload?.loadDetails?.sourceWalletId,
+                            destination_wallet_id: payload?.loadDetails?.destinationWalletId,
+                            amount: payload?.loadDetails?.amount
+                        },
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                } catch (error) {
+                    const rtkError = rtkQueryCatchError(error, 'WALLET-TO-WALLET-LOAD faced application error');
+                    return rtkError
+                }
+            },
         }),
     }),
 })
