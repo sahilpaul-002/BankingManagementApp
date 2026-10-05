@@ -185,7 +185,7 @@ export default function RecentTransactionsSection({ walletTransactions, walletTr
                 }
                 type="button"
                 variant="link"
-                onClick={() => navigate('/statements')}
+                onClick={() => navigate('/wallets/statements')}
               />
             </div>
           </div>
@@ -231,7 +231,7 @@ export default function RecentTransactionsSection({ walletTransactions, walletTr
                 }
                 type="button"
                 variant="link"
-                onClick={() => navigate('/statements')}
+                onClick={() => navigate('/wallets/statements')}
               />
             </div>
           </div>
