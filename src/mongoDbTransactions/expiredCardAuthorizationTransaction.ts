@@ -210,8 +210,11 @@ const expireCardAuthorizationTransaction = async (transactionData: ExpireCardTra
             },
             {
                 $set: {
-                    transaction_status: "FAILED",
-                    balance_after: mongoose.Types.Decimal128.fromString(newAccountBalance.toDecimalPlaces(4).toString()),
+                    transaction_type: "RELEASE",
+                    transaction_status: "SUCCESS",
+                    balance_after: mongoose.Types.Decimal128.fromString(
+                        newAccountBalance.toDecimalPlaces(4).toString()
+                    ),
                     remarks: "Card transaction authorization expired and wallet hold was released",
                 },
             },

@@ -869,6 +869,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
             transaction_status: 1,
             amount: 1,
             fee: 1,
+            balance_before: 1,
             balance_after: 1,
             remarks: 1,
             createdAt: 1,

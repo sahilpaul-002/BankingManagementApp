@@ -289,7 +289,9 @@ export const cardTransactionSettlementTransaction = async (decoded: CardAuthoriz
                     },
                     {
                         $set: {
-                            transaction_status: "FAILED",
+                            transaction_type: "RELEASE",
+                            transaction_status: "SUCCESS",
+                            balance_after: currentBalance,
                         },
                     },
                     {
@@ -463,6 +465,10 @@ export const cardTransactionSettlementTransaction = async (decoded: CardAuthoriz
             throw new ServiceError("Failed to update wallet during card transaction settlement");
         }
 
+        // Calculate the balance after
+        const balanceAfter = decoded.action === "APPROVE" ? currentBalance.minus(transactionAmount) : currentBalance;
+        const balanceAfterDecimal128 = mongoose.Types.Decimal128.fromString(balanceAfter.toDecimalPlaces(4).toString());
+
         // Update wallet transaction
         const walletTransactionUpdate = await user_wallet_transactions.updateOne(
             {
@@ -472,8 +478,13 @@ export const cardTransactionSettlementTransaction = async (decoded: CardAuthoriz
             },
             {
                 $set: {
-                    transaction_status: decoded.action === "APPROVE" ? "SUCCESS" : "FAILED",
+                    transaction_type: decoded.action === "APPROVE" ? "WITHDRAW" : "RELEASE",
+
+                    transaction_status: "SUCCESS",
+
+                    balance_after: balanceAfterDecimal128,
                 },
+
             },
             {
                 session: mongoSession,
