@@ -15,17 +15,17 @@ import ShowInConsole from '@/utils/ShowInConsole';
 
 // ── Status badge helpers ──────────────────────────────────────────────────────
 const KYC_STATUS_STYLES: Record<string, string> = {
-    PENDING:       'bg-yellow-100 text-yellow-700',
+    PENDING: 'bg-yellow-100 text-yellow-700',
     'IN-PROGRESS': 'bg-blue-100 text-blue-700',
-    RFI:           'bg-orange-100 text-orange-700',
-    COMPLETED:     'bg-green-100 text-green-700',
+    RFI: 'bg-orange-100 text-orange-700',
+    COMPLETED: 'bg-green-100 text-green-700',
 };
 
 const STATUS_STYLES: Record<string, string> = {
-    DISABLED:       'bg-red-100 text-red-700',
+    DISABLED: 'bg-red-100 text-red-700',
     'PRE-VERIFIED': 'bg-yellow-100 text-yellow-700',
-    VERIFIED:       'bg-blue-100 text-blue-700',
-    ACTIVE:         'bg-green-100 text-green-700',
+    VERIFIED: 'bg-blue-100 text-blue-700',
+    ACTIVE: 'bg-green-100 text-green-700',
 };
 
 const formatDate = (iso: string) => {
@@ -75,6 +75,7 @@ export default function CardholderDetailsSidebarComponent({
 
     const userEmail = sessionStorage.getItem('userEmail') || cardholder?.email || '';
     const targetCardholderId = cardholder?.cardholder_id;
+    const isWalletCardCreationAllowed = (cardholder?.kyc_status?.toUpperCase() === 'COMPLETED' && cardholder?.status?.toUpperCase() === 'VERIFIED');
 
     // Selected state for loading wallet
     const [isLoadWalletOpen, setIsLoadWalletOpen] = useState(false);
@@ -83,7 +84,7 @@ export default function CardholderDetailsSidebarComponent({
     const [isCreateCardOpen, setIsCreateCardOpen] = useState(false);
 
     // ------------------------------ USER USD WALLET DETAILS RTK QUERY ------------------------------ \\
-    const {data: getWalletDetailsData, isFetching: getWalletDetailsIsFetching, isError: getWalletDetailsIsError, error: getWalletDetailsError} = useGetWalletDetailsQuery({ email: userEmail, cardholderId: targetCardholderId!, currency: 'USD' }, { skip: !isOpen || !userEmail || !targetCardholderId });
+    const { data: getWalletDetailsData, isFetching: getWalletDetailsIsFetching, isError: getWalletDetailsIsError, error: getWalletDetailsError } = useGetWalletDetailsQuery({ email: userEmail, cardholderId: targetCardholderId!, currency: 'USD' }, { skip: !isOpen || !userEmail || !targetCardholderId });
     const walletDetailsData = (getWalletDetailsData?.data as WalletsDetailsResponseDataType) ?? {};
     const walletList: WalletItemType[] = walletDetailsData?.wallets_details ?? [];
     const usdWallet: WalletItemType | undefined = walletList.find((w) => w.wallet_currency?.toUpperCase() === 'USD') ?? walletList[0];
@@ -137,8 +138,8 @@ export default function CardholderDetailsSidebarComponent({
                 Array.isArray(err?.data?.message)
                     ? err.data.message[0]
                     : err?.data?.message ||
-                      err?.message ||
-                      'Failed to create wallet. Please try again later.';
+                    err?.message ||
+                    'Failed to create wallet. Please try again later.';
 
             if (errorMessage?.toLowerCase()?.includes('wallet already exists')) {
                 toast.error('Wallet already exists.');
@@ -287,50 +288,57 @@ export default function CardholderDetailsSidebarComponent({
                 </div>
 
                 {/* Footer: Create Wallet Button when wallet is not found, or Load Wallet Button when wallet exists */}
-                {isWalletsDetailsNotFound ? (
-                    <div className="shrink-0 p-4! sm:p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end">
-                        <div className="w-full sm:w-[150px] h-[38px]">
-                            <CustomButtonComponent
-                                id="cardholderDetails-createWallet-btn"
-                                label="Create Wallet"
-                                type="button"
-                                variant="navy"
-                                onClick={handleCreateWallet}
-                                showButtonLoader={isCreatingWallet}
-                                disabled={isCreatingWallet}
-                            />
-                        </div>
-                    </div>
-                ) : usdWallet ? (
-                    <div className="shrink-0 p-4! sm:p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end gap-3 flex-wrap sm:flex-nowrap">
-                        <div className="w-full sm:w-[150px] h-[38px]">
-                            <CustomButtonComponent
-                                id="cardholderDetails-loadWallet-btn"
-                                label={
-                                    <span className="flex items-center justify-center gap-1.5">
-                                        <ArrowDownToLine className="w-4 h-4" /> Load Wallet
-                                    </span>
-                                }
-                                type="button"
-                                variant="outline"
-                                onClick={() => setIsLoadWalletOpen(true)}
-                            />
-                        </div>
-                        <div className="w-full sm:w-[150px] h-[38px]">
-                            <CustomButtonComponent
-                                id="cardholderDetails-createCard-btn"
-                                label={
-                                    <span className="flex items-center justify-center gap-1.5">
-                                        <Plus className="w-4 h-4" /> Create Card
-                                    </span>
-                                }
-                                type="button"
-                                variant="navy"
-                                onClick={() => setIsCreateCardOpen(true)}
-                            />
-                        </div>
-                    </div>
-                ) : null}
+                {isWalletCardCreationAllowed && (
+                    <>
+                        {isWalletsDetailsNotFound ? (
+                            <div className="shrink-0 p-4! sm:p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end">
+                                <div className="w-full sm:w-[150px] h-[38px]">
+                                    <CustomButtonComponent
+                                        id="cardholderDetails-createWallet-btn"
+                                        label="Create Wallet"
+                                        type="button"
+                                        variant="navy"
+                                        onClick={handleCreateWallet}
+                                        showButtonLoader={isCreatingWallet}
+                                        disabled={isCreatingWallet}
+                                    />
+                                </div>
+                            </div>
+                        ) : usdWallet ? (
+                            <div className="shrink-0 p-4! sm:p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end gap-3 flex-wrap sm:flex-nowrap">
+                                <div className="w-full sm:w-[150px] h-[38px]">
+                                    <CustomButtonComponent
+                                        id="cardholderDetails-loadWallet-btn"
+                                        label={
+                                            <span className="flex items-center justify-center gap-1.5">
+                                                <ArrowDownToLine className="w-4 h-4" />
+                                                Load Wallet
+                                            </span>
+                                        }
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setIsLoadWalletOpen(true)}
+                                    />
+                                </div>
+
+                                <div className="w-full sm:w-[150px] h-[38px]">
+                                    <CustomButtonComponent
+                                        id="cardholderDetails-createCard-btn"
+                                        label={
+                                            <span className="flex items-center justify-center gap-1.5">
+                                                <Plus className="w-4 h-4" />
+                                                Create Card
+                                            </span>
+                                        }
+                                        type="button"
+                                        variant="navy"
+                                        onClick={() => setIsCreateCardOpen(true)}
+                                    />
+                                </div>
+                            </div>
+                        ) : null}
+                    </>
+                )}
             </div>
 
             {/* Load Cardholder Wallet Sidebar Drawer */}

@@ -89,7 +89,6 @@ export const walletApis = createApi({
 
                     // Set wallet id in session storage
                     const walletId = (result?.data?.data as Record<string, any>)?.walletId
-                    sessionStorage.setItem("walletId", walletId);
 
                     return {
                         data: result.data as apiResponseType<apiResponseDataType>,

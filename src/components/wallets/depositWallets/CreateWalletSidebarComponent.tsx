@@ -143,7 +143,6 @@ export default function CreateWalletSidebarComponent({ isOpen, onClose, onSucces
 
             // Set wallet id in session storage
             const userWalletId = (result?.data as WalletsDetailsResponseDataType)?.walletId;
-            sessionStorage.setItem("walletId", userWalletId);
 
             toast.success('Wallet created successfully.');
             reset();
