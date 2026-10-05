@@ -238,7 +238,7 @@ export const walletApis = createApi({
         // =======================================================
         // GET WALLET DETAILS
         // =======================================================
-        getWalletDetails: build.query<apiResponseType<apiResponseDataType>, { email: string, cardholderId: string }>({
+        getWalletDetails: build.query<apiResponseType<apiResponseDataType>, { email: string, cardholderId: string, currency?: "USD" | "SGD" | "EUR" | "USDT" | "USDC" }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -269,7 +269,13 @@ export const walletApis = createApi({
                         url: `${WALLET_URL}`,
                         method: 'GET',
                         headers,
-                        params: { email: payload.email, cardholder_id: payload.cardholderId },
+                        params: { 
+                            email: payload?.email, 
+                            cardholder_id: payload?.cardholderId,
+                            ...(payload?.currency && {
+                                currency: payload?.currency,
+                            }),
+                        },
                     }) as {
                         data?: apiResponseType<apiResponseDataType>
                         error?: unknown
