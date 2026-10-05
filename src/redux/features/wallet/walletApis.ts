@@ -290,7 +290,16 @@ export const walletApis = createApi({
                     return rtkError;
                 }
             },
-            providesTags: [{ type: 'Wallet', id: 'DETAILS' }],
+            // providesTags: [{ type: 'Wallet', id: 'DETAILS' }],
+
+            // For admin wallet details currency is not used so id = DETALS
+            // For cardholder wallet details currency is used so id = CARDHOLDER-WALLET-DETAILS
+            providesTags: (result, error, arg) => [
+                { type: 'Wallet', id: 'DETAILS' },
+                ...(arg.currency
+                    ? [{ type: 'Wallet' as const, id: 'CARDHOLDER-WALLET-DETAILS' }]
+                    : []),
+            ],
         }),
 
 
@@ -488,6 +497,7 @@ export const walletApis = createApi({
                     return rtkError
                 }
             },
+            invalidatesTags: [{ type: 'Wallet', id: 'DETAILS' }, { type: 'Wallet', id: 'CARDHOLDER-WALLET-DETAILS' }]
         }),
     }),
 })
@@ -503,4 +513,5 @@ export const {
     useExecuteCurrencyConversionQuoteMutation,
     useGetWalletTransactionsQuery,
     useLazyGetWalletTransactionsQuery,
+    useWalletToWalletLoadMutation
 } = walletApis

@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, ArrowDownToLine } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { toast } from 'react-toastify';
 import type { CardholderItemType } from '@/types/cards/cardholderTypes';
 import CardholderCollapsibleSectionComponent from './CardholderCollapsibleSectionComponent';
 import CardholderWalletSectionComponent from './CardholderWalletSectionComponent';
 import CardholderCardsSectionComponent from './CardholderCardsSectionComponent';
+import LoadCardholderWalletSidebarComponent from './LoadCardholderWalletSidebarComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import { useCreateWalletMutation, useGetWalletDetailsQuery } from '@/redux/features/wallet/walletApis';
 import type { WalletsDetailsResponseDataType, WalletItemType } from '@/types/wallets/depositWalletsTypes';
@@ -75,11 +76,15 @@ export default function CardholderDetailsSidebarComponent({
     const userEmail = sessionStorage.getItem('userEmail') || cardholder?.email || '';
     const targetCardholderId = cardholder?.cardholder_id;
 
+    // Selected state for loading wallet
+    const [isLoadWalletOpen, setIsLoadWalletOpen] = useState(false);
+
     // ------------------------------ USER USD WALLET DETAILS RTK QUERY ------------------------------ \\
     const {data: getWalletDetailsData, isFetching: getWalletDetailsIsFetching, isError: getWalletDetailsIsError, error: getWalletDetailsError} = useGetWalletDetailsQuery({ email: userEmail, cardholderId: targetCardholderId!, currency: 'USD' }, { skip: !isOpen || !userEmail || !targetCardholderId });
     const walletDetailsData = (getWalletDetailsData?.data as WalletsDetailsResponseDataType) ?? {};
     const walletList: WalletItemType[] = walletDetailsData?.wallets_details ?? [];
     const usdWallet: WalletItemType | undefined = walletList.find((w) => w.wallet_currency?.toUpperCase() === 'USD') ?? walletList[0];
+    const destinationWalletId = walletDetailsData?.walletId || (usdWallet as any)?.walletId || usdWallet?._id || '';
     const isWalletsDetailsNotFound =
         (getWalletDetailsIsError &&
             getWalletDetailsError &&
@@ -278,8 +283,8 @@ export default function CardholderDetailsSidebarComponent({
                     />
                 </div>
 
-                {/* Footer: Create Wallet Button when wallet is not found */}
-                {isWalletsDetailsNotFound && (
+                {/* Footer: Create Wallet Button when wallet is not found, or Load Wallet Button when wallet exists */}
+                {isWalletsDetailsNotFound ? (
                     <div className="shrink-0 p-4! sm:p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end">
                         <div className="w-full sm:w-[150px] h-[38px]">
                             <CustomButtonComponent
@@ -293,8 +298,33 @@ export default function CardholderDetailsSidebarComponent({
                             />
                         </div>
                     </div>
-                )}
+                ) : usdWallet ? (
+                    <div className="shrink-0 p-4! sm:p-6! border-t border-[var(--line)] bg-[var(--bg-subtle)] flex items-center justify-end">
+                        <div className="w-full sm:w-[150px] h-[38px]">
+                            <CustomButtonComponent
+                                id="cardholderDetails-loadWallet-btn"
+                                label={
+                                    <span className="flex items-center justify-center gap-1.5">
+                                        <ArrowDownToLine className="w-4 h-4" /> Load Wallet
+                                    </span>
+                                }
+                                type="button"
+                                variant="navy"
+                                onClick={() => setIsLoadWalletOpen(true)}
+                            />
+                        </div>
+                    </div>
+                ) : null}
             </div>
+
+            {/* Load Cardholder Wallet Sidebar Drawer */}
+            <LoadCardholderWalletSidebarComponent
+                isOpen={isLoadWalletOpen}
+                onClose={() => setIsLoadWalletOpen(false)}
+                cardholder={cardholder}
+                wallet={usdWallet ?? null}
+                destinationWalletId={destinationWalletId}
+            />
         </div>
     );
 }
