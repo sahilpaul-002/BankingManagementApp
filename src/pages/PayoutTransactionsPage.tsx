@@ -187,6 +187,8 @@ export default function PayoutTransactionsPage() {
                     dateRange={dateRange}
                     onDateRangeApply={handleDateRangeApply}
                     onDateRangeClear={handleDateRangeClear}
+                    onRefresh={refetchPayoutTransactions}
+                    isRefreshing={getPayoutTransactionsIsFetching}
                 />
 
                 {/* Sub-component 2: Transactions Table List */}

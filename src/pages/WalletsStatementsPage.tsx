@@ -168,6 +168,8 @@ export default function WalletsStatementsPage() {
                     dateRange={dateRange}
                     onDateRangeApply={handleDateRangeApply}
                     onDateRangeClear={handleDateRangeClear}
+                    onRefresh={refetchWalletTransactions}
+                    isRefreshing={getWalletTransactionsIsFetching}
                 />
 
                 {/* Sub-component 2: Transactions Table List */}

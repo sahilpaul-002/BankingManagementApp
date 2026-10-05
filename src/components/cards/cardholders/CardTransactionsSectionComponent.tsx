@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ReceiptText } from 'lucide-react';
+import { ReceiptText, RefreshCw } from 'lucide-react';
+import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import type { PaginationState } from '@tanstack/react-table';
 import { useGetCardTransactionListQuery } from '@/redux/features/card/cardApi';
 import type {
@@ -34,7 +35,13 @@ export default function CardTransactionsSectionComponent({
     const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
 
     // ------------------------------ GET CARD TRANSACTIONS RTK QUERY ------------------------------ \\
-    const {data: getCardTransactionsData, isFetching: getCardTransactionsIsFetching, isError: getCardTransactionsIsError, error: getCardTransactionsError} = useGetCardTransactionListQuery(
+    const {
+        data: getCardTransactionsData,
+        isFetching: getCardTransactionsIsFetching,
+        isError: getCardTransactionsIsError,
+        error: getCardTransactionsError,
+        refetch: refetchCardTransactions,
+    } = useGetCardTransactionListQuery(
         {
             email: userEmail,
             cardholderId: cardholderId,
@@ -93,11 +100,35 @@ export default function CardTransactionsSectionComponent({
                     </div>
                 </div>
 
-                {totalTransactionsCount > 0 && (
-                    <span className="inline-flex items-center gap-1.5 px-3! py-1! rounded-full text-xs font-semibold bg-[var(--bg-subtle)] text-[var(--ink-soft)] border border-[var(--line)]">
-                        {totalTransactionsCount} {totalTransactionsCount === 1 ? 'Record' : 'Records'}
-                    </span>
-                )}
+                <div className="flex items-center gap-3">
+                    <div className="w-[38px] h-[38px]">
+                        <CustomButtonComponent
+                            id="cardTransactionsSection-refresh-btn"
+                            label={
+                                <RefreshCw
+                                    className={`w-4 h-4 ${
+                                        getCardTransactionsIsFetching ? 'animate-spin' : ''
+                                    }`}
+                                />
+                            }
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="p-0! rounded-xl border-[var(--line)] bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] text-[var(--ink)]"
+                            onClick={() => refetchCardTransactions()}
+                            disabled={getCardTransactionsIsFetching}
+                            showButtonLoader={false}
+                            title="Refresh"
+                            aria-label="Refresh card transactions"
+                        />
+                    </div>
+
+                    {totalTransactionsCount > 0 && (
+                        <span className="inline-flex items-center gap-1.5 px-3! py-1! rounded-full text-xs font-semibold bg-[var(--bg-subtle)] text-[var(--ink-soft)] border border-[var(--line)]">
+                            {totalTransactionsCount} {totalTransactionsCount === 1 ? 'Record' : 'Records'}
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Sub-component: Card Transactions Table List */}

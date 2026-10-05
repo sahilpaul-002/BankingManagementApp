@@ -1,7 +1,8 @@
 import React from 'react';
-import { Search } from 'lucide-react';
+import { RefreshCw, Search } from 'lucide-react';
+import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import DepositWalletsTabsComponent from '@/components/wallets/depositWallets/DepositWalletsTabsComponent';
-import CustomDateRangeFilterComponent, { type DateRange, } from '@/components/common/CustomDateRangeFilterComponent';
+import CustomDateRangeFilterComponent, { type DateRange } from '@/components/common/CustomDateRangeFilterComponent';
 
 type WalletTransactionTypeTab = 'ALL' | 'LOAD' | 'WITHDRAW' | 'RELEASE';
 
@@ -20,9 +21,21 @@ interface WalletStatementsFilterComponentPropsType {
     dateRange: DateRange;
     onDateRangeApply: (range: DateRange) => void;
     onDateRangeClear: () => void;
+    onRefresh: () => void;
+    isRefreshing: boolean;
 }
 
-export default function WalletStatementsFilterComponent({searchQuery, onSearchChange, selectedType, onTypeChange, dateRange, onDateRangeApply,  onDateRangeClear}: WalletStatementsFilterComponentPropsType) {
+export default function WalletStatementsFilterComponent({
+    searchQuery,
+    onSearchChange,
+    selectedType,
+    onTypeChange,
+    dateRange,
+    onDateRangeApply,
+    onDateRangeClear,
+    onRefresh,
+    isRefreshing,
+}: WalletStatementsFilterComponentPropsType) {
     return (
         <div className="w-full flex flex-col gap-4">
             {/* Type Tabs */}
@@ -33,7 +46,7 @@ export default function WalletStatementsFilterComponent({searchQuery, onSearchCh
                 idPrefix="walletStatements"
             />
 
-            {/* Search + Date Filter */}
+            {/* Search + Date Filter + Refresh */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 {/* Search Input */}
                 <div className="relative w-full">
@@ -51,12 +64,37 @@ export default function WalletStatementsFilterComponent({searchQuery, onSearchCh
                     />
                 </div>
 
-                {/* Date Range Filter */}
-                <CustomDateRangeFilterComponent
-                    value={dateRange}
-                    onApply={onDateRangeApply}
-                    onClear={onDateRangeClear}
-                />
+                <div className="w-full sm:w-auto flex items-center justify-between sm:justify-start gap-3 shrink-0">
+                    {/* Date Range Filter */}
+                    <CustomDateRangeFilterComponent
+                        value={dateRange}
+                        onApply={onDateRangeApply}
+                        onClear={onDateRangeClear}
+                    />
+
+                    {/* Refresh Button */}
+                    <div className="w-[42px] h-[42px] shrink-0">
+                        <CustomButtonComponent
+                            id="walletStatements-refresh-btn"
+                            label={
+                                <RefreshCw
+                                    className={`w-4 h-4 ${
+                                        isRefreshing ? 'animate-spin' : ''
+                                    }`}
+                                />
+                            }
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="p-0! rounded-xl border-[var(--line)] bg-[var(--bg-surface)] hover:bg-[var(--bg-hover)] text-[var(--ink)]"
+                            onClick={onRefresh}
+                            disabled={isRefreshing}
+                            showButtonLoader={false}
+                            title="Refresh"
+                            aria-label="Refresh wallet statements"
+                        />
+                    </div>
+                </div>
             </div>
         </div>
     );
