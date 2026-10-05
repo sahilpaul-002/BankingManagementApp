@@ -249,8 +249,8 @@ export default function PayoutTransactionsListComponent({
 
     return (
         <div className="w-full bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl shadow-xs overflow-hidden">
-            <div className={getPayoutTransactionsIsFetching || payoutTransactionsNotFound ? '' : 'overflow-x-auto'}>
-                <table className={`w-full text-left border-collapse ${getPayoutTransactionsIsFetching || payoutTransactionsNotFound ? '' : 'min-w-[980px]'}`}>
+            <div className={getPayoutTransactionsIsFetching || payoutTransactionsNotFound || table.getRowModel().rows.length === 0 ? '' : 'overflow-x-auto'}>
+                <table className={`w-full text-left border-collapse ${getPayoutTransactionsIsFetching || payoutTransactionsNotFound || table.getRowModel().rows.length === 0 ? '' : 'min-w-[980px]'}`}>
                     <thead>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <tr

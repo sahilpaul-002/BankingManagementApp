@@ -400,7 +400,7 @@ export const cardApis = createApi({
                     }
 
                     const result = await executeBaseQuery(baseQuery, {
-                        url: `${CARD_URL}`,
+                        url: `${CARD_URL}/transactions`,
                         method: 'GET',
                         headers,
                         params: {

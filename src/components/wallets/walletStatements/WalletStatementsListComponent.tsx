@@ -271,8 +271,8 @@ export default function WalletStatementsListComponent({
 
     return (
         <div className="w-full bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl shadow-xs overflow-hidden">
-            <div className={getWalletTransactionsIsFetching || walletTransactionsNotFound ? '' : 'overflow-x-auto'}>
-                <table className={`w-full text-left border-collapse ${getWalletTransactionsIsFetching || walletTransactionsNotFound ? '' : 'min-w-[900px]'}`}>
+            <div className={getWalletTransactionsIsFetching || walletTransactionsNotFound || table.getRowModel().rows.length === 0 ? '' : 'overflow-x-auto'}>
+                <table className={`w-full text-left border-collapse ${getWalletTransactionsIsFetching || walletTransactionsNotFound || table.getRowModel().rows.length === 0 ? '' : 'min-w-[900px]'}`}>
                     <thead>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <tr

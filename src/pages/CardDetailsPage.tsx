@@ -6,6 +6,7 @@ import { useGetCardDetailSQuery, useGetCardsQuery } from '@/redux/features/card/
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import type { CardItemType, CardsListResponseDataType } from '@/types/cards/manageCardsTypes';
 import CardDetailsViewComponent from '@/components/cards/cardDetails/CardDetailsViewComponent';
+import CardTransactionsSectionComponent from '@/components/cards/cardholders/CardTransactionsSectionComponent';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import ShowInConsole from '@/utils/ShowInConsole';
 import type { CardDetailsResponseDataType, CardDetailsType } from '@/types/cards/cardDetailsTypes';
@@ -96,6 +97,13 @@ export default function CardDetailsPage() {
                             card={cardDetails!}
                             userEmail={userEmail || '--'}
                             cardholderId={userCardholderId || '--'}
+                        />
+
+                        {/* Card Transactions Section */}
+                        <CardTransactionsSectionComponent
+                            cardId={cardId!}
+                            cardholderId={userCardholderId || ''}
+                            userEmail={userEmail || ''}
                         />
                     </Activity>
 

@@ -89,3 +89,54 @@ export interface CardDetailsPayloadType {
         cardholderId: string;
     };
 }
+
+// =============================
+// CARD TRANSACTION ITEM TYPE
+// =============================
+
+export type CardTransactionType = 'PURCHASE' | 'REFUND' | 'HOLD' | 'RELEASE' | string;
+export type CardTransactionStatusType = 'SUCCESS' | 'FAILED' | 'REVERSED' | 'PENDING' | 'PROCESSING' | string;
+export type CardAuthorizationType = 'HOLD' | 'IMMEDIATE' | string;
+export type CardAuthorizationStatusType = 'AUTHORIZED' | 'EXPIRED' | 'REJECTED' | 'PENDING' | string;
+
+export interface CardTransactionItemType {
+    _id: string;
+    transaction_id: string;
+    transaction_type: CardTransactionType;
+    transaction_status: CardTransactionStatusType;
+    authorization_type: CardAuthorizationType;
+    authorization_status: CardAuthorizationStatusType;
+    currency: string;
+    amount: string | CardDecimalValueType;
+    fee: CardDecimalValueType | string;
+    card_type: 'VIRTUAL' | 'PHYSICAL' | string;
+    merchant_name: string;
+    merchant_category: string;
+    merchant_country: string;
+    reference_id: string;
+    createdAt: string;
+}
+
+// =============================
+// CARD TRANSACTIONS PAGINATION TYPE
+// =============================
+
+export interface CardTransactionsPaginationType {
+    current_page: number;
+    page_size: number;
+    total_records: number;
+    total_pages: number;
+    has_next_page: boolean;
+    has_previous_page: boolean;
+}
+
+// =============================
+// CARD TRANSACTIONS RESPONSE DATA TYPE
+// =============================
+
+export interface CardTransactionsListResponseDataType {
+    cardholder_id: string;
+    card_id: string;
+    pagination: CardTransactionsPaginationType;
+    transactions: CardTransactionItemType[];
+}
