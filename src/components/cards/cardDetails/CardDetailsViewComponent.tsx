@@ -294,8 +294,8 @@ export default function CardDetailsViewComponent({
                 Array.isArray(err?.data?.message)
                     ? err.data.message[0]
                     : err?.data?.message ||
-                      err?.message ||
-                      'Failed to dispatch card sensitive details. Please try again later.';
+                    err?.message ||
+                    'Failed to dispatch card sensitive details. Please try again later.';
             const normalizeMessage = errorMessage?.toLowerCase();
 
             if (normalizeMessage?.includes('card and card details not found')) {
@@ -306,9 +306,7 @@ export default function CardDetailsViewComponent({
         }
     };
 
-    const handleUpdateCardStatus = async (
-        targetStatus: 'ACTIVE' | 'INACTIVE' | 'FROZEN' | 'BLOCKED'
-    ) => {
+    const handleUpdateCardStatus = async (targetStatus: 'ACTIVE' | 'INACTIVE' | 'FROZEN' | 'BLOCKED') => {
         if (!userEmail || !cardholderId || !card._id) {
             toast.error('Missing user or cardholder information. Please re-login.');
             return;
@@ -340,16 +338,24 @@ export default function CardDetailsViewComponent({
             } else {
                 toast.error(response?.message || 'Failed to update card status.');
             }
-        } catch (err: any) {
+        }
+        catch (err: any) {
             ShowInConsole('Update card status error:', err);
             const errorMessage =
                 Array.isArray(err?.data?.message)
                     ? err.data.message[0]
                     : err?.data?.message ||
-                      err?.message ||
-                      `Failed to update card status. Please try again.`;
-            toast.error(errorMessage);
-        } finally {
+                    err?.message ||
+                    `Failed to update card status. Please try again.`;
+            const normalizeMessage = errorMessage?.toLowerCase()
+            if (normalizeMessage?.includes("card and card details not found")) {
+                toast.error("Unable to fetch card and card details")
+            }
+            else {
+                toast.error(`Failed to update card status. Please try again.`);
+            }
+        }
+        finally {
             setUpdatingTargetStatus(null);
         }
     };
@@ -391,9 +397,19 @@ export default function CardDetailsViewComponent({
                 Array.isArray(err?.data?.message)
                     ? err.data.message[0]
                     : err?.data?.message ||
-                      err?.message ||
-                      'Failed to update card limits. Please try again.';
-            toast.error(errorMessage);
+                    err?.message ||
+                    'Failed to update card limits. Please try again.';
+
+            const normalizeMessage = errorMessage?.toLowerCase()
+            if (normalizeMessage?.includes("card and card details not found")) {
+                toast.error("Unable to fetch card and card details")
+            }
+            else if (normalizeMessage?.includes("card limits can only be updated when the card is active state")) {
+                toast.error("Card and card details does not exist")
+            }
+            else {
+                toast.error('Failed to update card limits. Please try again.');
+            }
         }
     };
 
@@ -545,9 +561,8 @@ export default function CardDetailsViewComponent({
                             {rawStatus}
                         </span>
                         <div
-                            className={`p-1.5! rounded-lg bg-[var(--bg-subtle)] text-[var(--mute)] group-hover:text-[var(--ink)] transition-transform duration-200 ${
-                                isActionsOpen ? 'rotate-180' : 'rotate-0'
-                            }`}
+                            className={`p-1.5! rounded-lg bg-[var(--bg-subtle)] text-[var(--mute)] group-hover:text-[var(--ink)] transition-transform duration-200 ${isActionsOpen ? 'rotate-180' : 'rotate-0'
+                                }`}
                         >
                             <ChevronDown className="w-4 h-4" />
                         </div>
@@ -723,9 +738,8 @@ export default function CardDetailsViewComponent({
                             Daily: ${formatDecimal(card.card_limits?.daily_limit?.$numberDecimal)}
                         </span>
                         <div
-                            className={`p-1.5! rounded-lg bg-[var(--bg-subtle)] text-[var(--mute)] group-hover:text-[var(--ink)] transition-transform duration-200 ${
-                                isSpendingLimitsOpen ? 'rotate-180' : 'rotate-0'
-                            }`}
+                            className={`p-1.5! rounded-lg bg-[var(--bg-subtle)] text-[var(--mute)] group-hover:text-[var(--ink)] transition-transform duration-200 ${isSpendingLimitsOpen ? 'rotate-180' : 'rotate-0'
+                                }`}
                         >
                             <ChevronDown className="w-4 h-4" />
                         </div>
