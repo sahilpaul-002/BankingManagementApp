@@ -8,7 +8,7 @@ interface WalletTransactionDetailsSidebarComponentProps {
     transaction: WalletTransactionItemType | null;
 }
 
-export default function WalletTransactionDetailsSidebarComponent({isOpen, onClose, transaction}: WalletTransactionDetailsSidebarComponentProps) {
+export default function WalletTransactionDetailsSidebarComponent({ isOpen, onClose, transaction }: WalletTransactionDetailsSidebarComponentProps) {
     // Lock background scroll when drawer is open
     useEffect(() => {
         if (isOpen) {
@@ -193,6 +193,12 @@ export default function WalletTransactionDetailsSidebarComponent({isOpen, onClos
                             <span className="text-[var(--mute)] font-medium">Fee</span>
                             <span className="text-right font-semibold text-[var(--ink)]">
                                 {formatDecimal(transaction.fee)}{' '}
+                                {transaction.wallet_details.wallet_currency}
+                            </span>
+
+                            <span className="text-[var(--mute)] font-medium">Balance Before</span>
+                            <span className="text-right font-semibold text-[var(--ink)]">
+                                {formatDecimal(transaction.balance_before)}{' '}
                                 {transaction.wallet_details.wallet_currency}
                             </span>
 

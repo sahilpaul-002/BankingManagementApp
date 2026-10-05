@@ -40,6 +40,7 @@ export interface WalletTransactionItemType {
     amount: WalletTransactionDecimalType;
     fee: WalletTransactionDecimalType;
     balance_after: WalletTransactionDecimalType;
+    balance_before: WalletTransactionDecimalType;
     remarks: string;
     createdAt: string;
 }
