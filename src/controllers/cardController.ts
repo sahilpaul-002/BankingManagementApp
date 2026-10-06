@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { cardTransactionAuthorizationWebhookService, createCardService, createCardTransactionService, getCardDetailsService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, getTopSpendingCardsService, mailCardSensetiveDetailsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
+import { cardTransactionAuthorizationWebhookService, createCardService, createCardTransactionService, getCardDetailsService, getCardsExpenditureService, getCardsListService, getCardTransactionDetailsService, getCardTransactionsService, getTopSpendingCardsService, mailCardSensetiveDetailsService, updateCardLimitsService, updateCardStatusService } from "../services/cardService.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
 import generateEmailTemplate from "../utils/generateEmailTemplate.js";
 import dotenv from "dotenv"
@@ -596,3 +596,49 @@ export const cardTransactionSettlementWebhook = async (req: Request, res: Respon
     }
 }
 // ------------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXXX ------------------------------------- \\
+
+
+// ------------------------------------------ FUNCTION TO GET CARDs EXPENDITURES ------------------------------------------ \\
+export const getCardsExpenditure = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const getCardsExpenditureServiceResponse = await getCardsExpenditureService(requestSession, aesDecryptedQueryData, userConfigurations)
+        if (getCardsExpenditureServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to fetch user cards expenditures", 400);
+        }
+        return res.success("User cards expenditures fetched successfully", getCardsExpenditureServiceResponse?.data || {}, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "getCardsExpenditureController",
+            // url: req.path,
+            // method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError("getCardsExpenditureController is facing unknown issue.", sanitizedError)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

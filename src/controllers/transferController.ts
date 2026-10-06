@@ -3,7 +3,7 @@ import type { successResponseJson } from "../types/responseJson.js";
 import { getRequestSession } from "../utils/requestContext.js";
 import { AppErrorClass, ForbiddenError, InvalidSessionError, ServiceError, ServiceUnavailableError, UnauthenticatedError, UnauthorizedError } from "../utils/AppErrorClass.js";
 import logger from "../utils/logger.js";
-import { createPayoutQuoteService, cryptoBeneficiaryTransferService, executePayoutQuoteService, getPayoutQuoteTransactionDetailsService, getPayoutQuoteTransactionsService } from "../services/transferService.js";
+import { createPayoutQuoteService, cryptoBeneficiaryTransferService, executePayoutQuoteService, getPayoutQuoteTransactionDetailsService, getPayoutQuoteTransactionsService, getPayoutsExpenditureService } from "../services/transferService.js";
 import sanitizeApiError from "../utils/sanitizeApiError.js";
 
 // ------------------------------------------ FUNCTION TO CREATE PAYOUT QUOTE ------------------------------------------ \\
@@ -231,6 +231,52 @@ export const getPayoutQuoteTransactionDetails = async (req: Request<{ id?: strin
             throw error
         }
         throw new ServiceError("GetPayoutQuoteTransactionDetailsController is facing unknown issue.", sanitizedError)
+    }
+}
+// --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// -------------------------------- FUNCTION TO GET PAYOUTS EXPENDITURES -------------------------------- \\
+export const getPayoutsExpenditure = async (req: Request<{ id?: string }>, res: Response): Promise<Response<successResponseJson> | void> => {
+    try {
+        let aesDecryptedBodyData = req.body
+        const aesDecryptedQueryData = (req as any).reqDecryptedQuery ?? req.query;
+        const requestSession: Request["session"] | undefined = getRequestSession();
+        if (!requestSession) {
+            throw new UnauthenticatedError("Unauthenticated session");
+        }
+
+        // Get user configuration from headers
+        const userConfigurations = {
+            businessId: req.headers["business-id"] as string,
+            programId: req.headers["program-id"] as string,
+            agentCode: req.headers["agent-code"] as string,
+            subAgentCode: req.headers["subagent-code"] as string
+        }
+
+        const getPayoutsExpenditureServiceResponse = await getPayoutsExpenditureService(requestSession, aesDecryptedQueryData, userConfigurations)
+        if (getPayoutsExpenditureServiceResponse?.status !== "SUCCESS") {
+            return res.fail("SERVICE_ERROR", "Failed to fetch payouts expenditures", 400);
+        }
+        return res.success("Payouts expenditure fetched successfully", getPayoutsExpenditureServiceResponse?.data || {}, 200)
+    }
+    catch (err) {
+        const error = err as any;
+        const url = req?.path || "UNKNOWN_URL";
+        const errorStatus = error?.status || "UnknownErrorStatus";
+
+        logger.error(error, {
+            serviceName: "GetPayoutsExpenditureController",
+            // url: req.path,
+            // method: req.method
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error
+        }
+        throw new ServiceError("GetPayoutsExpenditureController is facing unknown issue.", sanitizedError)
     }
 }
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\

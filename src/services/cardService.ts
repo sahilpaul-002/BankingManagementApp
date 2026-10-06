@@ -1455,3 +1455,189 @@ export const cardTransactionAuthorizationWebhookService = async (aesDecryptedQue
     }
 };
 // --------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXX --------------------------------- \\
+
+
+// ----------------------------------- GET CARD EXPENDITURE ----------------------------------- \\
+export const getCardsExpenditureService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check required collections
+        const cardCollection = await checkMongoDbCollectionExist("user_card_details");
+        if (cardCollection.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection(card details) does not exist");
+        }
+        const transactionCollection = await checkMongoDbCollectionExist("user_card_transactions");
+        if (transactionCollection.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection(card transactions) does not exist");
+        }
+
+        // Validate email
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request query");
+        }
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided");
+        }
+
+        // Validate session configuration
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
+        const sessionProgramId = requestSession?.userConfiguration?.programId;
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
+        if (userConfiguration?.businessId !== sessionBusinessId ||
+            userConfiguration?.programId !== sessionProgramId ||
+            userConfiguration?.agentCode !== sessionAgentCode ||
+            userConfiguration?.subAgentCode !== sessionSubAgentCode
+        ) {
+            throw new ForbiddenError("User configuration is not valid to access card expenditure");
+        }
+
+        // Validate cardholder ID
+        const cardholderId = checkStringQueryParams(aesDecryptedQueryData, "cardholder_id");
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Valid cardholder-id not found in request query");
+        }
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
+
+        // Check authorization for cardholder
+        if (cardholderId.toString() !== requestSession?.cardholderId?.toString()) {
+            if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+                throw new ForbiddenError("Not authorized to get card expenditure");
+            }
+        }
+
+        // Verify cardholder exists
+        const cardHolderExist = await user_details.exists({
+            cardholder_id: cardholderObjectId,
+            business_id: sessionBusinessId,
+            program_id: sessionProgramId,
+            agent_code: sessionAgentCode,
+        });
+        if (!cardHolderExist) {
+            throw new ServiceError("Cardholder Id provided is invalid or does not exist");
+        }
+
+        // Validate dates
+        const fromDate = checkStringQueryParams(aesDecryptedQueryData, "from_date");
+        const toDate = checkStringQueryParams(aesDecryptedQueryData, "to_date");
+        if (!fromDate) {
+            throw new InvalidRequestQueryError("From date parameter is not present");
+        }
+        if (!toDate) {
+            throw new InvalidRequestQueryError("To date parameter is not present");
+        }
+        const startDate = new Date(fromDate);
+        const endDate = new Date(toDate);
+        if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+            throw new InvalidRequestQueryError("Invalid from date or to date");
+        }
+
+        // Normalize date range to full days
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+        if (startDate > endDate) {
+            throw new InvalidRequestQueryError("From date cannot be greater than to date");
+        }
+
+        // Get all cards for cardholder
+        const cards = await user_card_details.find({ cardholder_id: cardholderObjectId }).select("_id card_currency").lean();
+        if (!Array.isArray(cards) || cards.length === 0) {
+            throw new NotFoundError("No cards associated with this cardholder found");
+        }
+        const cardIds = cards.map((card) => card._id);
+
+        // Aggregate card transactions
+        // PURCHASE + SUCCESS = card expenditure
+        // REFUND / REVERSAL are intentionally excluded because
+        // they should not increase expenditure.
+        // WITHDRAWAL / FEE can be included later if your business
+        // definition considers them card expenditure.
+        const expenditureAggregation = await user_card_transactions.aggregate([
+            {
+                $match: {
+                    cardholder_id: cardholderObjectId,
+                    card_id: { $in: cardIds },
+                    transaction_type: "PURCHASE",
+                    transaction_status: "SUCCESS",
+                    createdAt: {
+                        $gte: startDate,
+                        $lte: endDate,
+                    },
+                    currency: "USD",
+                },
+            },
+            {
+                $group: {
+                    _id: {
+                        $dateToString: {
+                            format: "%Y-%m-%d",
+                            date: "$createdAt",
+                        },
+                    },
+                    amount: {
+                        $sum: "$amount",
+                    },
+                },
+            },
+            {
+                $sort: {
+                    _id: 1,
+                },
+            },
+        ]);
+
+        // Convert aggregation result into a lookup map
+        const expenditureByDate = new Map<string, Decimal>();
+        for (const item of expenditureAggregation) {
+            expenditureByDate.set(item._id, new Decimal(item.amount.toString()));
+        }
+
+        // Generate every date in requested range
+        const cardSpend: Array<{ date: string; amount: string; }> = [];
+        let totalCardSpend = new Decimal("0");
+        const currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+            const day = String(currentDate.getDate()).padStart(2, "0");
+            const dateKey = `${year}-${month}-${day}`;
+            const amount = expenditureByDate.get(dateKey) ?? new Decimal("0");
+            totalCardSpend = totalCardSpend.plus(amount);
+            cardSpend.push({
+                date: dateKey,
+                amount: amount.toDecimalPlaces(4).toFixed(2),
+            });
+            currentDate.setDate(
+                currentDate.getDate() + 1
+            );
+        }
+
+        // Return response
+        return {
+            status: "SUCCESS",
+            message: "Card expenditure data fetched successfully",
+            data: {
+                currency: "USD",
+                total_card_spend: totalCardSpend.toDecimalPlaces(4).toFixed(2),
+                card_spend: cardSpend,
+            },
+        };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, {serviceName: "GetCardsExpenditureService"});
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError("GetCardsExpenditureService facing issue", sanitizedError);
+    }
+};

@@ -383,7 +383,7 @@ export const cryptoBeneficiaryTransferService = async (requestSession: Request["
         // Calculate source amount
         const sourceAmount = new Decimal(aesDecryptedBodyData.amount?.toString() ?? "0");
         // Validate crypto beneficiary transfer details
-        const validationData = {...aesDecryptedBodyData, amount: sourceAmount};
+        const validationData = { ...aesDecryptedBodyData, amount: sourceAmount };
         const validationResult = cryptoBeneficiaryTransferValidationSchema.safeParse(validationData);
         if (!validationResult.success) {
             throw new ServiceError("Invalid request", z.flattenError(validationResult.error));
@@ -686,3 +686,332 @@ export const getPayoutQuoteTransactionDetailsService = async (requestSession: Re
     }
 };
 // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+
+// ----------------------------------- GET PAYOUT EXPENDITURE ----------------------------------- \\
+export const getPayoutsExpenditureService = async (
+    requestSession: Request["session"],
+    aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined,
+    userConfiguration: userConfigurationsType
+): Promise<successResponseJson | failedResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist(
+            "fiat_payout_transactions"
+        );
+
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection does not exist");
+        }
+
+        // ----------------------------------- VALIDATE EMAIL ----------------------------------- \\
+
+        const email = checkStringQueryParams(
+            aesDecryptedQueryData,
+            "email"
+        );
+
+        if (!email) {
+            throw new InvalidRequestBodyError(
+                "Email not found in request body"
+            );
+        }
+
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError(
+                "Unauthorized access detected - invalid email provided"
+            );
+        }
+
+        // ----------------------------------- VALIDATE SESSION CONFIGURATION ----------------------------------- \\
+
+        const sessionBusinessId =
+            requestSession?.userConfiguration?.businessId;
+
+        const sessionProgramId =
+            requestSession?.userConfiguration?.programId;
+
+        const sessionAgentCode =
+            requestSession?.userConfiguration?.agentCode;
+
+        const sessionSubAgentCode =
+            requestSession?.userConfiguration?.subAgentCode;
+
+        if (
+            userConfiguration?.businessId !== sessionBusinessId ||
+            userConfiguration?.programId !== sessionProgramId ||
+            userConfiguration?.agentCode !== sessionAgentCode ||
+            userConfiguration?.subAgentCode !== sessionSubAgentCode
+        ) {
+            throw new ForbiddenError(
+                "User configuration is not valid to access payout expenditure"
+            );
+        }
+
+        // ----------------------------------- VALIDATE USER ID ----------------------------------- \\
+
+        const userId = checkStringQueryParams(
+            aesDecryptedQueryData,
+            "user_id"
+        );
+
+        if (!userId || !Types.ObjectId.isValid(userId)) {
+            throw new InvalidRequestBodyError(
+                "User-id not found or invalid user-id in request body"
+            );
+        }
+
+        if (userId !== requestSession?.userId) {
+            throw new UnauthorizedError(
+                "Unauthorized access detected - invalid user id provided"
+            );
+        }
+
+        const userObjectId = new Types.ObjectId(userId);
+
+        // ----------------------------------- VALIDATE USER ----------------------------------- \\
+
+        const userDetails = await user_details
+            .findOne({
+                _id: userObjectId,
+                business_id: sessionBusinessId,
+                program_id: sessionProgramId,
+                agent_code: sessionAgentCode,
+            })
+            .select("email")
+            .lean();
+
+        if (!userDetails) {
+            throw new ServiceError(
+                "Invalid user-id provided in the request params"
+            );
+        }
+
+        if (email !== userDetails.email) {
+            throw new ServiceError(
+                "Invalid email provided in the request params"
+            );
+        }
+
+        // ----------------------------------- CHECK ADMIN ACCESS ----------------------------------- \\
+
+        if (
+            requestSession?.userType !== "ADMIN" &&
+            requestSession?.userType !== "MASTER_ADMIN"
+        ) {
+            throw new ForbiddenError(
+                "Not authorized to access payout expenditure"
+            );
+        }
+
+        // ----------------------------------- DATE RANGE ----------------------------------- \\
+
+        const dateFilter: {
+            $gte?: Date;
+            $lte?: Date;
+        } = {};
+
+        const fromDate = checkStringQueryParams(
+            aesDecryptedQueryData,
+            "from_date"
+        );
+
+        const toDate = checkStringQueryParams(
+            aesDecryptedQueryData,
+            "to_date"
+        );
+
+        if (fromDate) {
+            const startDate = new Date(fromDate);
+
+            if (Number.isNaN(startDate.getTime())) {
+                throw new InvalidRequestQueryError(
+                    "Invalid from date parameter"
+                );
+            }
+
+            dateFilter.$gte = startDate;
+        }
+
+        if (toDate) {
+            const endDate = new Date(toDate);
+
+            if (Number.isNaN(endDate.getTime())) {
+                throw new InvalidRequestQueryError(
+                    "Invalid to date parameter"
+                );
+            }
+
+            endDate.setHours(23, 59, 59, 999);
+
+            dateFilter.$lte = endDate;
+        }
+
+        // ----------------------------------- GET PAYOUT EXPENDITURE ----------------------------------- \\
+
+        const matchQuery: Record<string, any> = {
+            user_id: userObjectId,
+
+            // Only completed/successful payouts count as expenditure
+            status: "SUCCESS",
+        };
+
+        if (Object.keys(dateFilter).length > 0) {
+            matchQuery.createdAt = dateFilter;
+        }
+
+        const payoutExpenditure = await fiat_payout_transactions.aggregate([
+            {
+                $match: matchQuery,
+            },
+            {
+                $group: {
+                    _id: {
+                        date: {
+                            $dateToString: {
+                                format: "%Y-%m-%d",
+                                date: "$createdAt",
+                            },
+                        },
+                        currency: "$source_currency",
+                    },
+                    amount: {
+                        $sum: "$source_amount",
+                    },
+                },
+            },
+            {
+                $sort: {
+                    "_id.date": 1,
+                },
+            },
+        ]);
+
+        // ----------------------------------- DETERMINE CURRENCY ----------------------------------- \\
+
+        const currencies = [
+            ...new Set(
+                payoutExpenditure.map(
+                    (item) => item?._id?.currency
+                )
+            ),
+        ];
+
+        if (currencies.length > 1) {
+            throw new ServiceError(
+                "Multiple source currencies found in payout expenditure"
+            );
+        }
+
+        const currency = currencies[0] ?? "USD";
+
+        // ----------------------------------- BUILD DAILY DATA ----------------------------------- \\
+
+        const payoutSpendMap = new Map<string, Decimal>();
+
+        for (const item of payoutExpenditure) {
+            const date = item?._id?.date;
+            const amount = item?.amount;
+
+            if (!date) {
+                continue;
+            }
+
+            payoutSpendMap.set(
+                date,
+                new Decimal(
+                    amount?.toString?.() ?? "0"
+                )
+            );
+        }
+
+        // ----------------------------------- TOTAL SPEND ----------------------------------- \\
+
+        let totalPayoutSpend = new Decimal("0");
+
+        for (const amount of payoutSpendMap.values()) {
+            totalPayoutSpend = totalPayoutSpend.plus(amount);
+        }
+
+        // ----------------------------------- FILL MISSING DATES ----------------------------------- \\
+
+        const payoutSpend: Array<{
+            date: string;
+            amount: string;
+        }> = [];
+
+        if (fromDate && toDate) {
+            const startDate = new Date(fromDate);
+            const endDate = new Date(toDate);
+
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+
+            const currentDate = new Date(startDate);
+
+            while (currentDate <= endDate) {
+                const year = currentDate.getFullYear();
+                const month = String(
+                    currentDate.getMonth() + 1
+                ).padStart(2, "0");
+                const day = String(
+                    currentDate.getDate()
+                ).padStart(2, "0");
+
+                const dateString = `${year}-${month}-${day}`;
+
+                payoutSpend.push({
+                    date: dateString,
+                    amount: (
+                        payoutSpendMap.get(dateString) ??
+                        new Decimal("0")
+                    ).toFixed(2),
+                });
+
+                currentDate.setDate(
+                    currentDate.getDate() + 1
+                );
+            }
+        } else {
+            for (const [date, amount] of payoutSpendMap.entries()) {
+                payoutSpend.push({
+                    date,
+                    amount: amount.toFixed(2),
+                });
+            }
+        }
+
+        // ----------------------------------- RESPONSE ----------------------------------- \\
+
+        return {
+            status: "SUCCESS",
+            message: "Payout expenditure data fetched successfully",
+            data: {
+                currency,
+                total_payout_spend: totalPayoutSpend.toFixed(2),
+                payout_spend: payoutSpend,
+            },
+        };
+    } catch (err) {
+        const error = err as any;
+
+        logger.error(error, {
+            serviceName: "GetPayoutExpenditureService",
+        });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(
+            "GetPayoutExpenditureService facing issue",
+            sanitizedError
+        );
+    }
+};
