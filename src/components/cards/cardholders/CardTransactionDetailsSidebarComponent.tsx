@@ -294,7 +294,12 @@ export default function CardTransactionDetailsSidebarComponent({
                         <div className="grid grid-cols-2 gap-y-3 text-xs">
                             <span className="text-[var(--mute)] font-medium">Created At</span>
                             <span className="text-right font-semibold text-[var(--ink)]">
-                                {formatDate(transaction.createdAt)}
+                                {formatDate(transaction.createdAt ?? "--")}
+                            </span>
+
+                            <span className="text-[var(--mute)] font-medium">Updated At</span>
+                            <span className="text-right font-semibold text-[var(--ink)]">
+                                {formatDate(transaction.updatedAt ?? "--")}
                             </span>
                         </div>
                     </div>

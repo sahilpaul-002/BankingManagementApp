@@ -43,6 +43,7 @@ export interface WalletTransactionItemType {
     balance_before: WalletTransactionDecimalType;
     remarks: string;
     createdAt: string;
+    updatedAt: string;
 }
 
 export interface WalletTransactionsPaginationType {

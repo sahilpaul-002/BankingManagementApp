@@ -220,6 +220,11 @@ export default function WalletTransactionDetailsSidebarComponent({ isOpen, onClo
                             <span className="text-right font-semibold text-[var(--ink)]">
                                 {formatDate(transaction.createdAt)}
                             </span>
+
+                            <span className="text-[var(--mute)] font-medium">Updated At</span>
+                            <span className="text-right font-semibold text-[var(--ink)]">
+                                {formatDate(transaction.updatedAt)}
+                            </span>
                         </div>
                     </div>
 

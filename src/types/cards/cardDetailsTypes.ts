@@ -115,6 +115,7 @@ export interface CardTransactionItemType {
     merchant_country: string;
     reference_id: string;
     createdAt: string;
+    updatedAt: string;
 }
 
 // =============================
