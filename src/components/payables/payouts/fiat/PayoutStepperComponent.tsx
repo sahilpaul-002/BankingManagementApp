@@ -18,8 +18,8 @@ const STEPS: StepItem[] = [
 
 export default function PayoutStepperComponent({ currentStep }: PayoutStepperComponentProps) {
     return (
-        <div className="w-full py-4 flex items-center justify-between">
-            <div className="w-full flex items-center justify-between max-w-4xl mx-auto">
+        <div className="w-full py-4! flex items-center justify-between">
+            <div className="w-full flex items-center justify-between mx-auto">
                 {STEPS.map((step, index) => {
                     const isCompleted = currentStep > step.id;
                     const isActive = currentStep === step.id;
@@ -50,7 +50,7 @@ export default function PayoutStepperComponent({ currentStep }: PayoutStepperCom
 
                             {/* Line separator */}
                             {index < STEPS.length - 1 && (
-                                <div className="flex-1 mx-4 h-[2px] bg-[var(--line)] relative">
+                                <div className="flex-1 mx-4! h-[2px] bg-[var(--line)] relative">
                                     <div
                                         className="h-full bg-[var(--ok)] transition-all duration-300"
                                         style={{

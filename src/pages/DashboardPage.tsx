@@ -156,8 +156,8 @@ export default function DashboardPage() {
 
     const shouldFetchTopSpendingCardsList = shouldFetchDependentApis && getAllWalletsBalancesIsSuccess && !!userCardholderId;
     // Cards List
-    const { data: getTopSPendingCardsData, isLoading: getTopSpendingCardsIsLoading, isFetching: getTopSpendingCardsIsFetching, isError: getTopSpendingCardsIsError, error: getTopSpendingCardsError } = useGetTopSpendingCardsQuery({ email: userEmail!, cardholderId: userCardholderId! }, { skip: !userEmail || !userCardholderId || !shouldFetchTopSpendingCardsList, refetchOnMountOrArgChange: true, });
-    const topSpendingCardsResponseData = (getTopSPendingCardsData?.data as TopSpendingCardsResponseDataType) ?? {};
+    const { data: getTopSpendingCardsData, isLoading: getTopSpendingCardsIsLoading, isFetching: getTopSpendingCardsIsFetching, isError: getTopSpendingCardsIsError, error: getTopSpendingCardsError } = useGetTopSpendingCardsQuery({ email: userEmail!, cardholderId: userCardholderId! }, { skip: !userEmail || !userCardholderId || !shouldFetchTopSpendingCardsList, refetchOnMountOrArgChange: true, });
+    const topSpendingCardsResponseData = (getTopSpendingCardsData?.data as TopSpendingCardsResponseDataType) ?? {};
     const topSpendingCardsList = (topSpendingCardsResponseData?.cards as TopSpendingCardItemType[]) ?? [];
     const isTopSpendingCardsCardsNotFound =
         getTopSpendingCardsIsError &&

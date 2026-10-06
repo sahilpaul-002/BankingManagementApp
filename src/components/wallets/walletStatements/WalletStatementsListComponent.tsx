@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
-import { ChevronRight, ReceiptText } from 'lucide-react';
+import { ChevronRight, ReceiptText, Triangle } from 'lucide-react';
 import {
     useTable,
     tableFeatures,
     rowPaginationFeature,
     columnVisibilityFeature,
+    rowSortingFeature,
+    createSortedRowModel,
     type ColumnDef,
     type PaginationState,
 } from '@tanstack/react-table';
@@ -14,6 +16,8 @@ import RingSpinnerLoaderComponent from '@/components/common/loaders/RingSpinnerL
 const walletTableFeatures = tableFeatures({
     rowPaginationFeature,
     columnVisibilityFeature,
+    rowSortingFeature,
+    sortedRowModel: createSortedRowModel(),
 });
 
 interface WalletStatementsListComponentPropsType {
@@ -238,7 +242,27 @@ export default function WalletStatementsListComponent({
             },
             {
                 id: 'createdAt',
-                header: 'Date',
+                header: ({ column }) => (
+                    <button
+                        type="button"
+                        onClick={column.getToggleSortingHandler()}
+                        className="inline-flex items-center gap-1.5 cursor-pointer hover:text-[var(--ink)] transition-colors"
+                    >
+                        <span>Date</span>
+
+                        {column.getIsSorted() === 'desc' && (
+                            <Triangle
+                                className="h-2.5 w-2.5 fill-[var(--mute)] text-[var(--mute)]"
+                            />
+                        )}
+
+                        {column.getIsSorted() === 'asc' && (
+                            <Triangle
+                                className="h-2.5 w-2.5 rotate-180 fill-[var(--mute)] text-[var(--mute)]"
+                            />
+                        )}
+                    </button>
+                ),
                 accessorKey: 'createdAt',
                 cell: ({ row }) => (
                     <span className="whitespace-nowrap text-[var(--mute)]">
@@ -267,6 +291,15 @@ export default function WalletStatementsListComponent({
         features: walletTableFeatures,
         data: transactions,
         columns,
+        enableSortingRemoval: false,
+        initialState: {
+            sorting: [
+                {
+                    id: 'createdAt',
+                    desc: true,
+                },
+            ],
+        },
     });
 
     return (

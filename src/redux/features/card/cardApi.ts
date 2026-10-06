@@ -108,7 +108,7 @@ export const cardApis = createApi({
         // =======================================================
         // GET TOP SPENDING CARDS LIST
         // =======================================================
-        getTopSpendingCards: build.query<apiResponseType<apiResponseDataType>, { email: string, cardholderId: string}>({
+        getTopSpendingCards: build.query<apiResponseType<apiResponseDataType>, { email: string, cardholderId: string }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -477,7 +477,60 @@ export const cardApis = createApi({
             },
             providesTags: [{ type: 'Card', id: 'TRANSACTION-LIST' }],
         }),
+
+
+        // =======================================================
+        // GET ALL CARDS EXPENDITURES LIST
+        // =======================================================
+        getAllCardsExpenditures: build.query<apiResponseType<apiResponseDataType>, { email: string, cardholderId: string, fromDate: string, toDate: string }>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = cardsApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('GET-ALL-CARDS-EXPENDITURES - Failed to fetch application headers');
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = cardsApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${CARD_URL}/allExpenditures`,
+                        method: 'GET',
+                        headers,
+                        params: {
+                            email: payload?.email,
+                            cardholder_id: payload?.cardholderId,
+                            from_date: payload.fromDate,
+                            to_date: payload.toDate,
+                        },
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, 'GET-ALL-CARDS-EXPENDITURES faced application error');
+                    return rtkError;
+                }
+            },
+            providesTags: [{ type: 'Card', id: 'ALL-CARDS-EXPENDITURES' }],
+        }),
     }),
 });
 
-export const { useGetCardsQuery, useLazyGetCardsQuery, useGetTopSpendingCardsQuery, useLazyGetTopSpendingCardsQuery, useGetCardDetailSQuery, useLazyGetCardDetailSQuery, useCreateCardMutation, useCardSensitiveDetailsMutation, useUpdateCardStatusMutation, useUpdateCardLimitsMutation, useGetCardTransactionListQuery, useLazyGetCardTransactionListQuery } = cardApis;
+export const { useGetCardsQuery, useLazyGetCardsQuery, useGetTopSpendingCardsQuery, useLazyGetTopSpendingCardsQuery, useGetCardDetailSQuery, useLazyGetCardDetailSQuery, useCreateCardMutation, useCardSensitiveDetailsMutation, useUpdateCardStatusMutation, useUpdateCardLimitsMutation, useGetCardTransactionListQuery, useLazyGetCardTransactionListQuery, useGetAllCardsExpendituresQuery, useLazyGetAllCardsExpendituresQuery } = cardApis;

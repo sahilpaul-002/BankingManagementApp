@@ -1,10 +1,12 @@
 import React, { useMemo } from 'react';
-import { ChevronRight, ArrowRight, ReceiptText } from 'lucide-react';
+import { ChevronRight, ArrowRight, ReceiptText, ArrowUp, ArrowDown, Triangle } from 'lucide-react';
 import {
     useTable,
     tableFeatures,
     rowPaginationFeature,
     columnVisibilityFeature,
+    rowSortingFeature,
+    createSortedRowModel,
     type ColumnDef,
     type PaginationState,
 } from '@tanstack/react-table';
@@ -15,6 +17,8 @@ import CustomTooltipComponent from '@/components/common/CustomToolTipComponent';
 const payoutTableFeatures = tableFeatures({
     rowPaginationFeature,
     columnVisibilityFeature,
+    rowSortingFeature,
+    sortedRowModel: createSortedRowModel(),
 });
 
 interface PayoutTransactionsListComponentPropsType {
@@ -216,7 +220,27 @@ export default function PayoutTransactionsListComponent({
             },
             {
                 id: 'completed_at',
-                header: 'Completed At',
+                header: ({ column }) => (
+                    <button
+                        type="button"
+                        onClick={column.getToggleSortingHandler()}
+                        className="inline-flex items-center gap-1.5 cursor-pointer hover:text-[var(--ink)] transition-colors"
+                    >
+                        <span>Completed At</span>
+
+                        {column.getIsSorted() === 'desc' && (
+                            <Triangle
+                                className="h-2.5 w-2.5 fill-[var(--mute)] text-[var(--mute)]"
+                            />
+                        )}
+
+                        {column.getIsSorted() === 'asc' && (
+                            <Triangle
+                                className="h-2.5 w-2.5 rotate-180 fill-[var(--mute)] text-[var(--mute)]"
+                            />
+                        )}
+                    </button>
+                ),
                 accessorKey: 'completed_at',
                 cell: ({ row }) => (
                     <span className="whitespace-nowrap text-[var(--mute)]">
@@ -245,6 +269,15 @@ export default function PayoutTransactionsListComponent({
         features: payoutTableFeatures,
         data: transactions,
         columns,
+        enableSortingRemoval: false,
+        initialState: {
+            sorting: [
+                {
+                    id: 'completed_at',
+                    desc: true,
+                },
+            ],
+        },
     });
 
     return (
