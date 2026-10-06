@@ -881,6 +881,7 @@ export const getCardTransactionsService = async (requestSession: Request["sessio
             authorization_status: 1,
             reference_id: 1,
             createdAt: 1,
+            updatedAt: 1,
         };
 
         // Fetch transactions

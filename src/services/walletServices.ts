@@ -873,6 +873,7 @@ export const getWalletTransactionsService = async (requestSession: Request["sess
             balance_after: 1,
             remarks: 1,
             createdAt: 1,
+            updatedAt: 1,
             ...(
                 !aesDecryptedQueryData.wallet_type &&
                 !aesDecryptedQueryData.wallet_currency && {
