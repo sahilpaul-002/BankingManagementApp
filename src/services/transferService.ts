@@ -689,11 +689,7 @@ export const getPayoutQuoteTransactionDetailsService = async (requestSession: Re
 
 
 // ----------------------------------- GET PAYOUT EXPENDITURE ----------------------------------- \\
-export const getPayoutsExpenditureService = async (
-    requestSession: Request["session"],
-    aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined,
-    userConfiguration: userConfigurationsType
-): Promise<successResponseJson | failedResponseJson> => {
+export const getPayoutsExpenditureService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson | failedResponseJson> => {
     try {
         if (!aesDecryptedQueryData) {
             throw new BadRequestError("Invalid query data");
@@ -708,158 +704,83 @@ export const getPayoutsExpenditureService = async (
             throw new NotFoundError("Required collection does not exist");
         }
 
-        // ----------------------------------- VALIDATE EMAIL ----------------------------------- \\
-
-        const email = checkStringQueryParams(
-            aesDecryptedQueryData,
-            "email"
-        );
-
+        //Validate Email
+        const email = checkStringQueryParams(aesDecryptedQueryData, "email");
         if (!email) {
-            throw new InvalidRequestBodyError(
-                "Email not found in request body"
-            );
+            throw new InvalidRequestBodyError("Email not found in request body");
         }
-
         if (email !== requestSession?.userEmail) {
-            throw new UnauthorizedError(
-                "Unauthorized access detected - invalid email provided"
-            );
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided");
         }
 
-        // ----------------------------------- VALIDATE SESSION CONFIGURATION ----------------------------------- \\
-
-        const sessionBusinessId =
-            requestSession?.userConfiguration?.businessId;
-
-        const sessionProgramId =
-            requestSession?.userConfiguration?.programId;
-
-        const sessionAgentCode =
-            requestSession?.userConfiguration?.agentCode;
-
-        const sessionSubAgentCode =
-            requestSession?.userConfiguration?.subAgentCode;
-
-        if (
-            userConfiguration?.businessId !== sessionBusinessId ||
+        // Validate Business Configuration
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId;
+        const sessionProgramId = requestSession?.userConfiguration?.programId;
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode;
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode;
+        if (userConfiguration?.businessId !== sessionBusinessId ||
             userConfiguration?.programId !== sessionProgramId ||
             userConfiguration?.agentCode !== sessionAgentCode ||
             userConfiguration?.subAgentCode !== sessionSubAgentCode
         ) {
-            throw new ForbiddenError(
-                "User configuration is not valid to access payout expenditure"
-            );
+            throw new ForbiddenError("User configuration is not valid to access payout expenditure");
         }
 
-        // ----------------------------------- VALIDATE USER ID ----------------------------------- \\
-
-        const userId = checkStringQueryParams(
-            aesDecryptedQueryData,
-            "user_id"
-        );
-
+        // Validate User Id
+        const userId = checkStringQueryParams(aesDecryptedQueryData, "user_id");
         if (!userId || !Types.ObjectId.isValid(userId)) {
-            throw new InvalidRequestBodyError(
-                "User-id not found or invalid user-id in request body"
-            );
+            throw new InvalidRequestBodyError("User-id not found or invalid user-id in request body");
         }
-
         if (userId !== requestSession?.userId) {
-            throw new UnauthorizedError(
-                "Unauthorized access detected - invalid user id provided"
-            );
+            throw new UnauthorizedError("Unauthorized access detected - invalid user id provided");
         }
-
         const userObjectId = new Types.ObjectId(userId);
 
-        // ----------------------------------- VALIDATE USER ----------------------------------- \\
-
-        const userDetails = await user_details
-            .findOne({
-                _id: userObjectId,
-                business_id: sessionBusinessId,
-                program_id: sessionProgramId,
-                agent_code: sessionAgentCode,
-            })
-            .select("email")
-            .lean();
-
+        // Fetch User Details
+        const userDetails = await user_details.findOne({
+            _id: userObjectId,
+            business_id: sessionBusinessId,
+            program_id: sessionProgramId,
+            agent_code: sessionAgentCode,
+        }).select("email").lean();
         if (!userDetails) {
-            throw new ServiceError(
-                "Invalid user-id provided in the request params"
-            );
+            throw new ServiceError("Invalid user-id provided in the request params");
         }
-
         if (email !== userDetails.email) {
-            throw new ServiceError(
-                "Invalid email provided in the request params"
-            );
+            throw new ServiceError("Invalid email provided in the request params");
         }
 
-        // ----------------------------------- CHECK ADMIN ACCESS ----------------------------------- \\
-
-        if (
-            requestSession?.userType !== "ADMIN" &&
-            requestSession?.userType !== "MASTER_ADMIN"
-        ) {
-            throw new ForbiddenError(
-                "Not authorized to access payout expenditure"
-            );
+        // Check Admin Access
+        if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+            throw new ForbiddenError("Not authorized to access payout expenditure");
         }
 
-        // ----------------------------------- DATE RANGE ----------------------------------- \\
-
-        const dateFilter: {
-            $gte?: Date;
-            $lte?: Date;
-        } = {};
-
-        const fromDate = checkStringQueryParams(
-            aesDecryptedQueryData,
-            "from_date"
-        );
-
-        const toDate = checkStringQueryParams(
-            aesDecryptedQueryData,
-            "to_date"
-        );
-
+        // Date Range
+        const dateFilter: { $gte?: Date; $lte?: Date; } = {};
+        const fromDate = checkStringQueryParams(aesDecryptedQueryData, "from_date");
+        const toDate = checkStringQueryParams(aesDecryptedQueryData, "to_date");
         if (fromDate) {
             const startDate = new Date(fromDate);
-
             if (Number.isNaN(startDate.getTime())) {
-                throw new InvalidRequestQueryError(
-                    "Invalid from date parameter"
-                );
+                throw new InvalidRequestQueryError("Invalid from date parameter");
             }
-
             dateFilter.$gte = startDate;
         }
-
         if (toDate) {
             const endDate = new Date(toDate);
-
             if (Number.isNaN(endDate.getTime())) {
-                throw new InvalidRequestQueryError(
-                    "Invalid to date parameter"
-                );
+                throw new InvalidRequestQueryError("Invalid to date parameter");
             }
-
             endDate.setHours(23, 59, 59, 999);
-
             dateFilter.$lte = endDate;
         }
 
-        // ----------------------------------- GET PAYOUT EXPENDITURE ----------------------------------- \\
-
+        // Get Payout Expenditure
         const matchQuery: Record<string, any> = {
             user_id: userObjectId,
-
-            // Only completed/successful payouts count as expenditure
             status: "SUCCESS",
+            source_currency: "USD",
         };
-
         if (Object.keys(dateFilter).length > 0) {
             matchQuery.createdAt = dateFilter;
         }
@@ -877,7 +798,6 @@ export const getPayoutsExpenditureService = async (
                                 date: "$createdAt",
                             },
                         },
-                        currency: "$source_currency",
                     },
                     amount: {
                         $sum: "$source_amount",
@@ -891,28 +811,8 @@ export const getPayoutsExpenditureService = async (
             },
         ]);
 
-        // ----------------------------------- DETERMINE CURRENCY ----------------------------------- \\
-
-        const currencies = [
-            ...new Set(
-                payoutExpenditure.map(
-                    (item) => item?._id?.currency
-                )
-            ),
-        ];
-
-        if (currencies.length > 1) {
-            throw new ServiceError(
-                "Multiple source currencies found in payout expenditure"
-            );
-        }
-
-        const currency = currencies[0] ?? "USD";
-
-        // ----------------------------------- BUILD DAILY DATA ----------------------------------- \\
-
+        // Build Daily Data
         const payoutSpendMap = new Map<string, Decimal>();
-
         for (const item of payoutExpenditure) {
             const date = item?._id?.date;
             const amount = item?.amount;
@@ -929,21 +829,17 @@ export const getPayoutsExpenditureService = async (
             );
         }
 
-        // ----------------------------------- TOTAL SPEND ----------------------------------- \\
-
+        // Total Spend
         let totalPayoutSpend = new Decimal("0");
-
         for (const amount of payoutSpendMap.values()) {
             totalPayoutSpend = totalPayoutSpend.plus(amount);
         }
 
-        // ----------------------------------- FILL MISSING DATES ----------------------------------- \\
-
+        // Fill Missing Dates
         const payoutSpend: Array<{
             date: string;
             amount: string;
         }> = [];
-
         if (fromDate && toDate) {
             const startDate = new Date(fromDate);
             const endDate = new Date(toDate);
@@ -955,28 +851,19 @@ export const getPayoutsExpenditureService = async (
 
             while (currentDate <= endDate) {
                 const year = currentDate.getFullYear();
-                const month = String(
-                    currentDate.getMonth() + 1
-                ).padStart(2, "0");
-                const day = String(
-                    currentDate.getDate()
-                ).padStart(2, "0");
-
+                const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+                const day = String(currentDate.getDate()).padStart(2, "0");
                 const dateString = `${year}-${month}-${day}`;
-
                 payoutSpend.push({
                     date: dateString,
-                    amount: (
-                        payoutSpendMap.get(dateString) ??
-                        new Decimal("0")
-                    ).toFixed(2),
+                    amount: (payoutSpendMap.get(dateString) ?? new Decimal("0")).toFixed(2),
                 });
-
                 currentDate.setDate(
                     currentDate.getDate() + 1
                 );
             }
-        } else {
+        }
+        else {
             for (const [date, amount] of payoutSpendMap.entries()) {
                 payoutSpend.push({
                     date,
@@ -985,18 +872,18 @@ export const getPayoutsExpenditureService = async (
             }
         }
 
-        // ----------------------------------- RESPONSE ----------------------------------- \\
-
+        // Response
         return {
             status: "SUCCESS",
             message: "Payout expenditure data fetched successfully",
             data: {
-                currency,
+                currency: "USD",
                 total_payout_spend: totalPayoutSpend.toFixed(2),
                 payout_spend: payoutSpend,
             },
         };
-    } catch (err) {
+    }
+    catch (err) {
         const error = err as any;
 
         logger.error(error, {
@@ -1015,3 +902,4 @@ export const getPayoutsExpenditureService = async (
         );
     }
 };
+// ----------------------------- XXXXXXXXXXXXXXXXXXXXXXX ----------------------------- \\
