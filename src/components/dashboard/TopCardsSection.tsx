@@ -1,76 +1,111 @@
+import { useState, Activity } from 'react';
 import { ChevronRight, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CustomButtonComponent from '../common/CustomButtonComponent';
 import type { TopSpendingCardItemType } from '@/types/dashboard/topSpendingCardsTypes';
+import TopSpendingCardsListComponent from './topSpendingCards/TopSpendingCardsListComponent';
+import TopSpendingCardLimitToggleComponent, {
+  type SpendingLimitPeriodType,
+} from './topSpendingCards/TopSpendingCardLimitToggleComponent';
 
-interface Card {
-  id: string;
-  last4: string;
-  holder: string;
-  company: string;
-  currency: string;
-  limit: number;
-  used: number;
+interface TopCardsSectionPropsType {
+  cardsList: TopSpendingCardItemType[] | [];
+  cardsListNotFound?: boolean | undefined;
 }
 
-interface TopCardsSectionProps {
-  cardsList: TopSpendingCardItemType[];
-  cardsListNotFound: boolean | undefined 
-}
-
-export default function TopCardsSection({ cardsList, cardsListNotFound }: TopCardsSectionProps) {
+export default function TopCardsSection({
+  cardsList,
+  cardsListNotFound = false,
+}: TopCardsSectionPropsType) {
   const navigate = useNavigate();
 
-  return (
-    <div className="cardsSection-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)]">
-      <div className="flex items-center justify-between mb-2!">
-        <h3
-          className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold tracking-widest uppercase flex items-center gap-2.5">
-          <span className='text-[var(--gold)]'>—</span>
-          Top Cards · This Month
-        </h3>
-        <div className="cardsSection-allCards-button-container">
-          <CustomButtonComponent id={"cardsSection-allCards-button"} label={<>All cards<ChevronRight className="w-4 h-4" /></>} type="button" variant={"link"} onClick={() => navigate('/manage-cards')} />
-        </div>
-      </div>
+  // Limit period toggle state: default to 'yearly'
+  const [period, setPeriod] = useState<SpendingLimitPeriodType>('yearly');
 
-      <div className="cardsListSection-container space-y-2!">
-        {cards.slice(0, 3).map((card) => {
-          const usagePercent = (card.used / card.limit) * 100;
-          return (
-            <div
-              key={card.id}
-              className="bg-[var(--bg-subtle)] flex items-center gap-4 px-2! rounded-lg hover:bg-opacity-50 cursor-pointer transition-colors">
-              <div
-                className="w-12 h-8 bg-[var(--nav-bg)] rounded flex items-center justify-center flex-shrink-0">
-                <CreditCard className="w-5 h-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-2 mb-1">
-                  <span className="text-[var(--ink)] font-mono text-xs sm:text-sm font-semibold">
-                    •••• {card.last4}
-                  </span>
-                  <span className="text-xs sm:text-xs text-[var(--mute)] truncate">
-                    {card.holder}
-                  </span>
-                </div>
-                <div className="text-xs sm:text-xs text-[var(--mute)] mb-2">
-                  {card.company}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 h-1.5 bg-[var(--line)] rounded-full overflow-hidden">
-                    <div className={`h-full bg-[var(--gold)] rounded-full transition-all`}
-                      style={{ width: `${usagePercent}%` }} />
-                  </div>
-                    <span className="text-xs text-[var(--ink)] font-medium">
-                    {card.currency} {card.used.toLocaleString()}
-                  </span>
-                </div>
-              </div>
+  // Data availability check
+  const hasCards =
+    !cardsListNotFound &&
+    Array.isArray(cardsList) &&
+    cardsList.length > 0;
+
+  const handleSelectCard = (cardId: string) => {
+    navigate(`/cards/manageCards/${cardId}`);
+  };
+
+  return (
+    <>
+      {/* Top Cards Not Found / Empty State */}
+      <Activity mode={!hasCards ? 'visible' : 'hidden'}>
+        <div className="cardsSection-container w-full h-full px-4! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)] flex flex-col justify-between">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-4!">
+            <h3 className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold tracking-widest uppercase flex items-center gap-2.5">
+              <span className="text-[var(--gold)]">—</span>
+              Top Spending Cards
+            </h3>
+            <div className="cardsSection-allCards-button-container">
+              <CustomButtonComponent
+                id="cardsSection-allCards-button-empty"
+                label={
+                  <>
+                    All cards
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                }
+                type="button"
+                variant="link"
+                onClick={() => navigate('/cards/manageCards')}
+              />
             </div>
-          );
-        })}
-      </div>
-    </div>
+          </div>
+
+          {/* Empty State */}
+          <div className="flex flex-col items-center justify-center gap-3 flex-1 py-8!">
+            <CreditCard
+              className="w-7 h-7 text-[var(--ink-soft)]"
+              strokeWidth={1.5}
+            />
+            <div className="flex flex-col items-center text-center gap-1">
+              <p className="text-sm font-semibold text-[var(--ink)]">
+                No top spending cards found
+              </p>
+              <p className="text-xs text-[var(--ink-soft)] max-w-[220px] leading-relaxed">
+                Your top spending cards will appear here once cards are active.
+              </p>
+            </div>
+          </div>
+        </div>
+      </Activity>
+
+      {/* Top Cards Found State */}
+      <Activity mode={hasCards ? 'visible' : 'hidden'}>
+        <div className="cardsSection-container w-full h-full px-2! py-4! bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-[var(--shadow-sm)] flex flex-col">
+          {/* Header with Title, Period Toggle, and All Cards Button */}
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4!">
+            <h3 className="text-xs sm:text-sm text-[var(--ink-soft)] font-semibold tracking-widest uppercase flex items-center gap-2.5">
+              <span className="text-[var(--gold)]">—</span>
+              Top Spending Cards
+            </h3>
+
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+              {/* Toggle Button for Daily, Monthly, Yearly */}
+              <TopSpendingCardLimitToggleComponent
+                period={period}
+                onChange={setPeriod}
+              />
+            </div>
+          </div>
+
+          {/* Cards List */}
+          <div className="cardsListSection-container flex-1">
+            <TopSpendingCardsListComponent
+              cards={cardsList}
+              period={period}
+              onSelectCard={handleSelectCard}
+            />
+          </div>
+        </div>
+      </Activity>
+    </>
   );
 }
