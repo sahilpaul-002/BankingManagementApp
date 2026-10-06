@@ -1,11 +1,12 @@
 import express from "express"
 import type { Router } from "express";
-import { createCard, getCardDetails, getCardsList, getCardTransactionDetails, getCardTransactions, mailCardSensetiveDetails, updateCardLimits, updateCardStatus } from "../controllers/cardController.js";
+import { createCard, getCardDetails, getCardsList, getCardTransactionDetails, getCardTransactions, getTopSpendingCards, mailCardSensetiveDetails, updateCardLimits, updateCardStatus } from "../controllers/cardController.js";
 
 const router: Router = express.Router()
 
 router.post("/create", createCard)
 router.get("/", getCardsList)
+router.get("/topSpendingCards", getTopSpendingCards)
 router.patch("/updateStatus/:id", updateCardStatus)
 router.patch("/updateLimits/:id", updateCardLimits)
 router.get("/transactions", getCardTransactions);

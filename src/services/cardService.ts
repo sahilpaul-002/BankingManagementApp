@@ -261,6 +261,93 @@ export const getCardsListService = async (requestSession: Request["session"], ae
 // ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
 
 
+// ----------------------------------- GET TOP THREE CARDS SERVICE ----------------------------------- \\
+export const getTopSpendingCardsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType): Promise<successResponseJson> => {
+    try {
+        if (!aesDecryptedQueryData) {
+            throw new BadRequestError("Invalid query data");
+        }
+
+        // Check collection
+        const isCollectionPresent = await checkMongoDbCollectionExist("user_card_details");
+        if (isCollectionPresent.status !== "SUCCESS") {
+            throw new NotFoundError("Required collection(card details) does not exist");
+        }
+
+        // Validate Email & User Id & Cardholder Id
+        const email = checkStringBody(aesDecryptedQueryData, "email");
+        if (!email) {
+            throw new InvalidRequestBodyError("Email not found in request request body")
+        }
+        if (email !== requestSession?.userEmail) {
+            throw new UnauthorizedError("Unauthorized access detected - invalid email provided")
+        }
+        const sessionBusinessId = requestSession?.userConfiguration?.businessId
+        const sessionProgramId = requestSession?.userConfiguration?.programId
+        const sessionAgentCode = requestSession?.userConfiguration?.agentCode
+        const sessionSubAgentCode = requestSession?.userConfiguration?.subAgentCode
+        if (userConfiguration?.businessId !== sessionBusinessId || userConfiguration?.programId !== sessionProgramId || userConfiguration?.agentCode !== sessionAgentCode || userConfiguration?.subAgentCode !== sessionSubAgentCode) {
+            throw new ForbiddenError("User configuration is not valid to access card list")
+        }
+        const cardholderId = checkStringBody(aesDecryptedQueryData, "cardholder_id");
+        if (!cardholderId || !Types.ObjectId.isValid(cardholderId)) {
+            throw new InvalidRequestBodyError("Valid cardholder-id not found in request body")
+        }
+
+        const cardholderObjectId = new Types.ObjectId(cardholderId);
+        // Check user type for non-user's cardholder id
+        if (cardholderId !== requestSession?.cardholderId) {
+            if (requestSession?.userType !== "ADMIN" && requestSession?.userType !== "MASTER_ADMIN") {
+                throw new ForbiddenError("Not authorized to get card list")
+            }
+        }
+        const cardHolderExist = await user_details.exists({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode });
+        if (!cardHolderExist) {
+            throw new ServiceError("Cardholder Id provided is invalid or does not exist")
+        }
+
+        const cardsList = await user_card_details
+            .find({
+                cardholder_id: cardholderObjectId,
+            })
+            .select(
+                "-cardholder_id -cvv -valid_date -valid_merchant_categories -createdAt -updatedAt -__v"
+            )
+            .sort({
+                "yearly_transaction.debit": -1,
+            }).limit(3).lean();
+
+        if (!Array.isArray(cardsList) || cardsList.length === 0) {
+            throw new NotFoundError("No cards associated with this cardholder found");
+        }
+
+        return {
+            status: "SUCCESS",
+            message: "Top three spending cards fetched successfully",
+            data: {
+                cardholderId,
+                cards: cardsList,
+            },
+        };
+    }
+    catch (err) {
+        const error = err as any;
+
+        logger.error(error, { serviceName: "GetTopSpendingCardsService" });
+
+        const sanitizedError = sanitizeApiError(error);
+
+        if (error instanceof AppErrorClass) {
+            throw error;
+        }
+
+        throw new ServiceError(`GetTopSpendingCardsService facing issue`, sanitizedError);
+
+    }
+};
+// ---------------------------------- XXXXXXXXXXXXXXXXXXXXXXXXXXXX ---------------------------------- \\
+
+
 // ----------------------------------- GET CARDS DETAILS SERVICE ----------------------------------- \\
 export const getCardDetailsService = async (requestSession: Request["session"], aesDecryptedQueryData: Record<string, string> | ParsedQs | undefined, userConfiguration: userConfigurationsType, cardId?: string): Promise<successResponseJson> => {
     try {
@@ -402,7 +489,7 @@ export const mailCardSensetiveDetailsService = async (requestSession: Request["s
                 throw new ForbiddenError("Not authorized to get card details")
             }
         }
-        const cardholderUserDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }, {full_name: 1, email: 1}).lean();
+        const cardholderUserDetails = await user_details.findOne({ cardholder_id: cardholderObjectId, business_id: sessionBusinessId, program_id: sessionProgramId, agent_code: sessionAgentCode }, { full_name: 1, email: 1 }).lean();
         if (!cardholderUserDetails) {
             throw new ServiceError("Cardholder Id provided is invalid or does not exist")
         }
@@ -423,7 +510,7 @@ export const mailCardSensetiveDetailsService = async (requestSession: Request["s
             throw new NotFoundError("Card and card details not found")
         }
 
-        return { status: "SUCCESS", message: "Card details fetched successfully", data: { cardholderId, email: cardholderUserDetails?.email, fullName: cardholderUserDetails?.full_name,  cardDetails } };
+        return { status: "SUCCESS", message: "Card details fetched successfully", data: { cardholderId, email: cardholderUserDetails?.email, fullName: cardholderUserDetails?.full_name, cardDetails } };
     }
     catch (err) {
         const error = err as any;
