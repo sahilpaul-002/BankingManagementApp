@@ -1,6 +1,7 @@
 import { ChevronRight, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CustomButtonComponent from '../common/CustomButtonComponent';
+import type { TopSpendingCardItemType } from '@/types/dashboard/topSpendingCardsTypes';
 
 interface Card {
   id: string;
@@ -13,10 +14,11 @@ interface Card {
 }
 
 interface TopCardsSectionProps {
-  cards: Card[];
+  cardsList: TopSpendingCardItemType[];
+  cardsListNotFound: boolean | undefined 
 }
 
-export default function TopCardsSection({ cards }: TopCardsSectionProps) {
+export default function TopCardsSection({ cardsList, cardsListNotFound }: TopCardsSectionProps) {
   const navigate = useNavigate();
 
   return (

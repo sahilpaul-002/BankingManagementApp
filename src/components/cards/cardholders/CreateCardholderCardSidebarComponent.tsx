@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import CustomInputComponent from '@/components/common/CustomInputComponent';
 import CustomSelectComponent from '@/components/common/CustomSelectComponent';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
-import { useCreateCardholderMutation } from '@/redux/features/card/cardApi';
+import { useCreateCardMutation } from '@/redux/features/card/cardApi';
 import { useDispatch } from 'react-redux';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import ShowInConsole from '@/utils/ShowInConsole';
@@ -233,7 +233,7 @@ export default function CreateCardholderCardSidebarComponent({
     const dispatch = useDispatch();
 
     // ── RTK Query Mutation ────────────────────────────────────────────────────
-    const [triggerCreateCard, { isLoading: isCreatingCard }] = useCreateCardholderMutation();
+    const [triggerCreateCard, { isLoading: isCreatingCard }] = useCreateCardMutation();
 
     // ── React Hook Form ───────────────────────────────────────────────────────
     const {

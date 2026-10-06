@@ -106,6 +106,57 @@ export const cardApis = createApi({
 
 
         // =======================================================
+        // GET TOP SPENDING CARDS LIST
+        // =======================================================
+        getTopSpendingCards: build.query<apiResponseType<apiResponseDataType>, { email: string, cardholderId: string}>({
+            async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
+                try {
+                    let state = getState() as rootStateType;
+                    let headers = cardsApiHeaders(state);
+                    if (!headers || Object.keys(headers).length === 0) {
+                        const result = await dispatch(
+                            userApis.endpoints.getApplicationHeaders.initiate(
+                                { email: payload.email },
+                                { forceRefetch: true }
+                            )
+                        );
+                        if (result.isError) {
+                            throw new ApplicationServiceError('GET-TOP-SPENDING-CARDS-LIST - Failed to fetch application headers');
+                        }
+
+                        // Get the latest Redux state
+                        state = getState() as rootStateType;
+
+                        headers = cardsApiHeaders(state)
+                    }
+
+                    const result = await executeBaseQuery(baseQuery, {
+                        url: `${CARD_URL}/topSpendingCards`,
+                        method: 'GET',
+                        headers,
+                        params: {
+                            email: payload.email,
+                            cardholder_id: payload.cardholderId,
+                        },
+                    }) as {
+                        data?: apiResponseType<apiResponseDataType>
+                        error?: unknown
+                    }
+
+                    return {
+                        data: result.data as apiResponseType<apiResponseDataType>,
+                    };
+                }
+                catch (error) {
+                    const rtkError = rtkQueryCatchError(error, 'GET-TOP-SPENDING-CARDS-LIST faced application error');
+                    return rtkError;
+                }
+            },
+            providesTags: [{ type: 'Card', id: 'TOP-SPENDING-CARDS-LIST' }],
+        }),
+
+
+        // =======================================================
         // GET CARD DETAILS
         // =======================================================
         getCardDetailS: build.query<apiResponseType<apiResponseDataType>, { email: string, cardDetails: { cardholderId: string, cardId: string } }>({
@@ -158,7 +209,7 @@ export const cardApis = createApi({
         // =======================================================
         // CREATE CARD
         // =======================================================
-        createCardholder: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardDetails: { cardholderId: string, nameOnCard: string, cardType: "VIRTUAL" | "PHYSICAL", cardCurrency: "USD", cardLimits?: { dailyLimit: string, monthlyLimit: string, yearlyLimit: string }, merchantCategories?: MerchantCategoryType[] } }>({
+        createCard: build.mutation<apiResponseType<apiResponseDataType>, { email: string; cardDetails: { cardholderId: string, nameOnCard: string, cardType: "VIRTUAL" | "PHYSICAL", cardCurrency: "USD", cardLimits?: { dailyLimit: string, monthlyLimit: string, yearlyLimit: string }, merchantCategories?: MerchantCategoryType[] } }>({
             async queryFn(payload, { getState, dispatch }, _extraOptions, baseQuery) {
                 try {
                     let state = getState() as rootStateType;
@@ -370,7 +421,7 @@ export const cardApis = createApi({
                     return rtkError;
                 }
             },
-            invalidatesTags: [{ type: 'Card', id: 'DETAILS' }],
+            invalidatesTags: [{ type: 'Card', id: 'DETAILS' }, { type: 'Card', id: 'TOP-SPENDING-CARDS-LIST' }],
         }),
 
 
@@ -429,4 +480,4 @@ export const cardApis = createApi({
     }),
 });
 
-export const { useGetCardsQuery, useLazyGetCardsQuery, useGetCardDetailSQuery, useLazyGetCardDetailSQuery, useCreateCardholderMutation, useCardSensitiveDetailsMutation, useUpdateCardStatusMutation, useUpdateCardLimitsMutation, useGetCardTransactionListQuery, useLazyGetCardTransactionListQuery } = cardApis;
+export const { useGetCardsQuery, useLazyGetCardsQuery, useGetTopSpendingCardsQuery, useLazyGetTopSpendingCardsQuery, useGetCardDetailSQuery, useLazyGetCardDetailSQuery, useCreateCardMutation, useCardSensitiveDetailsMutation, useUpdateCardStatusMutation, useUpdateCardLimitsMutation, useGetCardTransactionListQuery, useLazyGetCardTransactionListQuery } = cardApis;

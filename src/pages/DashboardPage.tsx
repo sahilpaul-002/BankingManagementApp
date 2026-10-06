@@ -26,6 +26,8 @@ import VerificationRequiredBanner from '@/components/dashboard/VerificationRequi
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import type { AllWalletBalancesResponseDataType } from '@/types/dashboard/allWalletsBalancesSectionTypes';
 import type { WalletTransactionsListResponseDataType } from '@/types/dashboard/walletTransactionsSectionTypes';
+import { useGetTopSpendingCardsQuery } from '@/redux/features/card/cardApi';
+import type { TopSpendingCardItemType, TopSpendingCardsResponseDataType } from '@/types/dashboard/topSpendingCardsTypes';
 
 export default function DashboardPage() {
     // Configure useNavigate
@@ -152,10 +154,21 @@ export default function DashboardPage() {
         "status" in getAllWalletsBalancesError?.data &&
         getAllWalletsBalancesError?.data.status === "NOT_FOUND";
 
-    // // Business Cards List
-    // const { data: getCardsListData, isFetching: getCardsListLoading, isError: getCardsListIsError, refetch: refetchCardsList } = useGetCardsListQuery({ email: email! }, { skip: !email || !shouldFetchDependentApis }
-    // );
-    // const userCardsList = getCardsListData?.data?.data ?? [];
+    const shouldFetchTopSpendingCardsList = shouldFetchDependentApis && getAllWalletsBalancesIsSuccess && !!userCardholderId;
+    // Cards List
+    const { data: getTopSPendingCardsData, isLoading: getTopSpendingCardsIsLoading, isFetching: getTopSpendingCardsIsFetching, isError: getTopSpendingCardsIsError, error: getTopSpendingCardsError } = useGetTopSpendingCardsQuery({ email: userEmail!, cardholderId: userCardholderId! }, { skip: !userEmail || !userCardholderId || !shouldFetchTopSpendingCardsList, refetchOnMountOrArgChange: true, });
+    const topSpendingCardsResponseData = (getTopSPendingCardsData?.data as TopSpendingCardsResponseDataType) ?? {};
+    const topSpendingCardsList = (topSpendingCardsResponseData?.cards as TopSpendingCardItemType[]) ?? [];
+    const isTopSpendingCardsCardsNotFound =
+        getTopSpendingCardsIsError &&
+        getTopSpendingCardsError &&
+        getTopSpendingCardsError != null &&
+        'status' in getTopSpendingCardsError &&
+        getTopSpendingCardsError?.status === 404 &&
+        typeof getTopSpendingCardsError?.data === 'object' &&
+        getTopSpendingCardsError?.data !== null &&
+        'status' in getTopSpendingCardsError?.data &&
+        (getTopSpendingCardsError?.data as { status: string }).status === 'NOT_FOUND';
 
     const shouldFetchWalletTransactions = shouldFetchDependentApis && getAllWalletsBalancesIsSuccess && !!userWalletId;
     // Wallet Transaction
@@ -175,6 +188,9 @@ export default function DashboardPage() {
     useEffect(() => {
         ShowInConsole("User All Wallets Balances details", userAllWalletsBalances);
     }, [userAllWalletsBalances])
+    useEffect(() => {
+        ShowInConsole('Cards list', topSpendingCardsResponseData as object);
+    }, [topSpendingCardsResponseData]);
     useEffect(() => {
         ShowInConsole("User Wallets Transactions", userWalletTransactions);
     }, [userWalletTransactions])
@@ -321,7 +337,10 @@ export default function DashboardPage() {
                                 walletsBalancesNotFound={isAllWalletsBalancesNotFound}
                             />
                             {/* Cards Section */}
-                            <TopCardsSection cards={DEMO.cards} />
+                            <TopCardsSection
+                                cardsList={topSpendingCardsList}
+                                cardsListNotFound={isTopSpendingCardsCardsNotFound}
+                            />
 
                             {/* ------------------- Row 2 ------------------- */}
                             {/* Chart Section */}
