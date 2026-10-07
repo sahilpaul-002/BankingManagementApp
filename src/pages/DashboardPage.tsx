@@ -28,6 +28,7 @@ import type { AllWalletBalancesResponseDataType } from '@/types/dashboard/allWal
 import type { WalletTransactionsListResponseDataType } from '@/types/dashboard/walletTransactionsSectionTypes';
 import { useGetTopSpendingCardsQuery } from '@/redux/features/card/cardApi';
 import type { TopSpendingCardItemType, TopSpendingCardsResponseDataType } from '@/types/dashboard/topSpendingCardsTypes';
+import { selectIsAdmin, selectIsMasterAdmin } from '@/redux/slice/user/userSlice';
 
 export default function DashboardPage() {
     // Configure useNavigate
@@ -35,6 +36,10 @@ export default function DashboardPage() {
 
     // Configure useDispatch
     const dispatch = useDispatch();
+
+    const isAdmin = useSelector(selectIsAdmin);
+    const isMasterAdmin = useSelector(selectIsMasterAdmin);
+    const canAccessAdminFeatures = isAdmin || isMasterAdmin;
 
     // ------------------------------- GET EMAIL FROM SESSION STORAGE ---------------------------------- \\
     // Get necessary user details from session storage
@@ -315,16 +320,18 @@ export default function DashboardPage() {
                                     Here's where things stand across your treasury today.
                                 </p>
                             </div>
-                            <div className="w-fit flex justify-center items-center gap-2">
-                                {/* Convert Button */}
-                                <div className="dashboardPage-convert-button-container w-[140px] sm:w-[160px] h-[30px] sm:h-[40px]">
-                                    <CustomButtonComponent id={"dashboardPage-convert-button"} label={<><ArrowLeftRight className="w-4 h-4" /> Convert</>} type="button" variant={"navy"} onClick={() => navigate('/wallets/currencyConversion')} />
+                            {canAccessAdminFeatures && (
+                                <div className="w-fit flex justify-center items-center gap-2">
+                                    {/* Convert Button */}
+                                    <div className="dashboardPage-convert-button-container w-[140px] sm:w-[160px] h-[30px] sm:h-[40px]">
+                                        <CustomButtonComponent id={"dashboardPage-convert-button"} label={<><ArrowLeftRight className="w-4 h-4" /> Convert</>} type="button" variant={"navy"} onClick={() => navigate('/wallets/currencyConversion')} />
+                                    </div>
+                                    {/* Send Money Button */}
+                                    <div className="dashboardPage-sendMoney-button-container w-[140px] sm:w-[160px] h-[30px] sm:h-[40px]">
+                                        <CustomButtonComponent id={"dashboardPage-sendMoney-button"} label={<><Send className="w-3.5 h-3.5" />Send money</>} type="button" variant={"navy"} onClick={() => navigate('/payables/payout')} />
+                                    </div>
                                 </div>
-                                {/* Send Money Button */}
-                                <div className="dashboardPage-sendMoney-button-container w-[140px] sm:w-[160px] h-[30px] sm:h-[40px]">
-                                    <CustomButtonComponent id={"dashboardPage-sendMoney-button"} label={<><Send className="w-3.5 h-3.5" />Send money</>} type="button" variant={"navy"} onClick={() => navigate('/payables/payout')} />
-                                </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Main Layout Grid */}
