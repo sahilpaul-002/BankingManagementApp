@@ -79,3 +79,26 @@ export const requireKycAndKybApproval = async () => {
 
     return requireKybApproval();
 };
+
+export const requireAdminAccess = () => {
+    const state = store.getState();
+
+    const isAdmin = state.user.isAdmin;
+    const isMasterAdmin = state.user.isMasterAdmin;
+
+    if (!isAdmin && !isMasterAdmin) {
+        return redirect("/dashboard");
+    }
+
+    return null;
+};
+
+export const requireAdminKycAndKybApproval = async () => {
+    const adminResult = requireAdminAccess();
+
+    if (adminResult) {
+        return adminResult;
+    }
+
+    return requireKycAndKybApproval();
+};

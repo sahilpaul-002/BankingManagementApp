@@ -4,12 +4,13 @@ import DepositWalletsListComponent from '@/components/wallets/depositWallets/Dep
 import WalletDetailsSidebarComponent from '@/components/wallets/depositWallets/WalletDetailsSidebarComponent';
 import CreateWalletSidebarComponent from '@/components/wallets/depositWallets/CreateWalletSidebarComponent';
 import { useNavigate } from 'react-router';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import type { WalletItemType, WalletsDetailsResponseDataType } from '@/types/wallets/depositWalletsTypes';
 import ShowInConsole from '@/utils/ShowInConsole';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import { Plus } from 'lucide-react';
+import { selectIsAdmin, selectIsMasterAdmin } from '@/redux/slice/user/userSlice';
 
 export default function DepositWalletsPage() {
     // Configure useNavigate
@@ -17,6 +18,11 @@ export default function DepositWalletsPage() {
 
     // Configure useDispatch
     const dispatch = useDispatch();
+
+    const isAdmin = useSelector(selectIsAdmin);
+    const isMasterAdmin = useSelector(selectIsMasterAdmin);
+    const canAccessAddWallet = isAdmin || isMasterAdmin;
+    const canAccessLoadWallet = isAdmin || isMasterAdmin;
 
     // ------------------------------- GET EMAIL FROM SESSION STORAGE ---------------------------------- \\
     // Get necessary user details from session storage
@@ -78,7 +84,7 @@ export default function DepositWalletsPage() {
     const handleCreateWalletSuccess = () => {
         setTimeout(() => {
             setIsCreateWalletOpen(false);
-        },1000)
+        }, 1000)
     };
 
     // All possible wallet type+currency combinations (5 total)
@@ -115,7 +121,7 @@ export default function DepositWalletsPage() {
                         </h1>
 
                         {/* Add Wallet Button — hidden when all 5 combinations exist */}
-                        {!allWalletsCreated && (
+                        {(canAccessAddWallet && !allWalletsCreated) && (
                             <button
                                 id="depositWalletsPage-addWallet-btn"
                                 type="button"
@@ -143,6 +149,7 @@ export default function DepositWalletsPage() {
                     isOpen={isDetailsOpen}
                     onClose={handleCloseDetails}
                     wallet={selectedWallet}
+                    canAccessLoadWallet={canAccessLoadWallet}
                 />
 
                 {/* Create Wallet Sidebar */}

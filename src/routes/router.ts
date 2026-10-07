@@ -5,7 +5,7 @@ import AuthLayout from "../layouts/AuthLayout";
 import SignInComponent from "../components/auth/SignInComponent";
 import SignUpComponent from "@/components/auth/SignUpComponent";
 import ServiceUnavailable503 from "@/pages/ServiceUnavailable503";
-import { requireAuthentication, requireAuthorization, requireKycAndKybApproval } from "./gaurds/requireAuthentication";
+import { requireAdminAccess, requireAdminKycAndKybApproval, requireAuthentication, requireAuthorization, requireKycAndKybApproval } from "./gaurds/requireAuthentication";
 import VerifyEmailComponent from "@/components/auth/VerifyEmailComponent";
 import SendEmailVerificationCodeComponent from "@/components/auth/SendEmailVerificationCodeComponent";
 import Select2FaMethodComponent from "@/components/auth/Select2FaMethodComponent";
@@ -89,7 +89,7 @@ const router = createBrowserRouter([
             },
             {
                 Component: DashboardLayout,
-                // loader: requireAuthorization,
+                loader: requireAuthorization,
                 children: [
                     {
                         path: "dashboard",
@@ -106,6 +106,7 @@ const router = createBrowserRouter([
                             },
                             {
                                 path: "currencyConversion",
+                                loader: requireAdminAccess,
                                 Component: CurrencyConversionPage,
                             },
                             {
@@ -117,7 +118,7 @@ const router = createBrowserRouter([
                     {
                         path: "payables",
                         Component: PayablesLayout,
-                        loader: requireKycAndKybApproval,
+                        loader: requireAdminKycAndKybApproval,
                         children: [
                             {
                                 path: "beneficiaries",
@@ -140,6 +141,7 @@ const router = createBrowserRouter([
                         children: [
                             {
                                 path: "cardholders",
+                                loader: requireAdminAccess,
                                 Component: CardholdersPage,
                             },
                             {
@@ -166,7 +168,7 @@ const router = createBrowserRouter([
                             },
                             {
                                 path: "prefundAccounts",
-                                loader: requireKycAndKybApproval,
+                                loader: requireAdminKycAndKybApproval,
                                 Component: UserPrefundAccountsPage,
                             }
                         ]

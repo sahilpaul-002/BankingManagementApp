@@ -9,7 +9,7 @@ import mapToRtkError from '@/errorHandling/mapToRtkError'
 import { helperApis } from '../helper/helperApis'
 import rtkQueryCatchError from '@/errorHandling/rtkQueryCatchError'
 import executeBaseQuery from '../executeBaseQuery'
-import { setAuthenticated } from '@/redux/slice/user/userSlice'
+import { setAuthenticated, setIsAdmin, setIsMasterAdmin } from '@/redux/slice/user/userSlice'
 import { rsaEncryption } from '@/utils/rsaEncryption'
 
 const ENVIRONMENT = import.meta.env.VITE_REACT_ENV
@@ -334,10 +334,25 @@ export const userApis = createApi({
 
                         // Replace response data with sanitized data
                         result.data.data = sanitizedLoginData;
-                    }
 
-                    // Update authentication status of user
-                    dispatch(setAuthenticated(true));
+                        // Update authentication status of user
+                        dispatch(setAuthenticated(true));
+
+                        // Set Admin
+                        if (sanitizedLoginData?.isAdmin?.toUpperCase() === "Y") {
+                            dispatch(setIsAdmin(true));
+                        }
+                        else {
+                            dispatch(setIsAdmin(false))
+                        }
+                        // Set Master Admin
+                        if (sanitizedLoginData?.isMasterAdmin?.toUpperCase() === "Y") {
+                            dispatch(setIsMasterAdmin(true));
+                        }
+                        else {
+                            dispatch(setIsMasterAdmin(false))
+                        }
+                    }
 
                     return {
                         data: result.data as apiResponseType<apiResponseDataType>,

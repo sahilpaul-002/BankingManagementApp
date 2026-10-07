@@ -1,6 +1,6 @@
 import ReactECharts from 'echarts-for-react';
 import type { EChartsOption } from 'echarts';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Activity, useEffect } from 'react';
 import { setShowInfoBanner } from '@/redux/slice/utility/utilitySlice';
 import { useGetPayoutsExpendituresQuery } from '@/redux/features/transfer/transferApis';
@@ -12,10 +12,15 @@ import type {
 import { useGetAllCardsExpendituresQuery } from '@/redux/features/card/cardApi';
 import ShowInConsole from '@/utils/ShowInConsole';
 import { ChartNoAxesCombined, Info } from 'lucide-react';
+import { selectIsAdmin, selectIsMasterAdmin } from '@/redux/slice/user/userSlice';
 
 export default function ExpenditureChartSection() {
   // Configure useDispatch
   const dispatch = useDispatch();
+
+  const isAdmin = useSelector(selectIsAdmin);
+  const isMasterAdmin = useSelector(selectIsMasterAdmin);
+  const canAccessPayoutsExpenditures = isAdmin || isMasterAdmin;
 
   // ------------------------------- GET EMAIL FROM SESSION STORAGE ---------------------------------- \\
   // Get necessary user details from session storage
@@ -56,62 +61,19 @@ export default function ExpenditureChartSection() {
 
   // ----------------------- PAYOUTS EXPENDITURES / ALL CARDS EXPENDITURES ----------------------- \\
   // Payouts Expenditures
-  const {
-    data: getPayoutsExpendituresData,
-    isLoading: getPayoutsExpendituresIsLoading,
-    isFetching: getPayoutsExpendituresIsFetching,
-    isError: getPayoutsExpendituresIsError,
-  } = useGetPayoutsExpendituresQuery(
-    {
-      email: userEmail!,
-      userId: userId!,
-      fromDate: fromDate,
-      toDate: toDate,
-    },
-    { skip: !userEmail || !userId, refetchOnMountOrArgChange: true }
-  );
-  const payoutsExpendituresResponseData =
-    getPayoutsExpendituresData?.data as PayoutExpenditureChartResponseDataType;
-  const payoutsExpendituresList =
-    (payoutsExpendituresResponseData?.payout_spend as ExpenditureChartItemType[]) ??
-    [];
-  const hasPayoutExpenditure =
-    !getPayoutsExpendituresIsError &&
-    payoutsExpendituresList.some((item) => Number(item.amount) > 0);
+  const {data: getPayoutsExpendituresData, isLoading: getPayoutsExpendituresIsLoading, isFetching: getPayoutsExpendituresIsFetching, isError: getPayoutsExpendituresIsError} = useGetPayoutsExpendituresQuery({email: userEmail!, userId: userId!, fromDate: fromDate, toDate: toDate}, { skip: !userEmail || !userId || !canAccessPayoutsExpenditures, refetchOnMountOrArgChange: true });
+  const payoutsExpendituresResponseData = getPayoutsExpendituresData?.data as PayoutExpenditureChartResponseDataType;
+  const payoutsExpendituresList = (payoutsExpendituresResponseData?.payout_spend as ExpenditureChartItemType[]) ?? [];
+  const hasPayoutExpenditure = !getPayoutsExpendituresIsError && payoutsExpendituresList.some((item) => Number(item.amount) > 0);
 
   // All Cards Expenditures
-  const {
-    data: getAllCardsExpendituresData,
-    isLoading: getAllCardsExpendituresIsLoading,
-    isFetching: getAllCardsExpendituresIsFetching,
-    isError: getAllCardsExpendituresIsError,
-  } = useGetAllCardsExpendituresQuery(
-    {
-      email: userEmail!,
-      cardholderId: userCardholderId!,
-      fromDate: fromDate,
-      toDate: toDate,
-    },
-    {
-      skip: !userEmail || !userCardholderId,
-      refetchOnMountOrArgChange: true,
-    }
-  );
-  const allCardsExpendituresResponseData =
-    getAllCardsExpendituresData?.data as CardExpenditureChartResponseDataType;
-  const allCardsExpendituresList =
-    (allCardsExpendituresResponseData?.card_spend as ExpenditureChartItemType[]) ??
-    [];
-  const hasCardExpenditure =
-    !getAllCardsExpendituresIsError &&
-    allCardsExpendituresList.some((item) => Number(item.amount) > 0);
+  const {data: getAllCardsExpendituresData, isLoading: getAllCardsExpendituresIsLoading, isFetching:getAllCardsExpendituresIsFetching, isError: getAllCardsExpendituresIsError} = useGetAllCardsExpendituresQuery({email: userEmail!, cardholderId: userCardholderId!, fromDate: fromDate, toDate: toDate}, {skip: !userEmail || !userCardholderId, refetchOnMountOrArgChange: true});
+  const allCardsExpendituresResponseData = getAllCardsExpendituresData?.data as CardExpenditureChartResponseDataType;
+  const allCardsExpendituresList = (allCardsExpendituresResponseData?.card_spend as ExpenditureChartItemType[]) ?? [];
+  const hasCardExpenditure = !getAllCardsExpendituresIsError && allCardsExpendituresList.some((item) => Number(item.amount) > 0);
 
   const hasExpenditureData = hasPayoutExpenditure || hasCardExpenditure;
-  const isExpenditureLoading =
-    getPayoutsExpendituresIsLoading ||
-    getPayoutsExpendituresIsFetching ||
-    getAllCardsExpendituresIsLoading ||
-    getAllCardsExpendituresIsFetching;
+  const isExpenditureLoading = getPayoutsExpendituresIsLoading || getPayoutsExpendituresIsFetching || getAllCardsExpendituresIsLoading || getAllCardsExpendituresIsFetching;
 
   useEffect(() => {
     ShowInConsole('Payouts Expenditures', payoutsExpendituresResponseData);

@@ -11,6 +11,7 @@ import { useGetKycDetailsQuery } from '@/redux/features/kyc/kycApis';
 import { useGetUserOnboardingDetailsQuery } from '@/redux/features/user/userApi';
 import { isKycApproved } from '@/utils/kycHelper';
 import { isKybApproved } from '@/utils/kybHelper';
+import { selectIsAdmin, selectIsMasterAdmin } from '@/redux/slice/user/userSlice';
 
 interface NavItem {
   label: string;
@@ -97,6 +98,9 @@ export default function NavbarComponent() {
   // --------------------------------------- Get/Use DNS Data --------------------------------------- \\
   // Get dns data from redux
   const dnsData = useSelector(selectDnsConfigDetails)
+  const isAdmin = useSelector(selectIsAdmin);
+  const isMasterAdmin = useSelector(selectIsMasterAdmin);
+  const canAccessAdminFeatures = isAdmin || isMasterAdmin;
 
   // Dns Config Data
   const domainName = window.location.hostname;
@@ -164,6 +168,30 @@ export default function NavbarComponent() {
   const isItemDisabled = (item: string): boolean => {
     if (!kycApproved || !kybApproved) {
       return !ALLOWED_ITEMS_WHEN_VERIFICATION_PENDING.includes(item);
+    }
+
+    return false;
+  };
+
+  const isItemHidden = (section: string, item: string): boolean => {
+    if (canAccessAdminFeatures) {
+      return false;
+    }
+
+    if (section === "Wallets" && item === "Currency Conversion") {
+      return true;
+    }
+
+    if (section === "Payables") {
+      return true;
+    }
+
+    if (section === "Cards" && item === "Cardholders") {
+      return true;
+    }
+
+    if (section === "User" && item === "Prefund Accounts") {
+      return true;
     }
 
     return false;
@@ -255,76 +283,50 @@ export default function NavbarComponent() {
       </div>
 
       {/* Navigation Items */}
+      {/* Navigation Items */}
       <nav className="w-full h-fit flex-1 overflow-y-auto py-4!">
-        {navigationData.map((section) => (
-          <div key={section.section} className="w-full h-hit mb-2!">
-            {/* Section Header */}
-            <button
-              onClick={() => toggleSection(section.section)}
-              className={`w-full flex items-center gap-3 px-4! py-2.5! transition-colors text-[var(--nav-text)] ${isCollapsed ? 'justify-center' : 'justify-between'
-                } hover:bg-opacity-10 hover:bg-white/10`}
-            >
-              <div className="flex justify-start items-center gap-3">
-                {getSectionIcon(section.section)}
+        {navigationData.map((section) => {
+          const visibleItems = section.items.filter(
+            (item) => !isItemHidden(section.section, item)
+          );
+
+          // Hide the entire section if no items are available
+          if (visibleItems.length === 0) {
+            return null;
+          }
+
+          return (
+            <div key={section.section} className="w-full h-fit mb-2!">
+              {/* Section Header */}
+              <button
+                onClick={() => toggleSection(section.section)}
+                className={`w-full flex items-center gap-3 px-4! py-2.5! transition-colors text-[var(--nav-text)] ${isCollapsed ? 'justify-center' : 'justify-between'
+                  } hover:bg-opacity-10 hover:bg-white/10`}
+              >
+                <div className="flex justify-start items-center gap-3">
+                  {getSectionIcon(section.section)}
+
+                  {!isCollapsed && (
+                    <span className="text-sm font-medium uppercase tracking-wide">
+                      {section.section}
+                    </span>
+                  )}
+                </div>
+
                 {!isCollapsed && (
-                  <span className="text-sm font-medium uppercase tracking-wide">
-                    {section.section}
-                  </span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${expandedSections.includes(section.section)
+                        ? 'rotate-180'
+                        : ''
+                      }`}
+                  />
                 )}
-              </div>
-              {!isCollapsed && (
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${expandedSections.includes(section.section) ? 'rotate-180' : ''
-                    }`}
-                />
-              )}
-            </button>
+              </button>
 
-            {/* Section Items */}
-            {!isCollapsed && expandedSections.includes(section.section) && (
-              <div className="mt-1!">
-                {section.items.map((item) => {
-                  const active = isItemActive(item);
-                  const disabled = isItemDisabled(item);
-
-                  return (
-                    <button
-                      key={item}
-                      type="button"
-                      disabled={disabled}
-                      aria-disabled={disabled}
-                      onClick={() => handleNavigation(item)}
-                      className={`w-full text-left px-4! py-2! pl-12! text-sm transition-colors
-            ${disabled
-                          ? "cursor-not-allowed text-[var(--nav-text-mute)] opacity-40"
-                          : active
-                            ? "cursor-pointer bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]"
-                            : "cursor-pointer bg-transparent font-normal text-[var(--nav-text)] hover:bg-white/10"
-                        }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span>{item}</span>
-
-                        {disabled && (
-                          <span className="text-[10px] uppercase tracking-wide text-[var(--nav-text-mute)]">
-                            Locked
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Collapsed state: show items on hover */}
-            {isCollapsed && (
-              <div className="relative group">
-                <div className="bg-[var(--nav-bg-2)] absolute left-full top-0 ml-2! hidden group-hover:block z-50 min-w-[200px] rounded-lg shadow-lg py-2!">
-                  <div className="px-4! py-2! text-xs font-semibold text-[var(--nav-text-mute)] uppercase tracking-wide">
-                    {section.section}
-                  </div>
-                  {section.items.map((item) => {
+              {/* Section Items */}
+              {!isCollapsed && expandedSections.includes(section.section) && (
+                <div className="mt-1!">
+                  {visibleItems.map((item) => {
                     const active = isItemActive(item);
                     const disabled = isItemDisabled(item);
 
@@ -333,23 +335,66 @@ export default function NavbarComponent() {
                         key={item}
                         type="button"
                         disabled={disabled}
+                        aria-disabled={disabled}
                         onClick={() => handleNavigation(item)}
-                        className={`w-full text-left px-4! py-2! text-sm transition-colors ${disabled
-                          ? "cursor-not-allowed opacity-50"
-                          : active
-                            ? "cursor-pointer bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]"
-                            : "cursor-pointer bg-transparent font-normal text-[var(--nav-text)] hover:bg-opacity-10 hover:bg-white/10"
+                        className={`w-full text-left px-4! py-2! pl-12! text-sm transition-colors ${disabled
+                            ? "cursor-not-allowed text-[var(--nav-text-mute)] opacity-40"
+                            : active
+                              ? "cursor-pointer bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]"
+                              : "cursor-pointer bg-transparent font-normal text-[var(--nav-text)] hover:bg-white/10"
                           }`}
                       >
-                        {item}
+                        <div className="flex items-center justify-between">
+                          <span>{item}</span>
+
+                          {disabled && (
+                            <span className="text-[10px] uppercase tracking-wide text-[var(--nav-text-mute)]">
+                              Locked
+                            </span>
+                          )}
+                        </div>
                       </button>
                     );
                   })}
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+
+              {/* Collapsed state: show items on hover */}
+              {isCollapsed && (
+                <div className="relative group">
+                  <div className="bg-[var(--nav-bg-2)] absolute left-full top-0 ml-2! hidden group-hover:block z-50 min-w-[200px] rounded-lg shadow-lg py-2!">
+                    <div className="px-4! py-2! text-xs font-semibold text-[var(--nav-text-mute)] uppercase tracking-wide">
+                      {section.section}
+                    </div>
+
+                    {visibleItems.map((item) => {
+                      const active = isItemActive(item);
+                      const disabled = isItemDisabled(item);
+
+                      const itemClassName = disabled
+                        ? "w-full text-left px-4! py-2! text-sm transition-colors cursor-not-allowed opacity-50"
+                        : active
+                          ? "w-full text-left px-4! py-2! text-sm transition-colors cursor-pointer bg-[var(--nav-active)] font-medium text-[var(--nav-text-strong)]"
+                          : "w-full text-left px-4! py-2! text-sm transition-colors cursor-pointer bg-transparent font-normal text-[var(--nav-text)] hover:bg-opacity-10 hover:bg-white/10";
+
+                      return (
+                        <button
+                          key={item}
+                          type="button"
+                          disabled={disabled}
+                          onClick={() => handleNavigation(item)}
+                          className={itemClassName}
+                        >
+                          {item}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
 
       {/* User Section - Bottom */}

@@ -1,7 +1,7 @@
 import { useState, useEffect, Activity } from 'react';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import CustomButtonComponent from '@/components/common/CustomButtonComponent';
 import ManageCardsListComponent from '@/components/cards/manageCards/ManageCardsListComponent';
 import CreateCardSidebarComponent from '@/components/cards/manageCards/CreateCardSidebarComponent';
@@ -11,6 +11,7 @@ import type { CardsListResponseDataType, CardItemType } from '@/types/cards/mana
 import ShowInConsole from '@/utils/ShowInConsole';
 import PageLoaderComponent from '@/components/common/loaders/PageLoaderComponent';
 import type { PaginationState } from '@tanstack/react-table';
+import { selectIsAdmin, selectIsMasterAdmin } from '@/redux/slice/user/userSlice';
 
 const DEFAULT_PAGINATION: PaginationState = {
     pageIndex: 0,
@@ -23,6 +24,10 @@ export default function ManageCardsPage() {
 
     // Configure useDispatch
     const dispatch = useDispatch();
+
+    const isAdmin = useSelector(selectIsAdmin);
+    const isMasterAdmin = useSelector(selectIsMasterAdmin);
+    const canAccessCreateCard = isAdmin || isMasterAdmin;
 
     // ------------------------------- GET EMAIL FROM SESSION STORAGE ---------------------------------- \\
     // Get necessary user details from session storage
@@ -97,19 +102,21 @@ export default function ManageCardsPage() {
                             <span className="font-serif italic font-normal">Cards</span>
                         </h1>
 
-                        <div className="w-[160px] h-[38px]">
-                            <CustomButtonComponent
-                                id="manageCardsPage-createCard-btn"
-                                label={
-                                    <span className="flex items-center justify-center gap-1.5">
-                                        <Plus className="w-4 h-4" /> Create Card
-                                    </span>
-                                }
-                                type="button"
-                                variant="navy"
-                                onClick={handleOpenCreateCard}
-                            />
-                        </div>
+                        {canAccessCreateCard && (
+                            <div className="w-[160px] h-[38px]">
+                                <CustomButtonComponent
+                                    id="manageCardsPage-createCard-btn"
+                                    label={
+                                        <span className="flex items-center justify-center gap-1.5">
+                                            <Plus className="w-4 h-4" /> Create Card
+                                        </span>
+                                    }
+                                    type="button"
+                                    variant="navy"
+                                    onClick={handleOpenCreateCard}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 

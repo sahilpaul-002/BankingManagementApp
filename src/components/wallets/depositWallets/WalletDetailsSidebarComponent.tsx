@@ -27,6 +27,7 @@ interface WalletDetailsSidebarComponentPropsType {
     isOpen: boolean;
     onClose: () => void;
     wallet: WalletItemType | null;
+    canAccessLoadWallet: boolean
 }
 
 // ─── Helper: format decimal string ───────────────────────────────────────────
@@ -46,7 +47,7 @@ function DetailRow({ label, children }: { label: string; children: React.ReactNo
     );
 }
 
-export default function WalletDetailsSidebarComponent({isOpen, onClose, wallet}: WalletDetailsSidebarComponentPropsType) {
+export default function WalletDetailsSidebarComponent({ isOpen, onClose, wallet, canAccessLoadWallet }: WalletDetailsSidebarComponentPropsType) {
     const [activePeriod, setActivePeriod] = useState<TransactionPeriod>('daily');
     const [isLoadWalletOpen, setIsLoadWalletOpen] = useState(false);
 
@@ -135,15 +136,17 @@ export default function WalletDetailsSidebarComponent({isOpen, onClose, wallet}:
                                 </div>
                             </div>
 
-                            <button
-                                id="walletDetails-loadWallet-btn"
-                                type="button"
-                                onClick={() => setIsLoadWalletOpen(true)}
-                                className="inline-flex items-center gap-1.5 px-3! py-2! rounded-lg text-xs font-semibold bg-[var(--nav-bg)] text-white hover:opacity-90 transition-opacity cursor-pointer shrink-0"
-                            >
-                                <ArrowDownToLine className="w-3.5 h-3.5" />
-                                Load Wallet
-                            </button>
+                            {canAccessLoadWallet && (
+                                <button
+                                    id="walletDetails-loadWallet-btn"
+                                    type="button"
+                                    onClick={() => setIsLoadWalletOpen(true)}
+                                    className="inline-flex items-center gap-1.5 px-3! py-2! rounded-lg text-xs font-semibold bg-[var(--nav-bg)] text-white hover:opacity-90 transition-opacity cursor-pointer shrink-0"
+                                >
+                                    <ArrowDownToLine className="w-3.5 h-3.5" />
+                                    Load Wallet
+                                </button>
+                            )}
                         </div>
 
                         {/* Section: WALLET INFO */}
@@ -180,104 +183,103 @@ export default function WalletDetailsSidebarComponent({isOpen, onClose, wallet}:
                                     <span className="font-semibold text-[var(--warn)]">
                                         {formatDecimal(wallet.holding_amount.$numberDecimal, wallet.wallet_currency)}
                                     </span>
-                            </DetailRow>
-                        </div>
-                    </div>
-
-                    {/* Section: TRANSACTIONS */}
-                    <div className="flex flex-col gap-4 pt-4! border-t border-[var(--line)]">
-                        <div className="flex items-center gap-2 text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
-                            <TrendingUp className="w-3.5 h-3.5" />
-                            <span>— TRANSACTIONS</span>
+                                </DetailRow>
+                            </div>
                         </div>
 
-                        {/* Period toggle buttons */}
-                        <div className="flex items-center gap-2 p-1! bg-[var(--bg-subtle)] rounded-xl border border-[var(--line)]">
-                            {PERIOD_TABS.map((tab) => {
-                                const isActive = activePeriod === tab.id;
-                                return (
-                                    <button
-                                        key={tab.id}
-                                        id={`walletDetails-txPeriod-${tab.id}-btn`}
-                                        type="button"
-                                        onClick={() => setActivePeriod(tab.id)}
-                                        className={`flex-1 py-2! px-3! text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer ${
-                                            isActive
-                                                ? 'bg-[var(--bg-surface)] text-[var(--ink)] shadow-xs border border-[var(--line)]'
-                                                : 'text-[var(--mute)] hover:text-[var(--ink-soft)]'
-                                        }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Period meta info */}
-                        {'date' in activeTx && (
-                            <p className="text-[11px] text-[var(--mute)]">
-                                Date:{' '}
-                                <span className="font-medium text-[var(--ink-soft)]">
-                                    {new Date(activeTx.date).toLocaleDateString('en-GB', {
-                                        day: '2-digit',
-                                        month: 'short',
-                                        year: 'numeric',
-                                    })}
-                                </span>
-                            </p>
-                        )}
-                        {'month' in activeTx && (
-                            <p className="text-[11px] text-[var(--mute)]">
-                                Period:{' '}
-                                <span className="font-medium text-[var(--ink-soft)]">
-                                    {new Date(activeTx.year, activeTx.month - 1).toLocaleDateString('en-GB', {
-                                        month: 'long',
-                                        year: 'numeric',
-                                    })}
-                                </span>
-                            </p>
-                        )}
-                        {'year' in activeTx && !('month' in activeTx) && (
-                            <p className="text-[11px] text-[var(--mute)]">
-                                Year:{' '}
-                                <span className="font-medium text-[var(--ink-soft)]">
-                                    {activeTx.year}
-                                </span>
-                            </p>
-                        )}
-
-                        {/* Credit / Debit display */}
-                        <div className="grid grid-cols-2 gap-3">
-                            {/* Credit card */}
-                            <div className="flex flex-col gap-1.5 p-4! rounded-xl bg-[var(--ok-bg)] border border-[var(--ok-bg)]">
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ok)]">
-                                    Credit
-                                </span>
-                                <span className="text-base font-bold text-[var(--ok)] leading-tight break-all">
-                                    {formatDecimal(activeTx.credit.$numberDecimal)}
-                                </span>
-                                <span className="text-[10px] text-[var(--ok)] opacity-75 uppercase">
-                                    {wallet.wallet_currency}
-                                </span>
+                        {/* Section: TRANSACTIONS */}
+                        <div className="flex flex-col gap-4 pt-4! border-t border-[var(--line)]">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--mute)] uppercase tracking-wider">
+                                <TrendingUp className="w-3.5 h-3.5" />
+                                <span>— TRANSACTIONS</span>
                             </div>
 
-                            {/* Debit card */}
-                            <div className="flex flex-col gap-1.5 p-4! rounded-xl bg-[var(--danger-bg)] border border-[var(--danger-bg)]">
-                                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--danger)]">
-                                    Debit
-                                </span>
-                                <span className="text-base font-bold text-[var(--danger)] leading-tight break-all">
-                                    {formatDecimal(activeTx.debit.$numberDecimal)}
-                                </span>
-                                <span className="text-[10px] text-[var(--danger)] opacity-75 uppercase">
-                                    {wallet.wallet_currency}
-                                </span>
+                            {/* Period toggle buttons */}
+                            <div className="flex items-center gap-2 p-1! bg-[var(--bg-subtle)] rounded-xl border border-[var(--line)]">
+                                {PERIOD_TABS.map((tab) => {
+                                    const isActive = activePeriod === tab.id;
+                                    return (
+                                        <button
+                                            key={tab.id}
+                                            id={`walletDetails-txPeriod-${tab.id}-btn`}
+                                            type="button"
+                                            onClick={() => setActivePeriod(tab.id)}
+                                            className={`flex-1 py-2! px-3! text-xs font-semibold rounded-lg transition-all duration-150 cursor-pointer ${isActive
+                                                    ? 'bg-[var(--bg-surface)] text-[var(--ink)] shadow-xs border border-[var(--line)]'
+                                                    : 'text-[var(--mute)] hover:text-[var(--ink-soft)]'
+                                                }`}
+                                        >
+                                            {tab.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Period meta info */}
+                            {'date' in activeTx && (
+                                <p className="text-[11px] text-[var(--mute)]">
+                                    Date:{' '}
+                                    <span className="font-medium text-[var(--ink-soft)]">
+                                        {new Date(activeTx.date).toLocaleDateString('en-GB', {
+                                            day: '2-digit',
+                                            month: 'short',
+                                            year: 'numeric',
+                                        })}
+                                    </span>
+                                </p>
+                            )}
+                            {'month' in activeTx && (
+                                <p className="text-[11px] text-[var(--mute)]">
+                                    Period:{' '}
+                                    <span className="font-medium text-[var(--ink-soft)]">
+                                        {new Date(activeTx.year, activeTx.month - 1).toLocaleDateString('en-GB', {
+                                            month: 'long',
+                                            year: 'numeric',
+                                        })}
+                                    </span>
+                                </p>
+                            )}
+                            {'year' in activeTx && !('month' in activeTx) && (
+                                <p className="text-[11px] text-[var(--mute)]">
+                                    Year:{' '}
+                                    <span className="font-medium text-[var(--ink-soft)]">
+                                        {activeTx.year}
+                                    </span>
+                                </p>
+                            )}
+
+                            {/* Credit / Debit display */}
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* Credit card */}
+                                <div className="flex flex-col gap-1.5 p-4! rounded-xl bg-[var(--ok-bg)] border border-[var(--ok-bg)]">
+                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ok)]">
+                                        Credit
+                                    </span>
+                                    <span className="text-base font-bold text-[var(--ok)] leading-tight break-all">
+                                        {formatDecimal(activeTx.credit.$numberDecimal)}
+                                    </span>
+                                    <span className="text-[10px] text-[var(--ok)] opacity-75 uppercase">
+                                        {wallet.wallet_currency}
+                                    </span>
+                                </div>
+
+                                {/* Debit card */}
+                                <div className="flex flex-col gap-1.5 p-4! rounded-xl bg-[var(--danger-bg)] border border-[var(--danger-bg)]">
+                                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--danger)]">
+                                        Debit
+                                    </span>
+                                    <span className="text-base font-bold text-[var(--danger)] leading-tight break-all">
+                                        {formatDecimal(activeTx.debit.$numberDecimal)}
+                                    </span>
+                                    <span className="text-[10px] text-[var(--danger)] opacity-75 uppercase">
+                                        {wallet.wallet_currency}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
             {/* Load Wallet Sidebar */}
             <LoadWalletSidebarComponent
