@@ -31,12 +31,17 @@ import ManageCardsPage from "@/pages/ManageCardsPage";
 import CardDetailsPage from "@/pages/CardDetailsPage";
 import PayoutTransactionsPage from "@/pages/PayoutTransactionsPage";
 import UserPrefundAccountsPage from "@/pages/UserPrefundAccountsPage";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
 
 const router = createBrowserRouter([
     {
         path: "/",
         Component: App,
         children: [
+            {
+                path: '/privacy-policy',
+                Component: PrivacyPolicyPage,
+            },
             {
                 path: "serviceUnavailable",
                 Component: ServiceUnavailable503,
@@ -145,8 +150,8 @@ const router = createBrowserRouter([
                                 Component: CardholdersPage,
                             },
                             {
-                              path: "manageCards",
-                              Component: ManageCardsPage,
+                                path: "manageCards",
+                                Component: ManageCardsPage,
                             },
                             {
                                 path: "manageCards/:id",

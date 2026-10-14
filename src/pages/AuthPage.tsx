@@ -1,6 +1,6 @@
 import React, { Activity, useEffect, useState } from 'react'
 import BrandingComponent from '../components/auth/BrandingComponent';
-import { Outlet } from 'react-router';
+import { Link, Outlet } from 'react-router';
 import FormSkeleton from "../components/common/FormSkeletonComponent";
 import { selectDnsConfigDetails, type dnsConfigDataType } from '@/redux/slice/config/configSlice';
 import { useSelector } from 'react-redux';
@@ -52,8 +52,13 @@ export default function AuthPage() {
                                                 {/* Separator */}
                                                 <div className="authPage-footer-separator text-[var(--gold)]">|</div>
 
-                                                {/* Terms & Condition Text */}
-                                                <span className="authPage-footer-privacyPolicyText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-normal hover:underline cursor-pointer">Privacy Policy</span>
+                                                {/* Privacy Policy */}
+                                                <Link
+                                                    to="/privacy-policy"
+                                                    className="authPage-footer-privacyPolicyText text-[var(--color-link1)] hover:text-[var(--color-link2)] text-start text-[12px] font-semibold tracking-normal hover:underline"
+                                                >
+                                                    Privacy Policy
+                                                </Link>
                                             </div>
 
                                             {/* Separator */}
