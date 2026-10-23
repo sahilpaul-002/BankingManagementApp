@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useSignInMutation } from '@/redux/features/user/userApi';
 import { toast } from 'react-toastify';
 import ShowInConsole from '@/utils/ShowInConsole';
+import { Copy } from 'lucide-react';
 
 export default function SignInComponent() {
   // Restore email in session storage
@@ -234,6 +235,110 @@ export default function SignInComponent() {
             </div>
           </div>
         </form >
+
+        {/* Demo Credentials */}
+        {/* <div className="signinPage-demoCredentials w-full rounded-lg border border-[var(--gold)]/30 bg-[var(--nav-bg)]/50 p-4! space-y-3">
+          <div className="flex flex-col items-start gap-1 text-center">
+            <h3 className="text-sm font-semibold text-[var(--gold)]">
+              Try the Demo Application
+            </h3>
+
+            <p className="text-xs text-[var(--line-strong)]">
+              Use the credentials below to explore the application.
+            </p>
+          </div>
+
+          <div className="space-y-2 text-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-medium text-[var(--line-strong)]">
+                Email
+              </span>
+
+              <button
+                type="button"
+                onClick={() =>
+                  navigator.clipboard.writeText("bmatest02@yopmail.com")
+                }
+                className="text-right font-medium text-[var(--color-link1)] hover:text-[var(--color-link2)] hover:underline"
+                title="Copy demo email"
+              >
+                bmatest02@yopmail.com
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-medium text-[var(--line-strong)]">
+                Password
+              </span>
+
+              <button
+                type="button"
+                onClick={() =>
+                  navigator.clipboard.writeText("W@llet123")
+                }
+                className="text-right font-medium text-[var(--color-link1)] hover:text-[var(--color-link2)] hover:underline"
+                title="Copy demo password"
+              >
+                W@llet123
+              </button>
+            </div>
+          </div>
+
+          <p className="text-start text-xs text-[var(--line-strong)] opacity-80">
+            Click either credential to copy it.
+          </p>
+        </div> */}
+
+        {/* Demo Credentials */}
+        <div className="signinPage-demoCredentials w-full rounded-lg border border-[var(--gold)]/30 bg-[var(--nav-bg)]/50 p-4! space-y-3">
+          <div className="flex flex-col items-start gap-1 text-center mb-1!">
+            <h3 className="text-sm font-semibold text-[var(--gold)]">
+              Try the Demo Application
+            </h3>
+
+            <p className="text-xs text-[var(--line-strong)]">
+              Use the credentials below to explore the application.
+            </p>
+          </div>
+
+          {[
+            { label: 'Email', value: 'bmatest02@yopmail.com' },
+            { label: 'Password', value: 'W@llet123' },
+          ].map(({ label, value }) => (
+            <div key={label} className="space-y-1">
+              <div className="flex items-center gap-2">
+                <p className="text-xs font-medium text-[var(--line-strong)]">
+                  {label}
+                </p>
+
+                <span className="text-xs font-medium text-[var(--line-strong)]"> - </span>
+
+                {/* <div className="flex items-center gap-2"> */}
+                <span className="min-w-0 break-all text-xs font-medium text-[var(--line-strong)]">
+                  {value}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(value);
+                      toast.success(`${label} copied successfully`);
+                    } catch {
+                      toast.error(`Unable to copy ${label.toLowerCase()}`);
+                    }
+                  }}
+                  className="shrink-0 rounded p-1! text-[var(--color-link1)] transition-colors hover:bg-[var(--gold)]/10 hover:text-[var(--color-link2)] cursor-pointer"
+                  aria-label={`Copy demo ${label.toLowerCase()}`}
+                  title={`Copy ${label}`}
+                >
+                  <Copy size={14} strokeWidth={1.8} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
     </div >
   )
