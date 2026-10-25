@@ -1,73 +1,27 @@
-# React + TypeScript + Vite
+Developed a full-stack Banking & Treasury Management Web Application that unifies banking workflows through a responsive interface and secure backend APIs.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Key Features:**
 
-Currently, two official plugins are available:
+• **Multi-Currency Wallets:** Digital wallets, transfers, balances, and transaction history across supported currencies and stablecoins.
+• **Card Management:** Virtual/physical card workflows, spending limits, MCC restrictions, and freeze/unfreeze controls.
+• **Payments & Payables:** Beneficiaries, payment initiation, transaction tracking, bank transfers, and crypto settlement workflows.
+• **Foreign Exchange:** Currency conversion with exchange quotes and rate-locking workflows.
+• **Authentication & Security:** RBAC, 2FA, protected routes, RSA/AES encryption and decryption, and FingerprintJS device fingerprinting.
+• **KYC/KYB:** Customer/business verification, document submission, status tracking, and verification-based access controls.
+• **Dashboard & Analytics:** Financial summaries, transaction history, and interactive visualizations.
+• **SVG Branding:** Explored SVG-based UI development for custom, scalable application branding.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**Technology Stack:**
+• Frontend: React 19, TypeScript, React Router v7
+• State & API: Redux Toolkit, RTK Query
+• UI: Tailwind CSS, Radix UI, shadcn/ui, Lucide React
+• Visualization: Apache ECharts, GSAP
+• Backend: Node.js, Express.js, TypeScript
+• Database: MongoDB
 
-## React Compiler
+Implemented modular architecture, reusable components, centralized API management, structured validation, and clear frontend/backend separation.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+This demo showcases full-stack development, fintech workflows, API integration, security, and maintainable software architecture. Financial operations requiring external providers are simulated where live integrations are unavailable.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+**Live Demo:** https://banking-management-app.netlify.app/
+**GitHub:** https://github.com/sahilpaul-002/BankingManagementApp/tree/BankingManagement-React
