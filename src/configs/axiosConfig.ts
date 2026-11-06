@@ -102,6 +102,9 @@ const setupInterceptors = (instance: AxiosInstance) => {
 
                 // RSA encrypt IV
                 const rsaRes = await rsaEncryption({ ivHex }, rsaKey as string);
+                if (rsaRes?.status !== 'SUCCESS' || !rsaRes.ciphertextBase64) {
+                    throw new ApplicationServiceError('RSA encryption of IV failed', 'RsaEncryption');
+                }
 
                 // ENCRYPT MULTIPART FORMDATA
                 if (req.data instanceof FormData) {

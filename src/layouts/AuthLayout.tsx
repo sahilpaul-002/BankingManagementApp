@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { useSelector } from "react-redux";
 import { selectDnsConfigDetails } from "@/redux/slice/config/configSlice";
 import ApplicationLoaderComponent from "@/components/common/loaders/ApplicationLoaderComponent";
+import ShowInConsole from "@/utils/ShowInConsole";
 
 
 export default function AuthLayout() {
@@ -29,7 +30,7 @@ export default function AuthLayout() {
 
   useEffect(() => {
     if (!isLoading && !isFetching && isSuccess) {
-      console.log(data);
+      ShowInConsole('DNS configuration:', data);
     }
 
     if (!isLoading && !isFetching && isError) {
